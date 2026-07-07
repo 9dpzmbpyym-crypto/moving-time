@@ -15,11 +15,6 @@ const P = {
 };
 
 const r = (ctx, c, x, y, w = 1, h = 1) => { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); };
-const dith = (ctx, c, x, y, w, h, step = 2, off = 0) => {
-  ctx.fillStyle = c;
-  for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++)
-    if ((i + j + off) % step === 0) ctx.fillRect(i, j, 1, 1);
-};
 
 const W = 66, H = 78;
 
@@ -44,14 +39,13 @@ function bedFinal(ctx) {
   r(ctx, P.burgundy, 17, 23, 32, 13); r(ctx, P.burgundyHi, 18, 24, 30, 3);
   r(ctx, P.burgundyLo, 17, 33, 32, 2);
 
-  // mustard/gold duvet
+  // mustard/gold duvet — flat tone-stepped bands, no texture patch
   r(ctx, P.out, 1, 37, 64, 34);
   r(ctx, P.mustardHi, 2, 38, 62, 4);
   r(ctx, P.mustard, 2, 42, 62, 20);
   r(ctx, P.mustardLo, 2, 62, 62, 8);
   r(ctx, "#B6862A", 2, 48, 62, 1);
   r(ctx, "#B6862A", 2, 56, 62, 1);
-  dith(ctx, P.mustardLo, 40, 42, 24, 20, 3, 0); // right-side shade
 
   // frame + legs
   r(ctx, P.out, 1, 71, 64, 3);
