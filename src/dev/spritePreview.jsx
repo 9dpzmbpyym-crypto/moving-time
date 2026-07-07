@@ -9,8 +9,8 @@ const ZOOM = 8;
 const P = {
   out: "#221306",
   mustard: "#C9942E", mustardHi: "#DDAB45", mustardLo: "#A87823",
-  burgundy: "#7C2E37", burgundyLo: "#591F27",
-  wood: "#5A381F", woodDark: "#3E2413",
+  burgundy: "#7C2E37", burgundyHi: "#96424C", burgundyLo: "#591F27",
+  wood: "#5A381F", woodDark: "#3E2413", woodMid: "#6E452A", woodHi: "#8C5931",
   tan: "#CBAA78", tanHi: "#DFC495", tanLo: "#AB8B57",
 };
 
@@ -21,55 +21,45 @@ const dith = (ctx, c, x, y, w, h, step = 2, off = 0) => {
     if ((i + j + off) % step === 0) ctx.fillRect(i, j, 1, 1);
 };
 
-const W = 66, H = 60;
+const W = 66, H = 78;
 
-// Variant A: burgundy pillow overlapping two tan pillows behind, flat fold-band duvet
-function bedA(ctx) {
-  r(ctx, P.out, 2, 0, 27, 16); r(ctx, P.out, 37, 0, 27, 16);
-  r(ctx, P.tan, 3, 1, 25, 14); r(ctx, P.tanHi, 3, 1, 25, 3); r(ctx, P.tanLo, 3, 12, 25, 3);
-  r(ctx, P.tan, 38, 1, 25, 14); r(ctx, P.tanHi, 38, 1, 25, 3); r(ctx, P.tanLo, 38, 12, 25, 3);
+// Keeps the headboard silhouette (approved from the live room), adds
+// tone-step shading + panel detail on the headboard, frame and legs,
+// matching the density of the reference pixel-art bed icon.
+function bedFinal(ctx) {
+  // headboard
+  r(ctx, P.out, 2, 0, 62, 16);
+  r(ctx, P.woodHi, 3, 1, 60, 3);
+  r(ctx, P.woodDark, 3, 4, 60, 10);
+  r(ctx, P.woodMid, 22, 5, 1, 9); r(ctx, P.woodMid, 43, 5, 1, 9); // panel seams
+  r(ctx, P.wood, 3, 13, 60, 1); // base shadow under cap
 
-  r(ctx, P.out, 15, 6, 36, 14);
-  r(ctx, P.burgundy, 16, 7, 34, 12); r(ctx, "#96424C", 17, 8, 32, 3);
-  r(ctx, P.burgundyLo, 16, 17, 34, 2);
+  // two tan pillows behind
+  r(ctx, P.out, 4, 16, 27, 15); r(ctx, P.out, 35, 16, 27, 15);
+  r(ctx, P.tan, 5, 17, 25, 13); r(ctx, P.tanHi, 5, 17, 25, 3); r(ctx, P.tanLo, 5, 27, 25, 3);
+  r(ctx, P.tan, 36, 17, 25, 13); r(ctx, P.tanHi, 36, 17, 25, 3); r(ctx, P.tanLo, 36, 27, 25, 3);
 
-  r(ctx, P.out, 1, 19, 64, 34);
-  r(ctx, P.mustardHi, 2, 20, 62, 4);
-  r(ctx, P.mustard, 2, 24, 62, 20);
-  r(ctx, P.mustardLo, 2, 44, 62, 8);
-  r(ctx, "#B6862A", 2, 30, 62, 1);
-  r(ctx, "#B6862A", 2, 38, 62, 1);
-  dith(ctx, P.mustardLo, 2, 24, 62, 20, 3, 0);
+  // burgundy accent pillow, front & center
+  r(ctx, P.out, 16, 22, 34, 15);
+  r(ctx, P.burgundy, 17, 23, 32, 13); r(ctx, P.burgundyHi, 18, 24, 30, 3);
+  r(ctx, P.burgundyLo, 17, 33, 32, 2);
 
-  r(ctx, P.out, 1, 53, 64, 3);
-  r(ctx, P.woodDark, 2, 53, 62, 2);
-  r(ctx, P.out, 4, 56, 4, 4); r(ctx, P.out, 58, 56, 4, 4);
-  r(ctx, P.woodDark, 5, 56, 2, 3); r(ctx, P.woodDark, 59, 56, 2, 3);
-}
+  // mustard/gold duvet
+  r(ctx, P.out, 1, 37, 64, 34);
+  r(ctx, P.mustardHi, 2, 38, 62, 4);
+  r(ctx, P.mustard, 2, 42, 62, 20);
+  r(ctx, P.mustardLo, 2, 62, 62, 8);
+  r(ctx, "#B6862A", 2, 48, 62, 1);
+  r(ctx, "#B6862A", 2, 56, 62, 1);
+  dith(ctx, P.mustardLo, 40, 42, 24, 20, 3, 0); // right-side shade
 
-// Variant B: three pillows fully visible side by side, quilted duvet texture
-function bedB(ctx) {
-  r(ctx, P.out, 0, 2, 20, 15); r(ctx, P.out, 46, 2, 20, 15);
-  r(ctx, P.tan, 1, 3, 18, 13); r(ctx, P.tanHi, 1, 3, 18, 3); r(ctx, P.tanLo, 1, 13, 18, 3);
-  r(ctx, P.tan, 47, 3, 18, 13); r(ctx, P.tanHi, 47, 3, 18, 3); r(ctx, P.tanLo, 47, 13, 18, 3);
-
-  r(ctx, P.out, 21, 5, 24, 13);
-  r(ctx, P.burgundy, 22, 6, 22, 11); r(ctx, "#96424C", 23, 7, 20, 3);
-  r(ctx, P.burgundyLo, 22, 15, 22, 2);
-
-  r(ctx, P.out, 1, 18, 64, 35);
-  r(ctx, P.mustardHi, 2, 19, 62, 3);
-  r(ctx, P.mustard, 2, 22, 62, 22);
-  r(ctx, P.mustardLo, 2, 44, 62, 8);
-  dith(ctx, P.mustardLo, 2, 22, 62, 22, 2, 0);
-  dith(ctx, P.mustardHi, 2, 22, 62, 22, 5, 2);
-  r(ctx, "#B6862A", 2, 34, 62, 1);
-
-  r(ctx, P.out, 1, 53, 64, 3);
-  r(ctx, P.wood, 2, 53, 62, 2);
-  dith(ctx, P.woodDark, 2, 53, 62, 2, 3, 0);
-  r(ctx, P.out, 4, 56, 4, 4); r(ctx, P.out, 58, 56, 4, 4);
-  r(ctx, P.woodDark, 5, 56, 2, 3); r(ctx, P.woodDark, 59, 56, 2, 3);
+  // frame + legs
+  r(ctx, P.out, 1, 71, 64, 3);
+  r(ctx, P.woodHi, 2, 71, 62, 1);
+  r(ctx, P.woodDark, 2, 72, 62, 2);
+  r(ctx, P.out, 4, 74, 4, 4); r(ctx, P.out, 58, 74, 4, 4);
+  r(ctx, P.wood, 5, 74, 1, 4); r(ctx, P.woodDark, 6, 74, 2, 4);
+  r(ctx, P.wood, 59, 74, 1, 4); r(ctx, P.woodDark, 60, 74, 2, 4);
 }
 
 function Candidate({ label, draw }) {
@@ -96,8 +86,7 @@ export default function SpritePreview() {
       minHeight: "100vh", background: "#160D06", display: "flex",
       alignItems: "center", justifyContent: "center", gap: 60, flexWrap: "wrap",
     }}>
-      <Candidate label="Variant A — burgundy overlapping tan pillows, flat fold bands" draw={bedA} />
-      <Candidate label="Variant B — three pillows in a row, quilted duvet texture" draw={bedB} />
+      <Candidate label="Headboard kept, added tone-step shading + panel/frame detail" draw={bedFinal} />
     </div>
   );
 }
