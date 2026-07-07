@@ -340,39 +340,39 @@ const ROOMS = {
     id: "bedroom",
     name: "Bedroom",
     objects: [
-      { id: "rug",            name: "Striped Rug",      category: "textiles",  x: 230, y: 470, z: 1, removable: true,
+      { id: "rug",            name: "Striped Rug",      category: "textiles",  x: 230, y: 470, z: 1, removable: true, value: 15,
         check: "Blue-green stripes. It has caught every midnight water glass you ever dropped." },
       { id: "curtains",       name: "Curtains",         category: "textiles",  x: 300, y: 32,  z: 2, removable: false,
         check: "These stay behind — the listing said “partially furnished.”" },
-      { id: "art_tree",       name: "Tree Painting",    category: "decor",     x: 88,  y: 112, z: 2, removable: true,
+      { id: "art_tree",       name: "Tree Painting",    category: "decor",     x: 88,  y: 112, z: 2, removable: true, value: 8,
         check: "A small green painting that made a rented wall feel less rented." },
-      { id: "art_poster",     name: "Coin Co. Poster",  category: "decor",     x: 184, y: 84,  z: 2, removable: true,
+      { id: "art_poster",     name: "Coin Co. Poster",  category: "decor",     x: 184, y: 84,  z: 2, removable: true, value: 5,
         check: "Birmingham Coin Company. You don't collect coins. It just looked cool." },
-      { id: "sill_plants",    name: "Windowsill Plants",category: "plants",    x: 408, y: 248, z: 3, removable: true,
+      { id: "sill_plants",    name: "Windowsill Plants",category: "plants",    x: 408, y: 248, z: 3, removable: true, value: 6,
         check: "The windowsill crew. They ride up front, obviously." },
-      { id: "hanging_plant",  name: "Hanging Pothos",   category: "plants",    x: 676, y: 14,  z: 3, removable: true,
+      { id: "hanging_plant",  name: "Hanging Pothos",   category: "plants",    x: 676, y: 14,  z: 3, removable: true, value: 10,
         check: "It survived three heat waves. It can survive Queens." },
-      { id: "dresser_mirror", name: "Dresser Mirror",   category: "furniture", x: 752, y: 176, z: 2, removable: true,
+      { id: "dresser_mirror", name: "Dresser Mirror",   category: "furniture", x: 752, y: 176, z: 2, removable: true, value: 20,
         check: "You've checked a thousand outfits here. It kept every secret." },
-      { id: "bed",            name: "Bed",              category: "furniture", x: 180, y: 280, z: 3, removable: true,
+      { id: "bed",            name: "Bed",              category: "furniture", x: 180, y: 280, z: 3, removable: true, value: 60,
         check: "Still smells like laundry day. The burgundy pillow matches nothing, which is why it works." },
-      { id: "nightstand",     name: "Nightstand",       category: "furniture", x: 52,  y: 372, z: 3, removable: true,
+      { id: "nightstand",     name: "Nightstand",       category: "furniture", x: 52,  y: 372, z: 3, removable: true, value: 25,
         check: "One drawer of mysteries, one shelf of books you swear you'll finish before the flight." },
-      { id: "vanity",         name: "Vanity Desk",      category: "furniture", x: 548, y: 330, z: 3, removable: true,
+      { id: "vanity",         name: "Vanity Desk",      category: "furniture", x: 548, y: 330, z: 3, removable: true, value: 45,
         check: "White desk, good light. Where letters and eyeliner both happened." },
-      { id: "dresser",        name: "Dresser",          category: "furniture", x: 740, y: 330, z: 3, removable: true,
+      { id: "dresser",        name: "Dresser",          category: "furniture", x: 740, y: 330, z: 3, removable: true, value: 70,
         check: "Solid wood, heavier than it looks. The movers will curse its name." },
-      { id: "lamp",           name: "Mushroom Lamp",    category: "lighting",  x: 80,  y: 296, z: 4, removable: true,
+      { id: "lamp",           name: "Mushroom Lamp",    category: "lighting",  x: 80,  y: 296, z: 4, removable: true, value: 18,
         check: "Chief mood-setter. Warm light or nothing." },
-      { id: "vanity_mirror",  name: "Standing Mirror",  category: "furniture", x: 596, y: 228, z: 4, removable: true,
+      { id: "vanity_mirror",  name: "Standing Mirror",  category: "furniture", x: 596, y: 228, z: 4, removable: true, value: 22,
         check: "Leans just so. You never once hung it properly. No regrets." },
-      { id: "stool",          name: "Stool",            category: "furniture", x: 600, y: 446, z: 4, removable: true,
+      { id: "stool",          name: "Stool",            category: "furniture", x: 600, y: 446, z: 4, removable: true, value: 10,
         check: "A little wobbly. Sit anyway." },
-      { id: "vase",           name: "Red Glass Vase",   category: "decor",     x: 772, y: 270, z: 4, removable: true,
+      { id: "vase",           name: "Red Glass Vase",   category: "decor",     x: 772, y: 270, z: 4, removable: true, value: 12,
         check: "Absolutely not surviving the box unless it's wrapped twice." },
-      { id: "figurines",      name: "Thrifted Figurines",category: "decor",    x: 852, y: 286, z: 4, removable: true,
+      { id: "figurines",      name: "Thrifted Figurines",category: "decor",    x: 852, y: 286, z: 4, removable: true, value: 8,
         check: "Two tiny companions from a good thrift run. They've seen things." },
-      { id: "basket",         name: "Everything Basket",category: "decor",     x: 812, y: 308, z: 4, removable: true,
+      { id: "basket",         name: "Everything Basket",category: "decor",     x: 812, y: 308, z: 4, removable: true, value: 5,
         check: "Currently holding: keys, receipts, one dried orange." },
     ],
   },
@@ -417,16 +417,20 @@ export default function PackItUp() {
   );
   const [selectedId, setSelectedId] = useState(null);
   const [hoverId, setHoverId] = useState(null);
-  const [packingId, setPackingId] = useState(null); // mid-animation
+  const [packingId, setPackingId] = useState(null); // mid pack animation
+  const [sellingId, setSellingId] = useState(null); // mid sell animation
   const [invOpen, setInvOpen] = useState(false);
-  const [minutes, setMinutes] = useState(0); // game time advances as you pack
+  const [minutes, setMinutes] = useState(0); // game time advances as you pack/sell
+  const [coins, setCoins] = useState(125);
   const [scale, setScale] = useState(1);
   const wrapRef = useRef(null);
 
   const removable = room.objects.filter((o) => o.removable);
   const packedCount = removable.filter((o) => objState[o.id].packed).length;
+  const soldCount = removable.filter((o) => objState[o.id].sold).length;
   const total = removable.length;
-  const done = packedCount === total;
+  const clearedCount = packedCount + soldCount;
+  const done = clearedCount === total;
   const boxCount = Math.min(4, Math.ceil(packedCount / 4));
 
   /* fit stage to viewport */
@@ -444,7 +448,7 @@ export default function PackItUp() {
 
   const packObject = useCallback((id) => {
     const obj = room.objects.find((o) => o.id === id);
-    if (!obj || !obj.removable || objState[id].packed || packingId) return;
+    if (!obj || !obj.removable || objState[id].packed || objState[id].sold || packingId || sellingId) return;
     setPackingId(id);
     setTimeout(() => {
       setObjState((s) => ({ ...s, [id]: { ...s[id], packed: true } }));
@@ -452,10 +456,29 @@ export default function PackItUp() {
       setSelectedId(null);
       setMinutes((m) => m + 10);
     }, 520);
-  }, [room.objects, objState, packingId]);
+  }, [room.objects, objState, packingId, sellingId]);
+
+  const sellObject = useCallback((id) => {
+    const obj = room.objects.find((o) => o.id === id);
+    if (!obj || !obj.removable || objState[id].packed || objState[id].sold || packingId || sellingId) return;
+    setSellingId(id);
+    setTimeout(() => {
+      setObjState((s) => ({ ...s, [id]: { ...s[id], sold: true } }));
+      setCoins((c) => c + (obj.value || 0));
+      setSellingId(null);
+      setSelectedId(null);
+      setMinutes((m) => m + 5);
+    }, 520);
+  }, [room.objects, objState, packingId, sellingId]);
 
   const unpackObject = (id) =>
     setObjState((s) => ({ ...s, [id]: { ...s[id], packed: false } }));
+
+  const unsellObject = (id) => {
+    const obj = room.objects.find((o) => o.id === id);
+    setCoins((c) => c - (obj?.value || 0));
+    setObjState((s) => ({ ...s, [id]: { ...s[id], sold: false } }));
+  };
 
   /* hotkeys: X pack · Z check(select) · Tab inventory · Esc close */
   useEffect(() => {
@@ -477,13 +500,14 @@ export default function PackItUp() {
   const visibleObjects = useMemo(
     () =>
       room.objects
-        .filter((o) => !objState[o.id].packed || o.id === packingId)
+        .filter((o) => (!objState[o.id].packed && !objState[o.id].sold) || o.id === packingId || o.id === sellingId)
         .sort((a, b) => a.z - b.z || (a.y + SPRITES[a.id].h * CELL) - (b.y + SPRITES[b.id].h * CELL)),
-    [room.objects, objState, packingId]
+    [room.objects, objState, packingId, sellingId]
   );
 
   const selected = room.objects.find((o) => o.id === selectedId) || null;
   const packedList = removable.filter((o) => objState[o.id].packed);
+  const soldList = removable.filter((o) => objState[o.id].sold);
 
   const ui = {
     frame: { background: "#241509", border: "3px solid #120A04", boxShadow: "inset 0 0 0 2px #4A2E17, 0 3px 0 #000" },
@@ -518,10 +542,11 @@ export default function PackItUp() {
             const spr = SPRITES[o.id];
             const isSel = selectedId === o.id;
             const isPacking = packingId === o.id;
+            const isSelling = sellingId === o.id;
             return (
               <div
                 key={o.id}
-                className={`obj ${isSel ? "sel" : ""} ${isPacking ? "packing" : ""} ${o.removable ? "" : "static"}`}
+                className={`obj ${isSel ? "sel" : ""} ${(isPacking || isSelling) ? "packing" : ""} ${o.removable ? "" : "static"}`}
                 style={{ position: "absolute", left: o.x, top: o.y, zIndex: o.z * 10 }}
                 onClick={(e) => { e.stopPropagation(); setSelectedId(o.id); }}
                 onMouseEnter={() => setHoverId(o.id)}
@@ -529,7 +554,7 @@ export default function PackItUp() {
                 title=""
               >
                 <PixelCanvas w={spr.w} h={spr.h} draw={spr.draw} />
-                {hoverId === o.id && !isPacking && (
+                {hoverId === o.id && !isPacking && !isSelling && (
                   <div style={{
                     position: "absolute", left: "50%", top: -30, transform: "translateX(-50%)",
                     background: "#241509", color: "#F2E4C0", padding: "3px 8px", whiteSpace: "nowrap",
@@ -568,13 +593,13 @@ export default function PackItUp() {
           <div style={{ position: "absolute", right: 14, top: 12, display: "flex", gap: 8, zIndex: 200 }}>
             <div style={{ padding: "8px 14px", color: "#F2E4C0", fontSize: 16, display: "flex", alignItems: "center", gap: 8, ...ui.frame, ...ui.label }}>
               <span style={{ width: 12, height: 12, background: P.gold, border: "2px solid #8A5E14", borderRadius: "50%", display: "inline-block" }} />
-              125
+              {coins}
             </div>
             <button
               onClick={() => setInvOpen((v) => !v)}
               style={{ padding: "6px 12px", color: "#F2E4C0", fontSize: 14, cursor: "pointer", ...ui.frame, ...ui.label }}
             >
-              📦 {packedCount}
+              📦 {clearedCount}
             </button>
           </div>
 
@@ -585,7 +610,7 @@ export default function PackItUp() {
               padding: "16px 28px", textAlign: "center", zIndex: 300, ...ui.frame,
             }}>
               <div style={{ color: "#FFD97A", fontSize: 20, animation: "bounce 1.2s infinite", ...ui.label }}>
-                ★ Bedroom packed! ★
+                ★ Bedroom cleared! ★
               </div>
               <div style={{ color: "#C9B896", fontSize: 13, marginTop: 6, ...ui.label }}>
                 Only the curtains stay. Next room coming soon…
@@ -614,32 +639,35 @@ export default function PackItUp() {
               </div>
               <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                 {selected.removable ? (
-                  <button
-                    onClick={() => packObject(selected.id)}
-                    disabled={!!packingId}
-                    style={{
-                      flex: 1, padding: "8px 0", fontSize: 14, cursor: "pointer",
-                      background: "linear-gradient(#8FD14F,#5EA032)", color: "#12260A",
-                      border: "3px solid #120A04", boxShadow: "inset 0 -3px 0 #3E7020", fontWeight: 700, ...ui.label,
-                    }}
-                  >
-                    [X] Pack it up
-                  </button>
+                  <>
+                    <button
+                      onClick={() => packObject(selected.id)}
+                      disabled={!!packingId || !!sellingId}
+                      style={{
+                        flex: 1, padding: "8px 0", fontSize: 14, cursor: "pointer",
+                        background: "linear-gradient(#8FD14F,#5EA032)", color: "#12260A",
+                        border: "3px solid #120A04", boxShadow: "inset 0 -3px 0 #3E7020", fontWeight: 700, ...ui.label,
+                      }}
+                    >
+                      [X] Pack it up
+                    </button>
+                    <button
+                      onClick={() => sellObject(selected.id)}
+                      disabled={!!packingId || !!sellingId}
+                      style={{
+                        flex: 1, padding: "8px 0", fontSize: 14, cursor: "pointer",
+                        background: "linear-gradient(#E0B65A,#B8862E)", color: "#2A1B08",
+                        border: "3px solid #120A04", boxShadow: "inset 0 -3px 0 #8A5E14", fontWeight: 700, ...ui.label,
+                      }}
+                    >
+                      Sell (${selected.value})
+                    </button>
+                  </>
                 ) : (
                   <div style={{ flex: 1, padding: "8px 0", textAlign: "center", fontSize: 13, color: "#8A7350", border: "2px dashed #4A2E17", ...ui.label }}>
                     Stays with the room
                   </div>
                 )}
-                <button
-                  disabled
-                  title="Selling unlocks in a future build"
-                  style={{
-                    flex: 1, padding: "8px 0", fontSize: 14, background: "#2E1D0E", color: "#6B563B",
-                    border: "3px solid #120A04", cursor: "not-allowed", ...ui.label,
-                  }}
-                >
-                  Sell (soon)
-                </button>
               </div>
             </div>
           )}
@@ -651,13 +679,13 @@ export default function PackItUp() {
               overflowY: "auto", ...ui.frame,
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <div style={{ color: "#FFD97A", fontSize: 16, ...ui.label }}>📦 Packed ({packedCount}/{total})</div>
+                <div style={{ color: "#FFD97A", fontSize: 16, ...ui.label }}>📦 Handled ({clearedCount}/{total})</div>
                 <button onClick={() => setInvOpen(false)}
                   style={{ background: "none", border: "none", color: "#8A7350", fontSize: 15, cursor: "pointer", ...ui.label }}>✕</button>
               </div>
-              {packedList.length === 0 && (
+              {packedList.length === 0 && soldList.length === 0 && (
                 <div style={{ color: "#8A7350", fontSize: 13, marginTop: 12, ...ui.label }}>
-                  Nothing packed yet. Click something in the room to start.
+                  Nothing handled yet. Click something in the room to start.
                 </div>
               )}
               {packedList.map((o) => (
@@ -667,13 +695,30 @@ export default function PackItUp() {
                 }}>
                   <div>
                     <div style={{ color: "#F2E4C0", fontSize: 13, ...ui.label }}>{o.name}</div>
-                    <div style={{ color: CATEGORY_COLORS[o.category], fontSize: 11, ...ui.label }}>{o.category}</div>
+                    <div style={{ color: CATEGORY_COLORS[o.category], fontSize: 11, ...ui.label }}>packed</div>
                   </div>
                   <button
                     onClick={() => unpackObject(o.id)}
                     style={{ padding: "3px 8px", fontSize: 11, background: "#2E1D0E", color: "#C9B896", border: "2px solid #120A04", cursor: "pointer", ...ui.label }}
                   >
                     unpack
+                  </button>
+                </div>
+              ))}
+              {soldList.map((o) => (
+                <div key={o.id} style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  marginTop: 8, padding: "7px 10px", background: "#1A0F06", border: "2px solid #4A2E17",
+                }}>
+                  <div>
+                    <div style={{ color: "#F2E4C0", fontSize: 13, ...ui.label }}>{o.name}</div>
+                    <div style={{ color: P.gold, fontSize: 11, ...ui.label }}>sold · +${o.value}</div>
+                  </div>
+                  <button
+                    onClick={() => unsellObject(o.id)}
+                    style={{ padding: "3px 8px", fontSize: 11, background: "#2E1D0E", color: "#C9B896", border: "2px solid #120A04", cursor: "pointer", ...ui.label }}
+                  >
+                    buy back
                   </button>
                 </div>
               ))}
@@ -694,7 +739,7 @@ export default function PackItUp() {
             ))}
             <span style={{ width: 2, height: 22, background: "#4A2E17" }} />
             <span style={{ color: "#C9B896", fontSize: 13, ...ui.label }}>
-              {room.name} · {packedCount}/{total} packed
+              {room.name} · {clearedCount}/{total} cleared
             </span>
           </div>
         </div>
