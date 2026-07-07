@@ -374,6 +374,90 @@ const ROOMS = {
   },
 };
 
+/* ---- placeholder shells: bare first-pass rooms awaiting real furniture ---- */
+function makePlaceholderShell({ wall, wallLight, wallShade, tileFloor }) {
+  return function draw(ctx) {
+    const W = 240, H = 180, WALL_B = 112;
+    r(ctx, wall, 0, 0, W, WALL_B);
+    dith(ctx, wallLight, 0, 0, W, 30, 3, 0);
+    dith(ctx, wallShade, 0, WALL_B - 26, W, 26, 3, 1);
+    r(ctx, wallLight, 0, 0, W, 3); r(ctx, wallShade, 0, 3, W, 1);
+    r(ctx, P.cream, 0, WALL_B - 6, W, 6); r(ctx, P.creamLo, 0, WALL_B - 6, W, 1);
+    r(ctx, P.out, 0, WALL_B - 1, W, 1);
+    if (tileFloor) {
+      r(ctx, "#C9BFA4", 0, WALL_B, W, H - WALL_B);
+      for (let ty = WALL_B; ty < H; ty += 12)
+        for (let tx = 0; tx < W; tx += 12) {
+          if ((tx / 12 + (ty - WALL_B) / 12) % 2 === 0) r(ctx, "#BBB093", tx, ty, 12, 12);
+          r(ctx, "#A79C80", tx, ty, 12, 1); r(ctx, "#A79C80", tx, ty, 1, 12);
+        }
+    } else {
+      r(ctx, P.floor, 0, WALL_B, W, H - WALL_B);
+      for (let row = 0; row * 8 + WALL_B < H; row++) {
+        const y0 = WALL_B + row * 8;
+        r(ctx, P.floorDark, 0, y0 + 7, W, 1);
+        dith(ctx, P.floorLight, 0, y0 + 1, W, 3, 5, row * 3);
+        const off = (row % 2) * 24;
+        for (let x = off + 10; x < W; x += 48) r(ctx, P.floorDark, x, y0, 1, 7);
+      }
+    }
+    // door hint on the left — same apartment language as the bedroom
+    r(ctx, P.out, 0, 0, 7, WALL_B); r(ctx, P.woodDark, 0, 0, 5, WALL_B); r(ctx, P.woodMid, 4, 4, 1, WALL_B - 8);
+    // window for light
+    r(ctx, P.out, 96, 16, 56, 50);
+    r(ctx, P.cream, 98, 18, 52, 46);
+    r(ctx, P.sky, 101, 21, 46, 40);
+    for (let j = 22; j < 60; j += 3) r(ctx, P.glassHi, 101, j, 46, 1);
+    r(ctx, P.cream, 122, 21, 4, 40);
+    dith(ctx, wallShade, 0, 0, 26, WALL_B, 2, 0);
+    dith(ctx, wallShade, W - 22, 0, 22, WALL_B, 2, 1);
+  };
+}
+
+/* floor continuation for tall (portrait) stages: repaint from the last full
+   pattern row down to extH cells with the exact same formulas the shells use,
+   so the overlap pixels are identical and the seam is invisible */
+function extendFloorPlank(ctx, extH) {
+  const WALL_B = 112, W = 240;
+  const startRow = Math.floor((180 - WALL_B) / 8) - 1;
+  for (let row = startRow; row * 8 + WALL_B < extH; row++) {
+    const y0 = WALL_B + row * 8;
+    r(ctx, P.floor, 0, y0, W, 8);
+    r(ctx, P.floorDark, 0, y0 + 7, W, 1);
+    dith(ctx, P.floorLight, 0, y0 + 1, W, 3, 5, row * 3);
+    const off = (row % 2) * 24;
+    for (let x = off + 10; x < W; x += 48) r(ctx, P.floorDark, x, y0, 1, 7);
+  }
+}
+function extendFloorTile(ctx, extH) {
+  const WALL_B = 112, W = 240;
+  const startY = WALL_B + Math.floor((180 - WALL_B) / 12) * 12;
+  for (let ty = startY; ty < extH; ty += 12)
+    for (let tx = 0; tx < W; tx += 12) {
+      r(ctx, "#C9BFA4", tx, ty, 12, 12);
+      if ((tx / 12 + (ty - WALL_B) / 12) % 2 === 0) r(ctx, "#BBB093", tx, ty, 12, 12);
+      r(ctx, "#A79C80", tx, ty, 12, 1); r(ctx, "#A79C80", tx, ty, 1, 12);
+    }
+}
+
+/* ordered apartment strip: pan left/right through these */
+const ROOMS_ORDER = ["bedroom", "bathroom", "office", "dining", "kitchen", "living"];
+ROOMS.bedroom.sprites = SPRITES;
+ROOMS.bedroom.drawShell = drawShell;
+ROOMS.bedroom.floorKind = "plank";
+[
+  ["bathroom", "Bathroom",    { wall: "#CBDDD6", wallLight: "#DCEAE4", wallShade: "#B4C8C0", tileFloor: true }],
+  ["office",   "Office",      { wall: "#C9CFB4", wallLight: "#D8DDC6", wallShade: "#B2B89C" }],
+  ["dining",   "Dining Room", { wall: "#E3CDAE", wallLight: "#EEDDC2", wallShade: "#CDB593" }],
+  ["kitchen",  "Kitchen",     { wall: "#E7DCA8", wallLight: "#F0E7BE", wallShade: "#CFC28D", tileFloor: true }],
+  ["living",   "Living Room", { wall: "#D9C4A9", wallLight: "#E6D5BE", wallShade: "#C1AA8C" }],
+].forEach(([id, name, cfg]) => {
+  ROOMS[id] = { id, name, objects: [], sprites: {}, drawShell: makePlaceholderShell(cfg), floorKind: cfg.tileFloor ? "tile" : "plank" };
+});
+
+/* object state is keyed per-room so an id reused across rooms can never collide */
+const sk = (roomId, id) => `${roomId}:${id}`;
+
 const CATEGORY_COLORS = {
   furniture: "#B07A3C", textiles: "#5C8C7C", decor: "#96424C",
   plants: "#5D7C3B", lighting: "#C9942E",
@@ -417,18 +501,37 @@ const SELL_CHIME_SRC = "data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2Z
    APP
    ============================================================ */
 export default function PackItUp() {
-  const roomId = "bedroom"; // future: currentRoom state + camera pan
-  const room = ROOMS[roomId];
+  /* mobile = portrait phone layout with its own UI chrome; desktop keeps the
+     original single-scale stage. */
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 760px)");
+    const on = (e) => setIsMobile(e.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
 
-  // object state: { [id]: { packed, sold, soldFor } }
+  const [roomIndex, setRoomIndex] = useState(0);
+  const room = isMobile ? ROOMS[ROOMS_ORDER[roomIndex]] : ROOMS.bedroom;
+
+  // object state: { [`${roomId}:${id}`]: { packed, sold, soldFor, donated } }
   const [objState, setObjState] = useState(() =>
-    Object.fromEntries(room.objects.map((o) => [o.id, { packed: false, sold: false, soldFor: 0 }]))
+    Object.fromEntries(
+      ROOMS_ORDER.flatMap((rid) =>
+        ROOMS[rid].objects.map((o) => [sk(rid, o.id), { packed: false, sold: false, soldFor: 0, donated: false }])
+      )
+    )
   );
   const [selectedId, setSelectedId] = useState(null);
   const [hoverId, setHoverId] = useState(null);
   const [packingId, setPackingId] = useState(null); // mid pack animation
   const [sellingId, setSellingId] = useState(null); // mid sell animation
+  const [donatingId, setDonatingId] = useState(null); // mid donate animation
+  const [donateToast, setDonateToast] = useState(null); // { name } receipt
   const [invOpen, setInvOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false); // mobile object-detail bottom sheet
   const [minutes, setMinutes] = useState(0); // game time advances as you pack/sell
   const [coins, setCoins] = useState(125);
   const [scale, setScale] = useState(1);
@@ -441,10 +544,37 @@ export default function PackItUp() {
   const sellBufferRef = useRef(null);
   const audioPrimedRef = useRef(false);
 
+  /* mobile pan-strip state: live drag offset + measured viewport box */
+  const viewRef = useRef(null);
+  const [viewSize, setViewSize] = useState({ w: 0, h: 0 });
+  const [dragX, setDragX] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const dragRef = useRef({ active: false, startX: 0, intent: false, id: null });
+  const suppressClickRef = useRef(false);
+
   useEffect(() => {
     setSellFormOpen(false);
     setSellAmount("");
+    if (!selectedId) setSheetOpen(false);
   }, [selectedId]);
+
+  /* leaving a room closes anything room-specific */
+  useEffect(() => {
+    setSelectedId(null);
+    setInvOpen(false);
+  }, [roomIndex]);
+
+  /* measure the mobile room-viewport so the stage can width/height-fit it */
+  useEffect(() => {
+    if (!isMobile) return;
+    const measure = () => {
+      const el = viewRef.current;
+      if (el) setViewSize({ w: el.clientWidth, h: el.clientHeight });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [isMobile]);
 
   /* decode the sell sound once via the Web Audio API — AudioBufferSourceNode
      schedules playback with near-zero, sample-accurate latency, unlike
@@ -488,11 +618,12 @@ export default function PackItUp() {
   };
 
   const removable = room.objects.filter((o) => o.removable);
-  const packedCount = removable.filter((o) => objState[o.id].packed).length;
-  const soldCount = removable.filter((o) => objState[o.id].sold).length;
+  const packedCount = removable.filter((o) => objState[sk(room.id, o.id)].packed).length;
+  const soldCount = removable.filter((o) => objState[sk(room.id, o.id)].sold).length;
+  const donatedCount = removable.filter((o) => objState[sk(room.id, o.id)].donated).length;
   const total = removable.length;
-  const clearedCount = packedCount + soldCount;
-  const done = clearedCount === total;
+  const clearedCount = packedCount + soldCount + donatedCount;
+  const done = total > 0 && clearedCount === total;
   const boxCount = Math.min(4, Math.ceil(packedCount / 4));
 
   /* fit stage to viewport */
@@ -508,62 +639,101 @@ export default function PackItUp() {
     return () => window.removeEventListener("resize", fit);
   }, []);
 
+  /* snapshot the pre-action state for the undo stack (roomId included so
+     undo works across rooms) */
+  const undoEntry = (id, prev, coinsDelta, minutesDelta) => ({
+    roomId: room.id, id,
+    prevPacked: prev.packed, prevSold: prev.sold, prevSoldFor: prev.soldFor, prevDonated: prev.donated,
+    coinsDelta, minutesDelta,
+  });
+  const busy = packingId || sellingId || donatingId;
+
   const packObject = useCallback((id) => {
+    const k = sk(room.id, id);
     const obj = room.objects.find((o) => o.id === id);
-    if (!obj || !obj.removable || objState[id].packed || objState[id].sold || packingId || sellingId) return;
-    const prev = objState[id];
+    if (!obj || !obj.removable || objState[k].packed || objState[k].sold || objState[k].donated || busy) return;
+    const prev = objState[k];
     setPackingId(id);
     setTimeout(() => {
-      setObjState((s) => ({ ...s, [id]: { ...s[id], packed: true } }));
-      setUndoStack((stack) => [...stack, { id, prevPacked: prev.packed, prevSold: prev.sold, prevSoldFor: prev.soldFor, coinsDelta: 0, minutesDelta: 10 }]);
+      setObjState((s) => ({ ...s, [k]: { ...s[k], packed: true } }));
+      setUndoStack((stack) => [...stack, undoEntry(id, prev, 0, 10)]);
       setPackingId(null);
       setSelectedId(null);
       setMinutes((m) => m + 10);
     }, 520);
-  }, [room.objects, objState, packingId, sellingId]);
+  }, [room, objState, busy]);
 
   const sellObject = useCallback((id, amount) => {
+    const k = sk(room.id, id);
     const obj = room.objects.find((o) => o.id === id);
-    if (!obj || !obj.removable || objState[id].packed || objState[id].sold || packingId || sellingId) return;
-    const prev = objState[id];
+    if (!obj || !obj.removable || objState[k].packed || objState[k].sold || objState[k].donated || busy) return;
+    const prev = objState[k];
     const credit = Number.isFinite(amount) ? amount : (obj.value || 0);
-    const spr = SPRITES[id];
+    const spr = room.sprites[id];
     setSellingId(id);
     // burst effect lives on its own timer so the sell animation ending
     // doesn't cut it short
-    setSellFx({ x: obj.x + (spr.w * CELL) / 2, y: obj.y + (spr.h * CELL) / 2, amount: credit });
+    setSellFx({ roomId: room.id, x: obj.x + (spr.w * CELL) / 2, y: obj.y + (spr.h * CELL) / 2, amount: credit });
     setTimeout(() => setSellFx(null), 1000);
     playSellSound();
     setTimeout(() => {
-      setObjState((s) => ({ ...s, [id]: { ...s[id], sold: true, soldFor: credit } }));
+      setObjState((s) => ({ ...s, [k]: { ...s[k], sold: true, soldFor: credit } }));
       setCoins((c) => c + credit);
-      setUndoStack((stack) => [...stack, { id, prevPacked: prev.packed, prevSold: prev.sold, prevSoldFor: prev.soldFor, coinsDelta: credit, minutesDelta: 5 }]);
+      setUndoStack((stack) => [...stack, undoEntry(id, prev, credit, 5)]);
       setSellingId(null);
       setSelectedId(null);
       setMinutes((m) => m + 5);
     }, 520);
-  }, [room.objects, objState, packingId, sellingId]);
+  }, [room, objState, busy]);
+
+  const donateObject = useCallback((id) => {
+    const k = sk(room.id, id);
+    const obj = room.objects.find((o) => o.id === id);
+    if (!obj || !obj.removable || objState[k].packed || objState[k].sold || objState[k].donated || busy) return;
+    const prev = objState[k];
+    setDonatingId(id);
+    setTimeout(() => {
+      setObjState((s) => ({ ...s, [k]: { ...s[k], donated: true } }));
+      setUndoStack((stack) => [...stack, undoEntry(id, prev, 0, 5)]);
+      setDonatingId(null);
+      setSelectedId(null);
+      setMinutes((m) => m + 5);
+      setDonateToast({ name: obj.name });
+      setTimeout(() => setDonateToast((t) => (t && t.name === obj.name ? null : t)), 3500);
+    }, 520);
+  }, [room, objState, busy]);
 
   const unpackObject = (id) => {
-    const prev = objState[id];
-    setUndoStack((stack) => [...stack, { id, prevPacked: prev.packed, prevSold: prev.sold, prevSoldFor: prev.soldFor, coinsDelta: 0, minutesDelta: 0 }]);
-    setObjState((s) => ({ ...s, [id]: { ...s[id], packed: false } }));
+    const k = sk(room.id, id);
+    const prev = objState[k];
+    setUndoStack((stack) => [...stack, undoEntry(id, prev, 0, 0)]);
+    setObjState((s) => ({ ...s, [k]: { ...s[k], packed: false } }));
   };
 
   const unsellObject = (id) => {
-    const prev = objState[id];
+    const k = sk(room.id, id);
+    const prev = objState[k];
     setCoins((c) => c - (prev.soldFor || 0));
-    setUndoStack((stack) => [...stack, { id, prevPacked: prev.packed, prevSold: prev.sold, prevSoldFor: prev.soldFor, coinsDelta: -(prev.soldFor || 0), minutesDelta: 0 }]);
-    setObjState((s) => ({ ...s, [id]: { ...s[id], sold: false, soldFor: 0 } }));
+    setUndoStack((stack) => [...stack, undoEntry(id, prev, -(prev.soldFor || 0), 0)]);
+    setObjState((s) => ({ ...s, [k]: { ...s[k], sold: false, soldFor: 0 } }));
+  };
+
+  const undonateObject = (id) => {
+    const k = sk(room.id, id);
+    const prev = objState[k];
+    setUndoStack((stack) => [...stack, undoEntry(id, prev, 0, 0)]);
+    setObjState((s) => ({ ...s, [k]: { ...s[k], donated: false } }));
   };
 
   const undoLast = () => {
     if (undoStack.length === 0) return;
-    const { id, prevPacked, prevSold, prevSoldFor, coinsDelta, minutesDelta } = undoStack[undoStack.length - 1];
-    setObjState((s) => ({ ...s, [id]: { ...s[id], packed: prevPacked, sold: prevSold, soldFor: prevSoldFor } }));
+    const { roomId, id, prevPacked, prevSold, prevSoldFor, prevDonated, coinsDelta, minutesDelta } = undoStack[undoStack.length - 1];
+    const k = sk(roomId, id);
+    setObjState((s) => ({ ...s, [k]: { ...s[k], packed: prevPacked, sold: prevSold, soldFor: prevSoldFor, donated: prevDonated } }));
     setCoins((c) => c - coinsDelta);
     setMinutes((m) => m - minutesDelta);
     setUndoStack((stack) => stack.slice(0, -1));
+    setDonateToast(null);
   };
 
   /* hotkeys: X pack · Z check(select) · Tab inventory · Esc close */
@@ -583,130 +753,622 @@ export default function PackItUp() {
   const hr12 = (Math.floor(t0 / 60) % 12) || 12;
   const clock = `Sun. ${hr12}:${String(t0 % 60).padStart(2, "0")}${Math.floor(t0 / 60) < 12 ? "am" : "pm"}`;
 
-  const visibleObjects = useMemo(
-    () =>
-      room.objects
-        .filter((o) => (!objState[o.id].packed && !objState[o.id].sold) || o.id === packingId || o.id === sellingId)
-        .sort((a, b) => a.z - b.z || (a.y + SPRITES[a.id].h * CELL) - (b.y + SPRITES[b.id].h * CELL)),
-    [room.objects, objState, packingId, sellingId]
-  );
+  /* per-room visible objects (mid-animation items stay visible while shrinking) */
+  const visibleObjectsFor = (rm) =>
+    rm.objects
+      .filter((o) => {
+        const st = objState[sk(rm.id, o.id)];
+        const animating = rm.id === room.id && (o.id === packingId || o.id === sellingId || o.id === donatingId);
+        return (!st.packed && !st.sold && !st.donated) || animating;
+      })
+      .sort((a, b) => a.z - b.z || (a.y + rm.sprites[a.id].h * CELL) - (b.y + rm.sprites[b.id].h * CELL));
 
   const selected = room.objects.find((o) => o.id === selectedId) || null;
-  const packedList = removable.filter((o) => objState[o.id].packed);
-  const soldList = removable.filter((o) => objState[o.id].sold);
-  const lastUndoObj = undoStack.length > 0 && room.objects.find((o) => o.id === undoStack[undoStack.length - 1].id);
+  const packedList = removable.filter((o) => objState[sk(room.id, o.id)].packed);
+  const soldList = removable.filter((o) => objState[sk(room.id, o.id)].sold);
+  const donatedList = removable.filter((o) => objState[sk(room.id, o.id)].donated);
+  const lastUndo = undoStack.length > 0 ? undoStack[undoStack.length - 1] : null;
+  const lastUndoObj = lastUndo && ROOMS[lastUndo.roomId].objects.find((o) => o.id === lastUndo.id);
 
   const ui = {
     frame: { background: "#241509", border: "3px solid #120A04", boxShadow: "inset 0 0 0 2px #4A2E17, 0 3px 0 #000" },
     label: { fontFamily: "'Courier New', monospace", fontWeight: 700, letterSpacing: "0.5px" },
   };
 
+  const styleTag = (
+    <style>{`
+      @keyframes packAway { to { transform: scale(0.05) translate(-40%, 60%); opacity: 0; } }
+      @keyframes popIn { from { transform: scale(0.6); opacity: 0; } }
+      @keyframes bounce { 0%,100% { transform: translateY(0);} 50% { transform: translateY(-3px);} }
+      @keyframes coinBurst {
+        0% { transform: translate(-8px, -8px) scale(0.5); opacity: 0; }
+        12% { opacity: 1; transform: translate(calc(var(--tx) * 0.35 - 8px), calc(var(--ty) * 0.8 - 8px)) scale(1); }
+        40% { transform: translate(calc(var(--tx) * 0.7 - 8px), calc(var(--ty) - 8px)) scale(1); opacity: 1; }
+        100% { transform: translate(calc(var(--tx) - 8px), 64px) scale(0.9); opacity: 0; }
+      }
+      @keyframes sellAmt {
+        0% { transform: translate(-50%, 0); opacity: 0; }
+        15% { opacity: 1; }
+        100% { transform: translate(-50%, -52px); opacity: 0; }
+      }
+      @keyframes sheetUp { from { transform: translateY(100%); } }
+      @keyframes fadeIn { from { opacity: 0; } }
+      .obj { cursor: pointer; transition: filter 120ms; }
+      .obj:hover, .obj.sel { filter: drop-shadow(0 0 0 #FFD97A) drop-shadow(2px 0 0 #FFD97A) drop-shadow(-2px 0 0 #FFD97A) drop-shadow(0 2px 0 #FFD97A) drop-shadow(0 -2px 0 #FFD97A) brightness(1.06); }
+      .obj.static { cursor: help; }
+      .obj.packing { animation: packAway 0.5s ease-in forwards; }
+      .panel { animation: popIn 140ms ease-out; }
+      .coin { animation: coinBurst 0.8s cubic-bezier(0.3, 0.4, 0.7, 1) both; }
+      .sellAmt { animation: sellAmt 0.9s ease-out both; }
+      .sheet { animation: sheetUp 240ms cubic-bezier(0.22, 1, 0.36, 1); }
+      button { font-family: 'Courier New', monospace; touch-action: manipulation; }
+    `}</style>
+  );
+
+  /* the room picture itself — shell + sprites + sell FX + box stack, always
+     drawn in 960-wide stage coordinates. Whatever scales it must scale it as
+     ONE box: the sellFx overlay math relies on living inside this space.
+     extCells > 180 continues the floor downward for tall portrait stages;
+     draw fns are cached so canvases don't repaint on every drag frame. */
+  const shellDrawCache = useRef({});
+  const getShellDraw = (rm, extCells) => {
+    if (extCells <= 180) return rm.drawShell;
+    const key = `${rm.id}:${extCells}`;
+    if (!shellDrawCache.current[key]) {
+      const extend = rm.floorKind === "tile" ? extendFloorTile : extendFloorPlank;
+      shellDrawCache.current[key] = (ctx) => { rm.drawShell(ctx); extend(ctx, extCells); };
+    }
+    return shellDrawCache.current[key];
+  };
+
+  const roomArt = (rm, extCells = 180) => {
+    const rmPacked = rm.objects.filter((o) => o.removable && objState[sk(rm.id, o.id)].packed).length;
+    const rmBoxes = Math.min(4, Math.ceil(rmPacked / 4));
+    return (
+      <>
+        {/* LAYER 0 — room shell */}
+        <div style={{ position: "absolute", inset: 0 }} onClick={() => setSelectedId(null)}>
+          <PixelCanvas w={240} h={extCells} draw={getShellDraw(rm, extCells)} redrawKey={extCells} />
+        </div>
+
+        {/* LAYER 1+ — object sprites */}
+        {visibleObjectsFor(rm).map((o) => {
+          const spr = rm.sprites[o.id];
+          const isCur = rm.id === room.id;
+          const isSel = isCur && selectedId === o.id;
+          const isBusy = isCur && (packingId === o.id || sellingId === o.id || donatingId === o.id);
+          return (
+            <div
+              key={o.id}
+              className={`obj ${isSel ? "sel" : ""} ${isBusy ? "packing" : ""} ${o.removable ? "" : "static"}`}
+              style={{ position: "absolute", left: o.x, top: o.y, zIndex: o.z * 10 }}
+              onClick={(e) => { e.stopPropagation(); setSelectedId(o.id); }}
+              onMouseEnter={() => setHoverId(o.id)}
+              onMouseLeave={() => setHoverId((h) => (h === o.id ? null : h))}
+              title=""
+            >
+              <PixelCanvas w={spr.w} h={spr.h} draw={spr.draw} />
+              {!isMobile && isCur && hoverId === o.id && !isBusy && (
+                <div style={{
+                  position: "absolute", left: "50%", top: -30, transform: "translateX(-50%)",
+                  background: "#241509", color: "#F2E4C0", padding: "3px 8px", whiteSpace: "nowrap",
+                  border: "2px solid #120A04", boxShadow: "inset 0 0 0 1px #4A2E17",
+                  fontSize: 13, zIndex: 999, ...ui.label,
+                }}>
+                  {o.name}{o.removable ? "" : " · stays"}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* coin burst + floating amount — own overlay on its own timer so the
+            item's shrink-away animation can't swallow or cut it short */}
+        {sellFx && sellFx.roomId === rm.id && (
+          <div style={{ position: "absolute", left: sellFx.x, top: sellFx.y, zIndex: 500, pointerEvents: "none" }}>
+            {COIN_BURSTS.map(({ tx, ty, d }, i) => (
+              <span
+                key={i}
+                className="coin"
+                style={{
+                  position: "absolute", left: 0, top: 0, width: 16, height: 16,
+                  background: P.goldHi, border: "3px solid #8A5E14", borderRadius: "50%",
+                  boxShadow: `inset 2px 2px 0 #FFE9A8`,
+                  animationDelay: `${d}ms`,
+                  "--tx": `${tx}px`, "--ty": `${ty}px`,
+                }}
+              />
+            ))}
+            <div
+              className="sellAmt"
+              style={{
+                position: "absolute", left: 0, top: -34, whiteSpace: "nowrap",
+                color: "#FFD97A", fontSize: 26, textShadow: "2px 2px 0 #120A04, -2px 2px 0 #120A04, 2px -2px 0 #120A04, -2px -2px 0 #120A04",
+                ...ui.label,
+              }}
+            >
+              +${sellFx.amount}
+            </div>
+          </div>
+        )}
+
+        {/* box stack near the open door */}
+        {rmPacked > 0 && (
+          <div style={{ position: "absolute", left: 24, top: 540, zIndex: 60, animation: "popIn 200ms ease-out" }}>
+            <PixelCanvas w={40} h={40} draw={(ctx) => drawBoxes(ctx, rmBoxes)} redrawKey={rmBoxes} />
+          </div>
+        )}
+      </>
+    );
+  };
+
+  const donateToastEl = donateToast && (
+    <div className="panel" style={{
+      position: "fixed", left: "50%", bottom: isMobile ? "calc(env(safe-area-inset-bottom, 0px) + 92px)" : 70,
+      transform: "translateX(-50%)", zIndex: 320, display: "flex", gap: 10, alignItems: "center",
+      padding: "10px 14px", whiteSpace: "nowrap", ...ui.frame,
+    }}>
+      <span style={{ color: "#F2E4C0", fontSize: 14, ...ui.label }}>🎁 Donated: {donateToast.name}</span>
+      <button
+        onClick={undoLast}
+        style={{ padding: "6px 12px", fontSize: 13, cursor: "pointer", color: "#FFD97A", background: "#3A2410", border: "2px solid #120A04", ...ui.label }}
+      >
+        Undo
+      </button>
+    </div>
+  );
+
+  /* ================= MOBILE — portrait phone layout =================
+     UI chrome lives in real CSS (flex/dvh) and never scales with the room;
+     only the room art inside the doorway frame gets the fit-scale. */
+  if (isMobile) {
+    const N = ROOMS_ORDER.length;
+    const stageScale = viewSize.w > 0 ? Math.max(0.15, (viewSize.w - 16) / STAGE_W) : 0.35;
+    // continue the floor downward so the room fills the tall viewport
+    const extCells = viewSize.h > 0
+      ? Math.max(STAGE_H / CELL, Math.ceil((viewSize.h - 16) / stageScale / CELL))
+      : STAGE_H / CELL;
+    const extPx = extCells * CELL;
+    const stageW = Math.round(STAGE_W * stageScale);
+    const stageH = Math.round(extPx * stageScale);
+    const prevRoom = roomIndex > 0 ? ROOMS[ROOMS_ORDER[roomIndex - 1]] : null;
+    const nextRoom = roomIndex < N - 1 ? ROOMS[ROOMS_ORDER[roomIndex + 1]] : null;
+
+    const onPointerDown = (e) => {
+      dragRef.current = { active: true, startX: e.clientX, intent: false, id: e.pointerId };
+    };
+    const onPointerMove = (e) => {
+      const d = dragRef.current;
+      if (!d.active || e.pointerId !== d.id) return;
+      let dx = e.clientX - d.startX;
+      if (!d.intent && Math.abs(dx) > 10) { d.intent = true; setDragging(true); }
+      if (!d.intent) return;
+      // ends of the apartment: no room beyond, so the strip only gives a little
+      if ((roomIndex === 0 && dx > 0) || (roomIndex === N - 1 && dx < 0)) {
+        dx = Math.max(-48, Math.min(48, dx / 4));
+      }
+      setDragX(dx);
+    };
+    const endDrag = (e) => {
+      const d = dragRef.current;
+      if (!d.active || (e && e.pointerId !== d.id)) return;
+      d.active = false;
+      if (d.intent) {
+        suppressClickRef.current = true;
+        setTimeout(() => { suppressClickRef.current = false; }, 80);
+        const threshold = Math.max(60, viewSize.w * 0.18);
+        setRoomIndex((i) => {
+          if (dragX <= -threshold) return Math.min(N - 1, i + 1);
+          if (dragX >= threshold) return Math.max(0, i - 1);
+          return i;
+        });
+      }
+      setDragging(false);
+      setDragX(0);
+    };
+
+    const arrowBtn = (dir, target) => target && (
+      <button
+        onClick={() => setRoomIndex((i) => i + dir)}
+        style={{
+          position: "absolute", top: 12, [dir < 0 ? "left" : "right"]: 14, zIndex: 60,
+          width: 54, minHeight: 48, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          color: "#FFD97A", cursor: "pointer", padding: "3px 2px",
+          ...ui.frame, ...ui.label,
+        }}
+      >
+        <span style={{ fontSize: 20, lineHeight: 1 }}>{dir < 0 ? "←" : "→"}</span>
+        <span style={{ fontSize: 8, marginTop: 2, maxWidth: 48, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {target.name}
+        </span>
+      </button>
+    );
+
+    const actions = [
+      { key: "check",  icon: "🔍", label: "Check",  disabled: !selected, onClick: () => setSheetOpen(true) },
+      { key: "pack",   icon: "📦", label: "Pack",   disabled: !selected || !selected.removable || !!busy, onClick: () => packObject(selected.id) },
+      { key: "sell",   icon: "💰", label: "Sell",   disabled: !selected || !selected.removable || !!busy, onClick: () => sellObject(selected.id) },
+      { key: "donate", icon: "🎁", label: "Donate", disabled: !selected || !selected.removable || !!busy, onClick: () => donateObject(selected.id) },
+      { key: "menu",   icon: "☰",  label: "Menu",   disabled: false, onClick: () => setInvOpen(true) },
+    ];
+
+    const invRow = (o, tagColor, tagText, btnText, btnFn) => (
+      <div key={o.id} style={{
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        marginTop: 8, padding: "10px 12px", background: "#1A0F06", border: "2px solid #4A2E17",
+      }}>
+        <div>
+          <div style={{ color: "#F2E4C0", fontSize: 14, ...ui.label }}>{o.name}</div>
+          <div style={{ color: tagColor, fontSize: 12, ...ui.label }}>{tagText}</div>
+        </div>
+        <button
+          onClick={() => btnFn(o.id)}
+          style={{ padding: "8px 12px", fontSize: 12, background: "#2E1D0E", color: "#C9B896", border: "2px solid #120A04", cursor: "pointer", ...ui.label }}
+        >
+          {btnText}
+        </button>
+      </div>
+    );
+
+    return (
+      <div
+        style={{
+          position: "fixed", inset: 0, height: "100dvh", background: "#160D06", overflow: "hidden",
+          userSelect: "none", WebkitUserSelect: "none", WebkitTapHighlightColor: "transparent",
+          display: "flex", flexDirection: "column",
+        }}
+        onPointerDownCapture={primeSellAudio}
+      >
+        {styleTag}
+
+        {/* ---- top HUD: native-sized chrome, never scales with the room ---- */}
+        <div style={{ flex: "0 0 auto", display: "flex", alignItems: "stretch", gap: 8, padding: "calc(env(safe-area-inset-top, 0px) + 10px) 10px 8px", zIndex: 130 }}>
+          <div style={{ padding: "7px 10px", flex: "1 1 auto", minWidth: 0, ...ui.frame }}>
+            <div style={{ color: "#F2E4C0", fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", ...ui.label }}>{clock.replace(/^\w+\.\s*/, "")}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+              <span style={{ color: "#D94A4A", fontSize: 11 }}>♥</span>
+              <div style={{ flex: 1, maxWidth: 70, height: 9, background: "#120A04", border: "2px solid #4A2E17" }}>
+                <div style={{ width: "100%", height: "100%", background: "linear-gradient(#8FD14F,#5EA032)" }} />
+              </div>
+            </div>
+          </div>
+          <div style={{ padding: "7px 12px", display: "flex", alignItems: "center", gap: 7, color: "#F2E4C0", fontSize: 15, ...ui.frame, ...ui.label }}>
+            <span style={{ width: 12, height: 12, background: P.gold, border: "2px solid #8A5E14", borderRadius: "50%", display: "inline-block" }} />
+            {coins}
+          </div>
+          <div style={{ padding: "6px 9px", textAlign: "right", ...ui.frame }}>
+            <div style={{ color: "#F2E4C0", fontSize: 11, whiteSpace: "nowrap", ...ui.label }}>{room.name}</div>
+            <div style={{ color: "#C9B896", fontSize: 10, marginTop: 2, whiteSpace: "nowrap", ...ui.label }}>
+              {total > 0 ? `${clearedCount}/${total} cleared` : "soon"}
+            </div>
+          </div>
+          <button
+            onClick={undoLast}
+            disabled={undoStack.length === 0}
+            title={lastUndoObj ? `Undo: ${lastUndoObj.name}` : "Nothing to undo"}
+            style={{
+              padding: "7px 12px", fontSize: 17, minWidth: 52, cursor: undoStack.length ? "pointer" : "default",
+              color: undoStack.length ? "#F2E4C0" : "#6B563B", ...ui.frame, ...ui.label,
+            }}
+          >
+            ↺
+          </button>
+        </div>
+
+        {/* ---- room viewport: pannable apartment strip ---- */}
+        <div
+          ref={viewRef}
+          style={{ flex: 1, position: "relative", overflow: "hidden", touchAction: "none" }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+          onClickCapture={(e) => {
+            if (suppressClickRef.current) { e.preventDefault(); e.stopPropagation(); }
+          }}
+        >
+          <div style={{
+            position: "absolute", top: 0, bottom: 0, left: 0, width: `${N * 100}%`, display: "flex",
+            transform: `translateX(calc(${-roomIndex * (100 / N)}% + ${dragX}px))`,
+            transition: dragging ? "none" : "transform 300ms cubic-bezier(0.22, 1, 0.36, 1)",
+          }}>
+            {ROOMS_ORDER.map((rid, i) => (
+              <div key={rid} style={{
+                width: `${100 / N}%`, flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center",
+                pointerEvents: i === roomIndex ? "auto" : "none",
+              }}>
+                {/* doorway frame: outward wood jambs painted OUTSIDE the room box,
+                    so they can never cover furniture */}
+                <div style={{
+                  position: "relative", width: stageW, height: stageH,
+                  boxShadow: "0 0 0 6px #3E2413, 0 0 0 10px #120A04, 0 0 0 13px #4A2E17, 0 16px 34px rgba(0,0,0,0.65)",
+                }}>
+                  <div style={{ width: STAGE_W, height: extPx, transform: `scale(${stageScale})`, transformOrigin: "top left", position: "relative" }}>
+                    {roomArt(ROOMS[rid], extCells)}
+                  </div>
+                  {/* looking-through-an-opening vignette: smooth fade at the very
+                      edges only, pointer-transparent */}
+                  <div style={{
+                    position: "absolute", inset: 0, pointerEvents: "none",
+                    background: "radial-gradient(ellipse at center, transparent 62%, rgba(10,5,2,0.38) 100%)",
+                  }} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* nav arrows over the room's top corners (bare wall there) */}
+          {arrowBtn(-1, prevRoom)}
+          {arrowBtn(1, nextRoom)}
+
+          {/* selected-object chip: tap for the detail sheet */}
+          {selected && !sheetOpen && !invOpen && (
+            <button
+              className="panel"
+              onClick={() => setSheetOpen(true)}
+              style={{
+                position: "absolute", left: "50%", bottom: 8, transform: "translateX(-50%)", zIndex: 80,
+                padding: "9px 14px", color: "#FFD97A", fontSize: 13, whiteSpace: "nowrap", cursor: "pointer",
+                maxWidth: "88%", overflow: "hidden", textOverflow: "ellipsis", ...ui.frame, ...ui.label,
+              }}
+            >
+              {selected.name}{selected.removable && selected.value ? ` · $${selected.value}` : ""} — details
+            </button>
+          )}
+
+          {/* room-cleared banner */}
+          {done && (
+            <div className="panel" style={{
+              position: "absolute", left: "50%", top: "12%", transform: "translateX(-50%)",
+              padding: "14px 22px", textAlign: "center", zIndex: 70, width: "max-content", maxWidth: "86%", ...ui.frame,
+            }}>
+              <div style={{ color: "#FFD97A", fontSize: 17, animation: "bounce 1.2s infinite", ...ui.label }}>
+                ★ {room.name} cleared! ★
+              </div>
+              <div style={{ color: "#C9B896", fontSize: 12, marginTop: 6, ...ui.label }}>
+                {nextRoom ? `Next up: ${nextRoom.name} →` : "That's the whole place."}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ---- bottom action bar: touch-sized, real gameplay verbs ---- */}
+        <div style={{
+          flex: "0 0 auto", position: "relative", zIndex: 120, display: "flex", gap: 6,
+          padding: "8px 8px calc(env(safe-area-inset-bottom, 0px) + 8px)",
+          background: "#1D1006", borderTop: "3px solid #120A04", boxShadow: "inset 0 3px 0 #3A2410",
+        }}>
+          {actions.map((a) => (
+            <button
+              key={a.key}
+              onClick={a.onClick}
+              disabled={a.disabled}
+              style={{
+                flex: 1, minHeight: 56, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
+                background: a.disabled ? "#241509" : "#3A2410", color: a.disabled ? "#6B563B" : "#F2E4C0",
+                border: "3px solid #120A04", boxShadow: a.disabled ? "none" : "inset 0 -3px 0 #1A0F06",
+                fontSize: 12, cursor: a.disabled ? "default" : "pointer", padding: 0, ...ui.label,
+              }}
+            >
+              <span style={{ fontSize: 16, lineHeight: 1 }}>{a.icon}</span>
+              {a.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ---- paper fan: 2 job apps + 1 admin card, visual only, tucked
+             partly behind the action bar ---- */}
+        <div style={{ position: "absolute", left: 8, bottom: "calc(env(safe-area-inset-bottom, 0px) + 34px)", zIndex: 110, pointerEvents: "none", width: 130, height: 100 }}>
+          {[
+            { rot: -14, dx: 0,  bg: "#E4B4A8", lo: "#C08578", label: "Job App", icon: "💼" },
+            { rot: -4,  dx: 26, bg: "#E9BFB2", lo: "#C08578", label: "Job App", icon: "💼" },
+            { rot: 7,   dx: 54, bg: "#B9CEDC", lo: "#8AA6B8", label: "Admin",   icon: "👤" },
+          ].map((c, i) => (
+            <div key={i} style={{
+              position: "absolute", left: c.dx, bottom: 0, width: 58, height: 92, background: c.bg,
+              border: "2px solid #120A04", boxShadow: "2px 2px 0 rgba(0,0,0,0.45)",
+              transform: `rotate(${c.rot}deg)`, transformOrigin: "50% 90%", padding: "5px 5px 0", zIndex: i,
+            }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: "#3A2018", ...ui.label }}>{c.label}</div>
+              <div style={{ marginTop: 3, fontSize: 11 }}>{c.icon}</div>
+              {[0, 1, 2, 3].map((j) => (
+                <div key={j} style={{ height: 3, marginTop: 4, background: c.lo, width: `${88 - j * 14}%` }} />
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* ---- Tasks: reserved spot, no system behind it yet ---- */}
+        <div style={{ position: "absolute", right: 10, bottom: "calc(env(safe-area-inset-bottom, 0px) + 84px)", zIndex: 105 }}>
+          <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 7, padding: "9px 13px", ...ui.frame }}>
+            <span style={{ fontSize: 14 }}>📋</span>
+            <span style={{ color: "#F2E4C0", fontSize: 13, ...ui.label }}>Tasks</span>
+            <span style={{ fontSize: 9, color: "#8A7350", ...ui.label }}>(soon)</span>
+            <span style={{ position: "absolute", top: -5, right: -5, width: 12, height: 12, borderRadius: "50%", background: "#C43B34", border: "2px solid #120A04" }} />
+          </div>
+        </div>
+
+        {donateToastEl}
+
+        {/* ---- object detail bottom sheet ---- */}
+        {sheetOpen && selected && !invOpen && (
+          <>
+            <div
+              onClick={() => setSheetOpen(false)}
+              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 190, animation: "fadeIn 160ms ease-out" }}
+            />
+            <div className="sheet" style={{
+              position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 200, maxHeight: "72dvh", overflowY: "auto",
+              background: "#241509", borderTop: "3px solid #120A04", boxShadow: "inset 0 3px 0 #4A2E17",
+              padding: "10px 16px calc(env(safe-area-inset-bottom, 0px) + 16px)",
+            }}>
+              <div style={{ width: 44, height: 5, background: "#4A2E17", borderRadius: 3, margin: "0 auto 10px" }} />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <div style={{ color: "#FFD97A", fontSize: 18, ...ui.label }}>{selected.name}</div>
+                <button
+                  onClick={() => setSheetOpen(false)}
+                  style={{ background: "none", border: "none", color: "#8A7350", fontSize: 20, cursor: "pointer", padding: "2px 6px", ...ui.label }}
+                >
+                  ✕
+                </button>
+              </div>
+              <div style={{
+                display: "inline-block", marginTop: 5, padding: "2px 10px", fontSize: 12, color: "#160D06",
+                background: CATEGORY_COLORS[selected.category] || "#888", border: "2px solid #120A04", ...ui.label,
+              }}>
+                {selected.category}
+              </div>
+              <div style={{ color: "#DACBA6", fontSize: 15, lineHeight: 1.5, marginTop: 10, ...ui.label }}>
+                {selected.check}
+              </div>
+              {selected.removable ? (
+                sellFormOpen ? (
+                  <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <span style={{ color: "#DACBA6", fontSize: 15, ...ui.label }}>Sold for $</span>
+                      <input
+                        type="number"
+                        autoFocus
+                        value={sellAmount}
+                        onChange={(e) => setSellAmount(e.target.value)}
+                        style={{
+                          flex: 1, minWidth: 0, padding: "10px 10px", fontSize: 16, background: "#160D06", color: "#F2E4C0",
+                          border: "2px solid #4A2E17", ...ui.label,
+                        }}
+                      />
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        onClick={() => sellObject(selected.id, parseFloat(sellAmount))}
+                        disabled={!!busy || sellAmount === "" || Number.isNaN(parseFloat(sellAmount))}
+                        style={{
+                          flex: 1, minHeight: 50, fontSize: 15, cursor: "pointer",
+                          background: "linear-gradient(#E0B65A,#B8862E)", color: "#2A1B08",
+                          border: "3px solid #120A04", boxShadow: "inset 0 -3px 0 #8A5E14", fontWeight: 700, ...ui.label,
+                        }}
+                      >
+                        Confirm sale
+                      </button>
+                      <button
+                        onClick={() => setSellFormOpen(false)}
+                        style={{
+                          flex: 1, minHeight: 50, fontSize: 15, cursor: "pointer",
+                          background: "#2E1D0E", color: "#C9B896", border: "3px solid #120A04", ...ui.label,
+                        }}
+                      >
+                        Back
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+                      <button
+                        onClick={() => packObject(selected.id)}
+                        disabled={!!busy}
+                        style={{
+                          flex: 1, minHeight: 52, fontSize: 15, cursor: "pointer",
+                          background: "linear-gradient(#8FD14F,#5EA032)", color: "#12260A",
+                          border: "3px solid #120A04", boxShadow: "inset 0 -3px 0 #3E7020", fontWeight: 700, ...ui.label,
+                        }}
+                      >
+                        📦 Pack it up
+                      </button>
+                      <button
+                        onClick={() => sellObject(selected.id)}
+                        disabled={!!busy}
+                        style={{
+                          flex: 1, minHeight: 52, fontSize: 15, cursor: "pointer",
+                          background: "linear-gradient(#E0B65A,#B8862E)", color: "#2A1B08",
+                          border: "3px solid #120A04", boxShadow: "inset 0 -3px 0 #8A5E14", fontWeight: 700, ...ui.label,
+                        }}
+                      >
+                        Sell (${selected.value})
+                      </button>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                      <button
+                        onClick={() => donateObject(selected.id)}
+                        disabled={!!busy}
+                        style={{
+                          flex: 1, minHeight: 44, fontSize: 14, cursor: "pointer",
+                          background: "#2E1D0E", color: "#C9B896", border: "3px solid #120A04", ...ui.label,
+                        }}
+                      >
+                        🎁 Donate
+                      </button>
+                      <button
+                        onClick={() => { setSellAmount(String(selected.value)); setSellFormOpen(true); }}
+                        disabled={!!busy}
+                        style={{
+                          flex: 1.4, minHeight: 44, fontSize: 12, cursor: "pointer",
+                          background: "#2E1D0E", color: "#C9B896", border: "2px solid #120A04", ...ui.label,
+                        }}
+                      >
+                        ✎ Sold for a different price?
+                      </button>
+                    </div>
+                  </>
+                )
+              ) : (
+                <div style={{ marginTop: 14, padding: "12px 0", textAlign: "center", fontSize: 14, color: "#8A7350", border: "2px dashed #4A2E17", ...ui.label }}>
+                  Stays with the room
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* ---- inventory bottom sheet ---- */}
+        {invOpen && (
+          <>
+            <div
+              onClick={() => setInvOpen(false)}
+              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 190, animation: "fadeIn 160ms ease-out" }}
+            />
+            <div className="sheet" style={{
+              position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 200, maxHeight: "72dvh", overflowY: "auto",
+              background: "#241509", borderTop: "3px solid #120A04", boxShadow: "inset 0 3px 0 #4A2E17",
+              padding: "10px 16px calc(env(safe-area-inset-bottom, 0px) + 16px)",
+            }}>
+              <div style={{ width: 44, height: 5, background: "#4A2E17", borderRadius: 3, margin: "0 auto 10px" }} />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <div style={{ color: "#FFD97A", fontSize: 17, ...ui.label }}>📦 Handled ({clearedCount}/{total})</div>
+                <button
+                  onClick={() => setInvOpen(false)}
+                  style={{ background: "none", border: "none", color: "#8A7350", fontSize: 20, cursor: "pointer", padding: "2px 6px", ...ui.label }}
+                >
+                  ✕
+                </button>
+              </div>
+              {packedList.length === 0 && soldList.length === 0 && donatedList.length === 0 && (
+                <div style={{ color: "#8A7350", fontSize: 14, marginTop: 12, ...ui.label }}>
+                  Nothing handled yet. Tap something in the room to start.
+                </div>
+              )}
+              {packedList.map((o) => invRow(o, CATEGORY_COLORS[o.category], "packed", "unpack", unpackObject))}
+              {soldList.map((o) => invRow(o, P.gold, `sold · +$${objState[sk(room.id, o.id)].soldFor}`, "buy back", unsellObject))}
+              {donatedList.map((o) => invRow(o, "#B9CEDC", "donated", "take back", undonateObject))}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  /* ================= DESKTOP — original single-scale layout ================= */
   return (
     <div
       style={{ position: "fixed", inset: 0, background: "#160D06", overflow: "hidden", userSelect: "none" }}
       onPointerDownCapture={primeSellAudio}
     >
-      <style>{`
-        @keyframes packAway { to { transform: scale(0.05) translate(-40%, 60%); opacity: 0; } }
-        @keyframes popIn { from { transform: scale(0.6); opacity: 0; } }
-        @keyframes bounce { 0%,100% { transform: translateY(0);} 50% { transform: translateY(-3px);} }
-        @keyframes coinBurst {
-          0% { transform: translate(-8px, -8px) scale(0.5); opacity: 0; }
-          12% { opacity: 1; transform: translate(calc(var(--tx) * 0.35 - 8px), calc(var(--ty) * 0.8 - 8px)) scale(1); }
-          40% { transform: translate(calc(var(--tx) * 0.7 - 8px), calc(var(--ty) - 8px)) scale(1); opacity: 1; }
-          100% { transform: translate(calc(var(--tx) - 8px), 64px) scale(0.9); opacity: 0; }
-        }
-        @keyframes sellAmt {
-          0% { transform: translate(-50%, 0); opacity: 0; }
-          15% { opacity: 1; }
-          100% { transform: translate(-50%, -52px); opacity: 0; }
-        }
-        .obj { cursor: pointer; transition: filter 120ms; }
-        .obj:hover, .obj.sel { filter: drop-shadow(0 0 0 #FFD97A) drop-shadow(2px 0 0 #FFD97A) drop-shadow(-2px 0 0 #FFD97A) drop-shadow(0 2px 0 #FFD97A) drop-shadow(0 -2px 0 #FFD97A) brightness(1.06); }
-        .obj.static { cursor: help; }
-        .obj.packing { animation: packAway 0.5s ease-in forwards; }
-        .panel { animation: popIn 140ms ease-out; }
-        .coin { animation: coinBurst 0.8s cubic-bezier(0.3, 0.4, 0.7, 1) both; }
-        .sellAmt { animation: sellAmt 0.9s ease-out both; }
-        button { font-family: 'Courier New', monospace; }
-      `}</style>
+      {styleTag}
 
       {/* stage wrapper */}
       <div ref={wrapRef} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ width: STAGE_W, height: STAGE_H, transform: `scale(${scale})`, transformOrigin: "center", position: "relative", flex: "0 0 auto" }}>
 
-          {/* LAYER 0 — room shell */}
-          <div style={{ position: "absolute", inset: 0 }} onClick={() => setSelectedId(null)}>
-            <PixelCanvas w={240} h={180} draw={drawShell} />
-          </div>
-
-          {/* LAYER 1+ — object sprites */}
-          {visibleObjects.map((o) => {
-            const spr = SPRITES[o.id];
-            const isSel = selectedId === o.id;
-            const isPacking = packingId === o.id;
-            const isSelling = sellingId === o.id;
-            return (
-              <div
-                key={o.id}
-                className={`obj ${isSel ? "sel" : ""} ${(isPacking || isSelling) ? "packing" : ""} ${o.removable ? "" : "static"}`}
-                style={{ position: "absolute", left: o.x, top: o.y, zIndex: o.z * 10 }}
-                onClick={(e) => { e.stopPropagation(); setSelectedId(o.id); }}
-                onMouseEnter={() => setHoverId(o.id)}
-                onMouseLeave={() => setHoverId((h) => (h === o.id ? null : h))}
-                title=""
-              >
-                <PixelCanvas w={spr.w} h={spr.h} draw={spr.draw} />
-                {hoverId === o.id && !isPacking && !isSelling && (
-                  <div style={{
-                    position: "absolute", left: "50%", top: -30, transform: "translateX(-50%)",
-                    background: "#241509", color: "#F2E4C0", padding: "3px 8px", whiteSpace: "nowrap",
-                    border: "2px solid #120A04", boxShadow: "inset 0 0 0 1px #4A2E17",
-                    fontSize: 13, zIndex: 999, ...ui.label,
-                  }}>
-                    {o.name}{o.removable ? "" : " · stays"}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {/* coin burst + floating amount — own overlay on its own timer so the
-              item's shrink-away animation can't swallow or cut it short */}
-          {sellFx && (
-            <div style={{ position: "absolute", left: sellFx.x, top: sellFx.y, zIndex: 500, pointerEvents: "none" }}>
-              {COIN_BURSTS.map(({ tx, ty, d }, i) => (
-                <span
-                  key={i}
-                  className="coin"
-                  style={{
-                    position: "absolute", left: 0, top: 0, width: 16, height: 16,
-                    background: P.goldHi, border: "3px solid #8A5E14", borderRadius: "50%",
-                    boxShadow: `inset 2px 2px 0 #FFE9A8`,
-                    animationDelay: `${d}ms`,
-                    "--tx": `${tx}px`, "--ty": `${ty}px`,
-                  }}
-                />
-              ))}
-              <div
-                className="sellAmt"
-                style={{
-                  position: "absolute", left: 0, top: -34, whiteSpace: "nowrap",
-                  color: "#FFD97A", fontSize: 26, textShadow: "2px 2px 0 #120A04, -2px 2px 0 #120A04, 2px -2px 0 #120A04, -2px -2px 0 #120A04",
-                  ...ui.label,
-                }}
-              >
-                +${sellFx.amount}
-              </div>
-            </div>
-          )}
-
-          {/* box stack near the open door */}
-          {packedCount > 0 && (
-            <div style={{ position: "absolute", left: 24, top: 540, zIndex: 60, animation: "popIn 200ms ease-out" }}>
-              <PixelCanvas w={40} h={40} draw={(ctx) => drawBoxes(ctx, boxCount)} redrawKey={boxCount} />
-            </div>
-          )}
+          {roomArt(room)}
 
           {/* ---- HUD: top-left status ---- */}
           <div style={{ position: "absolute", left: 14, top: 12, padding: "8px 14px 10px", zIndex: 200, ...ui.frame }}>
@@ -854,16 +1516,28 @@ export default function PackItUp() {
                 )}
               </div>
               {selected.removable && !sellFormOpen && (
-                <button
-                  onClick={() => { setSellAmount(String(selected.value)); setSellFormOpen(true); }}
-                  disabled={!!packingId || !!sellingId}
-                  style={{
-                    width: "100%", marginTop: 8, padding: "6px 0", fontSize: 12, cursor: "pointer",
-                    background: "#2E1D0E", color: "#C9B896", border: "2px solid #120A04", ...ui.label,
-                  }}
-                >
-                  ✎ Sold it for a different price? Enter it
-                </button>
+                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                  <button
+                    onClick={() => donateObject(selected.id)}
+                    disabled={!!busy}
+                    style={{
+                      flex: 1, padding: "6px 0", fontSize: 12, cursor: "pointer",
+                      background: "#2E1D0E", color: "#C9B896", border: "2px solid #120A04", ...ui.label,
+                    }}
+                  >
+                    🎁 Donate
+                  </button>
+                  <button
+                    onClick={() => { setSellAmount(String(selected.value)); setSellFormOpen(true); }}
+                    disabled={!!busy}
+                    style={{
+                      flex: 1.6, padding: "6px 0", fontSize: 12, cursor: "pointer",
+                      background: "#2E1D0E", color: "#C9B896", border: "2px solid #120A04", ...ui.label,
+                    }}
+                  >
+                    ✎ Sold for a different price?
+                  </button>
+                </div>
               )}
             </div>
           )}
@@ -908,13 +1582,30 @@ export default function PackItUp() {
                 }}>
                   <div>
                     <div style={{ color: "#F2E4C0", fontSize: 13, ...ui.label }}>{o.name}</div>
-                    <div style={{ color: P.gold, fontSize: 11, ...ui.label }}>sold · +${objState[o.id].soldFor}</div>
+                    <div style={{ color: P.gold, fontSize: 11, ...ui.label }}>sold · +${objState[sk(room.id, o.id)].soldFor}</div>
                   </div>
                   <button
                     onClick={() => unsellObject(o.id)}
                     style={{ padding: "3px 8px", fontSize: 11, background: "#2E1D0E", color: "#C9B896", border: "2px solid #120A04", cursor: "pointer", ...ui.label }}
                   >
                     buy back
+                  </button>
+                </div>
+              ))}
+              {donatedList.map((o) => (
+                <div key={o.id} style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  marginTop: 8, padding: "7px 10px", background: "#1A0F06", border: "2px solid #4A2E17",
+                }}>
+                  <div>
+                    <div style={{ color: "#F2E4C0", fontSize: 13, ...ui.label }}>{o.name}</div>
+                    <div style={{ color: "#B9CEDC", fontSize: 11, ...ui.label }}>donated</div>
+                  </div>
+                  <button
+                    onClick={() => undonateObject(o.id)}
+                    style={{ padding: "3px 8px", fontSize: 11, background: "#2E1D0E", color: "#C9B896", border: "2px solid #120A04", cursor: "pointer", ...ui.label }}
+                  >
+                    take back
                   </button>
                 </div>
               ))}
@@ -940,6 +1631,8 @@ export default function PackItUp() {
           </div>
         </div>
       </div>
+
+      {donateToastEl}
     </div>
   );
 }
