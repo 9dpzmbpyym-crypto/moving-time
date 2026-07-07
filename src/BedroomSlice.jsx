@@ -440,6 +440,20 @@ function extendFloorTile(ctx, extH) {
     }
 }
 
+/* ceiling band for tall portrait stages: dark wood planks above the wall,
+   pushing the room toward the vertical middle of the phone screen */
+function drawCeiling(ctx, h) {
+  const W = 240;
+  r(ctx, "#241407", 0, 0, W, h); // deep shadow, clearly not floor
+  for (let row = 0; row * 9 < h; row++) {
+    const y0 = row * 9;
+    r(ctx, "#1B0E04", 0, y0 + 8, W, 1);
+    dith(ctx, "#2E1A0C", 0, y0 + 2, W, 3, 7, row * 4);
+  }
+  r(ctx, "#4A2E17", 0, h - 3, W, 1); // lit beam edge above the wall
+  r(ctx, P.out, 0, h - 2, W, 2);
+}
+
 /* ordered apartment strip: pan left/right through these */
 const ROOMS_ORDER = ["bedroom", "bathroom", "office", "dining", "kitchen", "living"];
 ROOMS.bedroom.sprites = SPRITES;
@@ -820,6 +834,11 @@ export default function PackItUp() {
     }
     return shellDrawCache.current[key];
   };
+  const getCeilingDraw = (h) => {
+    const key = `ceiling:${h}`;
+    if (!shellDrawCache.current[key]) shellDrawCache.current[key] = (ctx) => drawCeiling(ctx, h);
+    return shellDrawCache.current[key];
+  };
 
   const roomArt = (rm, extCells = 180) => {
     const rmPacked = rm.objects.filter((o) => o.removable && objState[sk(rm.id, o.id)].packed).length;
@@ -928,6 +947,9 @@ export default function PackItUp() {
     const extCells = viewSize.h > 0
       ? Math.max(STAGE_H / CELL, Math.ceil((viewSize.h - 16) / stageScale / CELL))
       : STAGE_H / CELL;
+    // spend some of the extra height on ceiling so the room sits mid-screen
+    const ceilCells = Math.min(64, Math.max(0, Math.round((extCells - STAGE_H / CELL) * 0.3)));
+    const roomCells = extCells - ceilCells;
     const extPx = extCells * CELL;
     const stageW = Math.round(STAGE_W * stageScale);
     const stageH = Math.round(extPx * stageScale);
@@ -1084,7 +1106,14 @@ export default function PackItUp() {
                   boxShadow: "0 0 0 6px #3E2413, 0 0 0 10px #120A04, 0 0 0 13px #4A2E17, 0 16px 34px rgba(0,0,0,0.65)",
                 }}>
                   <div style={{ width: STAGE_W, height: extPx, transform: `scale(${stageScale})`, transformOrigin: "top left", position: "relative" }}>
-                    {roomArt(ROOMS[rid], extCells)}
+                    {ceilCells > 0 && (
+                      <div style={{ position: "absolute", top: 0, left: 0 }}>
+                        <PixelCanvas w={240} h={ceilCells} draw={getCeilingDraw(ceilCells)} redrawKey={ceilCells} />
+                      </div>
+                    )}
+                    <div style={{ position: "absolute", top: ceilCells * CELL, left: 0, right: 0, bottom: 0 }}>
+                      {roomArt(ROOMS[rid], roomCells)}
+                    </div>
                   </div>
                   {/* looking-through-an-opening vignette: smooth fade at the very
                       edges only, pointer-transparent */}
