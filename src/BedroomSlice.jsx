@@ -400,6 +400,34 @@ function PixelCanvas({ w, h, draw, redrawKey, style }) {
   );
 }
 
+/* six evenly-spaced directions for the sell coin-burst */
+const COIN_ANGLES = Array.from({ length: 6 }, (_, i) => (i / 6) * Math.PI * 2);
+
+/* synthesized "cha-ching" — no audio files, one shared AudioContext */
+let sellAudioCtx = null;
+function playSellChime() {
+  try {
+    sellAudioCtx = sellAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = sellAudioCtx;
+    const now = ctx.currentTime;
+    [880, 1318.5].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "square";
+      osc.frequency.value = freq;
+      const start = now + i * 0.09;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(0.15, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.25);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + 0.26);
+    });
+  } catch {
+    // audio unavailable/blocked — sale still proceeds silently
+  }
+}
+
 /* ============================================================
    APP
    ============================================================ */
@@ -407,9 +435,9 @@ export default function PackItUp() {
   const roomId = "bedroom"; // future: currentRoom state + camera pan
   const room = ROOMS[roomId];
 
-  // object state: { [id]: { packed, sold } }
+  // object state: { [id]: { packed, sold, soldFor } }
   const [objState, setObjState] = useState(() =>
-    Object.fromEntries(room.objects.map((o) => [o.id, { packed: false, sold: false }]))
+    Object.fromEntries(room.objects.map((o) => [o.id, { packed: false, sold: false, soldFor: 0 }]))
   );
   const [selectedId, setSelectedId] = useState(null);
   const [hoverId, setHoverId] = useState(null);
@@ -419,7 +447,15 @@ export default function PackItUp() {
   const [minutes, setMinutes] = useState(0); // game time advances as you pack/sell
   const [coins, setCoins] = useState(125);
   const [scale, setScale] = useState(1);
+  const [sellFormOpen, setSellFormOpen] = useState(false);
+  const [sellAmount, setSellAmount] = useState("");
+  const [lastAction, setLastAction] = useState(null); // single-step undo record
   const wrapRef = useRef(null);
+
+  useEffect(() => {
+    setSellFormOpen(false);
+    setSellAmount("");
+  }, [selectedId]);
 
   const removable = room.objects.filter((o) => o.removable);
   const packedCount = removable.filter((o) => objState[o.id].packed).length;
@@ -445,35 +481,54 @@ export default function PackItUp() {
   const packObject = useCallback((id) => {
     const obj = room.objects.find((o) => o.id === id);
     if (!obj || !obj.removable || objState[id].packed || objState[id].sold || packingId || sellingId) return;
+    const prev = objState[id];
     setPackingId(id);
     setTimeout(() => {
       setObjState((s) => ({ ...s, [id]: { ...s[id], packed: true } }));
+      setLastAction({ id, prevPacked: prev.packed, prevSold: prev.sold, prevSoldFor: prev.soldFor, coinsDelta: 0, minutesDelta: 10 });
       setPackingId(null);
       setSelectedId(null);
       setMinutes((m) => m + 10);
     }, 520);
   }, [room.objects, objState, packingId, sellingId]);
 
-  const sellObject = useCallback((id) => {
+  const sellObject = useCallback((id, amount) => {
     const obj = room.objects.find((o) => o.id === id);
     if (!obj || !obj.removable || objState[id].packed || objState[id].sold || packingId || sellingId) return;
+    const prev = objState[id];
+    const credit = Number.isFinite(amount) ? amount : (obj.value || 0);
     setSellingId(id);
+    playSellChime();
     setTimeout(() => {
-      setObjState((s) => ({ ...s, [id]: { ...s[id], sold: true } }));
-      setCoins((c) => c + (obj.value || 0));
+      setObjState((s) => ({ ...s, [id]: { ...s[id], sold: true, soldFor: credit } }));
+      setCoins((c) => c + credit);
+      setLastAction({ id, prevPacked: prev.packed, prevSold: prev.sold, prevSoldFor: prev.soldFor, coinsDelta: credit, minutesDelta: 5 });
       setSellingId(null);
       setSelectedId(null);
       setMinutes((m) => m + 5);
     }, 520);
   }, [room.objects, objState, packingId, sellingId]);
 
-  const unpackObject = (id) =>
+  const unpackObject = (id) => {
+    const prev = objState[id];
+    setLastAction({ id, prevPacked: prev.packed, prevSold: prev.sold, prevSoldFor: prev.soldFor, coinsDelta: 0, minutesDelta: 0 });
     setObjState((s) => ({ ...s, [id]: { ...s[id], packed: false } }));
+  };
 
   const unsellObject = (id) => {
-    const obj = room.objects.find((o) => o.id === id);
-    setCoins((c) => c - (obj?.value || 0));
-    setObjState((s) => ({ ...s, [id]: { ...s[id], sold: false } }));
+    const prev = objState[id];
+    setCoins((c) => c - (prev.soldFor || 0));
+    setLastAction({ id, prevPacked: prev.packed, prevSold: prev.sold, prevSoldFor: prev.soldFor, coinsDelta: -(prev.soldFor || 0), minutesDelta: 0 });
+    setObjState((s) => ({ ...s, [id]: { ...s[id], sold: false, soldFor: 0 } }));
+  };
+
+  const undoLast = () => {
+    if (!lastAction) return;
+    const { id, prevPacked, prevSold, prevSoldFor, coinsDelta, minutesDelta } = lastAction;
+    setObjState((s) => ({ ...s, [id]: { ...s[id], packed: prevPacked, sold: prevSold, soldFor: prevSoldFor } }));
+    setCoins((c) => c - coinsDelta);
+    setMinutes((m) => m - minutesDelta);
+    setLastAction(null);
   };
 
   /* hotkeys: X pack · Z check(select) · Tab inventory · Esc close */
@@ -504,6 +559,7 @@ export default function PackItUp() {
   const selected = room.objects.find((o) => o.id === selectedId) || null;
   const packedList = removable.filter((o) => objState[o.id].packed);
   const soldList = removable.filter((o) => objState[o.id].sold);
+  const lastActionObj = lastAction && room.objects.find((o) => o.id === lastAction.id);
 
   const ui = {
     frame: { background: "#241509", border: "3px solid #120A04", boxShadow: "inset 0 0 0 2px #4A2E17, 0 3px 0 #000" },
@@ -516,11 +572,17 @@ export default function PackItUp() {
         @keyframes packAway { to { transform: scale(0.05) translate(-40%, 60%); opacity: 0; } }
         @keyframes popIn { from { transform: scale(0.6); opacity: 0; } }
         @keyframes bounce { 0%,100% { transform: translateY(0);} 50% { transform: translateY(-3px);} }
+        @keyframes coinBurst {
+          0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+          25% { opacity: 1; }
+          100% { transform: translate(var(--tx), var(--ty)) scale(1); opacity: 0; }
+        }
         .obj { cursor: pointer; transition: filter 120ms; }
         .obj:hover, .obj.sel { filter: drop-shadow(0 0 0 #FFD97A) drop-shadow(2px 0 0 #FFD97A) drop-shadow(-2px 0 0 #FFD97A) drop-shadow(0 2px 0 #FFD97A) drop-shadow(0 -2px 0 #FFD97A) brightness(1.06); }
         .obj.static { cursor: help; }
         .obj.packing { animation: packAway 0.5s ease-in forwards; }
         .panel { animation: popIn 140ms ease-out; }
+        .coin { animation: coinBurst 0.6s ease-out forwards; }
         button { font-family: 'Courier New', monospace; }
       `}</style>
 
@@ -550,6 +612,21 @@ export default function PackItUp() {
                 title=""
               >
                 <PixelCanvas w={spr.w} h={spr.h} draw={spr.draw} />
+                {isSelling && (
+                  <div style={{ position: "absolute", left: (spr.w * CELL) / 2, top: (spr.h * CELL) / 2, zIndex: 500, pointerEvents: "none" }}>
+                    {COIN_ANGLES.map((deg, i) => (
+                      <span
+                        key={i}
+                        className="coin"
+                        style={{
+                          position: "absolute", left: 0, top: 0, width: 10, height: 10,
+                          background: P.gold, border: "2px solid #8A5E14", borderRadius: "50%",
+                          "--tx": `${Math.cos(deg) * 46 - 5}px`, "--ty": `${Math.sin(deg) * 46 - 5}px`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
                 {hoverId === o.id && !isPacking && !isSelling && (
                   <div style={{
                     position: "absolute", left: "50%", top: -30, transform: "translateX(-50%)",
@@ -585,8 +662,19 @@ export default function PackItUp() {
             </div>
           </div>
 
-          {/* ---- HUD: top-right coins + inventory ---- */}
+          {/* ---- HUD: top-right coins + inventory + undo ---- */}
           <div style={{ position: "absolute", right: 14, top: 12, display: "flex", gap: 8, zIndex: 200 }}>
+            <button
+              onClick={undoLast}
+              disabled={!lastAction}
+              title={lastActionObj ? `Undo: ${lastActionObj.name}` : "Nothing to undo"}
+              style={{
+                padding: "6px 12px", fontSize: 14, cursor: lastAction ? "pointer" : "default",
+                color: lastAction ? "#F2E4C0" : "#6B563B", ...ui.frame, ...ui.label,
+              }}
+            >
+              ↺ Undo{lastActionObj ? ` ${lastActionObj.name}` : ""}
+            </button>
             <div style={{ padding: "8px 14px", color: "#F2E4C0", fontSize: 16, display: "flex", alignItems: "center", gap: 8, ...ui.frame, ...ui.label }}>
               <span style={{ width: 12, height: 12, background: P.gold, border: "2px solid #8A5E14", borderRadius: "50%", display: "inline-block" }} />
               {coins}
@@ -635,30 +723,70 @@ export default function PackItUp() {
               </div>
               <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                 {selected.removable ? (
-                  <>
-                    <button
-                      onClick={() => packObject(selected.id)}
-                      disabled={!!packingId || !!sellingId}
-                      style={{
-                        flex: 1, padding: "8px 0", fontSize: 14, cursor: "pointer",
-                        background: "linear-gradient(#8FD14F,#5EA032)", color: "#12260A",
-                        border: "3px solid #120A04", boxShadow: "inset 0 -3px 0 #3E7020", fontWeight: 700, ...ui.label,
-                      }}
-                    >
-                      [X] Pack it up
-                    </button>
-                    <button
-                      onClick={() => sellObject(selected.id)}
-                      disabled={!!packingId || !!sellingId}
-                      style={{
-                        flex: 1, padding: "8px 0", fontSize: 14, cursor: "pointer",
-                        background: "linear-gradient(#E0B65A,#B8862E)", color: "#2A1B08",
-                        border: "3px solid #120A04", boxShadow: "inset 0 -3px 0 #8A5E14", fontWeight: 700, ...ui.label,
-                      }}
-                    >
-                      Sell (${selected.value})
-                    </button>
-                  </>
+                  sellFormOpen ? (
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <span style={{ color: "#DACBA6", fontSize: 13, ...ui.label }}>Sold for $</span>
+                        <input
+                          type="number"
+                          autoFocus
+                          value={sellAmount}
+                          onChange={(e) => setSellAmount(e.target.value)}
+                          style={{
+                            flex: 1, padding: "6px 8px", fontSize: 14, background: "#160D06", color: "#F2E4C0",
+                            border: "2px solid #4A2E17", ...ui.label,
+                          }}
+                        />
+                      </div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button
+                          onClick={() => sellObject(selected.id, parseFloat(sellAmount))}
+                          disabled={!!packingId || !!sellingId || sellAmount === "" || Number.isNaN(parseFloat(sellAmount))}
+                          style={{
+                            flex: 1, padding: "8px 0", fontSize: 14, cursor: "pointer",
+                            background: "linear-gradient(#E0B65A,#B8862E)", color: "#2A1B08",
+                            border: "3px solid #120A04", boxShadow: "inset 0 -3px 0 #8A5E14", fontWeight: 700, ...ui.label,
+                          }}
+                        >
+                          Confirm sale
+                        </button>
+                        <button
+                          onClick={() => setSellFormOpen(false)}
+                          style={{
+                            flex: 1, padding: "8px 0", fontSize: 14, cursor: "pointer",
+                            background: "#2E1D0E", color: "#C9B896", border: "3px solid #120A04", ...ui.label,
+                          }}
+                        >
+                          Back
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => packObject(selected.id)}
+                        disabled={!!packingId || !!sellingId}
+                        style={{
+                          flex: 1, padding: "8px 0", fontSize: 14, cursor: "pointer",
+                          background: "linear-gradient(#8FD14F,#5EA032)", color: "#12260A",
+                          border: "3px solid #120A04", boxShadow: "inset 0 -3px 0 #3E7020", fontWeight: 700, ...ui.label,
+                        }}
+                      >
+                        [X] Pack it up
+                      </button>
+                      <button
+                        onClick={() => { setSellAmount(String(selected.value)); setSellFormOpen(true); }}
+                        disabled={!!packingId || !!sellingId}
+                        style={{
+                          flex: 1, padding: "8px 0", fontSize: 14, cursor: "pointer",
+                          background: "linear-gradient(#E0B65A,#B8862E)", color: "#2A1B08",
+                          border: "3px solid #120A04", boxShadow: "inset 0 -3px 0 #8A5E14", fontWeight: 700, ...ui.label,
+                        }}
+                      >
+                        Sell (~${selected.value})
+                      </button>
+                    </>
+                  )
                 ) : (
                   <div style={{ flex: 1, padding: "8px 0", textAlign: "center", fontSize: 13, color: "#8A7350", border: "2px dashed #4A2E17", ...ui.label }}>
                     Stays with the room
@@ -708,7 +836,7 @@ export default function PackItUp() {
                 }}>
                   <div>
                     <div style={{ color: "#F2E4C0", fontSize: 13, ...ui.label }}>{o.name}</div>
-                    <div style={{ color: P.gold, fontSize: 11, ...ui.label }}>sold · +${o.value}</div>
+                    <div style={{ color: P.gold, fontSize: 11, ...ui.label }}>sold · +${objState[o.id].soldFor}</div>
                   </div>
                   <button
                     onClick={() => unsellObject(o.id)}
