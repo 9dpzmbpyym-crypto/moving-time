@@ -10,7 +10,7 @@ const P = {
   out: "#221306",
   mustard: "#C9942E", mustardHi: "#DDAB45", mustardLo: "#A87823",
   burgundy: "#7C2E37", burgundyHi: "#96424C", burgundyLo: "#591F27",
-  wood: "#5A381F", woodDark: "#3E2413", woodMid: "#6E452A", woodHi: "#8C5931",
+  wood: "#5A381F", woodDark: "#3E2413", woodHi: "#8C5931",
   tan: "#CBAA78", tanHi: "#DFC495", tanLo: "#AB8B57",
 };
 
@@ -18,34 +18,31 @@ const r = (ctx, c, x, y, w = 1, h = 1) => { ctx.fillStyle = c; ctx.fillRect(x, y
 
 const W = 66, H = 78;
 
-// Keeps the headboard silhouette (approved from the live room), adds
-// tone-step shading + panel detail on the headboard, frame and legs,
-// matching the density of the reference pixel-art bed icon.
+// Keeps the headboard silhouette (approved from the live room). Shading
+// pared back to match the reference icon: mostly flat color blocks, a
+// single highlight cap on wood, and one thin shadow line per surface —
+// no internal banding/seams.
 function bedFinal(ctx) {
-  // headboard
+  // headboard: flat panel, one highlight cap, no seams
   r(ctx, P.out, 2, 0, 62, 16);
   r(ctx, P.woodHi, 3, 1, 60, 3);
-  r(ctx, P.woodDark, 3, 4, 60, 10);
-  r(ctx, P.woodMid, 22, 5, 1, 9); r(ctx, P.woodMid, 43, 5, 1, 9); // panel seams
-  r(ctx, P.wood, 3, 13, 60, 1); // base shadow under cap
+  r(ctx, P.woodDark, 3, 4, 60, 12);
 
-  // two tan pillows behind
+  // two tan pillows behind — flat fill, thin highlight + shadow edge
   r(ctx, P.out, 4, 16, 27, 15); r(ctx, P.out, 35, 16, 27, 15);
-  r(ctx, P.tan, 5, 17, 25, 13); r(ctx, P.tanHi, 5, 17, 25, 3); r(ctx, P.tanLo, 5, 27, 25, 3);
-  r(ctx, P.tan, 36, 17, 25, 13); r(ctx, P.tanHi, 36, 17, 25, 3); r(ctx, P.tanLo, 36, 27, 25, 3);
+  r(ctx, P.tan, 5, 17, 25, 13); r(ctx, P.tanHi, 5, 17, 25, 2); r(ctx, P.tanLo, 5, 28, 25, 2);
+  r(ctx, P.tan, 36, 17, 25, 13); r(ctx, P.tanHi, 36, 17, 25, 2); r(ctx, P.tanLo, 36, 28, 25, 2);
 
-  // burgundy accent pillow, front & center
+  // burgundy accent pillow, front & center — flat fill, thin highlight + shadow edge
   r(ctx, P.out, 16, 22, 34, 15);
-  r(ctx, P.burgundy, 17, 23, 32, 13); r(ctx, P.burgundyHi, 18, 24, 30, 3);
-  r(ctx, P.burgundyLo, 17, 33, 32, 2);
+  r(ctx, P.burgundy, 17, 23, 32, 13); r(ctx, P.burgundyHi, 18, 24, 30, 2);
+  r(ctx, P.burgundyLo, 17, 34, 32, 2);
 
-  // mustard/gold duvet — flat tone-stepped bands, no texture patch
+  // mustard/gold duvet — flat fill, single highlight + shadow edge (no crease bands)
   r(ctx, P.out, 1, 37, 64, 34);
-  r(ctx, P.mustardHi, 2, 38, 62, 4);
-  r(ctx, P.mustard, 2, 42, 62, 20);
-  r(ctx, P.mustardLo, 2, 62, 62, 8);
-  r(ctx, "#B6862A", 2, 48, 62, 1);
-  r(ctx, "#B6862A", 2, 56, 62, 1);
+  r(ctx, P.mustardHi, 2, 38, 62, 3);
+  r(ctx, P.mustard, 2, 41, 62, 27);
+  r(ctx, P.mustardLo, 2, 68, 62, 2);
 
   // frame + legs
   r(ctx, P.out, 1, 71, 64, 3);
