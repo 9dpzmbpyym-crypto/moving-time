@@ -920,7 +920,7 @@ ROOMS.bathroom = {
       check: "Behind the mirror: expired everything. The cabinet stays put." },
     { id: "sill_bottles",    name: "Windowsill Bottles",  category: "plants",   x: 248, y: 208, z: 3, removable: true, value: 7,
       check: "A tiny skyline of glass bottles and one determined plant." },
-    { id: "bathtub",         name: "Bathtub",             category: "furniture",x: 90,  y: 330, z: 3, removable: false,
+    { id: "bathtub",         name: "Bathtub",             category: "furniture",x: 90,  y: 376, z: 3, removable: false,
       check: "Deep enough to think in. It stays with the pipes." },
     { id: "toilet",          name: "Toilet",              category: "furniture",x: 460, y: 380, z: 3, removable: false,
       check: "The throne. Comes with the kingdom — it stays." },
