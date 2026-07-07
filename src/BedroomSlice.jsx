@@ -390,7 +390,7 @@ const OFFICE_SPRITES = {
     panel(1); panel(76);
   }},
 
-  desk_hutch: { w: 64, h: 96, draw(ctx) {
+  desk_hutch: { w: 150, h: 96, draw(ctx) {
     // hutch shelves
     r(ctx, P.out, 2, 0, 60, 46);
     r(ctx, P.woodMid, 3, 1, 58, 44); r(ctx, P.woodHi, 3, 1, 58, 2);
@@ -408,9 +408,9 @@ const OFFICE_SPRITES = {
     r(ctx, P.burgundy, 26, 29, 4, 13); r(ctx, P.teal, 31, 30, 4, 12); r(ctx, P.mustard, 36, 29, 4, 13);
     r(ctx, "#28304A", 41, 31, 4, 11); r(ctx, P.green, 46, 30, 4, 12);
     r(ctx, P.cardLo, 52, 33, 5, 9);                                       // box
-    // desk top
-    r(ctx, P.out, 0, 46, 64, 5);
-    r(ctx, P.woodLight, 1, 47, 62, 3); r(ctx, P.woodHi, 1, 47, 62, 1);
+    // one long desk top, running from the hutch to under the window
+    r(ctx, P.out, 0, 46, 150, 5);
+    r(ctx, P.woodLight, 1, 47, 148, 3); r(ctx, P.woodHi, 1, 47, 148, 1);
     // drawer pedestal (right) + open leg space (left)
     r(ctx, P.out, 34, 51, 28, 42);
     r(ctx, P.woodMid, 35, 52, 26, 40);
@@ -420,10 +420,13 @@ const OFFICE_SPRITES = {
       r(ctx, P.gold, 46, y + 4, 4, 2);
     };
     drw(54); drw(66); drw(78);
-    // left legs + solid shadow under desk
+    // left legs + solid shadow under the hutch half
     r(ctx, P.out, 2, 51, 4, 42); r(ctx, P.woodDark, 3, 51, 2, 41);
     r(ctx, "#1E1206", 6, 51, 28, 41);
     r(ctx, P.out, 2, 92, 60, 2);
+    // open knee span under the window: thin shadow + far leg
+    r(ctx, "#1E1206", 64, 51, 80, 2);
+    r(ctx, P.out, 144, 51, 4, 42); r(ctx, P.woodDark, 145, 51, 2, 41);
   }},
 
   computer: { w: 28, h: 24, draw(ctx) {
@@ -597,37 +600,29 @@ function extendFloorBathTile(ctx, extH) {
 }
 
 const BATH_SPRITES = {
-  bathtub: { w: 58, h: 42, draw(ctx) {
-    // red tile ledge behind
-    r(ctx, P.out, 0, 0, 58, 8);
-    r(ctx, "#8A3038", 1, 1, 56, 6); dith(ctx, "#A3444C", 1, 1, 56, 2, 2, 0);
-    for (let x = 1; x < 57; x += 8) r(ctx, "#6E242B", x, 1, 1, 6);
-    // faucet on the ledge, right end
-    r(ctx, P.out, 45, 0, 4, 9); r(ctx, "#B8AE96", 46, 1, 2, 7);
-    r(ctx, P.out, 41, 7, 6, 3); r(ctx, "#B8AE96", 42, 8, 4, 1);            // spout
-    r(ctx, P.out, 51, 2, 3, 3); r(ctx, "#B8AE96", 52, 3, 1, 1);            // tap
-    // tub rim
-    r(ctx, P.out, 0, 8, 58, 6);
-    r(ctx, P.white, 1, 9, 56, 4); r(ctx, "#FBF6E6", 1, 9, 56, 1);
-    // basin shadow hint
-    r(ctx, P.whiteLo, 6, 10, 46, 2);
-    // tub body
-    r(ctx, P.out, 2, 14, 54, 22);
-    r(ctx, P.white, 3, 15, 52, 20);
-    dith(ctx, P.whiteLo, 38, 16, 16, 18, 2, 0);
-    r(ctx, P.whiteLo, 3, 32, 52, 3);
-    r(ctx, P.out, 2, 36, 54, 2);
-    // chrome overflow cap
-    r(ctx, P.out, 44, 22, 4, 4); r(ctx, "#B8AE96", 45, 23, 2, 2);
-    // feet + floor shadow
-    r(ctx, P.out, 7, 38, 6, 4); r(ctx, P.whiteLo, 8, 38, 4, 3);
-    r(ctx, P.out, 45, 38, 6, 4); r(ctx, P.whiteLo, 46, 38, 4, 3);
-    dith(ctx, "#8A754F", 12, 39, 34, 2, 2, 0);
-    // draped towel
-    r(ctx, P.out, 10, 12, 14, 20);
-    r(ctx, P.cream, 11, 13, 12, 18); r(ctx, P.creamLo, 11, 19, 12, 1); r(ctx, P.creamLo, 11, 25, 12, 1);
-    r(ctx, P.red, 11, 28, 12, 2);
-    for (let x = 11; x < 23; x += 2) r(ctx, P.creamLo, x, 31, 1, 1);       // fringe
+  // lengthwise tub, seen top-down like the bed: head at top, drain at foot
+  bathtub: { w: 36, h: 62, draw(ctx) {
+    // rounded outer shell
+    r(ctx, P.out, 2, 0, 32, 62); r(ctx, P.out, 0, 2, 36, 58); r(ctx, P.out, 1, 1, 34, 60);
+    r(ctx, P.white, 3, 1, 30, 60); r(ctx, P.white, 1, 3, 34, 56); r(ctx, P.white, 2, 2, 32, 58);
+    r(ctx, "#FBF6E6", 3, 1, 30, 2); r(ctx, "#FBF6E6", 1, 4, 2, 18);
+    // basin interior
+    r(ctx, P.out, 5, 6, 26, 50);
+    r(ctx, P.whiteLo, 6, 7, 24, 48);
+    dith(ctx, P.white, 7, 8, 10, 44, 2, 0);
+    dith(ctx, "#C4BAA0", 20, 10, 9, 44, 2, 1);
+    r(ctx, "#C4BAA0", 6, 51, 24, 4);
+    // faucet at the head
+    r(ctx, P.out, 13, 0, 10, 5); r(ctx, "#B8AE96", 14, 1, 8, 3);
+    r(ctx, P.out, 16, 5, 4, 4); r(ctx, "#B8AE96", 17, 6, 2, 2);
+    // drain at the foot
+    r(ctx, P.out, 16, 44, 4, 4); r(ctx, "#B8AE96", 17, 45, 2, 2);
+    // towel over the right rim
+    r(ctx, P.out, 27, 18, 9, 20);
+    r(ctx, P.cream, 28, 19, 7, 18);
+    r(ctx, P.creamLo, 28, 25, 7, 1); r(ctx, P.creamLo, 28, 31, 7, 1);
+    r(ctx, P.red, 28, 34, 7, 2);
+    for (let y = 20; y < 36; y += 3) r(ctx, P.creamLo, 34, y, 1, 1);
   }},
 
   toilet: { w: 26, h: 38, draw(ctx) {
@@ -786,21 +781,21 @@ const ROOMS = {
         check: "It survived three heat waves. It can survive Queens." },
       { id: "bed",            name: "Bed",              category: "furniture", x: 180, y: 280, z: 3, removable: true, value: 60,
         check: "Still smells like laundry day. The burgundy pillow matches nothing, which is why it works." },
-      { id: "nightstand",     name: "Nightstand",       category: "furniture", x: 52,  y: 372, z: 3, removable: true, value: 25,
+      { id: "nightstand",     name: "Nightstand",       category: "furniture", x: 68,  y: 372, z: 3, removable: true, value: 25,
         check: "One drawer of mysteries, one shelf of books you swear you'll finish before the flight." },
       { id: "vanity",         name: "Vanity Desk",      category: "furniture", x: 548, y: 228, z: 3, removable: true, value: 67,
         check: "White desk, good light — where letters and eyeliner both happened. The standing mirror beside it leans just so; you never once hung it properly, no regrets." },
-      { id: "dresser",        name: "Dresser",          category: "furniture", x: 740, y: 174, z: 3, removable: true, value: 90,
+      { id: "dresser",        name: "Dresser",          category: "furniture", x: 700, y: 174, z: 3, removable: true, value: 90,
         check: "Solid wood, heavier than it looks — the movers will curse its name. The mirror on top has checked a thousand outfits and kept every secret." },
-      { id: "lamp",           name: "Mushroom Lamp",    category: "lighting",  x: 80,  y: 296, z: 4, removable: true, value: 18,
+      { id: "lamp",           name: "Mushroom Lamp",    category: "lighting",  x: 96,  y: 296, z: 4, removable: true, value: 18,
         check: "Chief mood-setter. Warm light or nothing." },
       { id: "stool",          name: "Stool",            category: "furniture", x: 600, y: 446, z: 4, removable: true, value: 10,
         check: "A little wobbly. Sit anyway." },
-      { id: "vase",           name: "Red Glass Vase",   category: "decor",     x: 772, y: 270, z: 4, removable: true, value: 12,
+      { id: "vase",           name: "Red Glass Vase",   category: "decor",     x: 732, y: 270, z: 4, removable: true, value: 12,
         check: "Absolutely not surviving the box unless it's wrapped twice." },
-      { id: "figurines",      name: "Thrifted Figurines",category: "decor",    x: 852, y: 286, z: 4, removable: true, value: 8,
+      { id: "figurines",      name: "Thrifted Figurines",category: "decor",    x: 812, y: 286, z: 4, removable: true, value: 8,
         check: "Two tiny companions from a good thrift run. They've seen things." },
-      { id: "basket",         name: "Everything Basket",category: "decor",     x: 812, y: 308, z: 4, removable: true, value: 5,
+      { id: "basket",         name: "Everything Basket",category: "decor",     x: 772, y: 308, z: 4, removable: true, value: 5,
         check: "Currently holding: keys, receipts, one dried orange." },
     ],
   },
@@ -874,14 +869,13 @@ function extendFloorTile(ctx, extH) {
 
 /* ceiling band for tall portrait stages: dark wood planks above the wall,
    pushing the room toward the vertical middle of the phone screen */
-function drawCeiling(ctx, h) {
-  // thin sun-washed plaster band, a couple tones darker than the wall
+function drawCeiling(ctx, h, shade = "#C7B28A", wall = "#D5C29B") {
+  // upper wall in shadow, lightening as it approaches the crown molding —
+  // tinted per room so it reads as the same wall, higher up
   const W = 240;
-  r(ctx, "#C7B28A", 0, 0, W, h);
-  dith(ctx, "#B49F78", 0, 0, W, h, 3, 0);
-  dith(ctx, "#D5C29B", 0, 0, W, 3, 2, 1);
-  r(ctx, "#8A754F", 0, h - 2, W, 1); // shadow where it meets the wall
-  r(ctx, P.out, 0, h - 1, W, 1);
+  r(ctx, shade, 0, 0, W, h);
+  if (h > 24) dith(ctx, wall, 0, h - 24, W, 24, 3, 0);
+  if (h > 10) dith(ctx, wall, 0, h - 10, W, 10, 2, 1);
 }
 
 /* ordered apartment strip: pan left/right through these */
@@ -889,12 +883,13 @@ const ROOMS_ORDER = ["bedroom", "bathroom", "office", "dining", "kitchen", "livi
 ROOMS.bedroom.sprites = SPRITES;
 ROOMS.bedroom.drawShell = drawShell;
 ROOMS.bedroom.floorKind = "plank";
+ROOMS.bedroom.ceilTones = ["#D6C49E", "#E7D9B9"];
 [
   ["dining",   "Dining Room", { wall: "#E3CDAE", wallLight: "#EEDDC2", wallShade: "#CDB593" }],
   ["kitchen",  "Kitchen",     { wall: "#E7DCA8", wallLight: "#F0E7BE", wallShade: "#CFC28D", tileFloor: true }],
   ["living",   "Living Room", { wall: "#D9C4A9", wallLight: "#E6D5BE", wallShade: "#C1AA8C" }],
 ].forEach(([id, name, cfg]) => {
-  ROOMS[id] = { id, name, objects: [], sprites: {}, drawShell: makePlaceholderShell(cfg), floorKind: cfg.tileFloor ? "tile" : "plank" };
+  ROOMS[id] = { id, name, objects: [], sprites: {}, drawShell: makePlaceholderShell(cfg), floorKind: cfg.tileFloor ? "tile" : "plank", ceilTones: [cfg.wallShade, cfg.wall] };
 });
 
 ROOMS.bathroom = {
@@ -909,7 +904,7 @@ ROOMS.bathroom = {
       check: "Behind the mirror: expired everything. The cabinet stays put." },
     { id: "sill_bottles",    name: "Windowsill Bottles",  category: "plants",   x: 248, y: 208, z: 3, removable: true, value: 7,
       check: "A tiny skyline of glass bottles and one determined plant." },
-    { id: "bathtub",         name: "Bathtub",             category: "furniture",x: 48,  y: 360, z: 3, removable: false,
+    { id: "bathtub",         name: "Bathtub",             category: "furniture",x: 90,  y: 330, z: 3, removable: false,
       check: "Deep enough to think in. It stays with the pipes." },
     { id: "toilet",          name: "Toilet",              category: "furniture",x: 460, y: 380, z: 3, removable: false,
       check: "The throne. Comes with the kingdom — it stays." },
@@ -919,7 +914,7 @@ ROOMS.bathroom = {
       check: "A leaning picture and a succulent that thrives on neglect." },
     { id: "toiletries",      name: "Toiletry Collection", category: "decor",    x: 630, y: 318, z: 4, removable: true, value: 10,
       check: "A perfume district. You use maybe two of these." },
-    { id: "laundry_basket",  name: "Laundry Basket",      category: "textiles", x: 330, y: 480, z: 4, removable: true, value: 8,
+    { id: "laundry_basket",  name: "Laundry Basket",      category: "textiles", x: 250, y: 470, z: 4, removable: true, value: 8,
       check: "One last load of “we'll deal with it at the new place.”" },
   ],
 };
@@ -932,21 +927,21 @@ ROOMS.office = {
       check: "Purple velvet, landlord's taste. They stay." },
     { id: "wall_frames",     name: "Framed Certificates", category: "decor",  x: 240, y: 110, z: 2, removable: true, value: 6,
       check: "Certificates of things you're pretty sure you can still do." },
-    { id: "desk_hutch",      name: "Desk & Hutch",     category: "furniture", x: 64,  y: 176, z: 3, removable: true, value: 85,
+    { id: "desk_hutch",      name: "Desk & Hutch",     category: "furniture", x: 80,  y: 176, z: 3, removable: true, value: 85,
       check: "The command center. Every drawer is a junk drawer if you believe in yourself." },
-    { id: "sewing_machine",  name: "Sewing Machine",   category: "furniture", x: 148, y: 116, z: 4, removable: true, value: 75,
+    { id: "sewing_machine",  name: "Sewing Machine",   category: "furniture", x: 164, y: 116, z: 4, removable: true, value: 75,
       check: "It hemmed curtains once. Mostly it judges you from the shelf." },
-    { id: "desk_lamp",       name: "Red Desk Lamp",    category: "lighting",  x: 76,  y: 262, z: 4, removable: true, value: 22,
+    { id: "desk_lamp",       name: "Red Desk Lamp",    category: "lighting",  x: 92,  y: 262, z: 4, removable: true, value: 22,
       check: "Red, articulated, dramatic. It has supervised every all-nighter." },
-    { id: "computer",        name: "Computer",         category: "furniture", x: 150, y: 264, z: 4, removable: true, value: 60,
+    { id: "computer",        name: "Computer",         category: "furniture", x: 346, y: 264, z: 4, removable: true, value: 60,
       check: "Still runs. The fan sounds like it's trying its best." },
-    { id: "desk_clutter",    name: "Desk Clutter",     category: "decor",     x: 210, y: 300, z: 4, removable: true, value: 10,
+    { id: "desk_clutter",    name: "Desk Clutter",     category: "decor",     x: 470, y: 300, z: 4, removable: true, value: 10,
       check: "An open notebook, a dead pen, and a mug that never made it back to the kitchen." },
-    { id: "office_chair",    name: "Office Chair",     category: "furniture", x: 310, y: 410, z: 4, removable: true, value: 35,
+    { id: "office_chair",    name: "Office Chair",     category: "furniture", x: 430, y: 386, z: 4, removable: true, value: 35,
       check: "Molded to exactly one spine: yours." },
-    { id: "storage_bin",     name: "Storage Tote",     category: "decor",     x: 480, y: 470, z: 3, removable: true, value: 6,
+    { id: "storage_bin",     name: "Storage Tote",     category: "decor",     x: 590, y: 495, z: 3, removable: true, value: 6,
       check: "Labeled “MISC” — which was ambitious." },
-    { id: "waste_bin",       name: "Wastebasket",      category: "decor",     x: 590, y: 520, z: 4, removable: true, value: 3,
+    { id: "waste_bin",       name: "Wastebasket",      category: "decor",     x: 110, y: 500, z: 4, removable: true, value: 3,
       check: "Contains at least three drafts of the same letter." },
     { id: "side_cabinet",    name: "Side Cabinet",     category: "furniture", x: 700, y: 350, z: 3, removable: true, value: 30,
       check: "Short cabinet, tall responsibilities: plant, books, one dramatic vase." },
@@ -1318,9 +1313,12 @@ export default function PackItUp() {
     }
     return shellDrawCache.current[key];
   };
-  const getCeilingDraw = (h) => {
-    const key = `ceiling:${h}`;
-    if (!shellDrawCache.current[key]) shellDrawCache.current[key] = (ctx) => drawCeiling(ctx, h);
+  const getCeilingDraw = (rm, h) => {
+    const key = `${rm.id}:ceil:${h}`;
+    if (!shellDrawCache.current[key]) {
+      const [shade, wall] = rm.ceilTones || [];
+      shellDrawCache.current[key] = (ctx) => drawCeiling(ctx, h, shade, wall);
+    }
     return shellDrawCache.current[key];
   };
 
@@ -1397,7 +1395,7 @@ export default function PackItUp() {
 
         {/* box stack near the open door */}
         {rmPacked > 0 && (
-          <div style={{ position: "absolute", left: 24, top: 540, zIndex: 60, animation: "popIn 200ms ease-out" }}>
+          <div style={{ position: "absolute", left: 70, top: 540, zIndex: 60, animation: "popIn 200ms ease-out" }}>
             <PixelCanvas w={40} h={40} draw={(ctx) => drawBoxes(ctx, rmBoxes)} redrawKey={rmBoxes} />
           </div>
         )}
@@ -1426,18 +1424,23 @@ export default function PackItUp() {
      only the room art inside the doorway frame gets the fit-scale. */
   if (isMobile) {
     const N = ROOMS_ORDER.length;
-    const stageScale = viewSize.w > 0 ? Math.max(0.15, (viewSize.w - 16) / STAGE_W) : 0.35;
+    // zoom the room art past width-fit so furniture reads big; the doorway
+    // frame crops the outer sliver of the stage symmetrically
+    const ZOOM = 1.15;
+    const frameW = Math.max(200, viewSize.w - 16);
+    const stageScale = viewSize.w > 0 ? Math.max(0.15, (frameW / STAGE_W) * ZOOM) : 0.4;
+    const cropX = Math.max(0, Math.round((STAGE_W * stageScale - frameW) / 2));
     // continue the floor downward so the room fills the tall viewport
     const extCells = viewSize.h > 0
       ? Math.max(STAGE_H / CELL, Math.ceil((viewSize.h - 16) / stageScale / CELL))
       : STAGE_H / CELL;
-    // a thin ceiling band nudges the room down without eating the floor
-    const ceilCells = extCells > STAGE_H / CELL
-      ? Math.min(28, Math.max(10, Math.round((extCells - STAGE_H / CELL) * 0.14)))
-      : 0;
+    // enough ceiling that the wall/floor line lands near mid-screen
+    const ceilCells = Math.max(0, Math.min(
+      extCells - STAGE_H / CELL,
+      Math.round((viewSize.h * 0.5) / (stageScale * CELL)) - 112
+    ));
     const roomCells = extCells - ceilCells;
     const extPx = extCells * CELL;
-    const stageW = Math.round(STAGE_W * stageScale);
     const stageH = Math.round(extPx * stageScale);
     const prevRoom = roomIndex > 0 ? ROOMS[ROOMS_ORDER[roomIndex - 1]] : null;
     const nextRoom = roomIndex < N - 1 ? ROOMS[ROOMS_ORDER[roomIndex + 1]] : null;
@@ -1588,13 +1591,13 @@ export default function PackItUp() {
                 {/* doorway frame: outward wood jambs painted OUTSIDE the room box,
                     so they can never cover furniture */}
                 <div style={{
-                  position: "relative", width: stageW, height: stageH,
+                  position: "relative", width: frameW, height: stageH, overflow: "hidden",
                   boxShadow: "0 0 0 6px #3E2413, 0 0 0 10px #120A04, 0 0 0 13px #4A2E17, 0 16px 34px rgba(0,0,0,0.65)",
                 }}>
-                  <div style={{ width: STAGE_W, height: extPx, transform: `scale(${stageScale})`, transformOrigin: "top left", position: "relative" }}>
+                  <div style={{ width: STAGE_W, height: extPx, transform: `translateX(${-cropX}px) scale(${stageScale})`, transformOrigin: "top left", position: "relative" }}>
                     {ceilCells > 0 && (
                       <div style={{ position: "absolute", top: 0, left: 0 }}>
-                        <PixelCanvas w={240} h={ceilCells} draw={getCeilingDraw(ceilCells)} redrawKey={ceilCells} />
+                        <PixelCanvas w={240} h={ceilCells} draw={getCeilingDraw(ROOMS[rid], ceilCells)} redrawKey={ceilCells} />
                       </div>
                     )}
                     <div style={{ position: "absolute", top: ceilCells * CELL, left: 0, right: 0, bottom: 0 }}>
