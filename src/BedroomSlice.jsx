@@ -449,18 +449,25 @@ export default function PackItUp() {
   /* decode the sell sound once via the Web Audio API — AudioBufferSourceNode
      schedules playback with near-zero, sample-accurate latency, unlike
      <audio>.play() which has real (and on mobile, sometimes large) startup
-     lag. The context starts suspended on iOS until resumed by a user
-     gesture, which primeSellAudio does on the very first tap. */
+     lag. Decode goes through atob, NOT fetch(dataURI): the hosted preview
+     page's CSP blocks fetch of data: URIs (connect-src), which silently
+     killed the sound there. The context starts suspended on iOS until
+     resumed by a user gesture, which primeSellAudio does on the first tap. */
   useEffect(() => {
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx) return;
     const ctx = new Ctx();
     audioCtxRef.current = ctx;
-    fetch(SELL_CHIME_SRC)
-      .then((r) => r.arrayBuffer())
-      .then((buf) => ctx.decodeAudioData(buf))
-      .then((decoded) => { sellBufferRef.current = decoded; })
-      .catch(() => {});
+    try {
+      const bin = atob(SELL_CHIME_SRC.split(",")[1]);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      ctx.decodeAudioData(bytes.buffer)
+        .then((decoded) => { sellBufferRef.current = decoded; })
+        .catch(() => {});
+    } catch {
+      // sound stays off; the game itself is unaffected
+    }
     return () => { ctx.close().catch(() => {}); };
   }, []);
 
