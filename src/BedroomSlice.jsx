@@ -576,9 +576,9 @@ function drawBathroomShell(ctx) {
   r(ctx, P.cream, 50, 64, 62, 3); r(ctx, P.creamLo, 50, 66, 62, 1);
 
   // wall heater vent, small and warm-toned
-  r(ctx, P.out, 65, 68, 18, 20);
-  r(ctx, "#8A754F", 66, 69, 16, 18); r(ctx, "#9C8760", 66, 69, 16, 2);
-  for (let j = 73; j < 85; j += 3) r(ctx, "#5C4B32", 68, j, 12, 1);
+  r(ctx, P.out, 80, 68, 18, 20);
+  r(ctx, "#8A754F", 81, 69, 16, 18); r(ctx, "#9C8760", 81, 69, 16, 2);
+  for (let j = 73; j < 85; j += 3) r(ctx, "#5C4B32", 83, j, 12, 1);
 
   // toilet paper on the wall, left of the toilet
   r(ctx, "#8A8272", 108, 72, 8, 2);
@@ -603,63 +603,63 @@ const BATH_SPRITES = {
   // lengthwise tub at the bed's 3/4 angle: inside of the far wall (with the
   // faucet) at top, basin interior in the middle, outer front panel + feet
   // at the bottom
-  bathtub: { w: 36, h: 62, draw(ctx) {
+  bathtub: { w: 58, h: 96, draw(ctx) {
     // far end: inside wall tilted toward the viewer
-    r(ctx, P.out, 2, 0, 32, 16); r(ctx, P.out, 0, 2, 36, 14);
-    r(ctx, P.white, 3, 1, 30, 14); r(ctx, P.white, 1, 3, 34, 12);
-    r(ctx, "#FBF6E6", 3, 1, 30, 3);
-    dith(ctx, P.whiteLo, 2, 9, 32, 6, 2, 0);
+    r(ctx, P.out, 2, 0, 54, 22); r(ctx, P.out, 0, 2, 58, 20);
+    r(ctx, P.white, 3, 1, 52, 20); r(ctx, P.white, 1, 3, 56, 18);
+    r(ctx, "#FBF6E6", 3, 1, 52, 4);
+    dith(ctx, P.whiteLo, 2, 14, 54, 8, 2, 0);
     // faucet + taps mounted on that wall
-    r(ctx, P.out, 15, 4, 6, 9); r(ctx, "#B8AE96", 16, 5, 4, 7);
-    r(ctx, P.out, 16, 12, 4, 3); r(ctx, "#B8AE96", 17, 13, 2, 1);
-    r(ctx, P.out, 8, 5, 4, 4); r(ctx, "#B8AE96", 9, 6, 2, 2);
-    r(ctx, P.out, 24, 5, 4, 4); r(ctx, "#B8AE96", 25, 6, 2, 2);
+    r(ctx, P.out, 24, 6, 10, 13); r(ctx, "#B8AE96", 25, 7, 8, 11);
+    r(ctx, P.out, 27, 19, 4, 4); r(ctx, "#B8AE96", 28, 20, 2, 2);
+    r(ctx, P.out, 13, 8, 6, 6); r(ctx, "#B8AE96", 14, 9, 4, 4);
+    r(ctx, P.out, 39, 8, 6, 6); r(ctx, "#B8AE96", 40, 9, 4, 4);
     // long side rims
-    r(ctx, P.out, 0, 14, 5, 32); r(ctx, P.white, 1, 15, 3, 31);
-    r(ctx, P.out, 31, 14, 5, 32); r(ctx, P.white, 32, 15, 3, 31);
+    r(ctx, P.out, 0, 20, 7, 52); r(ctx, P.white, 1, 21, 5, 50);
+    r(ctx, P.out, 51, 20, 7, 52); r(ctx, P.white, 52, 21, 5, 50);
     // basin interior
-    r(ctx, P.out, 4, 15, 28, 31);
-    r(ctx, P.whiteLo, 5, 16, 26, 29);
-    dith(ctx, P.white, 6, 17, 10, 26, 2, 0);
-    dith(ctx, "#C4BAA0", 22, 18, 8, 26, 2, 1);
-    r(ctx, "#C4BAA0", 5, 41, 26, 4);
-    r(ctx, P.out, 16, 36, 4, 4); r(ctx, "#B8AE96", 17, 37, 2, 2);  // drain
+    r(ctx, P.out, 6, 21, 46, 50);
+    r(ctx, P.whiteLo, 7, 22, 44, 48);
+    dith(ctx, P.white, 8, 23, 16, 42, 2, 0);
+    dith(ctx, "#C4BAA0", 34, 25, 15, 42, 2, 1);
+    r(ctx, "#C4BAA0", 7, 63, 44, 5);
+    r(ctx, P.out, 26, 56, 5, 5); r(ctx, "#B8AE96", 27, 57, 3, 3);  // drain
     // near end: rolled rim, then the outer front panel
-    r(ctx, P.out, 0, 44, 36, 6);
-    r(ctx, P.white, 1, 45, 34, 4); r(ctx, "#FBF6E6", 1, 45, 34, 2);
-    r(ctx, P.out, 1, 50, 34, 8);
-    r(ctx, P.white, 2, 51, 32, 6);
-    dith(ctx, P.whiteLo, 20, 51, 14, 6, 2, 0);
-    r(ctx, P.whiteLo, 2, 55, 32, 2);
+    r(ctx, P.out, 0, 70, 58, 8);
+    r(ctx, P.white, 1, 71, 56, 6); r(ctx, "#FBF6E6", 1, 71, 56, 2);
+    r(ctx, P.out, 2, 78, 54, 12);
+    r(ctx, P.white, 3, 79, 52, 10);
+    dith(ctx, P.whiteLo, 30, 79, 24, 10, 2, 0);
+    r(ctx, P.whiteLo, 3, 86, 52, 3);
     // feet
-    r(ctx, P.out, 4, 58, 6, 4); r(ctx, P.whiteLo, 5, 58, 4, 3);
-    r(ctx, P.out, 26, 58, 6, 4); r(ctx, P.whiteLo, 27, 58, 4, 3);
+    r(ctx, P.out, 7, 90, 8, 5); r(ctx, P.whiteLo, 8, 90, 6, 4);
+    r(ctx, P.out, 43, 90, 8, 5); r(ctx, P.whiteLo, 44, 90, 6, 4);
     // towel over the right rim
-    r(ctx, P.out, 29, 20, 8, 18);
-    r(ctx, P.cream, 30, 21, 6, 16);
-    r(ctx, P.creamLo, 30, 26, 6, 1); r(ctx, P.creamLo, 30, 31, 6, 1);
-    r(ctx, P.red, 30, 33, 6, 2);
+    r(ctx, P.out, 48, 30, 10, 28);
+    r(ctx, P.cream, 49, 31, 8, 26);
+    r(ctx, P.creamLo, 49, 38, 8, 1); r(ctx, P.creamLo, 49, 47, 8, 1);
+    r(ctx, P.red, 49, 52, 8, 3);
   }},
 
-  toilet: { w: 26, h: 38, draw(ctx) {
+  toilet: { w: 32, h: 48, draw(ctx) {
     // tank
-    r(ctx, P.out, 3, 0, 20, 14);
-    r(ctx, P.white, 4, 1, 18, 12); r(ctx, "#FBF6E6", 4, 1, 18, 2);
-    r(ctx, P.whiteLo, 4, 4, 18, 1);                                        // lid seam
-    r(ctx, "#B8AE96", 18, 6, 3, 2);                                        // flush handle
+    r(ctx, P.out, 4, 0, 24, 18);
+    r(ctx, P.white, 5, 1, 22, 16); r(ctx, "#FBF6E6", 5, 1, 22, 3);
+    r(ctx, P.whiteLo, 5, 5, 22, 1);                                        // lid seam
+    r(ctx, P.out, 25, 8, 4, 3); r(ctx, "#B8AE96", 26, 9, 2, 1);            // flush handle
     // seat, widest part
-    r(ctx, P.out, 0, 14, 26, 9);
-    r(ctx, P.white, 1, 15, 24, 7); r(ctx, "#FBF6E6", 1, 15, 24, 2);
-    r(ctx, P.whiteLo, 5, 17, 16, 4);                                       // seat oval hint
-    dith(ctx, P.whiteLo, 17, 16, 7, 6, 2, 0);
+    r(ctx, P.out, 0, 18, 32, 11);
+    r(ctx, P.white, 1, 19, 30, 9); r(ctx, "#FBF6E6", 1, 19, 30, 2);
+    r(ctx, P.whiteLo, 6, 22, 20, 5);                                       // seat oval hint
+    dith(ctx, P.whiteLo, 21, 20, 9, 8, 2, 0);
     // bowl tapering straight into the base
-    r(ctx, P.out, 4, 23, 18, 7);
-    r(ctx, P.white, 5, 24, 16, 5); dith(ctx, P.whiteLo, 14, 24, 6, 5, 2, 0);
-    r(ctx, P.out, 7, 30, 12, 4);
-    r(ctx, P.white, 8, 31, 10, 2);
+    r(ctx, P.out, 5, 29, 22, 9);
+    r(ctx, P.white, 6, 30, 20, 7); dith(ctx, P.whiteLo, 17, 30, 8, 7, 2, 0);
+    r(ctx, P.out, 10, 38, 12, 6);
+    r(ctx, P.white, 11, 39, 10, 4);
     // base flare
-    r(ctx, P.out, 5, 34, 16, 4);
-    r(ctx, P.white, 6, 35, 14, 2); r(ctx, P.whiteLo, 6, 36, 14, 1);
+    r(ctx, P.out, 7, 44, 18, 4);
+    r(ctx, P.white, 8, 45, 16, 2); r(ctx, P.whiteLo, 8, 46, 16, 1);
   }},
 
   bath_vanity: { w: 66, h: 68, draw(ctx) {
@@ -920,17 +920,17 @@ ROOMS.bathroom = {
       check: "Behind the mirror: expired everything. The cabinet stays put." },
     { id: "sill_bottles",    name: "Windowsill Bottles",  category: "plants",   x: 248, y: 208, z: 3, removable: true, value: 7,
       check: "A tiny skyline of glass bottles and one determined plant." },
-    { id: "bathtub",         name: "Bathtub",             category: "furniture",x: 90,  y: 376, z: 3, removable: false,
+    { id: "bathtub",         name: "Bathtub",             category: "furniture",x: 66,  y: 344, z: 3, removable: false,
       check: "Deep enough to think in. It stays with the pipes." },
-    { id: "toilet",          name: "Toilet",              category: "furniture",x: 460, y: 380, z: 3, removable: false,
+    { id: "toilet",          name: "Toilet",              category: "furniture",x: 460, y: 340, z: 3, removable: false,
       check: "The throne. Comes with the kingdom — it stays." },
     { id: "bath_vanity",     name: "Tiled Vanity",        category: "furniture",x: 610, y: 330, z: 3, removable: false,
       check: "Red tile counter, white cabinet, one optimistic sink. Plumbed in for good." },
-    { id: "toilet_decor",    name: "Tank-top Decor",      category: "decor",    x: 452, y: 312, z: 4, removable: true, value: 6,
+    { id: "toilet_decor",    name: "Tank-top Decor",      category: "decor",    x: 484, y: 276, z: 4, removable: true, value: 6,
       check: "A leaning picture and a succulent that thrives on neglect." },
     { id: "toiletries",      name: "Toiletry Collection", category: "decor",    x: 630, y: 318, z: 4, removable: true, value: 10,
       check: "A perfume district. You use maybe two of these." },
-    { id: "laundry_basket",  name: "Laundry Basket",      category: "textiles", x: 250, y: 470, z: 4, removable: true, value: 8,
+    { id: "laundry_basket",  name: "Laundry Basket",      category: "textiles", x: 310, y: 500, z: 4, removable: true, value: 8,
       check: "One last load of “we'll deal with it at the new place.”" },
   ],
 };
