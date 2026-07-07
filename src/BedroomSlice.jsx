@@ -437,7 +437,8 @@ export default function PackItUp() {
   const [undoStack, setUndoStack] = useState([]); // undo history, most recent last
   const [sellFx, setSellFx] = useState(null); // { x, y, amount } coin-burst overlay
   const wrapRef = useRef(null);
-  const sellAudioRef = useRef(null);
+  const audioCtxRef = useRef(null);
+  const sellBufferRef = useRef(null);
   const audioPrimedRef = useRef(false);
 
   useEffect(() => {
@@ -445,22 +446,38 @@ export default function PackItUp() {
     setSellAmount("");
   }, [selectedId]);
 
-  /* silently warm up the audio element on the very first tap so the media
-     pipeline is already initialized by the time a real sale needs it —
-     first-play cold-start is the main source of perceived sell-sound lag */
+  /* decode the sell sound once via the Web Audio API — AudioBufferSourceNode
+     schedules playback with near-zero, sample-accurate latency, unlike
+     <audio>.play() which has real (and on mobile, sometimes large) startup
+     lag. The context starts suspended on iOS until resumed by a user
+     gesture, which primeSellAudio does on the very first tap. */
+  useEffect(() => {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    audioCtxRef.current = ctx;
+    fetch(SELL_CHIME_SRC)
+      .then((r) => r.arrayBuffer())
+      .then((buf) => ctx.decodeAudioData(buf))
+      .then((decoded) => { sellBufferRef.current = decoded; })
+      .catch(() => {});
+    return () => { ctx.close().catch(() => {}); };
+  }, []);
+
   const primeSellAudio = () => {
     if (audioPrimedRef.current) return;
     audioPrimedRef.current = true;
-    const el = sellAudioRef.current;
-    if (!el) return;
-    el.volume = 0;
-    el.play()
-      .then(() => {
-        el.pause();
-        el.currentTime = 0;
-        el.volume = 1;
-      })
-      .catch(() => { el.volume = 1; });
+    audioCtxRef.current?.resume().catch(() => {});
+  };
+
+  const playSellSound = () => {
+    const ctx = audioCtxRef.current;
+    const buf = sellBufferRef.current;
+    if (!ctx || !buf) return;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
   };
 
   const removable = room.objects.filter((o) => o.removable);
@@ -509,10 +526,7 @@ export default function PackItUp() {
     // doesn't cut it short
     setSellFx({ x: obj.x + (spr.w * CELL) / 2, y: obj.y + (spr.h * CELL) / 2, amount: credit });
     setTimeout(() => setSellFx(null), 1000);
-    if (sellAudioRef.current) {
-      sellAudioRef.current.currentTime = 0;
-      sellAudioRef.current.play().catch(() => {});
-    }
+    playSellSound();
     setTimeout(() => {
       setObjState((s) => ({ ...s, [id]: { ...s[id], sold: true, soldFor: credit } }));
       setCoins((c) => c + credit);
@@ -609,8 +623,6 @@ export default function PackItUp() {
         .sellAmt { animation: sellAmt 0.9s ease-out both; }
         button { font-family: 'Courier New', monospace; }
       `}</style>
-
-      <audio ref={sellAudioRef} src={SELL_CHIME_SRC} preload="auto" />
 
       {/* stage wrapper */}
       <div ref={wrapRef} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
