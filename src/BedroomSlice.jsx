@@ -236,27 +236,27 @@ const SPRITES = {
     r(ctx, P.greenHi, 8, 19, 3, 3); r(ctx, P.greenLo, 9, 22, 2, 3);
   }},
 
-  vanity: { w: 46, h: 40, draw(ctx) {
-    r(ctx, P.out, 0, 4, 46, 4);                       // top
-    r(ctx, P.white, 1, 5, 44, 2);
-    r(ctx, P.out, 2, 8, 42, 12);                      // drawer box
-    r(ctx, P.white, 3, 9, 40, 10);
-    r(ctx, P.whiteLo, 3, 9, 40, 1);
-    r(ctx, P.whiteLo, 22, 9, 1, 10);                  // drawer split
-    r(ctx, "#B8AE96", 12, 13, 3, 2); r(ctx, "#B8AE96", 31, 13, 3, 2);
+  // vanity desk + its standing mirror leaning behind/beside it, one composite sprite
+  vanity: { w: 46, h: 66, draw(ctx) {
+    // standing mirror, leaning at the back, top of frame rising above the desk
+    r(ctx, P.out, 13, 0, 26, 28);
+    r(ctx, P.woodMid, 14, 1, 24, 26); r(ctx, P.woodHi, 14, 1, 24, 1);
+    r(ctx, P.glass, 16, 3, 20, 22);
+    r(ctx, P.glassHi, 18, 4, 3, 20); r(ctx, P.glassHi, 23, 4, 1, 20);  // light streak
+    dith(ctx, P.glassLo, 26, 5, 9, 19, 2, 0);
+    r(ctx, P.out, 16, 28, 3, 3); r(ctx, P.out, 33, 28, 3, 3);          // stand feet
+    // desk
+    r(ctx, P.out, 0, 30, 46, 4);                       // top
+    r(ctx, P.white, 1, 31, 44, 2);
+    r(ctx, P.out, 2, 34, 42, 12);                      // drawer box
+    r(ctx, P.white, 3, 35, 40, 10);
+    r(ctx, P.whiteLo, 3, 35, 40, 1);
+    r(ctx, P.whiteLo, 22, 35, 1, 10);                  // drawer split
+    r(ctx, "#B8AE96", 12, 39, 3, 2); r(ctx, "#B8AE96", 31, 39, 3, 2);
     // legs
-    r(ctx, P.out, 3, 20, 4, 20); r(ctx, P.white, 4, 20, 2, 19);
-    r(ctx, P.out, 39, 20, 4, 20); r(ctx, P.white, 40, 20, 2, 19);
-    dith(ctx, P.whiteLo, 4, 30, 2, 9, 2, 0); dith(ctx, P.whiteLo, 40, 30, 2, 9, 2, 1);
-  }},
-
-  vanity_mirror: { w: 28, h: 31, draw(ctx) {
-    r(ctx, P.out, 1, 0, 26, 28);
-    r(ctx, P.woodMid, 2, 1, 24, 26); r(ctx, P.woodHi, 2, 1, 24, 1);
-    r(ctx, P.glass, 4, 3, 20, 22);
-    r(ctx, P.glassHi, 6, 4, 3, 20); r(ctx, P.glassHi, 11, 4, 1, 20);  // light streak
-    dith(ctx, P.glassLo, 14, 5, 9, 19, 2, 0);
-    r(ctx, P.out, 4, 28, 3, 3); r(ctx, P.out, 21, 28, 3, 3);          // stand feet
+    r(ctx, P.out, 3, 46, 4, 20); r(ctx, P.white, 4, 46, 2, 19);
+    r(ctx, P.out, 39, 46, 4, 20); r(ctx, P.white, 40, 46, 2, 19);
+    dith(ctx, P.whiteLo, 4, 56, 2, 9, 2, 0); dith(ctx, P.whiteLo, 40, 56, 2, 9, 2, 1);
   }},
 
   stool: { w: 16, h: 16, draw(ctx) {
@@ -266,33 +266,33 @@ const SPRITES = {
     r(ctx, P.woodDark, 3, 9, 10, 1);
   }},
 
-  dresser: { w: 48, h: 60, draw(ctx) {
-    r(ctx, P.out, 0, 0, 48, 54);
-    r(ctx, P.woodHi, 1, 1, 46, 3);                    // top slab
-    r(ctx, P.woodMid, 1, 4, 46, 48);
-    dith(ctx, P.wood, 36, 4, 11, 48, 2, 0);           // right shading
+  // dresser + its wall mirror mounted just above it, one composite sprite
+  dresser: { w: 48, h: 99, draw(ctx) {
+    // mirror, centered above
+    r(ctx, P.out, 4, 0, 40, 36);
+    r(ctx, P.woodMid, 5, 1, 38, 34); r(ctx, P.woodHi, 5, 1, 38, 1);
+    r(ctx, P.glass, 8, 4, 32, 28);
+    r(ctx, P.glassHi, 11, 5, 4, 26); r(ctx, P.glassHi, 17, 5, 2, 26);
+    dith(ctx, P.glassLo, 24, 6, 14, 25, 2, 1);
+    r(ctx, P.mustardLo, 34, 8, 4, 14);               // curtain reflection wink
+    // dresser body
+    r(ctx, P.out, 0, 39, 48, 54);
+    r(ctx, P.woodHi, 1, 40, 46, 3);                   // top slab
+    r(ctx, P.woodMid, 1, 43, 46, 48);
+    dith(ctx, P.wood, 36, 43, 11, 48, 2, 0);          // right shading
     const drawer = (x, y, w, h) => {
       outlineRect(ctx, "#33200F", x, y, w, h);
       r(ctx, P.woodLight, x + 1, y + 1, w - 2, h - 2);
       r(ctx, P.woodHi, x + 1, y + 1, w - 2, 1);
     };
-    drawer(3, 6, 20, 9); drawer(25, 6, 20, 9);        // two small
-    drawer(3, 17, 42, 10); drawer(3, 29, 42, 10); drawer(3, 41, 42, 9); // three wide
+    drawer(3, 45, 20, 9); drawer(25, 45, 20, 9);        // two small
+    drawer(3, 56, 42, 10); drawer(3, 68, 42, 10); drawer(3, 80, 42, 9); // three wide
     // knobs
-    [[12, 10], [34, 10]].forEach(([x, y]) => r(ctx, P.gold, x, y, 2, 2));
-    [[14, 21], [32, 21], [14, 33], [32, 33], [14, 44], [32, 44]].forEach(([x, y]) => r(ctx, P.gold, x, y, 2, 2));
+    [[12, 49], [34, 49]].forEach(([x, y]) => r(ctx, P.gold, x, y, 2, 2));
+    [[14, 60], [32, 60], [14, 72], [32, 72], [14, 83], [32, 83]].forEach(([x, y]) => r(ctx, P.gold, x, y, 2, 2));
     // feet
-    r(ctx, P.out, 2, 54, 5, 6); r(ctx, P.out, 41, 54, 5, 6);
-    r(ctx, P.woodDark, 3, 54, 3, 5); r(ctx, P.woodDark, 42, 54, 3, 5);
-  }},
-
-  dresser_mirror: { w: 40, h: 36, draw(ctx) {
-    r(ctx, P.out, 0, 0, 40, 36);
-    r(ctx, P.woodMid, 1, 1, 38, 34); r(ctx, P.woodHi, 1, 1, 38, 1);
-    r(ctx, P.glass, 4, 4, 32, 28);
-    r(ctx, P.glassHi, 7, 5, 4, 26); r(ctx, P.glassHi, 13, 5, 2, 26);
-    dith(ctx, P.glassLo, 20, 6, 14, 25, 2, 1);
-    r(ctx, P.mustardLo, 30, 8, 4, 14);               // curtain reflection wink
+    r(ctx, P.out, 2, 93, 5, 6); r(ctx, P.out, 41, 93, 5, 6);
+    r(ctx, P.woodDark, 3, 93, 3, 5); r(ctx, P.woodDark, 42, 93, 3, 5);
   }},
 
   vase: { w: 8, h: 16, draw(ctx) {
@@ -352,20 +352,16 @@ const ROOMS = {
         check: "The windowsill crew. They ride up front, obviously." },
       { id: "hanging_plant",  name: "Hanging Pothos",   category: "plants",    x: 676, y: 14,  z: 3, removable: true, value: 10,
         check: "It survived three heat waves. It can survive Queens." },
-      { id: "dresser_mirror", name: "Dresser Mirror",   category: "furniture", x: 752, y: 176, z: 2, removable: true, value: 20,
-        check: "You've checked a thousand outfits here. It kept every secret." },
       { id: "bed",            name: "Bed",              category: "furniture", x: 180, y: 280, z: 3, removable: true, value: 60,
         check: "Still smells like laundry day. The burgundy pillow matches nothing, which is why it works." },
       { id: "nightstand",     name: "Nightstand",       category: "furniture", x: 52,  y: 372, z: 3, removable: true, value: 25,
         check: "One drawer of mysteries, one shelf of books you swear you'll finish before the flight." },
-      { id: "vanity",         name: "Vanity Desk",      category: "furniture", x: 548, y: 330, z: 3, removable: true, value: 45,
-        check: "White desk, good light. Where letters and eyeliner both happened." },
-      { id: "dresser",        name: "Dresser",          category: "furniture", x: 740, y: 330, z: 3, removable: true, value: 70,
-        check: "Solid wood, heavier than it looks. The movers will curse its name." },
+      { id: "vanity",         name: "Vanity Desk",      category: "furniture", x: 548, y: 228, z: 3, removable: true, value: 67,
+        check: "White desk, good light — where letters and eyeliner both happened. The standing mirror beside it leans just so; you never once hung it properly, no regrets." },
+      { id: "dresser",        name: "Dresser",          category: "furniture", x: 740, y: 174, z: 3, removable: true, value: 90,
+        check: "Solid wood, heavier than it looks — the movers will curse its name. The mirror on top has checked a thousand outfits and kept every secret." },
       { id: "lamp",           name: "Mushroom Lamp",    category: "lighting",  x: 80,  y: 296, z: 4, removable: true, value: 18,
         check: "Chief mood-setter. Warm light or nothing." },
-      { id: "vanity_mirror",  name: "Standing Mirror",  category: "furniture", x: 596, y: 228, z: 4, removable: true, value: 22,
-        check: "Leans just so. You never once hung it properly. No regrets." },
       { id: "stool",          name: "Stool",            category: "furniture", x: 600, y: 446, z: 4, removable: true, value: 10,
         check: "A little wobbly. Sit anyway." },
       { id: "vase",           name: "Red Glass Vase",   category: "decor",     x: 772, y: 270, z: 4, removable: true, value: 12,
