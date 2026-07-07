@@ -781,8 +781,8 @@ const ROOMS = {
     objects: [
       { id: "rug",            name: "Striped Rug",      category: "textiles",  x: 230, y: 470, z: 1, removable: true, value: 15,
         check: "Blue-green stripes. It has caught every midnight water glass you ever dropped." },
-      { id: "curtains",       name: "Curtains",         category: "textiles",  x: 300, y: 32,  z: 2, removable: false,
-        check: "These stay behind — the listing said “partially furnished.”" },
+      { id: "curtains",       name: "Curtains",         category: "textiles",  x: 300, y: 32,  z: 2, removable: true, value: 12,
+        check: "Technically yours. Take them, sell them, or leave them hanging for the next tenant — donating counts." },
       { id: "art_tree",       name: "Tree Painting",    category: "decor",     x: 88,  y: 112, z: 2, removable: true, value: 8,
         check: "A small green painting that made a rented wall feel less rented." },
       { id: "art_poster",     name: "Coin Co. Poster",  category: "decor",     x: 184, y: 84,  z: 2, removable: true, value: 5,
@@ -935,8 +935,8 @@ ROOMS.office = {
   id: "office", name: "Office",
   drawShell: drawOfficeShell, floorKind: "plank", sprites: OFFICE_SPRITES,
   objects: [
-    { id: "office_curtains", name: "Purple Curtains",  category: "textiles",  x: 468, y: 32,  z: 2, removable: false,
-      check: "Purple velvet, landlord's taste. They stay." },
+    { id: "office_curtains", name: "Green Curtains",   category: "textiles",  x: 468, y: 32,  z: 2, removable: true, value: 10,
+      check: "Deep green, your taste. The landlord gets them only if you leave them." },
     { id: "wall_frames",     name: "Framed Certificates", category: "decor",  x: 240, y: 110, z: 2, removable: true, value: 6,
       check: "Certificates of things you're pretty sure you can still do." },
     { id: "desk_hutch",      name: "Desk & Hutch",     category: "furniture", x: 80,  y: 176, z: 3, removable: true, value: 85,
@@ -1949,7 +1949,7 @@ export default function PackItUp() {
                 ★ Bedroom cleared! ★
               </div>
               <div style={{ color: "#C9B896", fontSize: 13, marginTop: 6, ...ui.label }}>
-                Only the curtains stay. Next room coming soon…
+                Every last thing handled. On to the next room…
               </div>
             </div>
           )}
