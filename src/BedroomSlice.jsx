@@ -316,6 +316,438 @@ const SPRITES = {
   }},
 };
 
+/* ============================================================
+   OFFICE — shell + sprites (ref: cozy corner-desk office)
+   ============================================================ */
+function drawOfficeShell(ctx) {
+  const W = 240, H = 180, WALL_B = 112;
+
+  // warm tan wall
+  r(ctx, "#D8C49A", 0, 0, W, WALL_B);
+  dith(ctx, "#E6D6B0", 0, 0, W, 30, 3, 0);
+  dith(ctx, "#C0AA7E", 0, WALL_B - 26, W, 26, 3, 1);
+  r(ctx, "#E6D6B0", 0, 0, W, 3); r(ctx, "#C0AA7E", 0, 3, W, 1);
+  r(ctx, P.cream, 0, WALL_B - 6, W, 6); r(ctx, P.creamLo, 0, WALL_B - 6, W, 1);
+  r(ctx, P.out, 0, WALL_B - 1, W, 1);
+
+  // plank floor (same colors as bedroom so the mobile floor-fill continues it)
+  r(ctx, P.floor, 0, WALL_B, W, H - WALL_B);
+  for (let row = 0; row * 8 + WALL_B < H; row++) {
+    const y0 = WALL_B + row * 8;
+    r(ctx, P.floorDark, 0, y0 + 7, W, 1);
+    dith(ctx, P.floorLight, 0, y0 + 1, W, 3, 5, row * 3);
+    const off = (row % 2) * 24;
+    for (let x = off + 10; x < W; x += 48) r(ctx, P.floorDark, x, y0, 1, 7);
+  }
+
+  // open-door hint, far left
+  r(ctx, P.out, 0, 0, 7, WALL_B);
+  r(ctx, P.woodDark, 0, 0, 5, WALL_B);
+  r(ctx, P.woodMid, 4, 4, 1, WALL_B - 8);
+
+  // window with a green summer view (x 126..194, y 14..76)
+  r(ctx, P.out, 126, 14, 68, 62);
+  r(ctx, P.cream, 128, 16, 64, 58);
+  r(ctx, P.sky, 132, 20, 56, 50);
+  dith(ctx, P.glassHi, 132, 20, 56, 8, 2, 0);            // bright sky top
+  dith(ctx, P.greenHi, 132, 30, 24, 14, 2, 0);           // tree canopies
+  r(ctx, P.green, 134, 34, 20, 12); dith(ctx, P.greenLo, 136, 38, 16, 8, 2, 1);
+  dith(ctx, P.greenHi, 162, 26, 26, 16, 2, 1);
+  r(ctx, P.green, 164, 30, 22, 14); dith(ctx, P.greenLo, 166, 36, 18, 8, 2, 0);
+  r(ctx, P.woodDark, 168, 48, 16, 10);                    // house across the street
+  r(ctx, "#8A9BA8", 168, 44, 16, 4);
+  r(ctx, P.red, 174, 52, 3, 6);                           // its red door
+  dith(ctx, P.green, 132, 58, 56, 12, 2, 0);              // hedge line
+  r(ctx, P.cream, 158, 20, 4, 50);                        // mullion
+  r(ctx, P.creamLo, 132, 44, 56, 2);                      // sash rail
+  r(ctx, P.out, 122, 78, 76, 1);
+  r(ctx, P.cream, 122, 76, 76, 3); r(ctx, P.creamLo, 122, 78, 76, 1);
+
+  // sunlight pool under the window
+  const sunX = 136, sunW = 50;
+  r(ctx, P.floorSun, sunX, WALL_B + 2, sunW, 28);
+  dith(ctx, P.floor, sunX, WALL_B + 2, sunW, 28, 2, 0);
+  dith(ctx, P.floorSun, sunX - 6, WALL_B + 2, 6, 28, 2, 1);
+  dith(ctx, P.floorSun, sunX + sunW, WALL_B + 2, 6, 28, 2, 0);
+  for (let j = WALL_B + 2; j < WALL_B + 30; j += 6) r(ctx, P.floor, sunX, j, sunW, 1);
+
+  // corner vignettes
+  dith(ctx, "#C0AA7E", 0, 0, 26, WALL_B, 2, 0);
+  dith(ctx, "#C0AA7E", W - 22, 0, 22, WALL_B, 2, 1);
+}
+
+const OFFICE_SPRITES = {
+  office_curtains: { w: 90, h: 70, draw(ctx) {
+    r(ctx, P.out, 0, 2, 90, 2); r(ctx, P.woodDark, 1, 2, 88, 1);
+    r(ctx, P.out, 0, 0, 3, 6); r(ctx, P.out, 87, 0, 3, 6);
+    const panel = (x) => {
+      r(ctx, P.out, x, 4, 13, 64);
+      r(ctx, "#6B5B7A", x + 1, 5, 11, 62);
+      r(ctx, "#7D6C8E", x + 2, 5, 2, 62); r(ctx, "#7D6C8E", x + 7, 5, 1, 62);
+      r(ctx, "#574969", x + 5, 5, 1, 62); r(ctx, "#574969", x + 10, 5, 1, 62);
+      dith(ctx, "#574969", x + 1, 52, 11, 15, 2, 0);
+    };
+    panel(1); panel(76);
+  }},
+
+  desk_hutch: { w: 64, h: 96, draw(ctx) {
+    // hutch shelves
+    r(ctx, P.out, 2, 0, 60, 46);
+    r(ctx, P.woodMid, 3, 1, 58, 44); r(ctx, P.woodHi, 3, 1, 58, 2);
+    r(ctx, "#1E1206", 6, 5, 24, 16); r(ctx, "#1E1206", 34, 5, 24, 16);   // upper cavities
+    r(ctx, "#1E1206", 6, 25, 52, 17);                                     // lower cavity
+    // books, upper left
+    r(ctx, P.green, 8, 9, 3, 12); r(ctx, "#6B4A8A", 12, 8, 3, 13); r(ctx, P.red, 16, 10, 3, 11);
+    r(ctx, "#28304A", 20, 9, 3, 12); r(ctx, "#B08A4A", 24, 11, 4, 10);
+    // jars + bear, upper right
+    r(ctx, P.glass, 37, 12, 5, 9); r(ctx, P.glassHi, 38, 13, 1, 7); r(ctx, P.woodDark, 37, 11, 5, 2);
+    r(ctx, P.glass, 44, 14, 4, 7); r(ctx, P.glassHi, 45, 15, 1, 5);
+    r(ctx, P.creamLo, 51, 12, 5, 6); r(ctx, P.cream, 52, 11, 3, 3);       // little bear
+    // lower shelf: binders shifted right (left half stays dark so the red
+    // lamp in front reads cleanly)
+    r(ctx, P.burgundy, 26, 29, 4, 13); r(ctx, P.teal, 31, 30, 4, 12); r(ctx, P.mustard, 36, 29, 4, 13);
+    r(ctx, "#28304A", 41, 31, 4, 11); r(ctx, P.green, 46, 30, 4, 12);
+    r(ctx, P.cardLo, 52, 33, 5, 9);                                       // box
+    // desk top
+    r(ctx, P.out, 0, 46, 64, 5);
+    r(ctx, P.woodLight, 1, 47, 62, 3); r(ctx, P.woodHi, 1, 47, 62, 1);
+    // drawer pedestal (right) + open leg space (left)
+    r(ctx, P.out, 34, 51, 28, 42);
+    r(ctx, P.woodMid, 35, 52, 26, 40);
+    const drw = (y) => {
+      outlineRect(ctx, "#33200F", 37, y, 22, 10);
+      r(ctx, P.woodLight, 38, y + 1, 20, 8); r(ctx, P.woodHi, 38, y + 1, 20, 1);
+      r(ctx, P.gold, 46, y + 4, 4, 2);
+    };
+    drw(54); drw(66); drw(78);
+    // left legs + solid shadow under desk
+    r(ctx, P.out, 2, 51, 4, 42); r(ctx, P.woodDark, 3, 51, 2, 41);
+    r(ctx, "#1E1206", 6, 51, 28, 41);
+    r(ctx, P.out, 2, 92, 60, 2);
+  }},
+
+  computer: { w: 28, h: 24, draw(ctx) {
+    r(ctx, P.out, 2, 0, 24, 16);
+    r(ctx, "#3A362F", 3, 1, 22, 14);
+    r(ctx, "#28304A", 5, 3, 18, 10);
+    r(ctx, P.glassHi, 6, 4, 2, 8); r(ctx, P.glassHi, 9, 4, 1, 8);        // screen glare
+    r(ctx, P.out, 12, 16, 4, 2); r(ctx, P.out, 8, 18, 12, 1);            // stand
+    r(ctx, P.out, 0, 20, 26, 4);                                          // keyboard
+    r(ctx, "#B8AE96", 1, 21, 24, 2);
+    for (let x = 3; x < 23; x += 3) r(ctx, "#8A8272", x, 21, 1, 1);
+  }},
+
+  desk_lamp: { w: 22, h: 24, draw(ctx) {
+    r(ctx, P.out, 2, 20, 10, 2); r(ctx, P.red, 3, 20, 8, 1);              // base
+    r(ctx, P.out, 6, 12, 2, 8); r(ctx, P.redHi, 6, 12, 1, 8);             // lower arm
+    r(ctx, P.out, 6, 10, 10, 2); r(ctx, P.red, 7, 10, 8, 1);              // upper arm
+    r(ctx, P.out, 14, 4, 7, 8);                                            // head cone
+    r(ctx, P.red, 15, 5, 5, 6); r(ctx, P.redHi, 15, 5, 2, 4);
+    r(ctx, P.goldHi, 16, 11, 4, 2); r(ctx, "#FBF6E6", 17, 12, 2, 1);      // warm glow
+    r(ctx, P.out, 5, 9, 3, 3); r(ctx, P.out, 12, 9, 3, 3);                // knuckles
+  }},
+
+  office_chair: { w: 34, h: 46, draw(ctx) {
+    r(ctx, P.out, 6, 0, 22, 22);                                           // backrest
+    r(ctx, "#2A2622", 7, 1, 20, 20); r(ctx, "#3A362F", 8, 2, 18, 3);
+    dith(ctx, "#1C1916", 9, 12, 16, 8, 2, 0);
+    r(ctx, P.out, 2, 22, 30, 8);                                           // seat
+    r(ctx, "#2A2622", 3, 23, 28, 6); r(ctx, "#3A362F", 3, 23, 28, 2);
+    r(ctx, P.out, 0, 18, 4, 8); r(ctx, P.out, 30, 18, 4, 8);               // armrests
+    r(ctx, "#3A362F", 1, 19, 2, 6); r(ctx, "#3A362F", 31, 19, 2, 6);
+    r(ctx, P.out, 15, 30, 4, 8); r(ctx, "#8A8272", 16, 30, 2, 7);          // gas lift
+    r(ctx, P.out, 4, 38, 26, 2);                                           // star base
+    r(ctx, P.out, 6, 40, 3, 4); r(ctx, P.out, 15, 40, 3, 4); r(ctx, P.out, 24, 40, 3, 4);
+    r(ctx, "#4A463F", 7, 41, 1, 2); r(ctx, "#4A463F", 16, 41, 1, 2); r(ctx, "#4A463F", 25, 41, 1, 2);
+  }},
+
+  sewing_machine: { w: 22, h: 16, draw(ctx) {
+    r(ctx, P.out, 0, 12, 22, 4); r(ctx, P.white, 1, 13, 20, 2);            // base
+    r(ctx, P.out, 2, 0, 14, 13);                                           // body arm
+    r(ctx, P.white, 3, 1, 12, 11); r(ctx, P.whiteLo, 3, 9, 12, 3);
+    r(ctx, "#5C7C9C", 5, 3, 6, 5); dith(ctx, P.white, 5, 3, 6, 5, 2, 0);   // blue floral hint
+    r(ctx, P.out, 14, 3, 4, 7); r(ctx, P.white, 15, 4, 2, 5);              // needle head
+    r(ctx, P.red, 6, 0, 2, 2);                                             // spool
+    r(ctx, P.out, 17, 9, 1, 4);                                            // needle
+  }},
+
+  storage_bin: { w: 26, h: 18, draw(ctx) {
+    r(ctx, P.out, 0, 0, 26, 6);                                            // lid
+    r(ctx, P.teal, 1, 1, 24, 4); r(ctx, P.tealHi, 1, 1, 24, 1);
+    r(ctx, P.out, 2, 6, 22, 12);                                           // tub
+    r(ctx, "#8A857C", 3, 7, 20, 10); dith(ctx, "#6E6A61", 3, 9, 20, 8, 2, 0);
+    r(ctx, "#B8AE96", 5, 9, 6, 4);                                         // label
+  }},
+
+  side_cabinet: { w: 48, h: 62, draw(ctx) {
+    // plant on top
+    r(ctx, P.green, 6, 2, 3, 8); r(ctx, P.greenHi, 10, 0, 3, 10); r(ctx, P.green, 14, 3, 3, 7);
+    r(ctx, P.greenLo, 3, 6, 3, 5);
+    r(ctx, P.out, 5, 10, 12, 8); r(ctx, P.terra, 6, 11, 10, 6); r(ctx, P.terraLo, 6, 15, 10, 2);
+    // book stack
+    r(ctx, P.out, 22, 10, 12, 8);
+    r(ctx, P.burgundy, 23, 11, 10, 2); r(ctx, P.teal, 23, 13, 10, 2); r(ctx, "#B08A4A", 23, 15, 10, 2);
+    // red vase
+    r(ctx, P.out, 39, 6, 6, 12); r(ctx, P.red, 40, 7, 4, 10); r(ctx, P.redHi, 40, 7, 1, 8);
+    // cabinet body
+    r(ctx, P.out, 0, 18, 48, 40);
+    r(ctx, P.woodHi, 1, 19, 46, 3);
+    r(ctx, P.woodMid, 1, 22, 46, 33);
+    dith(ctx, P.wood, 36, 22, 11, 33, 2, 0);
+    outlineRect(ctx, "#33200F", 4, 25, 19, 27); r(ctx, P.woodLight, 5, 26, 17, 25); r(ctx, P.woodHi, 5, 26, 17, 1);
+    outlineRect(ctx, "#33200F", 25, 25, 19, 27); r(ctx, P.woodLight, 26, 26, 17, 25); r(ctx, P.woodHi, 26, 26, 17, 1);
+    r(ctx, P.gold, 20, 37, 2, 3); r(ctx, P.gold, 26, 37, 2, 3);
+    r(ctx, P.out, 2, 58, 5, 4); r(ctx, P.out, 41, 58, 5, 4);
+    r(ctx, P.woodDark, 3, 58, 3, 3); r(ctx, P.woodDark, 42, 58, 3, 3);
+  }},
+
+  waste_bin: { w: 14, h: 16, draw(ctx) {
+    r(ctx, P.out, 1, 0, 12, 16);
+    r(ctx, "#2A2622", 2, 1, 10, 14); r(ctx, "#3A362F", 2, 1, 10, 2);
+    dith(ctx, "#1C1916", 3, 6, 8, 9, 2, 0);
+    r(ctx, P.cream, 4, 2, 3, 2);                                           // crumpled draft
+  }},
+
+  desk_clutter: { w: 30, h: 14, draw(ctx) {
+    // open notebook
+    r(ctx, P.out, 0, 6, 16, 8);
+    r(ctx, P.cream, 1, 7, 14, 6); r(ctx, P.creamLo, 8, 7, 1, 6);
+    r(ctx, "#7C6A4A", 3, 9, 4, 1); r(ctx, "#7C6A4A", 3, 11, 4, 1); r(ctx, "#7C6A4A", 10, 9, 4, 1);
+    r(ctx, "#28304A", 12, 4, 6, 2);                                        // pen
+    // mug
+    r(ctx, P.out, 20, 4, 8, 10);
+    r(ctx, P.red, 21, 5, 6, 8); r(ctx, P.redHi, 21, 5, 2, 6);
+    r(ctx, P.out, 27, 6, 3, 5); r(ctx, P.red, 28, 7, 1, 3);                // handle
+  }},
+
+  wall_frames: { w: 28, h: 20, draw(ctx) {
+    r(ctx, P.out, 0, 2, 13, 16); r(ctx, P.woodDark, 1, 3, 11, 14); r(ctx, P.cream, 2, 4, 9, 12);
+    r(ctx, "#7C6A4A", 3, 6, 7, 1); r(ctx, "#7C6A4A", 3, 8, 6, 1); r(ctx, "#7C6A4A", 3, 10, 7, 1);
+    r(ctx, P.gold, 5, 12, 3, 2);                                           // seal
+    r(ctx, P.out, 15, 0, 13, 18); r(ctx, P.woodMid, 16, 1, 11, 16); r(ctx, P.cream, 17, 2, 9, 14);
+    r(ctx, P.greenHi, 19, 4, 5, 5); r(ctx, P.green, 20, 6, 4, 4); r(ctx, P.wood, 21, 9, 2, 4); // little botanical
+  }},
+};
+
+/* ============================================================
+   BATHROOM — shell + sprites (ref: red tile + tan diamond floor)
+   ============================================================ */
+function drawBathroomShell(ctx) {
+  const W = 240, H = 180, WALL_B = 112;
+
+  // cream wall
+  r(ctx, "#EFE3C6", 0, 0, W, WALL_B);
+  dith(ctx, "#F7EDD6", 0, 0, W, 30, 3, 0);
+  dith(ctx, "#DCCDA8", 0, WALL_B - 32, W, 12, 3, 1);
+  r(ctx, "#F7EDD6", 0, 0, W, 3); r(ctx, "#DCCDA8", 0, 3, W, 1);
+
+  // burgundy tile wainscot band
+  r(ctx, "#D9C9A8", 0, 90, W, 2);
+  r(ctx, "#8A3038", 0, 92, W, WALL_B - 92);
+  dith(ctx, "#A3444C", 0, 92, W, 4, 2, 0);
+  for (let x = 0; x < W; x += 10) r(ctx, "#6E242B", x, 92, 1, WALL_B - 92);
+  r(ctx, "#6E242B", 0, 102, W, 1);
+  r(ctx, P.out, 0, WALL_B - 1, W, 1);
+
+  // tan diamond-tile floor (position-based pattern; extendFloorBathTile continues it)
+  r(ctx, "#D9C289", 0, WALL_B, W, H - WALL_B);
+  for (let y = WALL_B; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      if ((x + y) % 16 === 0 || (x - y + 960) % 16 === 0) r(ctx, "#C1A76F", x, y, 1, 1);
+    }
+  dith(ctx, "#E5D3A0", 0, WALL_B, W, H - WALL_B, 7, 2);
+
+  // open-door hint, far left
+  r(ctx, P.out, 0, 0, 7, WALL_B);
+  r(ctx, P.woodDark, 0, 0, 5, WALL_B);
+  r(ctx, P.woodMid, 4, 4, 1, WALL_B - 8);
+
+  // frosted window (x 56..104, y 14..62)
+  r(ctx, P.out, 54, 12, 54, 54);
+  r(ctx, P.white, 56, 14, 50, 50);
+  r(ctx, "#AECBDD", 59, 17, 44, 44);
+  dith(ctx, "#CBE0EC", 59, 17, 44, 44, 2, 0);
+  for (let j = 18; j < 34; j += 3) r(ctx, "#CBE0EC", 59, j, 44, 1);        // blinds, half-drawn
+  r(ctx, P.white, 79, 17, 4, 44);                                          // mullion
+  r(ctx, P.out, 50, 66, 62, 1);
+  r(ctx, P.cream, 50, 64, 62, 3); r(ctx, P.creamLo, 50, 66, 62, 1);
+
+  // wall heater vent, small and warm-toned
+  r(ctx, P.out, 65, 68, 18, 20);
+  r(ctx, "#8A754F", 66, 69, 16, 18); r(ctx, "#9C8760", 66, 69, 16, 2);
+  for (let j = 73; j < 85; j += 3) r(ctx, "#5C4B32", 68, j, 12, 1);
+
+  // toilet paper on the wall, left of the toilet
+  r(ctx, "#8A8272", 108, 72, 8, 2);
+  r(ctx, P.out, 108, 74, 8, 6); r(ctx, P.white, 109, 75, 6, 4); r(ctx, P.whiteLo, 109, 78, 6, 1);
+
+  // corner vignettes
+  dith(ctx, "#DCCDA8", 0, 0, 22, 90, 2, 0);
+  dith(ctx, "#DCCDA8", W - 20, 0, 20, 90, 2, 1);
+}
+
+function extendFloorBathTile(ctx, extH) {
+  const WALL_B = 112, W = 240;
+  r(ctx, "#D9C289", 0, 180, W, extH - 180);
+  for (let y = 180; y < extH; y++)
+    for (let x = 0; x < W; x++) {
+      if ((x + y) % 16 === 0 || (x - y + 960) % 16 === 0) r(ctx, "#C1A76F", x, y, 1, 1);
+    }
+  dith(ctx, "#E5D3A0", 0, 180, W, extH - 180, 7, 2);
+}
+
+const BATH_SPRITES = {
+  bathtub: { w: 58, h: 42, draw(ctx) {
+    // red tile ledge behind
+    r(ctx, P.out, 0, 0, 58, 8);
+    r(ctx, "#8A3038", 1, 1, 56, 6); dith(ctx, "#A3444C", 1, 1, 56, 2, 2, 0);
+    for (let x = 1; x < 57; x += 8) r(ctx, "#6E242B", x, 1, 1, 6);
+    // faucet on the ledge, right end
+    r(ctx, P.out, 45, 0, 4, 9); r(ctx, "#B8AE96", 46, 1, 2, 7);
+    r(ctx, P.out, 41, 7, 6, 3); r(ctx, "#B8AE96", 42, 8, 4, 1);            // spout
+    r(ctx, P.out, 51, 2, 3, 3); r(ctx, "#B8AE96", 52, 3, 1, 1);            // tap
+    // tub rim
+    r(ctx, P.out, 0, 8, 58, 6);
+    r(ctx, P.white, 1, 9, 56, 4); r(ctx, "#FBF6E6", 1, 9, 56, 1);
+    // basin shadow hint
+    r(ctx, P.whiteLo, 6, 10, 46, 2);
+    // tub body
+    r(ctx, P.out, 2, 14, 54, 22);
+    r(ctx, P.white, 3, 15, 52, 20);
+    dith(ctx, P.whiteLo, 38, 16, 16, 18, 2, 0);
+    r(ctx, P.whiteLo, 3, 32, 52, 3);
+    r(ctx, P.out, 2, 36, 54, 2);
+    // chrome overflow cap
+    r(ctx, P.out, 44, 22, 4, 4); r(ctx, "#B8AE96", 45, 23, 2, 2);
+    // feet + floor shadow
+    r(ctx, P.out, 7, 38, 6, 4); r(ctx, P.whiteLo, 8, 38, 4, 3);
+    r(ctx, P.out, 45, 38, 6, 4); r(ctx, P.whiteLo, 46, 38, 4, 3);
+    dith(ctx, "#8A754F", 12, 39, 34, 2, 2, 0);
+    // draped towel
+    r(ctx, P.out, 10, 12, 14, 20);
+    r(ctx, P.cream, 11, 13, 12, 18); r(ctx, P.creamLo, 11, 19, 12, 1); r(ctx, P.creamLo, 11, 25, 12, 1);
+    r(ctx, P.red, 11, 28, 12, 2);
+    for (let x = 11; x < 23; x += 2) r(ctx, P.creamLo, x, 31, 1, 1);       // fringe
+  }},
+
+  toilet: { w: 26, h: 38, draw(ctx) {
+    // tank
+    r(ctx, P.out, 3, 0, 20, 14);
+    r(ctx, P.white, 4, 1, 18, 12); r(ctx, "#FBF6E6", 4, 1, 18, 2);
+    r(ctx, P.whiteLo, 4, 4, 18, 1);                                        // lid seam
+    r(ctx, "#B8AE96", 18, 6, 3, 2);                                        // flush handle
+    // seat, widest part
+    r(ctx, P.out, 0, 14, 26, 9);
+    r(ctx, P.white, 1, 15, 24, 7); r(ctx, "#FBF6E6", 1, 15, 24, 2);
+    r(ctx, P.whiteLo, 5, 17, 16, 4);                                       // seat oval hint
+    dith(ctx, P.whiteLo, 17, 16, 7, 6, 2, 0);
+    // bowl tapering straight into the base
+    r(ctx, P.out, 4, 23, 18, 7);
+    r(ctx, P.white, 5, 24, 16, 5); dith(ctx, P.whiteLo, 14, 24, 6, 5, 2, 0);
+    r(ctx, P.out, 7, 30, 12, 4);
+    r(ctx, P.white, 8, 31, 10, 2);
+    // base flare
+    r(ctx, P.out, 5, 34, 16, 4);
+    r(ctx, P.white, 6, 35, 14, 2); r(ctx, P.whiteLo, 6, 36, 14, 1);
+  }},
+
+  bath_vanity: { w: 66, h: 68, draw(ctx) {
+    // faucet
+    r(ctx, P.out, 30, 0, 3, 8); r(ctx, "#B8AE96", 31, 1, 1, 6);
+    r(ctx, P.out, 30, 0, 8, 3); r(ctx, "#B8AE96", 31, 1, 6, 1);
+    r(ctx, P.out, 24, 4, 4, 4); r(ctx, P.out, 40, 4, 4, 4);                // taps
+    // red tile counter
+    r(ctx, P.out, 0, 8, 66, 12);
+    r(ctx, "#8A3038", 1, 9, 64, 10); dith(ctx, "#A3444C", 1, 9, 64, 3, 2, 0);
+    for (let x = 1; x < 65; x += 9) r(ctx, "#6E242B", x, 9, 1, 10);
+    r(ctx, "#6E242B", 1, 14, 64, 1);
+    // sink basin inset
+    r(ctx, P.out, 18, 10, 30, 8);
+    r(ctx, P.white, 19, 11, 28, 6); r(ctx, "#FBF6E6", 19, 11, 28, 2);
+    dith(ctx, P.whiteLo, 33, 12, 13, 5, 2, 0);
+    // cabinet
+    r(ctx, P.out, 4, 20, 58, 44);
+    r(ctx, P.white, 5, 21, 56, 42);
+    r(ctx, P.whiteLo, 5, 21, 56, 1);
+    outlineRect(ctx, P.whiteLo, 9, 25, 23, 34); outlineRect(ctx, P.whiteLo, 34, 25, 23, 34);
+    r(ctx, "#B8AE96", 29, 40, 2, 4); r(ctx, "#B8AE96", 35, 40, 2, 4);
+    dith(ctx, P.whiteLo, 46, 25, 11, 34, 2, 0);
+    // kick
+    r(ctx, P.out, 6, 64, 54, 4); r(ctx, P.whiteLo, 7, 65, 52, 2);
+  }},
+
+  mirror_cabinet: { w: 40, h: 32, draw(ctx) {
+    r(ctx, P.out, 0, 0, 40, 32);
+    r(ctx, P.white, 1, 1, 38, 30); r(ctx, "#FBF6E6", 1, 1, 38, 2);
+    r(ctx, P.out, 4, 4, 15, 24); r(ctx, P.out, 21, 4, 15, 24);
+    r(ctx, P.glass, 5, 5, 13, 22); r(ctx, P.glass, 22, 5, 13, 22);
+    r(ctx, P.glassHi, 7, 6, 3, 20); r(ctx, P.glassHi, 11, 6, 1, 20);
+    r(ctx, P.glassHi, 24, 6, 3, 20); r(ctx, P.glassHi, 28, 6, 1, 20);
+    dith(ctx, P.glassLo, 13, 7, 4, 19, 2, 0); dith(ctx, P.glassLo, 30, 7, 4, 19, 2, 1);
+    r(ctx, "#B8AE96", 18, 14, 1, 4); r(ctx, "#B8AE96", 21, 14, 1, 4);
+  }},
+
+  red_towels: { w: 30, h: 30, draw(ctx) {
+    r(ctx, P.out, 0, 2, 30, 3); r(ctx, "#8A8272", 1, 3, 28, 1);            // rail
+    r(ctx, P.out, 0, 0, 3, 5); r(ctx, P.out, 27, 0, 3, 5);
+    // red towel
+    r(ctx, P.out, 4, 5, 12, 22);
+    r(ctx, P.red, 5, 6, 10, 20); r(ctx, P.redHi, 5, 6, 3, 18);
+    r(ctx, P.burgundyLo, 5, 22, 10, 2); r(ctx, P.burgundyLo, 5, 14, 10, 1);
+    // white towel
+    r(ctx, P.out, 18, 5, 10, 18);
+    r(ctx, P.cream, 19, 6, 8, 16); r(ctx, P.creamLo, 19, 18, 8, 1);
+    r(ctx, P.red, 19, 14, 8, 2);
+  }},
+
+  crossstitch_art: { w: 16, h: 20, draw(ctx) {
+    r(ctx, P.out, 0, 0, 16, 20);
+    r(ctx, P.woodMid, 1, 1, 14, 18); r(ctx, P.woodHi, 1, 1, 14, 1);
+    r(ctx, P.cream, 3, 3, 10, 14);
+    r(ctx, P.redHi, 6, 5, 2, 2); r(ctx, P.redHi, 9, 6, 2, 2); r(ctx, P.red, 7, 7, 2, 2); // petals
+    r(ctx, P.green, 7, 9, 1, 5); r(ctx, P.greenLo, 6, 12, 1, 2); r(ctx, P.greenLo, 9, 11, 1, 2);
+  }},
+
+  sill_bottles: { w: 28, h: 12, draw(ctx) {
+    r(ctx, P.green, 2, 0, 2, 4); r(ctx, P.greenHi, 4, 1, 2, 3); r(ctx, P.green, 6, 2, 1, 2);
+    r(ctx, P.out, 1, 4, 8, 8); r(ctx, P.terra, 2, 5, 6, 6); r(ctx, P.terraLo, 2, 9, 6, 2);
+    r(ctx, P.out, 12, 2, 4, 10); r(ctx, P.glass, 13, 3, 2, 8); r(ctx, P.glassHi, 13, 3, 1, 6);
+    r(ctx, P.out, 18, 4, 4, 8); r(ctx, "#B87A2E", 19, 5, 2, 6); r(ctx, "#D69A48", 19, 5, 1, 4);
+    r(ctx, P.out, 24, 6, 3, 6); r(ctx, P.glass, 25, 7, 1, 4);
+  }},
+
+  laundry_basket: { w: 26, h: 22, draw(ctx) {
+    // spilling laundry
+    r(ctx, P.out, 3, 0, 20, 8);
+    r(ctx, P.cream, 4, 1, 8, 6); r(ctx, P.creamLo, 4, 5, 8, 2);
+    r(ctx, P.red, 13, 1, 9, 6); r(ctx, P.redHi, 13, 1, 4, 3);
+    // wicker basket
+    r(ctx, P.out, 0, 8, 26, 14);
+    r(ctx, "#B08A4A", 1, 9, 24, 12); dith(ctx, "#8E6C34", 1, 9, 24, 12, 2, 0);
+    r(ctx, "#C9A96A", 1, 9, 24, 2);
+  }},
+
+  toiletries: { w: 30, h: 14, draw(ctx) {
+    r(ctx, P.out, 0, 11, 30, 3); r(ctx, "#C9A96A", 1, 12, 28, 1);          // tray
+    r(ctx, P.out, 2, 3, 4, 9); r(ctx, "#B87A2E", 3, 4, 2, 7);              // amber bottle
+    r(ctx, P.out, 8, 0, 4, 12); r(ctx, P.redHi, 9, 1, 2, 10); r(ctx, P.red, 9, 7, 2, 4); // shampoo
+    r(ctx, P.out, 14, 4, 4, 8); r(ctx, P.white, 15, 5, 2, 6);              // pump
+    r(ctx, P.out, 20, 6, 4, 6); r(ctx, P.glass, 21, 7, 2, 4); r(ctx, P.glassHi, 21, 7, 1, 2);
+    r(ctx, P.out, 25, 5, 4, 7); r(ctx, "#6B4A8A", 26, 6, 2, 5);            // perfume
+  }},
+
+  toilet_decor: { w: 22, h: 18, draw(ctx) {
+    // leaning frame
+    r(ctx, P.out, 0, 0, 13, 16);
+    r(ctx, P.woodDark, 1, 1, 11, 14);
+    r(ctx, P.cream, 2, 2, 9, 12);
+    r(ctx, "#8A9BA8", 3, 3, 7, 6); r(ctx, P.green, 3, 7, 7, 3);            // little landscape
+    // succulent
+    r(ctx, P.greenHi, 16, 6, 2, 3); r(ctx, P.green, 18, 5, 2, 4); r(ctx, P.greenLo, 15, 8, 1, 2);
+    r(ctx, P.out, 14, 9, 7, 7); r(ctx, P.white, 15, 10, 5, 5); r(ctx, P.whiteLo, 15, 13, 5, 2);
+  }},
+};
+
 /* box stack sprite (grows near the door as you pack) */
 function drawBoxes(ctx, count) {
   ctx.clearRect(0, 0, 40, 40);
@@ -458,14 +890,68 @@ ROOMS.bedroom.sprites = SPRITES;
 ROOMS.bedroom.drawShell = drawShell;
 ROOMS.bedroom.floorKind = "plank";
 [
-  ["bathroom", "Bathroom",    { wall: "#CBDDD6", wallLight: "#DCEAE4", wallShade: "#B4C8C0", tileFloor: true }],
-  ["office",   "Office",      { wall: "#C9CFB4", wallLight: "#D8DDC6", wallShade: "#B2B89C" }],
   ["dining",   "Dining Room", { wall: "#E3CDAE", wallLight: "#EEDDC2", wallShade: "#CDB593" }],
   ["kitchen",  "Kitchen",     { wall: "#E7DCA8", wallLight: "#F0E7BE", wallShade: "#CFC28D", tileFloor: true }],
   ["living",   "Living Room", { wall: "#D9C4A9", wallLight: "#E6D5BE", wallShade: "#C1AA8C" }],
 ].forEach(([id, name, cfg]) => {
   ROOMS[id] = { id, name, objects: [], sprites: {}, drawShell: makePlaceholderShell(cfg), floorKind: cfg.tileFloor ? "tile" : "plank" };
 });
+
+ROOMS.bathroom = {
+  id: "bathroom", name: "Bathroom",
+  drawShell: drawBathroomShell, floorKind: "bathtile", sprites: BATH_SPRITES,
+  objects: [
+    { id: "crossstitch_art", name: "Cross-stitch Flower", category: "decor",    x: 96,  y: 140, z: 2, removable: true, value: 6,
+      check: "Somebody's grandmother made this. Possibly yours." },
+    { id: "red_towels",      name: "Fancy Towels",        category: "textiles", x: 480, y: 120, z: 2, removable: true, value: 5,
+      check: "The fancy towels. Guests were never allowed to actually use them." },
+    { id: "mirror_cabinet",  name: "Mirrored Cabinet",    category: "furniture",x: 640, y: 96,  z: 2, removable: false,
+      check: "Behind the mirror: expired everything. The cabinet stays put." },
+    { id: "sill_bottles",    name: "Windowsill Bottles",  category: "plants",   x: 248, y: 208, z: 3, removable: true, value: 7,
+      check: "A tiny skyline of glass bottles and one determined plant." },
+    { id: "bathtub",         name: "Bathtub",             category: "furniture",x: 48,  y: 360, z: 3, removable: false,
+      check: "Deep enough to think in. It stays with the pipes." },
+    { id: "toilet",          name: "Toilet",              category: "furniture",x: 460, y: 380, z: 3, removable: false,
+      check: "The throne. Comes with the kingdom — it stays." },
+    { id: "bath_vanity",     name: "Tiled Vanity",        category: "furniture",x: 610, y: 330, z: 3, removable: false,
+      check: "Red tile counter, white cabinet, one optimistic sink. Plumbed in for good." },
+    { id: "toilet_decor",    name: "Tank-top Decor",      category: "decor",    x: 452, y: 312, z: 4, removable: true, value: 6,
+      check: "A leaning picture and a succulent that thrives on neglect." },
+    { id: "toiletries",      name: "Toiletry Collection", category: "decor",    x: 630, y: 318, z: 4, removable: true, value: 10,
+      check: "A perfume district. You use maybe two of these." },
+    { id: "laundry_basket",  name: "Laundry Basket",      category: "textiles", x: 330, y: 480, z: 4, removable: true, value: 8,
+      check: "One last load of “we'll deal with it at the new place.”" },
+  ],
+};
+
+ROOMS.office = {
+  id: "office", name: "Office",
+  drawShell: drawOfficeShell, floorKind: "plank", sprites: OFFICE_SPRITES,
+  objects: [
+    { id: "office_curtains", name: "Purple Curtains",  category: "textiles",  x: 468, y: 32,  z: 2, removable: false,
+      check: "Purple velvet, landlord's taste. They stay." },
+    { id: "wall_frames",     name: "Framed Certificates", category: "decor",  x: 240, y: 110, z: 2, removable: true, value: 6,
+      check: "Certificates of things you're pretty sure you can still do." },
+    { id: "desk_hutch",      name: "Desk & Hutch",     category: "furniture", x: 64,  y: 176, z: 3, removable: true, value: 85,
+      check: "The command center. Every drawer is a junk drawer if you believe in yourself." },
+    { id: "sewing_machine",  name: "Sewing Machine",   category: "furniture", x: 148, y: 116, z: 4, removable: true, value: 75,
+      check: "It hemmed curtains once. Mostly it judges you from the shelf." },
+    { id: "desk_lamp",       name: "Red Desk Lamp",    category: "lighting",  x: 76,  y: 262, z: 4, removable: true, value: 22,
+      check: "Red, articulated, dramatic. It has supervised every all-nighter." },
+    { id: "computer",        name: "Computer",         category: "furniture", x: 150, y: 264, z: 4, removable: true, value: 60,
+      check: "Still runs. The fan sounds like it's trying its best." },
+    { id: "desk_clutter",    name: "Desk Clutter",     category: "decor",     x: 210, y: 300, z: 4, removable: true, value: 10,
+      check: "An open notebook, a dead pen, and a mug that never made it back to the kitchen." },
+    { id: "office_chair",    name: "Office Chair",     category: "furniture", x: 310, y: 410, z: 4, removable: true, value: 35,
+      check: "Molded to exactly one spine: yours." },
+    { id: "storage_bin",     name: "Storage Tote",     category: "decor",     x: 480, y: 470, z: 3, removable: true, value: 6,
+      check: "Labeled “MISC” — which was ambitious." },
+    { id: "waste_bin",       name: "Wastebasket",      category: "decor",     x: 590, y: 520, z: 4, removable: true, value: 3,
+      check: "Contains at least three drafts of the same letter." },
+    { id: "side_cabinet",    name: "Side Cabinet",     category: "furniture", x: 700, y: 350, z: 3, removable: true, value: 30,
+      check: "Short cabinet, tall responsibilities: plant, books, one dramatic vase." },
+  ],
+};
 
 /* object state is keyed per-room so an id reused across rooms can never collide */
 const sk = (roomId, id) => `${roomId}:${id}`;
@@ -827,7 +1313,7 @@ export default function PackItUp() {
     if (extCells <= 180) return rm.drawShell;
     const key = `${rm.id}:${extCells}`;
     if (!shellDrawCache.current[key]) {
-      const extend = rm.floorKind === "tile" ? extendFloorTile : extendFloorPlank;
+      const extend = { tile: extendFloorTile, bathtile: extendFloorBathTile }[rm.floorKind] || extendFloorPlank;
       shellDrawCache.current[key] = (ctx) => { rm.drawShell(ctx); extend(ctx, extCells); };
     }
     return shellDrawCache.current[key];
