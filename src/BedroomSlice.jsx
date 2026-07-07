@@ -449,7 +449,7 @@ export default function PackItUp() {
   const [scale, setScale] = useState(1);
   const [sellFormOpen, setSellFormOpen] = useState(false);
   const [sellAmount, setSellAmount] = useState("");
-  const [lastAction, setLastAction] = useState(null); // single-step undo record
+  const [undoStack, setUndoStack] = useState([]); // undo history, most recent last
   const wrapRef = useRef(null);
 
   useEffect(() => {
@@ -485,7 +485,7 @@ export default function PackItUp() {
     setPackingId(id);
     setTimeout(() => {
       setObjState((s) => ({ ...s, [id]: { ...s[id], packed: true } }));
-      setLastAction({ id, prevPacked: prev.packed, prevSold: prev.sold, prevSoldFor: prev.soldFor, coinsDelta: 0, minutesDelta: 10 });
+      setUndoStack((stack) => [...stack, { id, prevPacked: prev.packed, prevSold: prev.sold, prevSoldFor: prev.soldFor, coinsDelta: 0, minutesDelta: 10 }]);
       setPackingId(null);
       setSelectedId(null);
       setMinutes((m) => m + 10);
@@ -502,7 +502,7 @@ export default function PackItUp() {
     setTimeout(() => {
       setObjState((s) => ({ ...s, [id]: { ...s[id], sold: true, soldFor: credit } }));
       setCoins((c) => c + credit);
-      setLastAction({ id, prevPacked: prev.packed, prevSold: prev.sold, prevSoldFor: prev.soldFor, coinsDelta: credit, minutesDelta: 5 });
+      setUndoStack((stack) => [...stack, { id, prevPacked: prev.packed, prevSold: prev.sold, prevSoldFor: prev.soldFor, coinsDelta: credit, minutesDelta: 5 }]);
       setSellingId(null);
       setSelectedId(null);
       setMinutes((m) => m + 5);
@@ -511,24 +511,24 @@ export default function PackItUp() {
 
   const unpackObject = (id) => {
     const prev = objState[id];
-    setLastAction({ id, prevPacked: prev.packed, prevSold: prev.sold, prevSoldFor: prev.soldFor, coinsDelta: 0, minutesDelta: 0 });
+    setUndoStack((stack) => [...stack, { id, prevPacked: prev.packed, prevSold: prev.sold, prevSoldFor: prev.soldFor, coinsDelta: 0, minutesDelta: 0 }]);
     setObjState((s) => ({ ...s, [id]: { ...s[id], packed: false } }));
   };
 
   const unsellObject = (id) => {
     const prev = objState[id];
     setCoins((c) => c - (prev.soldFor || 0));
-    setLastAction({ id, prevPacked: prev.packed, prevSold: prev.sold, prevSoldFor: prev.soldFor, coinsDelta: -(prev.soldFor || 0), minutesDelta: 0 });
+    setUndoStack((stack) => [...stack, { id, prevPacked: prev.packed, prevSold: prev.sold, prevSoldFor: prev.soldFor, coinsDelta: -(prev.soldFor || 0), minutesDelta: 0 }]);
     setObjState((s) => ({ ...s, [id]: { ...s[id], sold: false, soldFor: 0 } }));
   };
 
   const undoLast = () => {
-    if (!lastAction) return;
-    const { id, prevPacked, prevSold, prevSoldFor, coinsDelta, minutesDelta } = lastAction;
+    if (undoStack.length === 0) return;
+    const { id, prevPacked, prevSold, prevSoldFor, coinsDelta, minutesDelta } = undoStack[undoStack.length - 1];
     setObjState((s) => ({ ...s, [id]: { ...s[id], packed: prevPacked, sold: prevSold, soldFor: prevSoldFor } }));
     setCoins((c) => c - coinsDelta);
     setMinutes((m) => m - minutesDelta);
-    setLastAction(null);
+    setUndoStack((stack) => stack.slice(0, -1));
   };
 
   /* hotkeys: X pack · Z check(select) · Tab inventory · Esc close */
@@ -559,7 +559,7 @@ export default function PackItUp() {
   const selected = room.objects.find((o) => o.id === selectedId) || null;
   const packedList = removable.filter((o) => objState[o.id].packed);
   const soldList = removable.filter((o) => objState[o.id].sold);
-  const lastActionObj = lastAction && room.objects.find((o) => o.id === lastAction.id);
+  const lastUndoObj = undoStack.length > 0 && room.objects.find((o) => o.id === undoStack[undoStack.length - 1].id);
 
   const ui = {
     frame: { background: "#241509", border: "3px solid #120A04", boxShadow: "inset 0 0 0 2px #4A2E17, 0 3px 0 #000" },
@@ -666,14 +666,14 @@ export default function PackItUp() {
           <div style={{ position: "absolute", right: 14, top: 12, display: "flex", gap: 8, zIndex: 200 }}>
             <button
               onClick={undoLast}
-              disabled={!lastAction}
-              title={lastActionObj ? `Undo: ${lastActionObj.name}` : "Nothing to undo"}
+              disabled={undoStack.length === 0}
+              title={lastUndoObj ? `Undo: ${lastUndoObj.name}` : "Nothing to undo"}
               style={{
-                padding: "6px 12px", fontSize: 14, cursor: lastAction ? "pointer" : "default",
-                color: lastAction ? "#F2E4C0" : "#6B563B", ...ui.frame, ...ui.label,
+                padding: "6px 12px", fontSize: 14, cursor: undoStack.length ? "pointer" : "default",
+                color: undoStack.length ? "#F2E4C0" : "#6B563B", ...ui.frame, ...ui.label,
               }}
             >
-              ↺ Undo{lastActionObj ? ` ${lastActionObj.name}` : ""}
+              ↺ Undo
             </button>
             <div style={{ padding: "8px 14px", color: "#F2E4C0", fontSize: 16, display: "flex", alignItems: "center", gap: 8, ...ui.frame, ...ui.label }}>
               <span style={{ width: 12, height: 12, background: P.gold, border: "2px solid #8A5E14", borderRadius: "50%", display: "inline-block" }} />
