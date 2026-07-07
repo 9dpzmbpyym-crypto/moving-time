@@ -600,29 +600,45 @@ function extendFloorBathTile(ctx, extH) {
 }
 
 const BATH_SPRITES = {
-  // lengthwise tub, seen top-down like the bed: head at top, drain at foot
+  // lengthwise tub at the bed's 3/4 angle: inside of the far wall (with the
+  // faucet) at top, basin interior in the middle, outer front panel + feet
+  // at the bottom
   bathtub: { w: 36, h: 62, draw(ctx) {
-    // rounded outer shell
-    r(ctx, P.out, 2, 0, 32, 62); r(ctx, P.out, 0, 2, 36, 58); r(ctx, P.out, 1, 1, 34, 60);
-    r(ctx, P.white, 3, 1, 30, 60); r(ctx, P.white, 1, 3, 34, 56); r(ctx, P.white, 2, 2, 32, 58);
-    r(ctx, "#FBF6E6", 3, 1, 30, 2); r(ctx, "#FBF6E6", 1, 4, 2, 18);
+    // far end: inside wall tilted toward the viewer
+    r(ctx, P.out, 2, 0, 32, 16); r(ctx, P.out, 0, 2, 36, 14);
+    r(ctx, P.white, 3, 1, 30, 14); r(ctx, P.white, 1, 3, 34, 12);
+    r(ctx, "#FBF6E6", 3, 1, 30, 3);
+    dith(ctx, P.whiteLo, 2, 9, 32, 6, 2, 0);
+    // faucet + taps mounted on that wall
+    r(ctx, P.out, 15, 4, 6, 9); r(ctx, "#B8AE96", 16, 5, 4, 7);
+    r(ctx, P.out, 16, 12, 4, 3); r(ctx, "#B8AE96", 17, 13, 2, 1);
+    r(ctx, P.out, 8, 5, 4, 4); r(ctx, "#B8AE96", 9, 6, 2, 2);
+    r(ctx, P.out, 24, 5, 4, 4); r(ctx, "#B8AE96", 25, 6, 2, 2);
+    // long side rims
+    r(ctx, P.out, 0, 14, 5, 32); r(ctx, P.white, 1, 15, 3, 31);
+    r(ctx, P.out, 31, 14, 5, 32); r(ctx, P.white, 32, 15, 3, 31);
     // basin interior
-    r(ctx, P.out, 5, 6, 26, 50);
-    r(ctx, P.whiteLo, 6, 7, 24, 48);
-    dith(ctx, P.white, 7, 8, 10, 44, 2, 0);
-    dith(ctx, "#C4BAA0", 20, 10, 9, 44, 2, 1);
-    r(ctx, "#C4BAA0", 6, 51, 24, 4);
-    // faucet at the head
-    r(ctx, P.out, 13, 0, 10, 5); r(ctx, "#B8AE96", 14, 1, 8, 3);
-    r(ctx, P.out, 16, 5, 4, 4); r(ctx, "#B8AE96", 17, 6, 2, 2);
-    // drain at the foot
-    r(ctx, P.out, 16, 44, 4, 4); r(ctx, "#B8AE96", 17, 45, 2, 2);
+    r(ctx, P.out, 4, 15, 28, 31);
+    r(ctx, P.whiteLo, 5, 16, 26, 29);
+    dith(ctx, P.white, 6, 17, 10, 26, 2, 0);
+    dith(ctx, "#C4BAA0", 22, 18, 8, 26, 2, 1);
+    r(ctx, "#C4BAA0", 5, 41, 26, 4);
+    r(ctx, P.out, 16, 36, 4, 4); r(ctx, "#B8AE96", 17, 37, 2, 2);  // drain
+    // near end: rolled rim, then the outer front panel
+    r(ctx, P.out, 0, 44, 36, 6);
+    r(ctx, P.white, 1, 45, 34, 4); r(ctx, "#FBF6E6", 1, 45, 34, 2);
+    r(ctx, P.out, 1, 50, 34, 8);
+    r(ctx, P.white, 2, 51, 32, 6);
+    dith(ctx, P.whiteLo, 20, 51, 14, 6, 2, 0);
+    r(ctx, P.whiteLo, 2, 55, 32, 2);
+    // feet
+    r(ctx, P.out, 4, 58, 6, 4); r(ctx, P.whiteLo, 5, 58, 4, 3);
+    r(ctx, P.out, 26, 58, 6, 4); r(ctx, P.whiteLo, 27, 58, 4, 3);
     // towel over the right rim
-    r(ctx, P.out, 27, 18, 9, 20);
-    r(ctx, P.cream, 28, 19, 7, 18);
-    r(ctx, P.creamLo, 28, 25, 7, 1); r(ctx, P.creamLo, 28, 31, 7, 1);
-    r(ctx, P.red, 28, 34, 7, 2);
-    for (let y = 20; y < 36; y += 3) r(ctx, P.creamLo, 34, y, 1, 1);
+    r(ctx, P.out, 29, 20, 8, 18);
+    r(ctx, P.cream, 30, 21, 6, 16);
+    r(ctx, P.creamLo, 30, 26, 6, 1); r(ctx, P.creamLo, 30, 31, 6, 1);
+    r(ctx, P.red, 30, 33, 6, 2);
   }},
 
   toilet: { w: 26, h: 38, draw(ctx) {
