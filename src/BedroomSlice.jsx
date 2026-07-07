@@ -382,10 +382,10 @@ const OFFICE_SPRITES = {
     r(ctx, P.out, 0, 0, 3, 6); r(ctx, P.out, 87, 0, 3, 6);
     const panel = (x) => {
       r(ctx, P.out, x, 4, 13, 64);
-      r(ctx, "#6B5B7A", x + 1, 5, 11, 62);
-      r(ctx, "#7D6C8E", x + 2, 5, 2, 62); r(ctx, "#7D6C8E", x + 7, 5, 1, 62);
-      r(ctx, "#574969", x + 5, 5, 1, 62); r(ctx, "#574969", x + 10, 5, 1, 62);
-      dith(ctx, "#574969", x + 1, 52, 11, 15, 2, 0);
+      r(ctx, "#3F5C46", x + 1, 5, 11, 62);
+      r(ctx, "#527455", x + 2, 5, 2, 62); r(ctx, "#527455", x + 7, 5, 1, 62);
+      r(ctx, "#2E4735", x + 5, 5, 1, 62); r(ctx, "#2E4735", x + 10, 5, 1, 62);
+      dith(ctx, "#2E4735", x + 1, 52, 11, 15, 2, 0);
     };
     panel(1); panel(76);
   }},
@@ -483,15 +483,11 @@ const OFFICE_SPRITES = {
   }},
 
   side_cabinet: { w: 48, h: 62, draw(ctx) {
-    // plant on top
-    r(ctx, P.green, 6, 2, 3, 8); r(ctx, P.greenHi, 10, 0, 3, 10); r(ctx, P.green, 14, 3, 3, 7);
-    r(ctx, P.greenLo, 3, 6, 3, 5);
-    r(ctx, P.out, 5, 10, 12, 8); r(ctx, P.terra, 6, 11, 10, 6); r(ctx, P.terraLo, 6, 15, 10, 2);
     // book stack
-    r(ctx, P.out, 22, 10, 12, 8);
-    r(ctx, P.burgundy, 23, 11, 10, 2); r(ctx, P.teal, 23, 13, 10, 2); r(ctx, "#B08A4A", 23, 15, 10, 2);
+    r(ctx, P.out, 2, 10, 12, 8);
+    r(ctx, P.burgundy, 3, 11, 10, 2); r(ctx, P.teal, 3, 13, 10, 2); r(ctx, "#B08A4A", 3, 15, 10, 2);
     // red vase
-    r(ctx, P.out, 39, 6, 6, 12); r(ctx, P.red, 40, 7, 4, 10); r(ctx, P.redHi, 40, 7, 1, 8);
+    r(ctx, P.out, 17, 6, 6, 12); r(ctx, P.red, 18, 7, 4, 10); r(ctx, P.redHi, 18, 7, 1, 8);
     // cabinet body
     r(ctx, P.out, 0, 18, 48, 40);
     r(ctx, P.woodHi, 1, 19, 46, 3);
@@ -955,12 +951,12 @@ ROOMS.office = {
       check: "An open notebook, a dead pen, and a mug that never made it back to the kitchen." },
     { id: "office_chair",    name: "Office Chair",     category: "furniture", x: 430, y: 386, z: 4, removable: true, value: 35,
       check: "Molded to exactly one spine: yours." },
-    { id: "storage_bin",     name: "Storage Tote",     category: "decor",     x: 590, y: 495, z: 3, removable: true, value: 6,
+    { id: "storage_bin",     name: "Storage Tote",     category: "decor",     x: 752, y: 288, z: 4, removable: true, value: 6,
       check: "Labeled “MISC” — which was ambitious." },
-    { id: "waste_bin",       name: "Wastebasket",      category: "decor",     x: 110, y: 500, z: 4, removable: true, value: 3,
-      check: "Contains at least three drafts of the same letter." },
-    { id: "side_cabinet",    name: "Side Cabinet",     category: "furniture", x: 700, y: 350, z: 3, removable: true, value: 30,
-      check: "Short cabinet, tall responsibilities: plant, books, one dramatic vase." },
+    { id: "waste_bin",       name: "Wastebasket",      category: "decor",     x: 600, y: 296, z: 4, removable: true, value: 3,
+      check: "Promoted to the desk for the move. Contains at least three drafts of the same letter." },
+    { id: "side_cabinet",    name: "Side Cabinet",     category: "furniture", x: 664, y: 288, z: 3, removable: true, value: 30,
+      check: "Short cabinet drafted into desk duty: books, one dramatic vase, and room for whatever's next." },
   ],
 };
 
