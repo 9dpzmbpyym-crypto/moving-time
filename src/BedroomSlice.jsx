@@ -443,15 +443,13 @@ function extendFloorTile(ctx, extH) {
 /* ceiling band for tall portrait stages: dark wood planks above the wall,
    pushing the room toward the vertical middle of the phone screen */
 function drawCeiling(ctx, h) {
+  // thin sun-washed plaster band, a couple tones darker than the wall
   const W = 240;
-  r(ctx, "#241407", 0, 0, W, h); // deep shadow, clearly not floor
-  for (let row = 0; row * 9 < h; row++) {
-    const y0 = row * 9;
-    r(ctx, "#1B0E04", 0, y0 + 8, W, 1);
-    dith(ctx, "#2E1A0C", 0, y0 + 2, W, 3, 7, row * 4);
-  }
-  r(ctx, "#4A2E17", 0, h - 3, W, 1); // lit beam edge above the wall
-  r(ctx, P.out, 0, h - 2, W, 2);
+  r(ctx, "#C7B28A", 0, 0, W, h);
+  dith(ctx, "#B49F78", 0, 0, W, h, 3, 0);
+  dith(ctx, "#D5C29B", 0, 0, W, 3, 2, 1);
+  r(ctx, "#8A754F", 0, h - 2, W, 1); // shadow where it meets the wall
+  r(ctx, P.out, 0, h - 1, W, 1);
 }
 
 /* ordered apartment strip: pan left/right through these */
@@ -947,8 +945,10 @@ export default function PackItUp() {
     const extCells = viewSize.h > 0
       ? Math.max(STAGE_H / CELL, Math.ceil((viewSize.h - 16) / stageScale / CELL))
       : STAGE_H / CELL;
-    // spend some of the extra height on ceiling so the room sits mid-screen
-    const ceilCells = Math.min(64, Math.max(0, Math.round((extCells - STAGE_H / CELL) * 0.3)));
+    // a thin ceiling band nudges the room down without eating the floor
+    const ceilCells = extCells > STAGE_H / CELL
+      ? Math.min(28, Math.max(10, Math.round((extCells - STAGE_H / CELL) * 0.14)))
+      : 0;
     const roomCells = extCells - ceilCells;
     const extPx = extCells * CELL;
     const stageW = Math.round(STAGE_W * stageScale);
@@ -1136,7 +1136,7 @@ export default function PackItUp() {
               className="panel"
               onClick={() => setSheetOpen(true)}
               style={{
-                position: "absolute", left: "50%", bottom: 8, transform: "translateX(-50%)", zIndex: 80,
+                position: "absolute", left: "50%", bottom: 130, transform: "translateX(-50%)", zIndex: 80,
                 padding: "9px 14px", color: "#FFD97A", fontSize: 13, whiteSpace: "nowrap", cursor: "pointer",
                 maxWidth: "88%", overflow: "hidden", textOverflow: "ellipsis", ...ui.frame, ...ui.label,
               }}
