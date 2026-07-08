@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import SAVED_LAYOUT from "./layout.json";
 // Sell sound: a real file in the repo (src/sell.mp3). Vite inlines it into the
 // bundle as a base64 data: URI at build time (forced via build.assetsInlineLimit
@@ -1553,7 +1553,11 @@ const CATEGORY_COLORS = {
    ============================================================ */
 function PixelCanvas({ w, h, draw, redrawKey, style }) {
   const ref = useRef(null);
-  useEffect(() => {
+  // useLayoutEffect (not useEffect) so the canvas is painted BEFORE the browser
+  // shows the frame — otherwise there's a blank frame where the <canvas> exists
+  // but hasn't been drawn yet, which reads as sprites/shell "popping in" a beat
+  // after a room switch.
+  useLayoutEffect(() => {
     const c = ref.current;
     if (!c) return;
     c.width = w; c.height = h;
@@ -1742,6 +1746,36 @@ const COIN_BURSTS = [
   { tx: 24,  ty: -56, d: 30 }, { tx: 56,  ty: -40, d: 120 },
 ];
 
+/* ---------- haptics ----------
+   Android (and most browsers) honor navigator.vibrate; iOS Safari ignores it
+   completely. So we ALSO fire the iOS trick: toggling a hidden <input switch>
+   (a Safari-only control) makes iOS play a light haptic tick — provided the
+   user has System Haptics on. We fire both every time: each platform responds
+   only to its own, and a device that supports neither simply feels nothing.
+   Calls happen inside tap/pointer handlers, i.e. within a user gesture, which
+   iOS requires for the tick. */
+let _iosHapticLabel = null;
+function iosHapticTick() {
+  if (typeof document === "undefined" || !document.body) return;
+  if (!_iosHapticLabel) {
+    const label = document.createElement("label");
+    label.setAttribute("aria-hidden", "true");
+    label.style.cssText = "position:absolute;width:0;height:0;opacity:0;pointer-events:none;overflow:hidden";
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.setAttribute("switch", ""); // Safari-only; this is what carries the haptic
+    label.appendChild(input);
+    document.body.appendChild(label);
+    _iosHapticLabel = label;
+  }
+  _iosHapticLabel.click(); // toggling fires the tick on iOS (either direction)
+}
+function haptic(pattern) {
+  try { if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(pattern); } catch {}
+  try { iosHapticTick(); } catch {}
+}
+const HAPTIC = { room: [10], pack: [20], sell: [15, 30, 15], donate: [12] };
+
 /* ============================================================
    APP
    ============================================================ */
@@ -1914,6 +1948,7 @@ export default function PackItUp() {
     const obj = room.objects.find((o) => o.id === id);
     if (!obj || !obj.removable || objState[k].packed || objState[k].sold || objState[k].donated || busy) return;
     const prev = objState[k];
+    haptic(HAPTIC.pack);
     setPackingId(id);
     setTimeout(() => {
       setObjState((s) => ({ ...s, [k]: { ...s[k], packed: true } }));
@@ -1936,6 +1971,7 @@ export default function PackItUp() {
     // doesn't cut it short
     setSellFx({ roomId: room.id, x: obj.x + (spr.w * CELL) / 2, y: obj.y + (spr.h * CELL) / 2, amount: credit });
     setTimeout(() => setSellFx(null), 1000);
+    haptic(HAPTIC.sell);
     playSellSound();
     setTimeout(() => {
       setObjState((s) => ({ ...s, [k]: { ...s[k], sold: true, soldFor: credit } }));
@@ -1952,6 +1988,7 @@ export default function PackItUp() {
     const obj = room.objects.find((o) => o.id === id);
     if (!obj || !obj.removable || objState[k].packed || objState[k].sold || objState[k].donated || busy) return;
     const prev = objState[k];
+    haptic(HAPTIC.donate);
     setDonatingId(id);
     setTimeout(() => {
       setObjState((s) => ({ ...s, [k]: { ...s[k], donated: true } }));
@@ -2043,6 +2080,11 @@ export default function PackItUp() {
   const styleTag = (
     <style>{`
       @keyframes packAway { to { transform: scale(0.05) translate(-40%, 60%); opacity: 0; } }
+      @keyframes packToBox {
+        0%   { transform: translate(0px, 0px) scale(var(--pscale, 1)); opacity: 1; }
+        30%  { transform: translate(calc(var(--pdx) * 0.25), calc(var(--pdy) * 0.25 - 40px)) scale(calc(var(--pscale, 1) * 0.82)); opacity: 1; }
+        100% { transform: translate(var(--pdx), var(--pdy)) scale(0.12); opacity: 0; }
+      }
       @keyframes popIn { from { transform: scale(0.6); opacity: 0; } }
       @keyframes bounce { 0%,100% { transform: translateY(0);} 50% { transform: translateY(-3px);} }
       @keyframes coinBurst {
@@ -2061,7 +2103,8 @@ export default function PackItUp() {
       .obj { cursor: pointer; transition: filter 120ms; }
       .obj:hover, .obj.sel { filter: drop-shadow(0 0 0 #FFD97A) drop-shadow(2px 0 0 #FFD97A) drop-shadow(-2px 0 0 #FFD97A) drop-shadow(0 2px 0 #FFD97A) drop-shadow(0 -2px 0 #FFD97A) brightness(1.06); }
       .obj.static { cursor: help; }
-      .obj.packing { animation: packAway 0.5s ease-in forwards; }
+      .obj.packing { animation: packToBox 0.52s cubic-bezier(0.4, 0, 0.7, 1) forwards; }
+      .obj.removing { animation: packAway 0.5s ease-in forwards; }
       .panel { animation: popIn 140ms ease-out; }
       .coin { animation: coinBurst 0.8s cubic-bezier(0.3, 0.4, 0.7, 1) both; }
       .sellAmt { animation: sellAmt 0.9s ease-out both; }
@@ -2110,18 +2153,20 @@ export default function PackItUp() {
           const placed = SAVED_LAYOUT[rm.id]?.[o.id] || o;
           const isCur = rm.id === room.id;
           const isSel = isCur && selectedId === o.id;
-          const isBusy = isCur && (packingId === o.id || sellingId === o.id || donatingId === o.id);
+          const isPacking = isCur && packingId === o.id;
+          const isRemoving = isCur && (sellingId === o.id || donatingId === o.id);
+          const isBusy = isPacking || isRemoving;
           if (rm.id === "dining" && o.id === "dining_chairs" && placed.parts) {
             const p = placed.parts;
             const common = { position: "absolute", left: placed.x, top: placed.y, transform: `scale(${placed.scale || 1})`, transformOrigin: "top left" };
             const click = (e) => { e.stopPropagation(); setSelectedId(o.id); };
             return <div key={o.id}>
-              <div className={`obj ${isSel ? "sel" : ""}`} onClick={click} style={{ ...common, zIndex: 30, width: spr.w * CELL, height: spr.h * CELL }}>
+              <div className={`obj ${isSel ? "sel" : ""} ${isBusy ? "removing" : ""}`} onClick={click} style={{ ...common, zIndex: 30, width: spr.w * CELL, height: spr.h * CELL }}>
                 <div style={{ position: "absolute", left: p.sides.x * CELL, top: p.sides.y * CELL, transform: `scale(${p.sides.scaleX},${p.sides.scaleY})`, transformOrigin: "top left" }}>
                   <PixelCanvas w={96} h={58} draw={drawDiningChairSides} />
                 </div>
               </div>
-              <div className={`obj ${isSel ? "sel" : ""}`} onClick={click} style={{ ...common, zIndex: 50, width: spr.w * CELL, height: spr.h * CELL }}>
+              <div className={`obj ${isSel ? "sel" : ""} ${isBusy ? "removing" : ""}`} onClick={click} style={{ ...common, zIndex: 50, width: spr.w * CELL, height: spr.h * CELL }}>
                 <div style={{ position: "absolute", left: p.cushion.x * CELL, top: p.cushion.y * CELL, transform: `scale(${p.cushion.scaleX},${p.cushion.scaleY})`, transformOrigin: "top left" }}>
                   <PixelCanvas w={30} h={9} draw={drawDiningFrontCushion} />
                 </div>
@@ -2131,11 +2176,21 @@ export default function PackItUp() {
               </div>
             </div>;
           }
+          // pack-to-box: fly the sprite into the box stack near the door as it
+          // shrinks. Deltas are stage px from the sprite's top-left to the pile
+          // (~120,650); it lands as a speck on the boxes. Sell/donate just shrink
+          // in place (`removing`) — only packing goes to the box.
+          const packSc = placed.scale || 1;
+          const packVars = isPacking ? {
+            "--pdx": `${120 - placed.x}px`,
+            "--pdy": `${650 - placed.y}px`,
+            "--pscale": packSc,
+          } : null;
           return (
             <div
               key={o.id}
-              className={`obj ${isSel ? "sel" : ""} ${isBusy ? "packing" : ""} ${o.removable ? "" : "static"}`}
-              style={{ position: "absolute", left: placed.x, top: placed.y, zIndex: o.z * 10, transform: `scale(${placed.scale || 1})`, transformOrigin: "top left" }}
+              className={`obj ${isSel ? "sel" : ""} ${isPacking ? "packing" : ""} ${isRemoving ? "removing" : ""} ${o.removable ? "" : "static"}`}
+              style={{ position: "absolute", left: placed.x, top: placed.y, zIndex: o.z * 10, transform: `scale(${placed.scale || 1})`, transformOrigin: "top left", ...packVars }}
               onClick={(e) => { e.stopPropagation(); setSelectedId(o.id); }}
               onMouseEnter={() => setHoverId(o.id)}
               onMouseLeave={() => setHoverId((h) => (h === o.id ? null : h))}
@@ -2262,9 +2317,11 @@ export default function PackItUp() {
         setTimeout(() => { suppressClickRef.current = false; }, 80);
         const threshold = Math.max(60, viewSize.w * 0.18);
         setRoomIndex((i) => {
-          if (dragX <= -threshold) return Math.min(N - 1, i + 1);
-          if (dragX >= threshold) return Math.max(0, i - 1);
-          return i;
+          let next = i;
+          if (dragX <= -threshold) next = Math.min(N - 1, i + 1);
+          else if (dragX >= threshold) next = Math.max(0, i - 1);
+          if (next !== i) haptic(HAPTIC.room);
+          return next;
         });
       }
       setDragging(false);
@@ -2273,7 +2330,7 @@ export default function PackItUp() {
 
     const arrowBtn = (dir, target) => target && (
       <button
-        onClick={() => setRoomIndex((i) => i + dir)}
+        onClick={() => { haptic(HAPTIC.room); setRoomIndex((i) => i + dir); }}
         style={{
           position: "absolute", top: 12, [dir < 0 ? "left" : "right"]: 14, zIndex: 60,
           width: 54, minHeight: 48, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -2376,7 +2433,14 @@ export default function PackItUp() {
             transform: `translateX(calc(${-roomIndex * (100 / N)}% + ${dragX}px))`,
             transition: dragging ? "none" : "transform 300ms cubic-bezier(0.22, 1, 0.36, 1)",
           }}>
-            {ROOMS_ORDER.map((rid, i) => (
+            {ROOMS_ORDER.map((rid, i) => {
+              // Only draw the current room and its immediate neighbors. A gesture
+              // or arrow only ever moves one room, so the destination is always
+              // already painted — the room you land on never assembles late. The
+              // frame + vignette below always render, so the doorway is present
+              // instantly even for not-yet-drawn rooms.
+              const near = Math.abs(i - roomIndex) <= 1;
+              return (
               <div key={rid} style={{
                 width: `${100 / N}%`, flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center",
                 pointerEvents: i === roomIndex ? "auto" : "none",
@@ -2384,19 +2448,21 @@ export default function PackItUp() {
                 {/* doorway frame: outward wood jambs painted OUTSIDE the room box,
                     so they can never cover furniture */}
                 <div style={{
-                  position: "relative", width: frameW, height: stageH, overflow: "hidden",
+                  position: "relative", width: frameW, height: stageH, overflow: "hidden", contain: "paint",
                   boxShadow: "0 0 0 6px #3E2413, 0 0 0 10px #120A04, 0 0 0 13px #4A2E17, 0 16px 34px rgba(0,0,0,0.65)",
                 }}>
-                  <div style={{ width: STAGE_W, height: extPx, transform: `translateX(${-cropX}px) scale(${stageScale})`, transformOrigin: "top left", position: "relative" }}>
-                    {ceilCells > 0 && (
-                      <div style={{ position: "absolute", top: 0, left: 0 }}>
-                        <PixelCanvas w={240} h={ceilCells} draw={getCeilingDraw(ROOMS[rid], ceilCells)} redrawKey={ceilCells} />
+                  {near && (
+                    <div style={{ width: STAGE_W, height: extPx, transform: `translateX(${-cropX}px) scale(${stageScale})`, transformOrigin: "top left", position: "relative" }}>
+                      {ceilCells > 0 && (
+                        <div style={{ position: "absolute", top: 0, left: 0 }}>
+                          <PixelCanvas w={240} h={ceilCells} draw={getCeilingDraw(ROOMS[rid], ceilCells)} redrawKey={ceilCells} />
+                        </div>
+                      )}
+                      <div style={{ position: "absolute", top: ceilCells * CELL, left: 0, right: 0, bottom: 0 }}>
+                        {roomArt(ROOMS[rid], roomCells)}
                       </div>
-                    )}
-                    <div style={{ position: "absolute", top: ceilCells * CELL, left: 0, right: 0, bottom: 0 }}>
-                      {roomArt(ROOMS[rid], roomCells)}
                     </div>
-                  </div>
+                  )}
                   {/* looking-through-an-opening vignette: smooth fade at the very
                       edges only, pointer-transparent */}
                   <div style={{
@@ -2405,7 +2471,8 @@ export default function PackItUp() {
                   }} />
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* nav arrows over the room's top corners (bare wall there) */}
