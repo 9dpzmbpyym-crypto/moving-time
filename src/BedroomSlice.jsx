@@ -1367,11 +1367,11 @@ const LIVING_OBJECTS = [
    Geometry lives in constants so the pack-to-box fly animation can aim at the
    exact slot the incoming item lands in. Bigger boxes than before, and the pile
    grows one box per packed item (a widening pyramid) up to BOX_MAX. */
-const BOX_ORIGIN = { x: 56, y: 500 };   // stage px: top-left of the pile canvas
-const BOX_CW = 66, BOX_CH = 52;         // pile canvas size, cells
-const BOX_W = 20, BOX_H = 16;           // one box, cells
+const BOX_ORIGIN = { x: 26, y: 440 };   // stage px: top-left of the pile canvas
+const BOX_CW = 124, BOX_CH = 72;        // pile canvas size, cells
+const BOX_W = 34, BOX_H = 26;           // one box, cells (~2x the old boxes)
 // fill order: bottom row L→R, then middle row, then apex
-const BOX_SLOTS = [[2, 34], [23, 34], [44, 34], [12, 18], [33, 18], [23, 4]];
+const BOX_SLOTS = [[16, 42], [50, 42], [84, 42], [33, 23], [67, 23], [50, 4]];
 const BOX_MAX = BOX_SLOTS.length;
 const boxSlotCenter = (i) => {
   const [sx, sy] = BOX_SLOTS[Math.min(Math.max(i, 0), BOX_MAX - 1)];
@@ -1380,34 +1380,42 @@ const boxSlotCenter = (i) => {
 
 function drawBoxes(ctx, count, openIdx = -1) {
   ctx.clearRect(0, 0, BOX_CW, BOX_CH);
+  const midX = Math.floor(BOX_W / 2);
   const closed = (x, y) => {
     r(ctx, P.out, x, y, BOX_W, BOX_H);
     r(ctx, P.card, x + 1, y + 1, BOX_W - 2, BOX_H - 2);
-    r(ctx, P.cardHi, x + 1, y + 1, BOX_W - 2, 3);              // lit top edge
-    dith(ctx, P.cardLo, x + 11, y + 4, 8, BOX_H - 6, 2, 0);    // right-side shade
-    r(ctx, P.cardLo, x + 1, y + 8, BOX_W - 2, 1);              // flap seam
-    r(ctx, P.out, x + 1, y + BOX_H - 3, BOX_W - 2, 1);         // base shadow
-    r(ctx, "#EBDDBE", x + 8, y + 1, 4, BOX_H - 2);             // vertical tape
-    r(ctx, "#D9C79E", x + 1, y + 7, BOX_W - 2, 2);             // horizontal tape
+    r(ctx, P.cardHi, x + 1, y + 1, BOX_W - 2, 4);                       // lit top
+    dith(ctx, P.cardLo, x + midX, y + 5, BOX_W - midX - 1, BOX_H - 8, 2, 0); // right shade
+    r(ctx, P.out, x + 1, y + midX - 1, BOX_W - 2, 1);                   // closed-flap seam
+    r(ctx, P.out, x + 1, y + BOX_H - 4, BOX_W - 2, 1);                  // base shadow
+    r(ctx, "#EBDDBE", x + midX - 2, y + 1, 5, BOX_H - 2);               // vertical tape
+    r(ctx, "#D9C79E", x + 1, y + midX - 3, BOX_W - 2, 3);               // horizontal tape
   };
   const open = (x, y) => {
-    // shorter body, top is open
-    r(ctx, P.out, x, y + 4, BOX_W, BOX_H - 4);
-    r(ctx, P.card, x + 1, y + 5, BOX_W - 2, BOX_H - 6);
-    dith(ctx, P.cardLo, x + 11, y + 6, 8, BOX_H - 9, 2, 0);
-    r(ctx, P.cardLo, x + 1, y + BOX_H - 3, BOX_W - 2, 1);
+    const top = y + 6;                          // mouth line; flaps hinge here
+    r(ctx, P.out, x, top, BOX_W, BOX_H - 6);    // body (top is open)
+    r(ctx, P.card, x + 1, top + 1, BOX_W - 2, BOX_H - 8);
+    dith(ctx, P.cardLo, x + midX, top + 2, BOX_W - midX - 1, BOX_H - 10, 2, 0);
+    r(ctx, P.out, x + 1, y + BOX_H - 4, BOX_W - 2, 1);
     // dark interior mouth
-    r(ctx, "#2A1A0C", x + 2, y + 5, BOX_W - 4, 4);
-    r(ctx, "#160D06", x + 2, y + 5, BOX_W - 4, 2);
-    // two flaps opened up and out
-    const flap = (fx) => {
-      r(ctx, P.out, fx, y - 3, 8, 8);
-      r(ctx, P.card, fx + 1, y - 2, 6, 6);
-      r(ctx, P.cardHi, fx + 1, y - 2, 6, 2);
-      r(ctx, P.cardLo, fx + 1, y + 2, 6, 2);
+    r(ctx, "#2A1A0C", x + 2, top, BOX_W - 4, 5);
+    r(ctx, "#160D06", x + 2, top + 1, BOX_W - 4, 3);
+    r(ctx, "#5A3A1E", x + 2, top, BOX_W - 4, 1);                        // lit front rim
+    // hinged flaps: rooted at the two mouth corners, angled up and outward
+    const flap = (hx, dir) => {
+      const len = Math.round(BOX_W * 0.5), th = 5;
+      for (let k = 0; k <= len; k++) {
+        const cx = hx + dir * k;
+        const cy = top - Math.round(k * 0.85);   // rises as it swings outward
+        r(ctx, P.out, cx, cy - th, 1, th + 1);
+        r(ctx, P.card, cx, cy - th + 1, 1, th - 1);
+        r(ctx, P.cardHi, cx, cy - th + 1, 1, 1); // lit outer face
+        r(ctx, P.cardLo, cx, cy - 1, 1, 1);      // shaded inner face
+      }
+      r(ctx, P.out, hx, top - th, 1, th + 2);    // hinge seam at the corner
     };
-    flap(x - 2);             // left flap
-    flap(x + BOX_W - 6);     // right flap
+    flap(x + 1, -1);              // left flap swings left-up
+    flap(x + BOX_W - 2, +1);      // right flap swings right-up
   };
   for (let i = 0; i < Math.min(count, BOX_MAX); i++) closed(BOX_SLOTS[i][0], BOX_SLOTS[i][1]);
   if (openIdx >= 0 && openIdx < BOX_MAX) open(BOX_SLOTS[openIdx][0], BOX_SLOTS[openIdx][1]);
@@ -1940,6 +1948,12 @@ export default function PackItUp() {
     const ctx = audioCtxRef.current;
     const buf = sellBufferRef.current;
     if (!ctx || !buf) return;
+    // Re-assert playback session + resume RIGHT before playing: iOS doesn't
+    // reliably keep the "playback" category (which is what lets the sound play
+    // through the mute switch) between taps, and can leave the context suspended.
+    // Sell fires from a tap, so we're in a user gesture here.
+    try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}
+    if (ctx.state === "suspended") ctx.resume().catch(() => {});
     const src = ctx.createBufferSource();
     src.buffer = buf;
     src.connect(ctx.destination);
@@ -2479,15 +2493,15 @@ export default function PackItUp() {
             position: "absolute", top: 0, bottom: 0, left: 0, width: `${N * 100}%`, display: "flex",
             transform: `translateX(calc(${-roomIndex * (100 / N)}% + ${dragX}px))`,
             transition: dragging ? "none" : "transform 300ms cubic-bezier(0.22, 1, 0.36, 1)",
-            willChange: "transform",
           }}>
             {ROOMS_ORDER.map((rid, i) => {
-              // Draw the current room plus two rooms out in each direction, so a
-              // far room (e.g. the kitchen, 4 deep) starts rasterizing well before
-              // you swipe to it instead of assembling on arrival. The frame +
-              // vignette below always render, so the doorway is present instantly
-              // even for rooms not yet drawn.
-              const near = Math.abs(i - roomIndex) <= 2;
+              // Every room is rendered and painted up front (drawn synchronously via
+              // useLayoutEffect in PixelCanvas). We deliberately do NOT window the
+              // rooms or promote them with will-change: both caused a flash on the
+              // snap — windowing mounts/unmounts a room the instant you release, and
+              // will-change re-rasterizes the layer as the transform animates. With
+              // all rooms static and unpromoted, the snap is just a translate of an
+              // already-painted strip, so nothing pops out.
               return (
               <div key={rid} style={{
                 width: `${100 / N}%`, flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center",
@@ -2499,24 +2513,16 @@ export default function PackItUp() {
                   position: "relative", width: frameW, height: stageH, overflow: "hidden",
                   boxShadow: "0 0 0 6px #3E2413, 0 0 0 10px #120A04, 0 0 0 13px #4A2E17, 0 16px 34px rgba(0,0,0,0.65)",
                 }}>
-                  {near && (
-                    // willChange promotes each visible room to its own GPU layer so
-                    // it rasterizes as ONE unit up front, instead of the compositor
-                    // filling in right-side tiles late as the room slides in (the
-                    // "right-side pop-in"). Only the ±1 rooms mount this, so it's at
-                    // most 3 layers. (No `contain: paint` on the frame — that let the
-                    // browser skip rasterizing off-screen rooms, feeding the pop-in.)
-                    <div style={{ width: STAGE_W, height: extPx, transform: `translateX(${-cropX}px) scale(${stageScale})`, transformOrigin: "top left", position: "relative", willChange: "transform" }}>
-                      {ceilCells > 0 && (
-                        <div style={{ position: "absolute", top: 0, left: 0 }}>
-                          <PixelCanvas w={240} h={ceilCells} draw={getCeilingDraw(ROOMS[rid], ceilCells)} redrawKey={ceilCells} />
-                        </div>
-                      )}
-                      <div style={{ position: "absolute", top: ceilCells * CELL, left: 0, right: 0, bottom: 0 }}>
-                        {roomArt(ROOMS[rid], roomCells)}
+                  <div style={{ width: STAGE_W, height: extPx, transform: `translateX(${-cropX}px) scale(${stageScale})`, transformOrigin: "top left", position: "relative" }}>
+                    {ceilCells > 0 && (
+                      <div style={{ position: "absolute", top: 0, left: 0 }}>
+                        <PixelCanvas w={240} h={ceilCells} draw={getCeilingDraw(ROOMS[rid], ceilCells)} redrawKey={ceilCells} />
                       </div>
+                    )}
+                    <div style={{ position: "absolute", top: ceilCells * CELL, left: 0, right: 0, bottom: 0 }}>
+                      {roomArt(ROOMS[rid], roomCells)}
                     </div>
-                  )}
+                  </div>
                   {/* looking-through-an-opening vignette: smooth fade at the very
                       edges only, pointer-transparent */}
                   <div style={{
