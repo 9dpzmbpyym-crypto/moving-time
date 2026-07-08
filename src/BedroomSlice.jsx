@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import SAVED_LAYOUT from "./layout.json";
 
 /* ============================================================
    PACK IT UP — vertical slice: The Bedroom
@@ -779,37 +780,37 @@ function drawKitchenShell(ctx) {
     }
 
   // back door on the left (towel hangs on it as a separate object)
-  r(ctx, P.out, 8, 10, 28, 102);
-  r(ctx, P.cream, 9, 11, 26, 100);
-  r(ctx, P.creamLo, 9, 11, 26, 2);
-  r(ctx, P.creamLo, 12, 50, 20, 1);
-  r(ctx, P.creamLo, 12, 80, 20, 1);
-  r(ctx, P.out, 14, 16, 16, 24);
-  r(ctx, "#BFD8CC", 15, 17, 14, 22);
-  r(ctx, P.out, 21, 17, 2, 22);
-  r(ctx, P.out, 15, 27, 14, 2);
-  r(ctx, P.gold, 30, 56, 2, 4);
-  r(ctx, P.out, 30, 60, 2, 1);
+  r(ctx, P.out, 22, 10, 28, 102);
+  r(ctx, P.cream, 23, 11, 26, 100);
+  r(ctx, P.creamLo, 23, 11, 26, 2);
+  r(ctx, P.creamLo, 26, 50, 20, 1);
+  r(ctx, P.creamLo, 26, 80, 20, 1);
+  r(ctx, P.out, 28, 16, 16, 24);
+  r(ctx, "#BFD8CC", 29, 17, 14, 22);
+  r(ctx, P.out, 35, 17, 2, 22);
+  r(ctx, P.out, 29, 27, 14, 2);
+  r(ctx, P.gold, 44, 56, 2, 4);
+  r(ctx, P.out, 44, 60, 2, 1);
 
   // green tile backsplash: window sill down to the counter line
-  r(ctx, "#6FA482", 46, 58, 104, 20);
-  r(ctx, "#7FB596", 46, 58, 104, 2);
+  r(ctx, "#6FA482", 50, 58, 128, 20);
+  r(ctx, "#7FB596", 50, 58, 128, 2);
   for (let ty = 58; ty < 78; ty += 10)
-    for (let tx = 46; tx < 150; tx += 10) {
+    for (let tx = 50; tx < 178; tx += 10) {
       r(ctx, "#4E7E5E", tx, ty, 10, 1);
       r(ctx, "#4E7E5E", tx, ty, 1, 10);
     }
 
   // window over the sink, blinds half-drawn
-  r(ctx, P.out, 92, 14, 56, 50);
-  r(ctx, P.cream, 94, 16, 52, 46);
-  r(ctx, "#BFD8CC", 98, 20, 44, 40);
-  for (let by = 21; by < 39; by += 3) r(ctx, P.glassHi, 98, by, 44, 1);
-  r(ctx, P.glassLo, 98, 39, 44, 1);
-  r(ctx, P.cream, 118, 20, 4, 40);
-  r(ctx, P.creamLo, 98, 44, 44, 2);
-  r(ctx, P.out, 90, 64, 60, 1);
-  r(ctx, P.creamLo, 90, 65, 60, 4);
+  r(ctx, P.out, 104, 14, 56, 50);
+  r(ctx, P.cream, 106, 16, 52, 46);
+  r(ctx, "#BFD8CC", 110, 20, 44, 40);
+  for (let by = 21; by < 39; by += 3) r(ctx, P.glassHi, 110, by, 44, 1);
+  r(ctx, P.glassLo, 110, 39, 44, 1);
+  r(ctx, P.cream, 130, 20, 4, 40);
+  r(ctx, P.creamLo, 110, 44, 44, 2);
+  r(ctx, P.out, 102, 64, 60, 1);
+  r(ctx, P.creamLo, 102, 65, 60, 4);
 
   dith(ctx, wallShade, 0, 0, 26, 112, 2, 0);
   dith(ctx, wallShade, 218, 0, 22, 112, 2, 1);
@@ -835,28 +836,28 @@ const KITCHEN_SPRITES = {
     r(ctx, P.out, 1, 38, 28, 1);
     r(ctx, P.whiteLo, 1, 39, 28, 4);
   }},
-  counter_sink: { w: 60, h: 44, draw(ctx) {
+  counter_sink: { w: 80, h: 44, draw(ctx) {
     // faucet rising above the counter
-    r(ctx, P.out, 27, 0, 2, 6); r(ctx, "#B8AE96", 27, 1, 1, 5);
-    r(ctx, P.out, 27, 0, 8, 2); r(ctx, "#B8AE96", 28, 0, 6, 1);
-    r(ctx, P.out, 34, 2, 1, 2);
+    r(ctx, P.out, 39, 0, 2, 6); r(ctx, "#B8AE96", 39, 1, 1, 5);
+    r(ctx, P.out, 39, 0, 8, 2); r(ctx, "#B8AE96", 40, 0, 6, 1);
+    r(ctx, P.out, 46, 2, 1, 2);
     // yellow tiled countertop
-    r(ctx, P.out, 0, 6, 60, 9);
-    r(ctx, "#E3C25E", 1, 7, 58, 4); r(ctx, "#EFD98A", 1, 7, 58, 1);
-    r(ctx, "#C9A63E", 1, 11, 58, 3);
-    for (let x = 9; x < 59; x += 8) r(ctx, "#A8862E", x, 7, 1, 7);
+    r(ctx, P.out, 0, 6, 80, 9);
+    r(ctx, "#E3C25E", 1, 7, 78, 4); r(ctx, "#EFD98A", 1, 7, 78, 1);
+    r(ctx, "#C9A63E", 1, 11, 78, 3);
+    for (let x = 9; x < 79; x += 8) r(ctx, "#A8862E", x, 7, 1, 7);
     // sink basin inset
-    r(ctx, P.out, 19, 7, 22, 7);
-    r(ctx, P.white, 20, 8, 20, 5); r(ctx, P.whiteLo, 20, 11, 20, 2);
+    r(ctx, P.out, 31, 7, 22, 7);
+    r(ctx, P.white, 32, 8, 20, 5); r(ctx, P.whiteLo, 32, 11, 20, 2);
     // cabinet run
-    r(ctx, P.out, 1, 15, 58, 25);
-    r(ctx, P.white, 2, 16, 56, 22);
+    r(ctx, P.out, 1, 15, 78, 25);
+    r(ctx, P.white, 2, 16, 76, 22);
     const door = (x, w, y, h) => { outlineRect(ctx, P.creamLo, x, y, w, h); r(ctx, "#B8AE96", x + Math.floor(w / 2), y + Math.floor(h / 2) - 1, 1, 2); };
-    door(4, 16, 18, 8); door(22, 16, 18, 8); door(40, 16, 18, 8);
-    door(4, 16, 27, 10); door(22, 16, 27, 10); door(40, 16, 27, 10);
-    r(ctx, P.out, 2, 38, 56, 1);
-    r(ctx, P.whiteLo, 4, 39, 52, 4);
-    r(ctx, P.out, 4, 43, 52, 1);
+    door(3, 17, 18, 8); door(22, 17, 18, 8); door(41, 17, 18, 8); door(60, 17, 18, 8);
+    door(3, 17, 27, 10); door(22, 17, 27, 10); door(41, 17, 27, 10); door(60, 17, 27, 10);
+    r(ctx, P.out, 2, 38, 76, 1);
+    r(ctx, P.whiteLo, 4, 39, 72, 4);
+    r(ctx, P.out, 4, 43, 72, 1);
   }},
   fridge: { w: 32, h: 60, draw(ctx) {
     r(ctx, P.out, 0, 0, 32, 60);
@@ -922,25 +923,25 @@ const KITCHEN_SPRITES = {
 };
 
 const KITCHEN_OBJECTS = [
-  { id: "stove", name: "Stove & Oven", category: "furniture", x: 210, y: 288, z: 3, removable: false,
+  { id: "stove", name: "Stove & Oven", category: "furniture", x: 200, y: 286, z: 3, removable: false,
     check: "Gas line's hooked in behind it — this range isn't budging from that wall." },
-  { id: "counter_sink", name: "Counter & Sink", category: "furniture", x: 340, y: 288, z: 3, removable: false,
+  { id: "counter_sink", name: "Counter & Sink", category: "furniture", x: 320, y: 286, z: 3, removable: false,
     check: "Plumbed straight into the wall. The sink comes with the house, not the boxes." },
-  { id: "fridge", name: "Refrigerator", category: "furniture", x: 610, y: 224, z: 3, removable: false,
+  { id: "fridge", name: "Refrigerator", category: "furniture", x: 640, y: 222, z: 3, removable: false,
     check: "That compressor's been humming since before you moved in — it'll keep humming after." },
-  { id: "pantry", name: "Pantry Cabinet", category: "furniture", x: 760, y: 176, z: 3, removable: false,
+  { id: "pantry", name: "Pantry Cabinet", category: "furniture", x: 768, y: 174, z: 3, removable: false,
     check: "Built in stud by stud. That cabinet is part of the wall now." },
-  { id: "kettle", name: "Blue Kettle", category: "decor", value: 12, x: 242, y: 282, z: 4, removable: true,
+  { id: "kettle", name: "Blue Kettle", category: "decor", value: 12, x: 236, y: 278, z: 4, removable: true,
     check: "It's announced every cup of tea in this kitchen for a decade. Still whistles right on cue." },
-  { id: "cutting_board", name: "Cutting Board", category: "decor", value: 5, x: 400, y: 294, z: 4, removable: true,
+  { id: "cutting_board", name: "Cutting Board", category: "decor", value: 5, x: 344, y: 294, z: 4, removable: true,
     check: "Scarred with a thousand onions. Somehow still your favorite one." },
-  { id: "dish_rack", name: "Dish Rack", category: "decor", value: 8, x: 500, y: 278, z: 4, removable: true,
+  { id: "dish_rack", name: "Dish Rack", category: "decor", value: 8, x: 544, y: 276, z: 4, removable: true,
     check: "Two plates and a prayer. It's held up the whole time you've lived here." },
-  { id: "sill_plants_k", name: "Windowsill Herbs", category: "plants", value: 6, x: 440, y: 226, z: 4, removable: true,
+  { id: "sill_plants_k", name: "Windowsill Herbs", category: "plants", value: 6, x: 488, y: 226, z: 4, removable: true,
     check: "Herbs that outlived three New Year's resolutions to cook more." },
-  { id: "fridge_plant", name: "Fridge-top Plant", category: "plants", value: 7, x: 642, y: 182, z: 4, removable: true,
+  { id: "fridge_plant", name: "Fridge-top Plant", category: "plants", value: 7, x: 672, y: 178, z: 4, removable: true,
     check: "It's trailed off that fridge top so long it's basically a factory feature." },
-  { id: "door_towel", name: "Striped Towel", category: "textiles", value: 3, x: 72, y: 140, z: 2, removable: true,
+  { id: "door_towel", name: "Striped Towel", category: "textiles", value: 3, x: 128, y: 140, z: 2, removable: true,
     check: "Threadbare, stained, irreplaceable. It stays folded over that bar out of pure habit." },
 ];
 
@@ -982,7 +983,7 @@ function drawDiningShell(ctx) {
   r(ctx, P.woodMid, 4, 4, 1, 104);
 
   // window with blinds
-  const wx = 60, wy = 22, ww = 52, wh = 50;
+  const wx = 86, wy = 14, ww = 68, wh = 62;
   r(ctx, P.out, wx - 2, wy - 2, ww + 4, wh + 4);
   r(ctx, P.cream, wx - 1, wy - 1, ww + 2, wh + 2);
   r(ctx, P.creamLo, wx - 1, wy + wh, ww + 2, 1);
@@ -999,21 +1000,43 @@ function drawDiningShell(ctx) {
   dith(ctx, WALL_SHADE, 240 - 22, 0, 22, 112, 2, 1);
 }
 
+function drawDiningChairSides(ctx) {
+  const sideChair = (ox, flip) => {
+    const outer = flip ? ox + 19 : ox;
+    r(ctx, P.out, outer, 7, 4, 33); r(ctx, "#1C1916", outer + 1, 8, 2, 31);
+    const seatX = flip ? ox : ox + 6;
+    r(ctx, P.out, seatX, 32, 17, 7); r(ctx, "#5C6C80", seatX + 1, 33, 15, 5);
+    r(ctx, "#6E7E92", seatX + 1, 33, 15, 2);
+    r(ctx, P.out, ox, 39, 23, 4); r(ctx, "#3A362F", ox + 1, 40, 21, 2);
+    r(ctx, P.out, seatX + 2, 39, 3, 14); r(ctx, P.out, seatX + 13, 39, 3, 14);
+    r(ctx, "#1C1916", seatX + 3, 40, 1, 12); r(ctx, "#1C1916", seatX + 14, 40, 1, 12);
+  };
+  sideChair(8, false); sideChair(65, true);
+}
+function drawDiningFrontCushion(ctx) {
+  r(ctx, P.out, 0, 0, 30, 9); r(ctx, "#5C6C80", 1, 1, 28, 7); r(ctx, "#6E7E92", 1, 1, 28, 2);
+}
+function drawDiningFrontFrame(ctx) {
+  r(ctx, P.out, 3, 19, 4, 19); r(ctx, P.out, 27, 19, 4, 19);
+  r(ctx, "#1C1916", 4, 20, 2, 17); r(ctx, "#1C1916", 28, 20, 2, 17);
+  r(ctx, P.out, 0, 0, 34, 5); r(ctx, "#3A362F", 1, 1, 32, 3);
+  r(ctx, P.out, 1, 4, 4, 25); r(ctx, P.out, 29, 4, 4, 25);
+  [8, 16, 24].forEach((x) => { r(ctx, P.out, x, 5, 3, 21); r(ctx, "#1C1916", x + 1, 6, 1, 19); });
+  r(ctx, P.out, 1, 25, 32, 5); r(ctx, "#3A362F", 2, 26, 30, 3);
+}
+
 const DINING_SPRITES = {
-  dining_curtains: { w: 72, h: 64, draw(ctx) {
-    r(ctx, P.out, 0, 0, 72, 3);
-    r(ctx, P.woodDark, 1, 1, 70, 1);
-    r(ctx, P.woodDark, 0, 0, 2, 3); r(ctx, P.woodDark, 70, 0, 2, 3);
-    r(ctx, P.out, 1, 3, 20, 60);
-    r(ctx, "#3F5C46", 2, 4, 18, 58);
-    r(ctx, "#527455", 2, 4, 18, 3);
-    dith(ctx, "#2E4735", 2, 40, 18, 20, 2, 0);
-    r(ctx, "#2E4735", 6, 4, 1, 58); r(ctx, "#2E4735", 13, 4, 1, 58);
-    r(ctx, P.out, 51, 3, 20, 60);
-    r(ctx, "#3F5C46", 52, 4, 18, 58);
-    r(ctx, "#527455", 52, 4, 18, 3);
-    dith(ctx, "#2E4735", 52, 40, 18, 20, 2, 0);
-    r(ctx, "#2E4735", 56, 4, 1, 58); r(ctx, "#2E4735", 63, 4, 1, 58);
+  dining_curtains: { w: 80, h: 68, draw(ctx) {
+    r(ctx, P.out, 0, 0, 80, 3);
+    r(ctx, P.woodDark, 1, 1, 78, 1);
+    r(ctx, P.woodDark, 0, 0, 2, 3); r(ctx, P.woodDark, 78, 0, 2, 3);
+    [1, 61].forEach((x) => {
+      r(ctx, P.out, x, 3, 18, 64);
+      r(ctx, "#3F5C46", x + 1, 4, 16, 62);
+      r(ctx, "#527455", x + 1, 4, 18, 3);
+      dith(ctx, "#2E4735", x + 1, 44, 16, 20, 2, 0);
+      r(ctx, "#2E4735", x + 5, 4, 1, 62); r(ctx, "#2E4735", x + 11, 4, 1, 62);
+    });
   }},
   sill_plants_d: { w: 14, h: 8, draw(ctx) {
     [0, 8].forEach((x) => {
@@ -1024,20 +1047,13 @@ const DINING_SPRITES = {
       r(ctx, P.terra, x + 1, 5, 4, 3); r(ctx, P.terraLo, x + 1, 7, 4, 1);
     });
   }},
-  shelf_art: { w: 22, h: 28, draw(ctx) {
-    r(ctx, P.out, 0, 0, 22, 28);
-    r(ctx, P.wood, 1, 1, 20, 26);
-    r(ctx, P.woodHi, 1, 1, 20, 2);
-    r(ctx, P.cream, 3, 3, 16, 22);
-    r(ctx, P.glass, 4, 4, 14, 10);
-    r(ctx, P.woodMid, 4, 14, 14, 1);
-    r(ctx, "#4A4A4A", 9, 7, 4, 6);
-    r(ctx, P.mustardHi, 10, 9, 2, 3);
-    r(ctx, P.woodDark, 10, 6, 2, 1);
-    r(ctx, P.burgundy, 5, 16, 3, 7);
-    r(ctx, P.teal, 9, 15, 3, 8);
-    r(ctx, P.mustard, 13, 17, 2, 6);
-    r(ctx, P.wood, 16, 16, 2, 7);
+  shelf_art: { w: 46, h: 50, draw(ctx) {
+    r(ctx, P.out, 0, 0, 46, 50); r(ctx, P.wood, 1, 1, 44, 48);
+    r(ctx, P.woodHi, 1, 1, 44, 2); r(ctx, P.cream, 4, 4, 38, 42);
+    r(ctx, P.glass, 5, 5, 36, 18); r(ctx, P.woodMid, 5, 23, 36, 2);
+    r(ctx, "#4A4A4A", 19, 9, 8, 13); r(ctx, P.mustardHi, 21, 13, 4, 8);
+    r(ctx, P.burgundy, 8, 29, 6, 13); r(ctx, P.teal, 17, 27, 6, 15);
+    r(ctx, P.mustard, 26, 30, 5, 12); r(ctx, P.wood, 35, 28, 4, 14);
   }},
   dining_table: { w: 64, h: 50, draw(ctx) {
     const w = 64;
@@ -1067,39 +1083,9 @@ const DINING_SPRITES = {
     r(ctx, P.cream, 15, 41, 2, 8); r(ctx, P.cream, 47, 41, 2, 8);
   }},
   dining_chairs: { w: 96, h: 58, draw(ctx) {
-    // tall slatted backs with see-through gaps, cushioned seats, real legs
-    function chair(ox, top, backH, w, cushH) {
-      // stiles
-      r(ctx, P.out, ox, top, 3, backH + cushH + 2);
-      r(ctx, P.out, ox + w - 3, top, 3, backH + cushH + 2);
-      r(ctx, P.woodDark, ox + 1, top + 1, 1, backH);
-      r(ctx, P.woodDark, ox + w - 2, top + 1, 1, backH);
-      // top rail
-      r(ctx, P.out, ox, top, w, 4);
-      r(ctx, P.woodMid, ox + 1, top + 1, w - 2, 2);
-      // three thin slats, wall shows between them
-      const step = Math.floor((w - 8) / 3);
-      for (let i = 0; i < 3; i++) {
-        const sx = ox + 5 + i * step;
-        r(ctx, P.out, sx, top + 4, 2, backH - 4);
-        r(ctx, P.woodDark, sx, top + 5, 1, backH - 6);
-      }
-      // cushion
-      r(ctx, P.out, ox - 2, top + backH, w + 4, cushH);
-      r(ctx, "#5C6C80", ox - 1, top + backH + 1, w + 2, cushH - 2);
-      r(ctx, "#6E7E92", ox - 1, top + backH + 1, w + 2, 2);
-      // seat frame + legs + stretcher
-      r(ctx, P.out, ox - 1, top + backH + cushH, w + 2, 3);
-      r(ctx, P.wood, ox, top + backH + cushH + 1, w, 1);
-      r(ctx, P.out, ox, top + backH + cushH + 3, 3, 12);
-      r(ctx, P.out, ox + w - 3, top + backH + cushH + 3, 3, 12);
-      r(ctx, P.woodDark, ox + 1, top + backH + cushH + 3, 1, 11);
-      r(ctx, P.woodDark, ox + w - 2, top + backH + cushH + 3, 1, 11);
-      r(ctx, P.woodDark, ox + 3, top + backH + cushH + 9, w - 6, 1);
-    }
-    chair(2, 6, 26, 24, 7);
-    chair(70, 6, 26, 24, 7);
-    chair(34, 11, 23, 28, 8);
+    drawDiningChairSides(ctx);
+    ctx.save(); ctx.translate(33, 30); drawDiningFrontCushion(ctx); ctx.restore();
+    ctx.save(); ctx.translate(31, 18); drawDiningFrontFrame(ctx); ctx.restore();
   }},
   candle_bowl: { w: 16, h: 12, draw(ctx) {
     r(ctx, P.out, 0, 6, 16, 6);
@@ -1112,19 +1098,15 @@ const DINING_SPRITES = {
     r(ctx, P.cream, 7, 0, 2, 4);
     r(ctx, P.mustardHi, 7, 0, 2, 1);
   }},
-  bar_cabinet: { w: 48, h: 44, draw(ctx) {
-    r(ctx, P.out, 0, 0, 48, 5);
-    r(ctx, P.woodLight, 1, 1, 46, 3);
-    r(ctx, P.out, 2, 5, 44, 35);
-    r(ctx, P.woodDark, 3, 6, 42, 33);
-    r(ctx, P.out, 23, 6, 2, 33);
-    r(ctx, P.woodMid, 4, 7, 18, 31);
-    r(ctx, P.woodMid, 26, 7, 18, 31);
-    r(ctx, P.woodHi, 4, 7, 18, 2); r(ctx, P.woodHi, 26, 7, 18, 2);
-    r(ctx, "#B8AE96", 19, 22, 3, 3);
-    r(ctx, "#B8AE96", 29, 22, 3, 3);
-    r(ctx, P.out, 4, 40, 6, 4); r(ctx, P.out, 38, 40, 6, 4);
-    r(ctx, P.woodDark, 5, 41, 4, 2); r(ctx, P.woodDark, 39, 41, 4, 2);
+  bar_cabinet: { w: 54, h: 50, draw(ctx) {
+    r(ctx, P.out, 0, 0, 54, 5); r(ctx, P.woodLight, 1, 1, 52, 3);
+    r(ctx, P.out, 2, 5, 50, 40); r(ctx, P.woodDark, 3, 6, 48, 38);
+    r(ctx, P.out, 26, 6, 2, 38);
+    r(ctx, P.woodMid, 4, 7, 21, 36); r(ctx, P.woodMid, 29, 7, 21, 36);
+    r(ctx, P.woodHi, 4, 7, 21, 2); r(ctx, P.woodHi, 29, 7, 21, 2);
+    r(ctx, "#B8AE96", 22, 25, 3, 3); r(ctx, "#B8AE96", 29, 25, 3, 3);
+    r(ctx, P.out, 4, 45, 7, 5); r(ctx, P.out, 43, 45, 7, 5);
+    r(ctx, P.woodDark, 5, 46, 5, 3); r(ctx, P.woodDark, 44, 46, 5, 3);
   }},
   bar_bottles: { w: 28, h: 16, draw(ctx) {
     r(ctx, P.out, 0, 4, 6, 12);
@@ -1145,21 +1127,21 @@ const DINING_SPRITES = {
 };
 
 const DINING_OBJECTS = [
-  { id: "dining_curtains", name: "Green Curtains", category: "textiles", x: 200, y: 80, z: 2, removable: true, value: 10,
+  { id: "dining_curtains", name: "Green Curtains", category: "textiles", x: 320, y: 48, z: 2, removable: true, value: 10,
     check: "They never belonged to the landlord — take them, or leave them for the next tenant." },
-  { id: "sill_plants_d", name: "Sill Succulents", category: "plants", x: 316, y: 264, z: 3, removable: true, value: 6,
+  { id: "sill_plants_d", name: "Sill Succulents", category: "plants", x: 452, y: 280, z: 3, removable: true, value: 6,
     check: "Low-maintenance succulents. They've survived worse landlords than this one." },
-  { id: "shelf_art", name: "Still-life Print", category: "decor", x: 640, y: 148, z: 2, removable: true, value: 9,
+  { id: "shelf_art", name: "Still-life Print", category: "decor", x: 696, y: 56, z: 2, removable: true, value: 9,
     check: "A framed print of a shelf. The real shelf was sold separately, apparently." },
-  { id: "dining_table", name: "Dining Table", category: "furniture", x: 300, y: 350, z: 3, removable: true, value: 70,
+  { id: "dining_table", name: "Dining Table", category: "furniture", x: 300, y: 350, z: 4, removable: true, value: 70,
     check: "Hosted exactly one dinner party. It was, by all accounts, a triumph." },
-  { id: "dining_chairs", name: "Chair Set", category: "furniture", x: 236, y: 332, z: 4, removable: true, value: 60,
+  { id: "dining_chairs", name: "Chair Set", category: "furniture", x: 236, y: 332, z: 3, removable: true, value: 60,
     check: "Four chairs, three matching. Close enough." },
   { id: "candle_bowl", name: "Candle Centerpiece", category: "decor", x: 396, y: 366, z: 5, removable: true, value: 6,
     check: "Never once lit. Purely decorative, deeply judgmental about it." },
-  { id: "bar_cabinet", name: "Bar Cabinet", category: "furniture", x: 688, y: 369, z: 3, removable: true, value: 45,
+  { id: "bar_cabinet", name: "Bar Cabinet", category: "furniture", x: 680, y: 272, z: 3, removable: true, value: 45,
     check: "Small, dark, and full of the good glasses. Mostly good glasses." },
-  { id: "bar_bottles", name: "Bar Collection", category: "decor", x: 720, y: 316, z: 4, removable: true, value: 18,
+  { id: "bar_bottles", name: "Bar Collection", category: "decor", x: 732, y: 216, z: 4, removable: true, value: 18,
     check: "The bar collection has opinions, mostly about your taste in wine." },
 ];
 
@@ -1233,21 +1215,15 @@ const LIVING_SPRITES = {
     r(ctx, P.gold, 31, 76, 2, 2);
     r(ctx, P.woodDark, 2, 92, 52, 4);
   }},
-  wall_art_pair: { w: 44, h: 26, draw(ctx) {
-    r(ctx, P.out, 0, 0, 26, 26);
-    r(ctx, P.woodDark, 1, 1, 24, 2);
-    r(ctx, "#17233F", 2, 3, 22, 15);
-    r(ctx, "#0F1830", 2, 14, 22, 4);
-    r(ctx, P.goldHi, 11, 15, 3, 5);
-    r(ctx, P.gold, 11, 19, 3, 1);
-    [[5, 5], [9, 4], [19, 6], [16, 9], [7, 10]].forEach(([x, y]) => r(ctx, P.white, x, y, 1, 1));
-    r(ctx, P.woodDark, 1, 22, 24, 3);
-    r(ctx, P.out, 30, 4, 14, 20);
-    r(ctx, P.woodDark, 31, 5, 12, 2);
-    r(ctx, P.white, 31, 7, 12, 15);
-    r(ctx, P.out, 33, 9, 4, 6);
-    r(ctx, P.out, 38, 13, 4, 5);
-    r(ctx, P.out, 35, 17, 3, 3);
+  wall_art_pair: { w: 52, h: 30, draw(ctx) {
+    r(ctx, P.out, 0, 0, 31, 30); r(ctx, P.woodDark, 1, 1, 29, 2);
+    r(ctx, "#17233F", 3, 4, 25, 18); r(ctx, "#0F1830", 3, 17, 25, 5);
+    r(ctx, P.goldHi, 13, 18, 4, 6); r(ctx, P.gold, 13, 23, 4, 1);
+    [[6, 6], [11, 5], [23, 7], [19, 11], [8, 13]].forEach(([x, y]) => r(ctx, P.white, x, y, 1, 1));
+    r(ctx, P.woodDark, 1, 26, 29, 3);
+    r(ctx, P.out, 36, 4, 16, 24); r(ctx, P.woodDark, 37, 5, 14, 2);
+    r(ctx, P.white, 37, 7, 14, 19);
+    r(ctx, P.out, 39, 9, 5, 8); r(ctx, P.out, 45, 14, 5, 7); r(ctx, P.out, 41, 20, 4, 4);
   }},
   sofa: { w: 76, h: 52, draw(ctx) {
     r(ctx, P.out, 0, 8, 12, 44);
@@ -1266,17 +1242,17 @@ const LIVING_SPRITES = {
     r(ctx, P.out, 38, 31, 1, 19);
     dith(ctx, "#1C1916", 9, 44, 58, 3, 2, 0);
     r(ctx, "#1C1916", 9, 47, 58, 4);
-    r(ctx, P.out, 9, 4, 26, 4);
-    r(ctx, P.cream, 10, 5, 24, 3);
-    r(ctx, P.out, 12, 8, 18, 22);
-    r(ctx, P.cream, 13, 9, 16, 20);
+    r(ctx, P.out, 9, 3, 26, 5);
+    r(ctx, P.cream, 10, 4, 24, 4);
+    r(ctx, P.out, 12, 8, 18, 23);
+    r(ctx, P.cream, 13, 9, 16, 21);
     r(ctx, P.creamLo, 13, 9, 16, 3);
-    dith(ctx, P.creamLo, 13, 20, 16, 8, 3, 0);
-    for (let fx = 13; fx < 29; fx += 2) r(ctx, P.creamLo, fx, 28, 1, 2);
-    r(ctx, P.out, 46, 24, 18, 16);
-    r(ctx, P.red, 47, 25, 16, 14);
-    r(ctx, P.redHi, 47, 25, 16, 3);
-    [[50, 30], [56, 30], [53, 34], [50, 38], [56, 38]].forEach(([x, y]) => r(ctx, P.gold, x, y, 1, 1));
+    dith(ctx, P.creamLo, 13, 20, 16, 9, 3, 0);
+    for (let fx = 13; fx < 29; fx += 2) r(ctx, P.creamLo, fx, 29, 1, 2);
+    r(ctx, P.out, 46, 16, 18, 15);
+    r(ctx, P.red, 47, 17, 16, 13);
+    r(ctx, P.redHi, 47, 17, 16, 3);
+    [[50, 22], [56, 22], [53, 26], [50, 29], [56, 29]].forEach(([x, y]) => r(ctx, P.gold, x, y, 1, 1));
   }},
   living_rug: { w: 150, h: 60, draw(ctx) {
     r(ctx, "#3E2413", 2, 2, 146, 56);
@@ -1286,17 +1262,16 @@ const LIVING_SPRITES = {
     for (let y = 4; y < 56; y += 3) { r(ctx, P.creamLo, 0, y, 2, 1); r(ctx, P.creamLo, 148, y, 2, 1); }
   }},
   // 3/4 view: deep light-wood top plane, front edge, block legs, lower shelf
-  coffee_table: { w: 56, h: 36, draw(ctx) {
-    r(ctx, P.out, 0, 0, 56, 14);
-    r(ctx, "#C49964", 1, 1, 54, 12);
-    r(ctx, "#D9B27E", 1, 1, 54, 3);
-    r(ctx, "#A87A4A", 1, 6, 54, 1); r(ctx, "#A87A4A", 1, 10, 54, 1);
-    r(ctx, P.out, 0, 14, 56, 6);
-    r(ctx, "#A87A4A", 1, 15, 54, 4); r(ctx, "#8F6538", 1, 17, 54, 2);
-    r(ctx, P.out, 2, 20, 6, 16); r(ctx, "#8F6538", 3, 21, 4, 14);
-    r(ctx, P.out, 48, 20, 6, 16); r(ctx, "#8F6538", 49, 21, 4, 14);
-    r(ctx, P.out, 6, 26, 44, 5);
-    r(ctx, "#B98F5C", 7, 27, 42, 3); dith(ctx, "#8F6538", 7, 27, 42, 3, 3, 0);
+  coffee_table: { w: 104, h: 44, draw(ctx) {
+    r(ctx, P.out, 0, 0, 104, 17); r(ctx, "#C49964", 1, 1, 102, 15);
+    r(ctx, "#D9B27E", 1, 1, 102, 4);
+    r(ctx, "#A87A4A", 1, 8, 102, 1); r(ctx, "#A87A4A", 1, 13, 102, 1);
+    r(ctx, P.out, 0, 17, 104, 7); r(ctx, "#A87A4A", 1, 18, 102, 5);
+    r(ctx, "#8F6538", 1, 21, 102, 2);
+    r(ctx, P.out, 4, 24, 8, 20); r(ctx, "#8F6538", 5, 25, 6, 18);
+    r(ctx, P.out, 92, 24, 8, 20); r(ctx, "#8F6538", 93, 25, 6, 18);
+    r(ctx, P.out, 10, 32, 84, 6); r(ctx, "#B98F5C", 11, 33, 82, 4);
+    dith(ctx, "#8F6538", 11, 33, 82, 4, 3, 0);
   }},
   table_decor: { w: 34, h: 14, draw(ctx) {
     r(ctx, P.out, 1, 10, 10, 3);
@@ -1341,41 +1316,39 @@ const LIVING_SPRITES = {
     r(ctx, P.woodDark, 2, 56, 4, 2);
     r(ctx, P.woodDark, 14, 56, 4, 2);
   }},
-  floor_lamp: { w: 18, h: 60, draw(ctx) {
+  floor_lamp: { w: 18, h: 72, draw(ctx) {
     r(ctx, P.out, 2, 0, 14, 8);
     r(ctx, P.red, 3, 1, 12, 6);
     r(ctx, P.redHi, 3, 1, 12, 2);
     r(ctx, P.goldHi, 6, 8, 6, 2);
-    r(ctx, P.out, 7, 10, 4, 42);
-    r(ctx, "#1C1916", 8, 10, 2, 42);
-    r(ctx, P.woodHi, 8, 10, 1, 30);
-    r(ctx, P.out, 2, 52, 14, 4);
-    r(ctx, "#1C1916", 3, 53, 12, 2);
-    r(ctx, P.out, 0, 56, 5, 4);
-    r(ctx, P.out, 13, 56, 5, 4);
-    r(ctx, "#1C1916", 1, 57, 3, 2);
-    r(ctx, "#1C1916", 14, 57, 3, 2);
+    r(ctx, P.out, 7, 10, 4, 54);
+    r(ctx, "#1C1916", 8, 10, 2, 54);
+    r(ctx, P.woodHi, 8, 10, 1, 38);
+    r(ctx, P.out, 5, 62, 8, 3); r(ctx, "#1C1916", 6, 63, 6, 1);
+    // round, weighted base instead of feet
+    r(ctx, P.out, 3, 65, 12, 1); r(ctx, P.out, 1, 66, 16, 4);
+    r(ctx, P.out, 3, 70, 12, 2); r(ctx, "#1C1916", 2, 67, 14, 2);
   }},
 };
 
 const LIVING_OBJECTS = [
-  { id: "tv_hutch", name: "TV Hutch", category: "furniture", value: 120, x: 80, y: 186, z: 3, removable: true,
+  { id: "tv_hutch", name: "TV Hutch", category: "furniture", value: 120, x: 72, y: 78, z: 3, removable: true,
     check: "Every remote from the last decade is lost somewhere inside this thing." },
-  { id: "wall_art_pair", name: "Wall Art", category: "decor", value: 12, x: 330, y: 110, z: 2, removable: true,
+  { id: "wall_art_pair", name: "Wall Art", category: "decor", value: 12, x: 376, y: 104, z: 2, removable: true,
     check: "The night scene came first; the little black-and-white one followed you home from a yard sale." },
-  { id: "sofa", name: "Leather Loveseat", category: "furniture", value: 150, x: 430, y: 356, z: 3, removable: true,
+  { id: "sofa", name: "Leather Loveseat", category: "furniture", value: 150, x: 328, y: 257, z: 3, removable: true,
     check: "This is the couch that remembers every nap you've ever taken on it. It's coming with you." },
-  { id: "living_rug", name: "Striped Rug", category: "textiles", value: 20, x: 200, y: 500, z: 1, removable: true,
+  { id: "living_rug", name: "Striped Rug", category: "textiles", value: 20, x: 180, y: 500, z: 1, removable: true,
     check: "Vacuumed a thousand times, forgiven nothing. Roll it up carefully." },
-  { id: "coffee_table", name: "Coffee Table", category: "furniture", value: 40, x: 300, y: 483, z: 4, removable: true,
+  { id: "coffee_table", name: "Coffee Table", category: "furniture", value: 40, x: 272, y: 468, z: 4, removable: true,
     check: "Ring stains from a decade of mugs you swore you'd use a coaster for." },
-  { id: "table_decor", name: "Table Clutter", category: "decor", value: 8, x: 344, y: 444, z: 5, removable: true,
+  { id: "table_decor", name: "Table Clutter", category: "decor", value: 8, x: 412, y: 424, z: 5, removable: true,
     check: "A candle you're saving for a special occasion that never comes, plus two books you'll definitely finish." },
-  { id: "destijl_poster", name: "De Stijl Poster", category: "decor", value: 15, x: 726, y: 372, z: 3, removable: true,
+  { id: "destijl_poster", name: "De Stijl Poster", category: "decor", value: 15, x: 640, y: 314, z: 3, removable: true,
     check: "Picked it up on that museum trip you half remember — mostly you remember the gift shop." },
-  { id: "standing_mirror", name: "Standing Mirror", category: "furniture", value: 35, x: 770, y: 285, z: 2, removable: true,
+  { id: "standing_mirror", name: "Standing Mirror", category: "furniture", value: 35, x: 752, y: 230, z: 2, removable: true,
     check: "Leans just enough to make you check your posture on the way out the door." },
-  { id: "floor_lamp", name: "Torchiere Lamp", category: "lighting", value: 25, x: 824, y: 290, z: 3, removable: true,
+  { id: "floor_lamp", name: "Torchiere Lamp", category: "lighting", value: 25, x: 836, y: 174, z: 3, removable: true,
     check: "Casts exactly one warm circle of light and no more. Very committed to its one job." },
 ];
 
@@ -1581,6 +1554,160 @@ function PixelCanvas({ w, h, draw, redrawKey, style }) {
   );
 }
 
+/* Dev-only visual layout editor, opened with ?edit=1. It keeps drafts in
+   localStorage and exports stage coordinates without changing game state. */
+export function LayoutEditor() {
+  const makeLayout = () => Object.fromEntries(ROOMS_ORDER.map((rid) => [rid,
+    Object.fromEntries(ROOMS[rid].objects.map((o) => { const saved = SAVED_LAYOUT[rid]?.[o.id]; return [o.id, {
+      x: saved?.x ?? o.x, y: saved?.y ?? o.y, scale: saved?.scale ?? 1,
+      ...(rid === "dining" && o.id === "dining_chairs" ? { parts: {
+        sides: { x: 0, y: 0, scaleX: 1, scaleY: 1 },
+        cushion: { x: 33, y: 30, scaleX: 1, scaleY: 1 },
+        frame: { x: 31, y: 18, scaleX: 1, scaleY: 1 },
+      } } : {}), ...(saved?.parts ? { parts: saved.parts } : {}),
+    }]; }))
+  ]));
+  const [roomId, setRoomId] = useState("kitchen");
+  const [layout, setLayout] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("pack-it-up-layout")) || makeLayout(); }
+    catch { return makeLayout(); }
+  });
+  const [selectedId, setSelectedId] = useState(null);
+  const [chairPart, setChairPart] = useState("group");
+  const [copied, setCopied] = useState(false);
+  const drag = useRef(null);
+  const stageRef = useRef(null);
+  const room = ROOMS[roomId];
+  const selected = selectedId ? layout[roomId]?.[selectedId] : null;
+
+  useEffect(() => { localStorage.setItem("pack-it-up-layout", JSON.stringify(layout)); }, [layout]);
+  useEffect(() => { setSelectedId(null); }, [roomId]);
+
+  const updateSelected = (patch) => {
+    if (!selectedId) return;
+    setLayout((all) => ({ ...all, [roomId]: { ...all[roomId], [selectedId]: { ...all[roomId][selectedId], ...patch } } }));
+  };
+  const updateChairPart = (patch) => {
+    if (selectedId !== "dining_chairs") return;
+    setLayout((all) => {
+      const item = all.dining.dining_chairs;
+      const defaults = makeLayout().dining.dining_chairs.parts;
+      const parts = item.parts || defaults;
+      return { ...all, dining: { ...all.dining, dining_chairs: { ...item, parts: {
+        ...parts, [chairPart]: { ...parts[chairPart], ...patch },
+      } } } };
+    });
+  };
+  const stagePoint = (e) => {
+    const box = stageRef.current.getBoundingClientRect();
+    return { x: (e.clientX - box.left) * STAGE_W / box.width, y: (e.clientY - box.top) * STAGE_H / box.height };
+  };
+  const beginDrag = (e, id) => {
+    e.preventDefault(); e.stopPropagation();
+    const p = stagePoint(e); const item = layout[roomId][id];
+    drag.current = { id, dx: p.x - item.x, dy: p.y - item.y };
+    setSelectedId(id); e.currentTarget.setPointerCapture?.(e.pointerId);
+  };
+  const moveDrag = (e) => {
+    if (!drag.current) return;
+    const p = stagePoint(e); const { id, dx, dy } = drag.current;
+    setLayout((all) => ({ ...all, [roomId]: { ...all[roomId], [id]: {
+      ...all[roomId][id], x: Math.round(p.x - dx), y: Math.round(p.y - dy),
+    } } }));
+  };
+  const endDrag = () => { drag.current = null; };
+  const resetRoom = () => setLayout((all) => ({ ...all, [roomId]: makeLayout()[roomId] }));
+  const exportText = JSON.stringify(Object.fromEntries(ROOMS_ORDER.map((rid) => [rid,
+    Object.fromEntries(ROOMS[rid].objects.map((o) => {
+      const v = layout[rid][o.id];
+      return [o.id, { x: Math.round(v.x), y: Math.round(v.y), scale: Number(v.scale.toFixed(2)), ...(v.parts ? { parts: v.parts } : {}) }];
+    }))
+  ])), null, 2);
+  const copyLayout = async () => {
+    try { await navigator.clipboard.writeText(exportText); setCopied(true); setTimeout(() => setCopied(false), 1800); }
+    catch { setCopied(false); }
+  };
+
+  const ordered = [...room.objects].sort((a, b) => a.z - b.z ||
+    (layout[roomId][a.id].y + room.sprites[a.id].h * CELL * layout[roomId][a.id].scale) -
+    (layout[roomId][b.id].y + room.sprites[b.id].h * CELL * layout[roomId][b.id].scale));
+  const panel = { background: "#241509", color: "#F2E4C0", border: "3px solid #120A04", boxShadow: "inset 0 0 0 2px #4A2E17" };
+  const button = { ...panel, padding: "8px 10px", cursor: "pointer", fontFamily: "'Courier New', monospace", fontWeight: 700 };
+
+  return <div style={{ minHeight: "100vh", background: "#160D06", color: "#F2E4C0", fontFamily: "'Courier New', monospace", display: "flex", flexDirection: "column" }}>
+    <div style={{ ...panel, padding: 10, display: "flex", gap: 7, alignItems: "center", flexWrap: "wrap", zIndex: 20 }}>
+      <strong style={{ marginRight: 8, color: "#FFD97A" }}>LAYOUT EDITOR</strong>
+      {ROOMS_ORDER.map((rid) => <button key={rid} onClick={() => setRoomId(rid)} style={{ ...button, color: rid === roomId ? "#FFD97A" : "#C9B896" }}>{ROOMS[rid].name}</button>)}
+      <button onClick={resetRoom} style={{ ...button, marginLeft: "auto" }}>Reset room</button>
+      <button onClick={copyLayout} style={{ ...button, color: "#FFD97A" }}>{copied ? "Copied!" : "Copy layout"}</button>
+    </div>
+    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
+      <div style={{ flex: 1, overflow: "auto", padding: 18, display: "flex", justifyContent: "center", alignItems: "flex-start" }}>
+        <div ref={stageRef} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag}
+          onPointerDown={() => setSelectedId(null)} style={{ position: "relative", width: STAGE_W, height: STAGE_H, flex: "0 0 auto", touchAction: "none", boxShadow: "0 0 0 8px #3E2413, 0 0 0 12px #000" }}>
+          <div style={{ position: "absolute", inset: 0 }}><PixelCanvas w={240} h={180} draw={room.drawShell} /></div>
+          {ordered.map((o) => {
+            const spr = room.sprites[o.id], v = layout[roomId][o.id], active = selectedId === o.id;
+            return <div key={o.id} onPointerDown={(e) => beginDrag(e, o.id)} style={{
+              position: "absolute", left: v.x, top: v.y, zIndex: o.z * 10, transform: `scale(${v.scale})`, transformOrigin: "top left",
+              cursor: "grab", outline: active ? "5px solid #FFD97A" : "none", outlineOffset: 3,
+            }}>{roomId === "dining" && o.id === "dining_chairs" ? (() => {
+              const parts = v.parts || makeLayout().dining.dining_chairs.parts;
+              const part = (key, w, h, draw) => <div key={key} onPointerDown={(e) => {
+                if (chairPart === "group") beginDrag(e, o.id);
+                else { e.stopPropagation(); setSelectedId(o.id); setChairPart(key); }
+              }} style={{
+                position: "absolute", left: parts[key].x * CELL, top: parts[key].y * CELL,
+                transform: `scale(${parts[key].scaleX}, ${parts[key].scaleY})`, transformOrigin: "top left",
+                outline: selectedId === o.id && chairPart === key ? "3px solid #67B7FF" : "none",
+              }}><PixelCanvas w={w} h={h} draw={draw} /></div>;
+              return <div style={{ position: "relative", width: spr.w * CELL, height: spr.h * CELL }}>
+                {part("sides", 96, 58, drawDiningChairSides)}
+                {part("cushion", 30, 9, drawDiningFrontCushion)}
+                {part("frame", 34, 38, drawDiningFrontFrame)}
+              </div>;
+            })() : <PixelCanvas w={spr.w} h={spr.h} draw={spr.draw} />}</div>;
+          })}
+        </div>
+      </div>
+      <aside style={{ ...panel, width: "auto", height: 260, padding: 14, overflow: "auto", flex: "0 0 260px", columnWidth: 270, columnGap: 24 }}>
+        <h2 style={{ color: "#FFD97A", fontSize: 17, margin: "0 0 10px" }}>{selectedId ? room.objects.find((o) => o.id === selectedId)?.name : "Select an item"}</h2>
+        {selected && <>
+          <div style={{ color: "#C9B896", marginBottom: 12 }}>Drag the highlighted item to move it.</div>
+          <label style={{ display: "block", marginBottom: 6 }}>Size: {Math.round(selected.scale * 100)}%</label>
+          <input type="range" min="0.5" max="2" step="0.05" value={selected.scale} onChange={(e) => updateSelected({ scale: Number(e.target.value) })} style={{ width: "100%" }} />
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <button onClick={() => updateSelected({ scale: Math.max(.5, selected.scale - .05) })} style={{ ...button, flex: 1 }}>Smaller</button>
+            <button onClick={() => updateSelected({ scale: Math.min(2, selected.scale + .05) })} style={{ ...button, flex: 1 }}>Larger</button>
+          </div>
+          <div style={{ marginTop: 14, color: "#C9B896" }}>x: {Math.round(selected.x)} &nbsp; y: {Math.round(selected.y)}</div>
+          {roomId === "dining" && selectedId === "dining_chairs" && (() => {
+            const parts = selected.parts || makeLayout().dining.dining_chairs.parts;
+            const p = parts[chairPart];
+            const slider = (label, key, min, max, step) => <label style={{ display: "block", marginTop: 10 }}>{label}: {Number(p[key]).toFixed(key.startsWith("scale") ? 2 : 0)}
+              <input type="range" min={min} max={max} step={step} value={p[key]} onChange={(e) => updateChairPart({ [key]: Number(e.target.value) })} style={{ width: "100%" }} />
+            </label>;
+            return <div style={{ marginTop: 18, borderTop: "2px solid #4A2E17", paddingTop: 12 }}>
+              <div style={{ color: "#FFD97A", marginBottom: 8 }}>Chair parts</div>
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                {[['group','Move whole set'],['sides','Side pair'],['cushion','Middle cushion'],['frame','Middle frame']].map(([key,label]) => <button key={key} onClick={() => setChairPart(key)} style={{ ...button, color: chairPart === key ? "#67B7FF" : "#C9B896", padding: "6px" }}>{label}</button>)}
+              </div>
+              {chairPart !== "group" && <>
+                {slider("Horizontal position", "x", -20, 80, 1)}
+                {slider("Vertical position", "y", -10, 70, 1)}
+                {slider("Width", "scaleX", .4, 1.8, .05)}
+                {slider("Height", "scaleY", .4, 1.8, .05)}
+              </>}
+            </div>;
+          })()}
+        </>}
+        <p style={{ color: "#C9B896", fontSize: 12, lineHeight: 1.5, marginTop: 20 }}>Your draft saves automatically on this computer. When you are happy, press <b>Copy layout</b> and paste it into our chat.</p>
+        <textarea readOnly value={exportText} style={{ width: "100%", height: 180, marginTop: 8, background: "#100904", color: "#C9B896", border: "2px solid #4A2E17", fontSize: 10 }} />
+      </aside>
+    </div>
+  </div>;
+}
+
 /* coin-burst trajectories: horizontal spread, arc peak height, start delay(ms) */
 const COIN_BURSTS = [
   { tx: -52, ty: -50, d: 0 }, { tx: -14, ty: -60, d: 90 },
@@ -1600,11 +1727,12 @@ const SELL_CHIME_SRC = "data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2Z
 export default function PackItUp() {
   /* mobile = portrait phone layout with its own UI chrome; desktop keeps the
      original single-scale stage. */
+  const mobileQuery = "(max-width: 760px), (orientation: portrait)";
   const [isMobile, setIsMobile] = useState(
-    () => typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches
+    () => typeof window !== "undefined" && window.matchMedia(mobileQuery).matches
   );
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 760px)");
+    const mq = window.matchMedia(mobileQuery);
     const on = (e) => setIsMobile(e.matches);
     mq.addEventListener("change", on);
     return () => mq.removeEventListener("change", on);
@@ -1669,8 +1797,15 @@ export default function PackItUp() {
       if (el) setViewSize({ w: el.clientWidth, h: el.clientHeight });
     };
     measure();
+    const observer = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(measure)
+      : null;
+    if (viewRef.current) observer?.observe(viewRef.current);
     window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
   }, [isMobile]);
 
   /* decode the sell sound once via the Web Audio API — AudioBufferSourceNode
@@ -1858,7 +1993,11 @@ export default function PackItUp() {
         const animating = rm.id === room.id && (o.id === packingId || o.id === sellingId || o.id === donatingId);
         return (!st.packed && !st.sold && !st.donated) || animating;
       })
-      .sort((a, b) => a.z - b.z || (a.y + rm.sprites[a.id].h * CELL) - (b.y + rm.sprites[b.id].h * CELL));
+      .sort((a, b) => {
+        const av = SAVED_LAYOUT[rm.id]?.[a.id] || a;
+        const bv = SAVED_LAYOUT[rm.id]?.[b.id] || b;
+        return a.z - b.z || (av.y + rm.sprites[a.id].h * CELL * (av.scale || 1)) - (bv.y + rm.sprites[b.id].h * CELL * (bv.scale || 1));
+      });
 
   const selected = room.objects.find((o) => o.id === selectedId) || null;
   const packedList = removable.filter((o) => objState[sk(room.id, o.id)].packed);
@@ -1939,14 +2078,35 @@ export default function PackItUp() {
         {/* LAYER 1+ — object sprites */}
         {visibleObjectsFor(rm).map((o) => {
           const spr = rm.sprites[o.id];
+          const placed = SAVED_LAYOUT[rm.id]?.[o.id] || o;
           const isCur = rm.id === room.id;
           const isSel = isCur && selectedId === o.id;
           const isBusy = isCur && (packingId === o.id || sellingId === o.id || donatingId === o.id);
+          if (rm.id === "dining" && o.id === "dining_chairs" && placed.parts) {
+            const p = placed.parts;
+            const common = { position: "absolute", left: placed.x, top: placed.y, transform: `scale(${placed.scale || 1})`, transformOrigin: "top left" };
+            const click = (e) => { e.stopPropagation(); setSelectedId(o.id); };
+            return <div key={o.id}>
+              <div className={`obj ${isSel ? "sel" : ""}`} onClick={click} style={{ ...common, zIndex: 30, width: spr.w * CELL, height: spr.h * CELL }}>
+                <div style={{ position: "absolute", left: p.sides.x * CELL, top: p.sides.y * CELL, transform: `scale(${p.sides.scaleX},${p.sides.scaleY})`, transformOrigin: "top left" }}>
+                  <PixelCanvas w={96} h={58} draw={drawDiningChairSides} />
+                </div>
+              </div>
+              <div className={`obj ${isSel ? "sel" : ""}`} onClick={click} style={{ ...common, zIndex: 50, width: spr.w * CELL, height: spr.h * CELL }}>
+                <div style={{ position: "absolute", left: p.cushion.x * CELL, top: p.cushion.y * CELL, transform: `scale(${p.cushion.scaleX},${p.cushion.scaleY})`, transformOrigin: "top left" }}>
+                  <PixelCanvas w={30} h={9} draw={drawDiningFrontCushion} />
+                </div>
+                <div style={{ position: "absolute", left: p.frame.x * CELL, top: p.frame.y * CELL, transform: `scale(${p.frame.scaleX},${p.frame.scaleY})`, transformOrigin: "top left" }}>
+                  <PixelCanvas w={34} h={38} draw={drawDiningFrontFrame} />
+                </div>
+              </div>
+            </div>;
+          }
           return (
             <div
               key={o.id}
               className={`obj ${isSel ? "sel" : ""} ${isBusy ? "packing" : ""} ${o.removable ? "" : "static"}`}
-              style={{ position: "absolute", left: o.x, top: o.y, zIndex: o.z * 10 }}
+              style={{ position: "absolute", left: placed.x, top: placed.y, zIndex: o.z * 10, transform: `scale(${placed.scale || 1})`, transformOrigin: "top left" }}
               onClick={(e) => { e.stopPropagation(); setSelectedId(o.id); }}
               onMouseEnter={() => setHoverId(o.id)}
               onMouseLeave={() => setHoverId((h) => (h === o.id ? null : h))}
