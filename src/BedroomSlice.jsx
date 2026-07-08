@@ -1401,12 +1401,13 @@ function drawBoxes(ctx, count, openIdx = -1) {
     r(ctx, "#2A1A0C", x + 2, top, BOX_W - 4, 5);
     r(ctx, "#160D06", x + 2, top + 1, BOX_W - 4, 3);
     r(ctx, "#5A3A1E", x + 2, top, BOX_W - 4, 1);                        // lit front rim
-    // hinged flaps: rooted at the two mouth corners, angled up and outward
+    // hinged flaps: rooted at the two mouth corners, angled up and outward.
+    // Flap length (along the diagonal) = half the box width, like a real lid.
     const flap = (hx, dir) => {
-      const len = Math.round(BOX_W * 0.5), th = 5;
-      for (let k = 0; k <= len; k++) {
-        const cx = hx + dir * k;
-        const cy = top - Math.round(k * 0.85);   // rises as it swings outward
+      const L = Math.round(BOX_W / 2), th = 5;
+      for (let k = 0; k <= L; k++) {
+        const cx = hx + dir * Math.round(k * 0.77);  // ~40° open
+        const cy = top - Math.round(k * 0.64);
         r(ctx, P.out, cx, cy - th, 1, th + 1);
         r(ctx, P.card, cx, cy - th + 1, 1, th - 1);
         r(ctx, P.cardHi, cx, cy - th + 1, 1, 1); // lit outer face
@@ -1872,6 +1873,7 @@ export default function PackItUp() {
   const [dragX, setDragX] = useState(0);
   const [dragging, setDragging] = useState(false);
   const dragRef = useRef({ active: false, startX: 0, intent: false, id: null });
+  const animRef = useRef(null); // in-flight rAF pan animation: { raf, commit }
   const suppressClickRef = useRef(false);
 
   useEffect(() => {
@@ -2354,7 +2356,37 @@ export default function PackItUp() {
     const prevRoom = roomIndex > 0 ? ROOMS[ROOMS_ORDER[roomIndex - 1]] : null;
     const nextRoom = roomIndex < N - 1 ? ROOMS[ROOMS_ORDER[roomIndex + 1]] : null;
 
+    // Pan animation is driven by requestAnimationFrame on the MAIN thread, not a
+    // CSS `transition: transform`. A CSS transition hands the whole 600%-wide
+    // strip to the compositor, which rasterizes it into a single texture at the
+    // start of the animation — that momentary raster is the room-switch "pop
+    // out". A live drag never flashes because it's JS-driven each frame; snaps
+    // and arrows now animate identically, so they don't flash either.
+    const cancelAnim = (finalize) => {
+      const a = animRef.current;
+      if (!a) return;
+      cancelAnimationFrame(a.raf);
+      animRef.current = null;
+      if (finalize) a.commit();
+    };
+    const animateTo = (fromX, toX, delta) => {
+      cancelAnim(true);
+      const t0 = performance.now(), dur = 300;
+      const ease = (t) => 1 - Math.pow(1 - t, 3);
+      const self = { raf: 0, commit: () => { if (delta) setRoomIndex((i) => i + delta); setDragX(0); } };
+      const step = (now) => {
+        if (animRef.current !== self) return;              // superseded or cancelled
+        const t = Math.min(1, (now - t0) / dur);
+        setDragX(fromX + (toX - fromX) * ease(t));
+        if (t < 1) self.raf = requestAnimationFrame(step);
+        else { animRef.current = null; self.commit(); }    // land: commit index, reset offset
+      };
+      self.raf = requestAnimationFrame(step);
+      animRef.current = self;
+    };
+
     const onPointerDown = (e) => {
+      cancelAnim(true);   // settle any in-flight snap so the drag starts clean
       dragRef.current = { active: true, startX: e.clientX, intent: false, id: e.pointerId };
     };
     const onPointerMove = (e) => {
@@ -2373,25 +2405,22 @@ export default function PackItUp() {
       const d = dragRef.current;
       if (!d.active || (e && e.pointerId !== d.id)) return;
       d.active = false;
+      let delta = 0;
       if (d.intent) {
         suppressClickRef.current = true;
         setTimeout(() => { suppressClickRef.current = false; }, 80);
         const threshold = Math.max(60, viewSize.w * 0.18);
-        setRoomIndex((i) => {
-          let next = i;
-          if (dragX <= -threshold) next = Math.min(N - 1, i + 1);
-          else if (dragX >= threshold) next = Math.max(0, i - 1);
-          if (next !== i) haptic(HAPTIC.room);
-          return next;
-        });
+        if (dragX <= -threshold) delta = roomIndex < N - 1 ? 1 : 0;
+        else if (dragX >= threshold) delta = roomIndex > 0 ? -1 : 0;
+        if (delta) haptic(HAPTIC.room);
       }
       setDragging(false);
-      setDragX(0);
+      animateTo(dragX, -delta * viewSize.w, delta);
     };
 
     const arrowBtn = (dir, target) => target && (
       <button
-        onClick={() => { haptic(HAPTIC.room); setRoomIndex((i) => i + dir); }}
+        onClick={() => { haptic(HAPTIC.room); animateTo(0, -dir * viewSize.w, dir); }}
         style={{
           position: "absolute", top: 12, [dir < 0 ? "left" : "right"]: 14, zIndex: 60,
           width: 54, minHeight: 48, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -2491,8 +2520,8 @@ export default function PackItUp() {
         >
           <div style={{
             position: "absolute", top: 0, bottom: 0, left: 0, width: `${N * 100}%`, display: "flex",
-            transform: `translateX(calc(${-roomIndex * (100 / N)}% + ${dragX}px))`,
-            transition: dragging ? "none" : "transform 300ms cubic-bezier(0.22, 1, 0.36, 1)",
+            transform: `translateX(${-roomIndex * viewSize.w + dragX}px)`,
+            transition: "none",
           }}>
             {ROOMS_ORDER.map((rid, i) => {
               // Every room is rendered and painted up front (drawn synchronously via
