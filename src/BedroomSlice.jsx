@@ -1841,6 +1841,11 @@ export default function PackItUp() {
     if (!Ctx) return;
     const ctx = new Ctx();
     audioCtxRef.current = ctx;
+    // iOS silences Web Audio when the physical mute switch is on, because it
+    // defaults the page's audio session to "ambient". Declaring "playback"
+    // (Safari 16.4+) makes the sell sound behave like a music app and play
+    // through the mute switch. No-op / harmless where the API is absent.
+    try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}
     try {
       const bin = atob(SELL_CHIME_SRC.split(",")[1]);
       const bytes = new Uint8Array(bin.length);
@@ -1857,6 +1862,9 @@ export default function PackItUp() {
   const primeSellAudio = () => {
     if (audioPrimedRef.current) return;
     audioPrimedRef.current = true;
+    // re-assert the playback session on the actual user gesture (some iOS
+    // versions only honor it once a gesture has engaged audio), then resume.
+    try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}
     audioCtxRef.current?.resume().catch(() => {});
   };
 
