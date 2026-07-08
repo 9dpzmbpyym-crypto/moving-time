@@ -1,349 +1,81 @@
 {
   "bedroom": {
-    "rug": {
-      "x": 234,
-      "y": 450,
-      "scale": 1.15
-    },
-    "curtains": {
-      "x": 300,
-      "y": 32,
-      "scale": 1
-    },
-    "art_tree": {
-      "x": 234,
-      "y": 286,
-      "scale": 1
-    },
-    "art_poster": {
-      "x": 795,
-      "y": 84,
-      "scale": 1.5
-    },
-    "sill_plants": {
-      "x": 431,
-      "y": 236,
-      "scale": 1
-    },
-    "hanging_plant": {
-      "x": 676,
-      "y": 14,
-      "scale": 1
-    },
-    "bed": {
-      "x": 347,
-      "y": 301,
-      "scale": 1.15
-    },
-    "nightstand": {
-      "x": 233,
-      "y": 345,
-      "scale": 1
-    },
-    "vanity": {
-      "x": 760,
-      "y": 215,
-      "scale": 1
-    },
-    "dresser": {
-      "x": 19,
-      "y": 92,
-      "scale": 1
-    },
-    "lamp": {
-      "x": 282,
-      "y": 268,
-      "scale": 1
-    },
-    "stool": {
-      "x": 824,
-      "y": 434,
-      "scale": 1
-    },
-    "vase": {
-      "x": 36,
-      "y": 184,
-      "scale": 1
-    },
-    "figurines": {
-      "x": 152,
-      "y": 198,
-      "scale": 1
-    },
-    "basket": {
-      "x": 85,
-      "y": 207,
-      "scale": 1
-    }
+    "rug": { "x": 298, "y": 446, "scale": 1.15 },
+    "curtains": { "x": 300, "y": 32, "scale": 1 },
+    "art_tree": { "x": 346, "y": 290, "scale": 1 },
+    "art_poster": { "x": 708, "y": 57, "scale": 1.5 },
+    "sill_plants": { "x": 431, "y": 236, "scale": 1 },
+    "hanging_plant": { "x": 195, "y": 7, "scale": 1 },
+    "bed": { "x": 415, "y": 320, "scale": 0.95 },
+    "nightstand": { "x": 302, "y": 332, "scale": 1 },
+    "vanity": { "x": 680, "y": 199, "scale": 1 },
+    "dresser": { "x": 89, "y": 114, "scale": 1 },
+    "lamp": { "x": 300, "y": 270, "scale": 1 },
+    "stool": { "x": 732, "y": 399, "scale": 1 },
+    "vase": { "x": 114, "y": 218, "scale": 1 },
+    "figurines": { "x": 211, "y": 225, "scale": 1 },
+    "basket": { "x": 147, "y": 244, "scale": 1 }
   },
   "bathroom": {
-    "crossstitch_art": {
-      "x": 96,
-      "y": 140,
-      "scale": 1
-    },
-    "red_towels": {
-      "x": 480,
-      "y": 120,
-      "scale": 1
-    },
-    "mirror_cabinet": {
-      "x": 651,
-      "y": 97,
-      "scale": 1.1
-    },
-    "sill_bottles": {
-      "x": 208,
-      "y": 208,
-      "scale": 0.9
-    },
-    "bathtub": {
-      "x": -7,
-      "y": 346,
-      "scale": 0.95
-    },
-    "toilet": {
-      "x": 318,
-      "y": 289,
-      "scale": 1
-    },
-    "bath_vanity": {
-      "x": 603,
-      "y": 241,
-      "scale": 1
-    },
-    "toilet_decor": {
-      "x": 349,
-      "y": 229,
-      "scale": 1
-    },
-    "toiletries": {
-      "x": 595,
-      "y": 226,
-      "scale": 0.85
-    },
-    "laundry_basket": {
-      "x": 228,
-      "y": 538,
-      "scale": 0.9
-    }
+    "crossstitch_art": { "x": 120, "y": 213, "scale": 1 },
+    "red_towels": { "x": 511, "y": 152, "scale": 1 },
+    "mirror_cabinet": { "x": 651, "y": 97, "scale": 1.1 },
+    "sill_bottles": { "x": 208, "y": 208, "scale": 0.9 },
+    "bathtub": { "x": 63, "y": 346, "scale": 0.95 },
+    "toilet": { "x": 401, "y": 289, "scale": 1 },
+    "bath_vanity": { "x": 603, "y": 241, "scale": 1 },
+    "toilet_decor": { "x": 424, "y": 227, "scale": 1 },
+    "toiletries": { "x": 767, "y": 233, "scale": 0.85 },
+    "laundry_basket": { "x": 302, "y": 580, "scale": 0.9 }
   },
   "office": {
-    "office_curtains": {
-      "x": 463,
-      "y": 45,
-      "scale": 1
-    },
-    "wall_frames": {
-      "x": 165,
-      "y": 47,
-      "scale": 1
-    },
-    "desk_hutch": {
-      "x": 17,
-      "y": 109,
-      "scale": 1.15
-    },
-    "sewing_machine": {
-      "x": 50,
-      "y": 53,
-      "scale": 1
-    },
-    "desk_lamp": {
-      "x": 208,
-      "y": 221,
-      "scale": 1.1
-    },
-    "computer": {
-      "x": 331,
-      "y": 248,
-      "scale": 1
-    },
-    "desk_clutter": {
-      "x": 110,
-      "y": 271,
-      "scale": 1
-    },
-    "office_chair": {
-      "x": 404,
-      "y": 322,
-      "scale": 1.15
-    },
-    "storage_bin": {
-      "x": 821,
-      "y": 256,
-      "scale": 1
-    },
-    "waste_bin": {
-      "x": 868,
-      "y": 547,
-      "scale": 1.2
-    },
-    "side_cabinet": {
-      "x": 702,
-      "y": 236,
-      "scale": 1.15
-    }
+    "office_curtains": { "x": 463, "y": 45, "scale": 1 },
+    "wall_frames": { "x": 193, "y": 73, "scale": 1 },
+    "desk_hutch": { "x": 66, "y": 138, "scale": 1.05 },
+    "sewing_machine": { "x": 102, "y": 75, "scale": 1 },
+    "desk_lamp": { "x": 208, "y": 221, "scale": 1.1 },
+    "computer": { "x": 362, "y": 244, "scale": 1.1 },
+    "desk_clutter": { "x": 110, "y": 271, "scale": 1 },
+    "office_chair": { "x": 382, "y": 317, "scale": 1.15 },
+    "storage_bin": { "x": 791, "y": 277, "scale": 0.9 },
+    "waste_bin": { "x": 797, "y": 569, "scale": 1.45 },
+    "side_cabinet": { "x": 691, "y": 263, "scale": 1.05 }
   },
   "dining": {
-    "dining_curtains": {
-      "x": 320,
-      "y": 48,
-      "scale": 1
-    },
-    "sill_plants_d": {
-      "x": 452,
-      "y": 280,
-      "scale": 1
-    },
-    "shelf_art": {
-      "x": 696,
-      "y": 56,
-      "scale": 1
-    },
-    "dining_table": {
-      "x": 300,
-      "y": 350,
-      "scale": 1
-    },
-    "dining_chairs": {
-      "x": 217,
-      "y": 297,
-      "scale": 1.05,
-      "parts": {
-        "sides": {
-          "x": 0,
-          "y": 0,
-          "scaleX": 1,
-          "scaleY": 1
-        },
-        "cushion": {
-          "x": 36,
-          "y": 52,
-          "scaleX": 0.85,
-          "scaleY": 0.8
-        },
-        "frame": {
-          "x": 38,
-          "y": 25,
-          "scaleX": 0.65,
-          "scaleY": 1.35
-        }
-      }
-    },
-    "candle_bowl": {
-      "x": 396,
-      "y": 366,
-      "scale": 1
-    },
-    "bar_cabinet": {
-      "x": 680,
-      "y": 272,
-      "scale": 1
-    },
-    "bar_bottles": {
-      "x": 732,
-      "y": 216,
-      "scale": 1
-    }
+    "dining_curtains": { "x": 320, "y": 48, "scale": 1 },
+    "sill_plants_d": { "x": 452, "y": 280, "scale": 1 },
+    "shelf_art": { "x": 645, "y": 29, "scale": 1 },
+    "dining_table": { "x": 210, "y": 330, "scale": 1.15 },
+    "dining_chairs": { "x": 111, "y": 269, "scale": 1.25, "parts": {
+      "sides": { "x": 0, "y": 0, "scaleX": 1, "scaleY": 1 },
+      "cushion": { "x": 36, "y": 52, "scaleX": 0.85, "scaleY": 0.8 },
+      "frame": { "x": 38, "y": 25, "scaleX": 0.65, "scaleY": 1.35 }
+    } },
+    "candle_bowl": { "x": 326, "y": 356, "scale": 1 },
+    "bar_cabinet": { "x": 627, "y": 312, "scale": 1 },
+    "bar_bottles": { "x": 671, "y": 251, "scale": 1 }
   },
   "kitchen": {
-    "stove": {
-      "x": 217,
-      "y": 264,
-      "scale": 1.1
-    },
-    "counter_sink": {
-      "x": 339,
-      "y": 258,
-      "scale": 1.15
-    },
-    "fridge": {
-      "x": 701,
-      "y": 223,
-      "scale": 1
-    },
-    "pantry": {
-      "x": 830,
-      "y": 138,
-      "scale": 1.15
-    },
-    "kettle": {
-      "x": 225,
-      "y": 283,
-      "scale": 1
-    },
-    "cutting_board": {
-      "x": 344,
-      "y": 294,
-      "scale": 1
-    },
-    "dish_rack": {
-      "x": 592,
-      "y": 264,
-      "scale": 1
-    },
-    "sill_plants_k": {
-      "x": 432,
-      "y": 214,
-      "scale": 1
-    },
-    "fridge_plant": {
-      "x": 721,
-      "y": 179,
-      "scale": 1
-    },
-    "door_towel": {
-      "x": 111,
-      "y": 67,
-      "scale": 1.35
-    }
+    "stove": { "x": 203, "y": 285, "scale": 1 },
+    "counter_sink": { "x": 313, "y": 280, "scale": 1.05 },
+    "fridge": { "x": 642, "y": 199, "scale": 1.1 },
+    "pantry": { "x": 782, "y": 150, "scale": 1.1 },
+    "kettle": { "x": 210, "y": 287, "scale": 1 },
+    "cutting_board": { "x": 342, "y": 293, "scale": 1.45 },
+    "dish_rack": { "x": 537, "y": 277, "scale": 1 },
+    "sill_plants_k": { "x": 432, "y": 214, "scale": 1 },
+    "fridge_plant": { "x": 721, "y": 179, "scale": 1 },
+    "door_towel": { "x": 111, "y": 67, "scale": 1.35 }
   },
   "living": {
-    "tv_hutch": {
-      "x": 34,
-      "y": 29,
-      "scale": 1.2
-    },
-    "wall_art_pair": {
-      "x": 379,
-      "y": 103,
-      "scale": 1.1
-    },
-    "sofa": {
-      "x": 327,
-      "y": 249,
-      "scale": 1
-    },
-    "living_rug": {
-      "x": 201,
-      "y": 455,
-      "scale": 1
-    },
-    "coffee_table": {
-      "x": 279,
-      "y": 445,
-      "scale": 1
-    },
-    "table_decor": {
-      "x": 412,
-      "y": 424,
-      "scale": 1
-    },
-    "destijl_poster": {
-      "x": 650,
-      "y": 295,
-      "scale": 1.15
-    },
-    "standing_mirror": {
-      "x": 780,
-      "y": 231,
-      "scale": 1
-    },
-    "floor_lamp": {
-      "x": 872,
-      "y": 175,
-      "scale": 1.05
-    }
+    "tv_hutch": { "x": 75, "y": 62, "scale": 1.1 },
+    "wall_art_pair": { "x": 379, "y": 103, "scale": 1.1 },
+    "sofa": { "x": 351, "y": 276, "scale": 0.9 },
+    "living_rug": { "x": 188, "y": 457, "scale": 1 },
+    "coffee_table": { "x": 314, "y": 451, "scale": 0.85 },
+    "table_decor": { "x": 412, "y": 424, "scale": 1 },
+    "destijl_poster": { "x": 626, "y": 299, "scale": 1.1 },
+    "standing_mirror": { "x": 747, "y": 238, "scale": 1 },
+    "floor_lamp": { "x": 829, "y": 199, "scale": 0.95 }
   }
 }

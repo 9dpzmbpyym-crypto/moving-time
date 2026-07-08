@@ -1582,6 +1582,12 @@ export function LayoutEditor() {
 
   useEffect(() => { localStorage.setItem("pack-it-up-layout", JSON.stringify(layout)); }, [layout]);
   useEffect(() => { setSelectedId(null); }, [roomId]);
+  const [fit, setFit] = useState(0.4);
+  useEffect(() => {
+    const calc = () => setFit(Math.min(1, (window.innerWidth - 20) / STAGE_W));
+    calc(); window.addEventListener("resize", calc);
+    return () => window.removeEventListener("resize", calc);
+  }, []);
 
   const updateSelected = (patch) => {
     if (!selectedId) return;
@@ -1642,9 +1648,10 @@ export function LayoutEditor() {
       <button onClick={copyLayout} style={{ ...button, color: "#FFD97A" }}>{copied ? "Copied!" : "Copy layout"}</button>
     </div>
     <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
-      <div style={{ flex: 1, overflow: "auto", padding: 18, display: "flex", justifyContent: "center", alignItems: "flex-start" }}>
+      <div style={{ flex: 1, overflow: "auto", padding: 10, display: "flex", justifyContent: "center", alignItems: "flex-start" }}>
+        <div style={{ width: STAGE_W * fit, height: STAGE_H * fit, flex: "0 0 auto", overflow: "hidden" }}>
         <div ref={stageRef} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag}
-          onPointerDown={() => setSelectedId(null)} style={{ position: "relative", width: STAGE_W, height: STAGE_H, flex: "0 0 auto", touchAction: "none", boxShadow: "0 0 0 8px #3E2413, 0 0 0 12px #000" }}>
+          onPointerDown={() => setSelectedId(null)} style={{ position: "relative", width: STAGE_W, height: STAGE_H, transform: `scale(${fit})`, transformOrigin: "top left", touchAction: "none", boxShadow: "0 0 0 8px #3E2413, 0 0 0 12px #000" }}>
           <div style={{ position: "absolute", inset: 0 }}><PixelCanvas w={240} h={180} draw={room.drawShell} /></div>
           {ordered.map((o) => {
             const spr = room.sprites[o.id], v = layout[roomId][o.id], active = selectedId === o.id;
@@ -1668,6 +1675,12 @@ export function LayoutEditor() {
               </div>;
             })() : <PixelCanvas w={spr.w} h={spr.h} draw={spr.draw} />}</div>;
           })}
+          {/* game-crop guide: the game zooms in and only shows the bright middle band.
+              Anything under the dimmed side strips gets cut off in the real game. */}
+          <div style={{ position: "absolute", top: 0, left: 0, width: 63, height: STAGE_H, background: "rgba(8,4,1,0.62)", borderRight: "2px dashed #FFD97A", pointerEvents: "none", zIndex: 900 }} />
+          <div style={{ position: "absolute", top: 0, left: STAGE_W - 63, width: 63, height: STAGE_H, background: "rgba(8,4,1,0.62)", borderLeft: "2px dashed #FFD97A", pointerEvents: "none", zIndex: 900 }} />
+          <div style={{ position: "absolute", top: 6, left: "50%", transform: "translateX(-50%)", background: "#241509", color: "#FFD97A", padding: "4px 10px", fontSize: 15, border: "2px solid #120A04", pointerEvents: "none", zIndex: 900 }}>keep items inside the bright area</div>
+        </div>
         </div>
       </div>
       <aside style={{ ...panel, width: "auto", height: 260, padding: 14, overflow: "auto", flex: "0 0 260px", columnWidth: 270, columnGap: 24 }}>
