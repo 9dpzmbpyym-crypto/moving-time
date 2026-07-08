@@ -755,6 +755,614 @@ const BATH_SPRITES = {
   }},
 };
 
+/* ============================================================
+   KITCHEN — shell + sprites (ref: galley kitchen mockup)
+   ============================================================ */
+function drawKitchenShell(ctx) {
+  const wallBase = "#EDE0B4", wallLight = "#F6ECC8", wallShade = "#D6C592";
+
+  r(ctx, wallBase, 0, 0, 240, 112);
+  dith(ctx, wallLight, 0, 0, 240, 8, 3, 0);
+  dith(ctx, wallShade, 0, 100, 240, 12, 3, 1);
+  r(ctx, wallLight, 0, 0, 240, 3);
+  r(ctx, wallShade, 0, 3, 240, 1);
+  r(ctx, P.cream, 0, 106, 240, 6);
+  r(ctx, P.creamLo, 0, 106, 240, 1);
+  r(ctx, P.out, 0, 111, 240, 1);
+
+  // tile floor (must match extendFloorTile exactly)
+  r(ctx, "#D8BC86", 0, 112, 240, 68);
+  for (let ty = 112; ty < 180; ty += 12)
+    for (let tx = 0; tx < 240; tx += 12) {
+      if ((tx / 12 + (ty - 112) / 12) % 2 === 0) r(ctx, "#CBAD72", tx, ty, 12, 12);
+      r(ctx, "#B4955C", tx, ty, 12, 1); r(ctx, "#B4955C", tx, ty, 1, 12);
+    }
+
+  // back door on the left (towel hangs on it as a separate object)
+  r(ctx, P.out, 8, 10, 28, 96);
+  r(ctx, P.cream, 9, 11, 26, 94);
+  r(ctx, P.creamLo, 9, 11, 26, 2);
+  r(ctx, P.creamLo, 12, 50, 20, 1);
+  r(ctx, P.creamLo, 12, 80, 20, 1);
+  r(ctx, P.out, 14, 16, 16, 24);
+  r(ctx, "#BFD8CC", 15, 17, 14, 22);
+  r(ctx, P.out, 21, 17, 2, 22);
+  r(ctx, P.out, 15, 27, 14, 2);
+  r(ctx, P.gold, 30, 56, 2, 4);
+  r(ctx, P.out, 30, 60, 2, 1);
+
+  // green tile backsplash behind the stove + counter run
+  r(ctx, "#6FA482", 46, 92, 104, 20);
+  r(ctx, "#7FB596", 46, 92, 104, 2);
+  for (let ty = 92; ty < 112; ty += 10)
+    for (let tx = 46; tx < 150; tx += 10) {
+      r(ctx, "#4E7E5E", tx, ty, 10, 1);
+      r(ctx, "#4E7E5E", tx, ty, 1, 10);
+    }
+
+  // window over the sink, blinds half-drawn
+  r(ctx, P.out, 92, 14, 56, 50);
+  r(ctx, P.cream, 94, 16, 52, 46);
+  r(ctx, "#BFD8CC", 98, 20, 44, 40);
+  for (let by = 21; by < 39; by += 3) r(ctx, P.glassHi, 98, by, 44, 1);
+  r(ctx, P.glassLo, 98, 39, 44, 1);
+  r(ctx, P.cream, 118, 20, 4, 40);
+  r(ctx, P.creamLo, 98, 44, 44, 2);
+  r(ctx, P.out, 90, 64, 60, 1);
+  r(ctx, P.creamLo, 90, 65, 60, 4);
+
+  dith(ctx, wallShade, 0, 0, 26, 112, 2, 0);
+  dith(ctx, wallShade, 218, 0, 22, 112, 2, 1);
+}
+
+const KITCHEN_SPRITES = {
+  stove: { w: 30, h: 44, draw(ctx) {
+    // back rail with dials
+    r(ctx, P.out, 0, 0, 30, 8);
+    r(ctx, P.white, 1, 1, 28, 6); r(ctx, "#FBF6E6", 1, 1, 28, 2);
+    [[5, 3], [11, 3], [17, 3], [23, 3]].forEach(([x, y]) => { r(ctx, P.out, x, y, 3, 3); r(ctx, P.gold, x + 1, y + 1, 1, 1); });
+    // cooktop with two big burner grates
+    r(ctx, P.out, 0, 8, 30, 10);
+    r(ctx, P.whiteLo, 1, 9, 28, 8);
+    [[4, 10], [17, 10]].forEach(([x, y]) => { r(ctx, P.out, x, y, 9, 6); r(ctx, "#2A2622", x + 1, y + 1, 7, 4); r(ctx, "#4A463F", x + 2, y + 2, 5, 2); });
+    // oven
+    r(ctx, P.out, 0, 18, 30, 26);
+    r(ctx, P.white, 1, 19, 28, 24);
+    r(ctx, "#B8AE96", 4, 21, 22, 2);
+    r(ctx, P.out, 4, 25, 22, 12);
+    r(ctx, "#2A1A0C", 5, 26, 20, 10);
+    r(ctx, P.glassHi, 7, 27, 5, 2);
+    r(ctx, P.out, 1, 38, 28, 1);
+    r(ctx, P.whiteLo, 1, 39, 28, 4);
+  }},
+  counter_sink: { w: 60, h: 44, draw(ctx) {
+    // faucet rising above the counter
+    r(ctx, P.out, 27, 0, 2, 6); r(ctx, "#B8AE96", 27, 1, 1, 5);
+    r(ctx, P.out, 27, 0, 8, 2); r(ctx, "#B8AE96", 28, 0, 6, 1);
+    r(ctx, P.out, 34, 2, 1, 2);
+    // yellow tiled countertop
+    r(ctx, P.out, 0, 6, 60, 9);
+    r(ctx, "#E3C25E", 1, 7, 58, 4); r(ctx, "#EFD98A", 1, 7, 58, 1);
+    r(ctx, "#C9A63E", 1, 11, 58, 3);
+    for (let x = 9; x < 59; x += 8) r(ctx, "#A8862E", x, 7, 1, 7);
+    // sink basin inset
+    r(ctx, P.out, 19, 7, 22, 7);
+    r(ctx, P.white, 20, 8, 20, 5); r(ctx, P.whiteLo, 20, 11, 20, 2);
+    // cabinet run
+    r(ctx, P.out, 1, 15, 58, 25);
+    r(ctx, P.white, 2, 16, 56, 22);
+    const door = (x, w, y, h) => { outlineRect(ctx, P.creamLo, x, y, w, h); r(ctx, "#B8AE96", x + Math.floor(w / 2), y + Math.floor(h / 2) - 1, 1, 2); };
+    door(4, 16, 18, 8); door(22, 16, 18, 8); door(40, 16, 18, 8);
+    door(4, 16, 27, 10); door(22, 16, 27, 10); door(40, 16, 27, 10);
+    r(ctx, P.out, 2, 38, 56, 1);
+    r(ctx, P.whiteLo, 4, 39, 52, 4);
+    r(ctx, P.out, 4, 43, 52, 1);
+  }},
+  fridge: { w: 32, h: 60, draw(ctx) {
+    r(ctx, P.out, 0, 0, 32, 60);
+    r(ctx, P.white, 1, 1, 30, 58);
+    r(ctx, "#FBF6E6", 1, 1, 30, 2);
+    r(ctx, P.whiteLo, 1, 1, 3, 58);
+    r(ctx, P.out, 1, 22, 30, 1);
+    r(ctx, "#B8AE96", 25, 4, 2, 14);
+    r(ctx, "#B8AE96", 25, 28, 2, 26);
+    r(ctx, P.whiteLo, 1, 56, 30, 3);
+  }},
+  pantry: { w: 26, h: 72, draw(ctx) {
+    r(ctx, P.out, 0, 0, 26, 72);
+    r(ctx, P.cream, 1, 1, 24, 70); r(ctx, "#FBF6E6", 1, 1, 24, 2);
+    outlineRect(ctx, P.creamLo, 4, 5, 18, 30);
+    outlineRect(ctx, P.creamLo, 4, 39, 18, 28);
+    r(ctx, P.creamLo, 1, 68, 24, 3);
+    r(ctx, "#B8AE96", 20, 33, 2, 8);
+  }},
+  kettle: { w: 14, h: 11, draw(ctx) {
+    r(ctx, P.out, 4, 0, 6, 3); r(ctx, "#6C90BE", 5, 1, 4, 1);
+    r(ctx, P.out, 1, 2, 12, 9);
+    r(ctx, "#4A6E9C", 2, 3, 10, 7);
+    r(ctx, "#6C90BE", 2, 3, 10, 2);
+    r(ctx, P.out, 0, 4, 3, 2); r(ctx, "#6C90BE", 0, 4, 2, 1);
+    r(ctx, P.out, 10, 0, 3, 1); r(ctx, P.out, 12, 1, 1, 3); r(ctx, P.out, 9, 3, 2, 1);
+  }},
+  cutting_board: { w: 12, h: 6, draw(ctx) {
+    r(ctx, P.out, 0, 0, 12, 6);
+    r(ctx, P.woodMid, 1, 1, 10, 4);
+    r(ctx, P.woodHi, 1, 1, 10, 1);
+    r(ctx, P.woodDark, 1, 4, 10, 1);
+  }},
+  dish_rack: { w: 18, h: 10, draw(ctx) {
+    r(ctx, P.out, 0, 7, 18, 3);
+    r(ctx, "#B8AE96", 1, 8, 16, 1);
+    [2, 5, 8, 11, 14, 16].forEach((x) => r(ctx, "#B8AE96", x, 0, 1, 8));
+    r(ctx, P.out, 3, 1, 5, 7); r(ctx, P.cream, 4, 2, 3, 5);
+    r(ctx, P.out, 10, 1, 5, 7); r(ctx, P.cream, 11, 2, 3, 5);
+  }},
+  sill_plants_k: { w: 20, h: 9, draw(ctx) {
+    [0, 11].forEach((x) => {
+      r(ctx, P.green, x + 2, 0, 1, 5); r(ctx, P.greenHi, x + 4, 1, 1, 4); r(ctx, P.green, x + 6, 0, 1, 5);
+      r(ctx, P.out, x, 5, 8, 4); r(ctx, P.terra, x + 1, 6, 6, 3); r(ctx, P.terraLo, x + 1, 8, 6, 1);
+    });
+  }},
+  fridge_plant: { w: 16, h: 12, draw(ctx) {
+    r(ctx, P.out, 3, 6, 10, 6);
+    r(ctx, P.terra, 4, 7, 8, 4); r(ctx, P.terraLo, 4, 10, 8, 1);
+    r(ctx, P.green, 3, 1, 10, 6); r(ctx, P.greenHi, 3, 1, 10, 2);
+    dith(ctx, P.greenLo, 3, 4, 10, 3, 2, 0);
+    r(ctx, P.green, 0, 8, 3, 1); r(ctx, P.greenHi, 0, 7, 2, 1);
+    r(ctx, P.green, 13, 8, 3, 1); r(ctx, P.greenHi, 14, 7, 2, 1);
+  }},
+  door_towel: { w: 13, h: 16, draw(ctx) {
+    r(ctx, P.out, 0, 0, 13, 2);
+    r(ctx, "#B8AE96", 1, 0, 11, 1);
+    r(ctx, P.out, 1, 2, 11, 14);
+    r(ctx, P.cream, 2, 3, 9, 12);
+    [3, 6, 9, 12].forEach((y, i) => r(ctx, i % 2 ? "#A3252C" : "#C97B2E", 2, y, 9, 2));
+    dith(ctx, P.creamLo, 2, 13, 9, 2, 2, 0);
+  }},
+};
+
+const KITCHEN_OBJECTS = [
+  { id: "stove", name: "Stove & Oven", category: "furniture", x: 210, y: 424, z: 3, removable: false,
+    check: "Gas line's hooked in behind it — this range isn't budging from that wall." },
+  { id: "counter_sink", name: "Counter & Sink", category: "furniture", x: 340, y: 424, z: 3, removable: false,
+    check: "Plumbed straight into the wall. The sink comes with the house, not the boxes." },
+  { id: "fridge", name: "Refrigerator", category: "furniture", x: 610, y: 360, z: 3, removable: false,
+    check: "That compressor's been humming since before you moved in — it'll keep humming after." },
+  { id: "pantry", name: "Pantry Cabinet", category: "furniture", x: 760, y: 312, z: 3, removable: false,
+    check: "Built in stud by stud. That cabinet is part of the wall now." },
+  { id: "kettle", name: "Blue Kettle", category: "decor", value: 12, x: 242, y: 418, z: 4, removable: true,
+    check: "It's announced every cup of tea in this kitchen for a decade. Still whistles right on cue." },
+  { id: "cutting_board", name: "Cutting Board", category: "decor", value: 5, x: 400, y: 430, z: 4, removable: true,
+    check: "Scarred with a thousand onions. Somehow still your favorite one." },
+  { id: "dish_rack", name: "Dish Rack", category: "decor", value: 8, x: 500, y: 414, z: 4, removable: true,
+    check: "Two plates and a prayer. It's held up the whole time you've lived here." },
+  { id: "sill_plants_k", name: "Windowsill Herbs", category: "plants", value: 6, x: 440, y: 226, z: 4, removable: true,
+    check: "Herbs that outlived three New Year's resolutions to cook more." },
+  { id: "fridge_plant", name: "Fridge-top Plant", category: "plants", value: 7, x: 642, y: 318, z: 4, removable: true,
+    check: "It's trailed off that fridge top so long it's basically a factory feature." },
+  { id: "door_towel", name: "Striped Towel", category: "textiles", value: 3, x: 72, y: 140, z: 2, removable: true,
+    check: "Threadbare, stained, irreplaceable. It stays folded over that bar out of pure habit." },
+];
+
+/* ============================================================
+   DINING ROOM — shell + sprites (ref: dining mockup)
+   ============================================================ */
+function drawDiningShell(ctx) {
+  const W = 240;
+  const WALL_BASE = "#EDE3C4", WALL_LIGHT = "#F6EFD8", WALL_SHADE = "#D8CBA4";
+
+  r(ctx, WALL_BASE, 0, 0, W, 112);
+  r(ctx, WALL_LIGHT, 0, 0, W, 17);
+  r(ctx, WALL_LIGHT, 0, 0, W, 3);
+  r(ctx, WALL_SHADE, 0, 3, W, 1);
+  r(ctx, WALL_LIGHT, 0, 17, W, 1);
+  dith(ctx, WALL_SHADE, 0, 18, W, 4, 2, 0);
+  r(ctx, WALL_SHADE, 0, 22, W, 1);
+  dith(ctx, WALL_SHADE, 0, 98, W, 8, 2, 0);
+  r(ctx, P.cream, 0, 106, W, 6);
+  r(ctx, P.creamLo, 0, 106, W, 1);
+  r(ctx, P.out, 0, 111, W, 1);
+
+  // plank floor (must match extendFloorPlank exactly)
+  r(ctx, P.floor, 0, 112, 240, 68);
+  for (let row = 0; row * 8 + 112 < 180; row++) {
+    const y0 = 112 + row * 8;
+    r(ctx, P.floorDark, 0, y0 + 7, 240, 1);
+    dith(ctx, P.floorLight, 0, y0 + 1, 240, 3, 5, row * 3);
+    const off = (row % 2) * 24;
+    for (let x = off + 10; x < 240; x += 48) r(ctx, P.floorDark, x, y0, 1, 7);
+  }
+
+  r(ctx, P.out, 0, 0, 7, 112);
+  r(ctx, P.woodDark, 0, 0, 5, 112);
+  r(ctx, P.woodMid, 4, 4, 1, 104);
+
+  // window with blinds
+  const wx = 60, wy = 22, ww = 52, wh = 50;
+  r(ctx, P.out, wx - 2, wy - 2, ww + 4, wh + 4);
+  r(ctx, P.cream, wx - 1, wy - 1, ww + 2, wh + 2);
+  r(ctx, P.creamLo, wx - 1, wy + wh, ww + 2, 1);
+  r(ctx, P.sky, wx + 2, wy + 2, ww - 4, wh - 4);
+  for (let sy = wy + 3; sy < wy + wh - 3; sy += 4) {
+    r(ctx, P.glassHi, wx + 3, sy, ww - 6, 2);
+  }
+  r(ctx, P.cream, wx + ww / 2 - 1, wy, 2, wh);
+  r(ctx, P.out, wx - 5, wy + wh, ww + 10, 5);
+  r(ctx, P.creamLo, wx - 4, wy + wh + 1, ww + 8, 3);
+  r(ctx, P.woodDark, wx - 5, wy + wh + 4, ww + 10, 1);
+
+  dith(ctx, WALL_SHADE, 0, 0, 26, 112, 2, 0);
+  dith(ctx, WALL_SHADE, 240 - 22, 0, 22, 112, 2, 1);
+}
+
+const DINING_SPRITES = {
+  dining_curtains: { w: 72, h: 64, draw(ctx) {
+    r(ctx, P.out, 0, 0, 72, 3);
+    r(ctx, P.woodDark, 1, 1, 70, 1);
+    r(ctx, P.woodDark, 0, 0, 2, 3); r(ctx, P.woodDark, 70, 0, 2, 3);
+    r(ctx, P.out, 1, 3, 20, 60);
+    r(ctx, "#3F5C46", 2, 4, 18, 58);
+    r(ctx, "#527455", 2, 4, 18, 3);
+    dith(ctx, "#2E4735", 2, 40, 18, 20, 2, 0);
+    r(ctx, "#2E4735", 6, 4, 1, 58); r(ctx, "#2E4735", 13, 4, 1, 58);
+    r(ctx, P.out, 51, 3, 20, 60);
+    r(ctx, "#3F5C46", 52, 4, 18, 58);
+    r(ctx, "#527455", 52, 4, 18, 3);
+    dith(ctx, "#2E4735", 52, 40, 18, 20, 2, 0);
+    r(ctx, "#2E4735", 56, 4, 1, 58); r(ctx, "#2E4735", 63, 4, 1, 58);
+  }},
+  sill_plants_d: { w: 14, h: 8, draw(ctx) {
+    [0, 8].forEach((x) => {
+      r(ctx, P.out, x, 0, 6, 5);
+      r(ctx, P.green, x + 1, 1, 2, 3); r(ctx, P.greenHi, x + 1, 1, 2, 1);
+      r(ctx, P.greenLo, x + 3, 1, 2, 3);
+      r(ctx, P.out, x, 4, 6, 4);
+      r(ctx, P.terra, x + 1, 5, 4, 3); r(ctx, P.terraLo, x + 1, 7, 4, 1);
+    });
+  }},
+  shelf_art: { w: 22, h: 28, draw(ctx) {
+    r(ctx, P.out, 0, 0, 22, 28);
+    r(ctx, P.wood, 1, 1, 20, 26);
+    r(ctx, P.woodHi, 1, 1, 20, 2);
+    r(ctx, P.cream, 3, 3, 16, 22);
+    r(ctx, P.glass, 4, 4, 14, 10);
+    r(ctx, P.woodMid, 4, 14, 14, 1);
+    r(ctx, "#4A4A4A", 9, 7, 4, 6);
+    r(ctx, P.mustardHi, 10, 9, 2, 3);
+    r(ctx, P.woodDark, 10, 6, 2, 1);
+    r(ctx, P.burgundy, 5, 16, 3, 7);
+    r(ctx, P.teal, 9, 15, 3, 8);
+    r(ctx, P.mustard, 13, 17, 2, 6);
+    r(ctx, P.wood, 16, 16, 2, 7);
+  }},
+  dining_table: { w: 64, h: 50, draw(ctx) {
+    const w = 64;
+    const steps = [8, 4, 1];
+    for (let i = 0; i < 3; i++) {
+      const inset = steps[i];
+      r(ctx, P.out, inset, i, w - 2 * inset, 1);
+    }
+    r(ctx, P.out, 0, 3, 1, 26); r(ctx, P.out, w - 1, 3, 1, 26);
+    for (let i = 0; i < 3; i++) {
+      const inset = steps[2 - i];
+      r(ctx, P.out, inset, 29 + i, w - 2 * inset, 1);
+    }
+    r(ctx, P.cream, 8, 1, w - 16, 1);
+    r(ctx, P.cream, 4, 2, w - 8, 1);
+    r(ctx, P.cream, 1, 3, w - 2, 26);
+    r(ctx, P.cream, 4, 29, w - 8, 1);
+    r(ctx, P.cream, 8, 30, w - 16, 1);
+    r(ctx, P.white, 8, 1, w - 16, 1);
+    r(ctx, P.white, 4, 2, w - 8, 1);
+    r(ctx, P.white, 1, 3, w - 2, 2);
+    dith(ctx, P.creamLo, 4, 24, w - 8, 6, 2, 0);
+    r(ctx, P.out, 3, 31, w - 6, 9);
+    r(ctx, P.creamLo, 4, 32, w - 8, 7);
+    r(ctx, P.whiteLo, 4, 32, w - 8, 1);
+    r(ctx, P.out, 14, 40, 4, 10); r(ctx, P.out, 46, 40, 4, 10);
+    r(ctx, P.cream, 15, 41, 2, 8); r(ctx, P.cream, 47, 41, 2, 8);
+  }},
+  dining_chairs: { w: 96, h: 58, draw(ctx) {
+    function chair(ox, oy, backH, seatH, legH, w) {
+      r(ctx, P.out, ox, oy, w, backH);
+      r(ctx, P.woodDark, ox + 1, oy + 1, w - 2, backH - 2);
+      r(ctx, P.woodLight, ox + 1, oy + 1, w - 2, 2);
+      const spindles = 3, innerW = w - 4, gap = innerW / (spindles + 1);
+      for (let i = 1; i <= spindles; i++) {
+        r(ctx, P.woodMid, ox + 2 + Math.round(i * gap) - 1, oy + 4, 2, backH - 8);
+      }
+      r(ctx, P.out, ox - 2, oy + backH, w + 4, seatH);
+      r(ctx, P.wood, ox - 1, oy + backH + 1, w + 2, seatH - 2);
+      r(ctx, "#5C6C80", ox, oy + backH + 2, w, seatH - 3);
+      dith(ctx, "#48566A", ox, oy + backH + 2, w, seatH - 3, 2, 0);
+      r(ctx, P.out, ox - 1, oy + backH + seatH, 3, legH);
+      r(ctx, P.out, ox + w - 2, oy + backH + seatH, 3, legH);
+      r(ctx, P.woodDark, ox, oy + backH + seatH + 1, 1, legH - 2);
+      r(ctx, P.woodDark, ox + w - 1, oy + backH + seatH + 1, 1, legH - 2);
+    }
+    chair(2, 12, 28, 8, 10, 24);
+    chair(70, 12, 28, 8, 10, 24);
+    chair(34, 20, 18, 10, 10, 28);
+  }},
+  candle_bowl: { w: 16, h: 12, draw(ctx) {
+    r(ctx, P.out, 0, 6, 16, 6);
+    r(ctx, P.teal, 1, 7, 14, 4);
+    r(ctx, P.tealHi, 1, 7, 14, 1);
+    dith(ctx, P.tealLo, 1, 9, 14, 1, 2, 0);
+    r(ctx, P.out, 3, 4, 10, 3);
+    r(ctx, P.woodLight, 4, 5, 8, 1);
+    r(ctx, P.out, 6, 0, 4, 5);
+    r(ctx, P.cream, 7, 0, 2, 4);
+    r(ctx, P.mustardHi, 7, 0, 2, 1);
+  }},
+  bar_cabinet: { w: 48, h: 44, draw(ctx) {
+    r(ctx, P.out, 0, 0, 48, 5);
+    r(ctx, P.woodLight, 1, 1, 46, 3);
+    r(ctx, P.out, 2, 5, 44, 35);
+    r(ctx, P.woodDark, 3, 6, 42, 33);
+    r(ctx, P.out, 23, 6, 2, 33);
+    r(ctx, P.woodMid, 4, 7, 18, 31);
+    r(ctx, P.woodMid, 26, 7, 18, 31);
+    r(ctx, P.woodHi, 4, 7, 18, 2); r(ctx, P.woodHi, 26, 7, 18, 2);
+    r(ctx, "#B8AE96", 19, 22, 3, 3);
+    r(ctx, "#B8AE96", 29, 22, 3, 3);
+    r(ctx, P.out, 4, 40, 6, 4); r(ctx, P.out, 38, 40, 6, 4);
+    r(ctx, P.woodDark, 5, 41, 4, 2); r(ctx, P.woodDark, 39, 41, 4, 2);
+  }},
+  bar_bottles: { w: 28, h: 16, draw(ctx) {
+    r(ctx, P.out, 0, 4, 6, 12);
+    r(ctx, P.wood, 1, 5, 4, 10);
+    r(ctx, P.woodHi, 1, 5, 4, 1);
+    r(ctx, P.out, 8, 2, 4, 14);
+    r(ctx, P.green, 9, 3, 2, 12); r(ctx, P.greenHi, 9, 3, 2, 2);
+    r(ctx, P.out, 9, 0, 2, 3); r(ctx, P.green, 9, 0, 2, 3);
+    r(ctx, P.out, 14, 3, 4, 13);
+    r(ctx, P.mustard, 15, 4, 2, 11); r(ctx, P.mustardHi, 15, 4, 2, 2);
+    r(ctx, P.out, 15, 1, 2, 3); r(ctx, P.mustard, 15, 1, 2, 3);
+    r(ctx, P.out, 20, 5, 8, 11);
+    r(ctx, P.glass, 21, 6, 6, 9);
+    r(ctx, P.red, 21, 9, 6, 6); r(ctx, P.redHi, 21, 9, 6, 1);
+    r(ctx, P.out, 22, 1, 4, 5);
+    r(ctx, P.glassHi, 23, 0, 2, 2);
+  }},
+};
+
+const DINING_OBJECTS = [
+  { id: "dining_curtains", name: "Green Curtains", category: "textiles", x: 200, y: 80, z: 2, removable: true, value: 10,
+    check: "They never belonged to the landlord — take them, or leave them for the next tenant." },
+  { id: "sill_plants_d", name: "Sill Succulents", category: "plants", x: 316, y: 264, z: 3, removable: true, value: 6,
+    check: "Low-maintenance succulents. They've survived worse landlords than this one." },
+  { id: "shelf_art", name: "Still-life Print", category: "decor", x: 640, y: 148, z: 2, removable: true, value: 9,
+    check: "A framed print of a shelf. The real shelf was sold separately, apparently." },
+  { id: "dining_table", name: "Dining Table", category: "furniture", x: 300, y: 400, z: 3, removable: true, value: 70,
+    check: "Hosted exactly one dinner party. It was, by all accounts, a triumph." },
+  { id: "dining_chairs", name: "Chair Set", category: "furniture", x: 236, y: 376, z: 4, removable: true, value: 60,
+    check: "Four chairs, three matching. Close enough." },
+  { id: "candle_bowl", name: "Candle Centerpiece", category: "decor", x: 396, y: 404, z: 5, removable: true, value: 6,
+    check: "Never once lit. Purely decorative, deeply judgmental about it." },
+  { id: "bar_cabinet", name: "Bar Cabinet", category: "furniture", x: 688, y: 412, z: 3, removable: true, value: 45,
+    check: "Small, dark, and full of the good glasses. Mostly good glasses." },
+  { id: "bar_bottles", name: "Bar Collection", category: "decor", x: 720, y: 364, z: 4, removable: true, value: 18,
+    check: "The bar collection has opinions, mostly about your taste in wine." },
+];
+
+/* ============================================================
+   LIVING ROOM — shell + sprites (ref: living room mockup)
+   ============================================================ */
+function drawLivingShell(ctx) {
+  const wallBase = "#EBDFC0", wallLight = "#F5EDD4", wallShade = "#D5C79E";
+  r(ctx, wallBase, 0, 0, 240, 112);
+  r(ctx, wallLight, 0, 0, 240, 3);
+  r(ctx, wallShade, 0, 3, 240, 1);
+  dith(ctx, wallShade, 0, 16, 240, 3, 2, 0);
+  r(ctx, P.cream, 0, 106, 240, 6);
+  r(ctx, P.creamLo, 0, 106, 240, 1);
+  r(ctx, P.out, 0, 111, 240, 1);
+
+  // plank floor (must match extendFloorPlank exactly), warmed with a tint pass
+  r(ctx, P.floor, 0, 112, 240, 68);
+  for (let row = 0; row * 8 + 112 < 180; row++) {
+    const y0 = 112 + row * 8;
+    r(ctx, P.floorDark, 0, y0 + 7, 240, 1);
+    dith(ctx, P.floorLight, 0, y0 + 1, 240, 3, 5, row * 3);
+    const off = (row % 2) * 24;
+    for (let x = off + 10; x < 240; x += 48) r(ctx, P.floorDark, x, y0, 1, 7);
+  }
+  dith(ctx, "#8C5931", 0, 112, 240, 68, 6, 1);
+
+  r(ctx, P.out, 0, 0, 7, 112);
+  r(ctx, P.woodDark, 0, 0, 5, 112);
+  r(ctx, P.woodMid, 4, 4, 1, 104);
+
+  dith(ctx, wallShade, 0, 0, 26, 112, 2, 0);
+  dith(ctx, wallShade, 240 - 22, 0, 22, 112, 2, 1);
+}
+
+const LIVING_SPRITES = {
+  tv_hutch: { w: 56, h: 96, draw(ctx) {
+    r(ctx, P.woodDark, 24, 6, 8, 4);
+    r(ctx, P.green, 22, 0, 3, 7); r(ctx, P.greenHi, 25, 0, 2, 6);
+    r(ctx, P.green, 28, 1, 3, 6); r(ctx, P.greenLo, 26, 3, 2, 4);
+    r(ctx, P.out, 0, 10, 56, 4);
+    r(ctx, P.woodHi, 1, 11, 54, 2);
+    r(ctx, P.woodDark, 1, 13, 54, 1);
+    r(ctx, P.out, 0, 14, 56, 82);
+    r(ctx, P.woodMid, 1, 15, 54, 80);
+    r(ctx, P.woodDark, 1, 15, 54, 1);
+    outlineRect(ctx, "#2A1A0C", 4, 18, 48, 13);
+    r(ctx, P.woodDark, 5, 19, 46, 11);
+    r(ctx, P.woodHi, 5, 27, 46, 1);
+    [[6, 20, 2, 7, P.burgundy], [9, 21, 2, 6, P.teal], [12, 19, 2, 8, P.mustard],
+     [15, 21, 2, 6, P.green], [41, 20, 2, 7, P.burgundy], [44, 21, 2, 6, P.mustard]]
+      .forEach(([x, y, w, h, c]) => { r(ctx, P.out, x, y, w, h); r(ctx, c, x, y + 1, w, h - 1); });
+    outlineRect(ctx, "#2A1A0C", 4, 33, 48, 24);
+    r(ctx, P.woodDark, 5, 34, 46, 22);
+    r(ctx, P.out, 8, 36, 40, 17);
+    r(ctx, "#141414", 9, 37, 38, 15);
+    r(ctx, P.glassHi, 12, 38, 6, 2);
+    r(ctx, P.glassHi, 21, 40, 3, 1);
+    r(ctx, P.woodDark, 26, 53, 4, 3);
+    r(ctx, P.woodHi, 1, 57, 54, 2);
+    r(ctx, P.woodDark, 1, 59, 54, 1);
+    outlineRect(ctx, "#2A1A0C", 3, 61, 24, 31);
+    r(ctx, P.woodLight, 4, 62, 22, 29);
+    r(ctx, P.woodHi, 4, 62, 22, 2);
+    outlineRect(ctx, "#2A1A0C", 29, 61, 24, 31);
+    r(ctx, P.woodLight, 30, 62, 22, 29);
+    r(ctx, P.woodHi, 30, 62, 22, 2);
+    dith(ctx, P.wood, 5, 66, 20, 22, 3, 0);
+    dith(ctx, P.wood, 31, 66, 20, 22, 3, 0);
+    r(ctx, P.gold, 23, 76, 2, 2);
+    r(ctx, P.gold, 31, 76, 2, 2);
+    r(ctx, P.woodDark, 2, 92, 52, 4);
+  }},
+  wall_art_pair: { w: 44, h: 26, draw(ctx) {
+    r(ctx, P.out, 0, 0, 26, 26);
+    r(ctx, P.woodDark, 1, 1, 24, 2);
+    r(ctx, "#17233F", 2, 3, 22, 15);
+    r(ctx, "#0F1830", 2, 14, 22, 4);
+    r(ctx, P.goldHi, 11, 15, 3, 5);
+    r(ctx, P.gold, 11, 19, 3, 1);
+    [[5, 5], [9, 4], [19, 6], [16, 9], [7, 10]].forEach(([x, y]) => r(ctx, P.white, x, y, 1, 1));
+    r(ctx, P.woodDark, 1, 22, 24, 3);
+    r(ctx, P.out, 30, 4, 14, 20);
+    r(ctx, P.woodDark, 31, 5, 12, 2);
+    r(ctx, P.white, 31, 7, 12, 15);
+    r(ctx, P.out, 33, 9, 4, 6);
+    r(ctx, P.out, 38, 13, 4, 5);
+    r(ctx, P.out, 35, 17, 3, 3);
+  }},
+  sofa: { w: 76, h: 52, draw(ctx) {
+    r(ctx, P.out, 0, 8, 12, 44);
+    r(ctx, "#2A2622", 1, 9, 10, 42);
+    r(ctx, "#3A362F", 1, 9, 10, 3);
+    r(ctx, P.out, 64, 8, 12, 44);
+    r(ctx, "#2A2622", 65, 9, 10, 42);
+    r(ctx, "#3A362F", 65, 9, 10, 3);
+    r(ctx, P.out, 10, 2, 56, 30);
+    r(ctx, "#2A2622", 11, 3, 54, 28);
+    r(ctx, "#3A362F", 11, 3, 54, 3);
+    r(ctx, P.out, 38, 3, 1, 28);
+    r(ctx, P.out, 8, 30, 60, 22);
+    r(ctx, "#2A2622", 9, 31, 58, 20);
+    r(ctx, "#3A362F", 9, 31, 58, 2);
+    r(ctx, P.out, 38, 31, 1, 19);
+    dith(ctx, "#1C1916", 9, 44, 58, 3, 2, 0);
+    r(ctx, "#1C1916", 9, 47, 58, 4);
+    r(ctx, P.out, 9, 4, 26, 4);
+    r(ctx, P.cream, 10, 5, 24, 3);
+    r(ctx, P.out, 12, 8, 18, 22);
+    r(ctx, P.cream, 13, 9, 16, 20);
+    r(ctx, P.creamLo, 13, 9, 16, 3);
+    dith(ctx, P.creamLo, 13, 20, 16, 8, 3, 0);
+    for (let fx = 13; fx < 29; fx += 2) r(ctx, P.creamLo, fx, 28, 1, 2);
+    r(ctx, P.out, 46, 24, 18, 16);
+    r(ctx, P.red, 47, 25, 16, 14);
+    r(ctx, P.redHi, 47, 25, 16, 3);
+    [[50, 30], [56, 30], [53, 34], [50, 38], [56, 38]].forEach(([x, y]) => r(ctx, P.gold, x, y, 1, 1));
+  }},
+  living_rug: { w: 120, h: 44, draw(ctx) {
+    r(ctx, "#3E2413", 2, 2, 116, 40);
+    r(ctx, "#8C5931", 4, 4, 112, 36);
+    [6, 12, 20, 26, 34].forEach((y, i) => r(ctx, i % 2 ? "#C9B48E" : "#5E351B", 4, y, 112, 4));
+    dith(ctx, "#5E351B", 4, 4, 112, 36, 6, 1);
+    for (let y = 4; y < 40; y += 3) { r(ctx, P.creamLo, 0, y, 2, 1); r(ctx, P.creamLo, 118, y, 2, 1); }
+  }},
+  coffee_table: { w: 56, h: 34, draw(ctx) {
+    r(ctx, P.out, 0, 0, 56, 8);
+    r(ctx, P.wood, 1, 1, 54, 6);
+    r(ctx, P.woodHi, 1, 1, 54, 2);
+    r(ctx, P.out, 4, 8, 48, 4);
+    r(ctx, P.woodMid, 5, 9, 46, 2);
+    r(ctx, P.out, 4, 12, 6, 20);
+    r(ctx, P.woodDark, 5, 13, 4, 18);
+    r(ctx, P.out, 46, 12, 6, 20);
+    r(ctx, P.woodDark, 47, 13, 4, 18);
+    r(ctx, P.out, 8, 22, 40, 5);
+    r(ctx, P.woodMid, 9, 23, 38, 3);
+    dith(ctx, P.wood, 9, 23, 38, 3, 3, 0);
+  }},
+  table_decor: { w: 34, h: 14, draw(ctx) {
+    r(ctx, P.out, 1, 10, 10, 3);
+    r(ctx, P.woodDark, 2, 11, 8, 2);
+    r(ctx, P.out, 2, 2, 7, 9);
+    r(ctx, P.cream, 3, 3, 5, 8);
+    r(ctx, P.creamLo, 3, 3, 5, 2);
+    r(ctx, P.goldHi, 5, 1, 1, 2);
+    r(ctx, P.out, 12, 7, 6, 7);
+    r(ctx, P.woodDark, 13, 8, 4, 5);
+    r(ctx, "#8A4526", 13, 5, 1, 3);
+    r(ctx, "#A85A32", 15, 4, 1, 4);
+    r(ctx, "#8A4526", 16, 5, 1, 3);
+    r(ctx, P.out, 19, 9, 15, 4);
+    r(ctx, P.green, 20, 10, 13, 2);
+    r(ctx, P.out, 19, 5, 15, 4);
+    r(ctx, "#3C5C86", 20, 6, 13, 2);
+  }},
+  destijl_poster: { w: 26, h: 36, draw(ctx) {
+    r(ctx, P.out, 0, 0, 26, 36);
+    r(ctx, P.white, 1, 1, 24, 34);
+    r(ctx, P.out, 3, 3, 20, 24);
+    r(ctx, P.white, 4, 4, 18, 22);
+    r(ctx, P.red, 4, 4, 8, 10);
+    r(ctx, "#1F4E9C", 14, 4, 8, 6);
+    r(ctx, P.gold, 4, 16, 6, 10);
+    r(ctx, "#1F4E9C", 14, 16, 8, 10);
+    r(ctx, P.out, 12, 4, 2, 22);
+    r(ctx, P.out, 4, 14, 18, 2);
+    r(ctx, P.out, 5, 29, 16, 2);
+    r(ctx, P.out, 7, 32, 12, 2);
+  }},
+  standing_mirror: { w: 20, h: 58, draw(ctx) {
+    r(ctx, P.out, 0, 0, 20, 58);
+    r(ctx, P.wood, 1, 1, 18, 56);
+    r(ctx, P.woodHi, 1, 1, 18, 2);
+    r(ctx, P.out, 3, 3, 14, 52);
+    r(ctx, P.glass, 4, 4, 12, 50);
+    r(ctx, P.glassHi, 6, 5, 2, 48);
+    r(ctx, P.glassHi, 11, 5, 1, 48);
+    dith(ctx, P.glassLo, 13, 6, 3, 46, 2, 1);
+    r(ctx, P.woodDark, 2, 56, 4, 2);
+    r(ctx, P.woodDark, 14, 56, 4, 2);
+  }},
+  floor_lamp: { w: 18, h: 60, draw(ctx) {
+    r(ctx, P.out, 2, 0, 14, 8);
+    r(ctx, P.red, 3, 1, 12, 6);
+    r(ctx, P.redHi, 3, 1, 12, 2);
+    r(ctx, P.goldHi, 6, 8, 6, 2);
+    r(ctx, P.out, 7, 10, 4, 42);
+    r(ctx, "#1C1916", 8, 10, 2, 42);
+    r(ctx, P.woodHi, 8, 10, 1, 30);
+    r(ctx, P.out, 2, 52, 14, 4);
+    r(ctx, "#1C1916", 3, 53, 12, 2);
+    r(ctx, P.out, 0, 56, 5, 4);
+    r(ctx, P.out, 13, 56, 5, 4);
+    r(ctx, "#1C1916", 1, 57, 3, 2);
+    r(ctx, "#1C1916", 14, 57, 3, 2);
+  }},
+};
+
+const LIVING_OBJECTS = [
+  { id: "tv_hutch", name: "TV Hutch", category: "furniture", value: 120, x: 80, y: 256, z: 3, removable: true,
+    check: "Every remote from the last decade is lost somewhere inside this thing." },
+  { id: "wall_art_pair", name: "Wall Art", category: "decor", value: 12, x: 330, y: 110, z: 2, removable: true,
+    check: "The night scene came first; the little black-and-white one followed you home from a yard sale." },
+  { id: "sofa", name: "Leather Loveseat", category: "furniture", value: 150, x: 430, y: 412, z: 3, removable: true,
+    check: "This is the couch that remembers every nap you've ever taken on it. It's coming with you." },
+  { id: "living_rug", name: "Striped Rug", category: "textiles", value: 20, x: 220, y: 470, z: 1, removable: true,
+    check: "Vacuumed a thousand times, forgiven nothing. Roll it up carefully." },
+  { id: "coffee_table", name: "Coffee Table", category: "furniture", value: 40, x: 300, y: 504, z: 4, removable: true,
+    check: "Ring stains from a decade of mugs you swore you'd use a coaster for." },
+  { id: "table_decor", name: "Table Clutter", category: "decor", value: 8, x: 344, y: 486, z: 5, removable: true,
+    check: "A candle you're saving for a special occasion that never comes, plus two books you'll definitely finish." },
+  { id: "destijl_poster", name: "De Stijl Poster", category: "decor", value: 15, x: 726, y: 396, z: 3, removable: true,
+    check: "Picked it up on that museum trip you half remember — mostly you remember the gift shop." },
+  { id: "standing_mirror", name: "Standing Mirror", category: "furniture", value: 35, x: 770, y: 200, z: 2, removable: true,
+    check: "Leans just enough to make you check your posture on the way out the door." },
+  { id: "floor_lamp", name: "Torchiere Lamp", category: "lighting", value: 25, x: 824, y: 240, z: 3, removable: true,
+    check: "Casts exactly one warm circle of light and no more. Very committed to its one job." },
+];
+
 /* box stack sprite (grows near the door as you pack) */
 function drawBoxes(ctx, count) {
   ctx.clearRect(0, 0, 40, 40);
@@ -813,46 +1421,6 @@ const ROOMS = {
   },
 };
 
-/* ---- placeholder shells: bare first-pass rooms awaiting real furniture ---- */
-function makePlaceholderShell({ wall, wallLight, wallShade, tileFloor }) {
-  return function draw(ctx) {
-    const W = 240, H = 180, WALL_B = 112;
-    r(ctx, wall, 0, 0, W, WALL_B);
-    dith(ctx, wallLight, 0, 0, W, 30, 3, 0);
-    dith(ctx, wallShade, 0, WALL_B - 26, W, 26, 3, 1);
-    r(ctx, wallLight, 0, 0, W, 3); r(ctx, wallShade, 0, 3, W, 1);
-    r(ctx, P.cream, 0, WALL_B - 6, W, 6); r(ctx, P.creamLo, 0, WALL_B - 6, W, 1);
-    r(ctx, P.out, 0, WALL_B - 1, W, 1);
-    if (tileFloor) {
-      r(ctx, "#C9BFA4", 0, WALL_B, W, H - WALL_B);
-      for (let ty = WALL_B; ty < H; ty += 12)
-        for (let tx = 0; tx < W; tx += 12) {
-          if ((tx / 12 + (ty - WALL_B) / 12) % 2 === 0) r(ctx, "#BBB093", tx, ty, 12, 12);
-          r(ctx, "#A79C80", tx, ty, 12, 1); r(ctx, "#A79C80", tx, ty, 1, 12);
-        }
-    } else {
-      r(ctx, P.floor, 0, WALL_B, W, H - WALL_B);
-      for (let row = 0; row * 8 + WALL_B < H; row++) {
-        const y0 = WALL_B + row * 8;
-        r(ctx, P.floorDark, 0, y0 + 7, W, 1);
-        dith(ctx, P.floorLight, 0, y0 + 1, W, 3, 5, row * 3);
-        const off = (row % 2) * 24;
-        for (let x = off + 10; x < W; x += 48) r(ctx, P.floorDark, x, y0, 1, 7);
-      }
-    }
-    // door hint on the left — same apartment language as the bedroom
-    r(ctx, P.out, 0, 0, 7, WALL_B); r(ctx, P.woodDark, 0, 0, 5, WALL_B); r(ctx, P.woodMid, 4, 4, 1, WALL_B - 8);
-    // window for light
-    r(ctx, P.out, 96, 16, 56, 50);
-    r(ctx, P.cream, 98, 18, 52, 46);
-    r(ctx, P.sky, 101, 21, 46, 40);
-    for (let j = 22; j < 60; j += 3) r(ctx, P.glassHi, 101, j, 46, 1);
-    r(ctx, P.cream, 122, 21, 4, 40);
-    dith(ctx, wallShade, 0, 0, 26, WALL_B, 2, 0);
-    dith(ctx, wallShade, W - 22, 0, 22, WALL_B, 2, 1);
-  };
-}
-
 /* floor continuation for tall (portrait) stages: repaint from the last full
    pattern row down to extH cells with the exact same formulas the shells use,
    so the overlap pixels are identical and the seam is invisible */
@@ -873,9 +1441,9 @@ function extendFloorTile(ctx, extH) {
   const startY = WALL_B + Math.floor((180 - WALL_B) / 12) * 12;
   for (let ty = startY; ty < extH; ty += 12)
     for (let tx = 0; tx < W; tx += 12) {
-      r(ctx, "#C9BFA4", tx, ty, 12, 12);
-      if ((tx / 12 + (ty - WALL_B) / 12) % 2 === 0) r(ctx, "#BBB093", tx, ty, 12, 12);
-      r(ctx, "#A79C80", tx, ty, 12, 1); r(ctx, "#A79C80", tx, ty, 1, 12);
+      r(ctx, "#D8BC86", tx, ty, 12, 12);
+      if ((tx / 12 + (ty - WALL_B) / 12) % 2 === 0) r(ctx, "#CBAD72", tx, ty, 12, 12);
+      r(ctx, "#B4955C", tx, ty, 12, 1); r(ctx, "#B4955C", tx, ty, 1, 12);
     }
 }
 
@@ -896,13 +1464,21 @@ ROOMS.bedroom.sprites = SPRITES;
 ROOMS.bedroom.drawShell = drawShell;
 ROOMS.bedroom.floorKind = "plank";
 ROOMS.bedroom.ceilTones = ["#D6C49E", "#E7D9B9"];
-[
-  ["dining",   "Dining Room", { wall: "#E3CDAE", wallLight: "#EEDDC2", wallShade: "#CDB593" }],
-  ["kitchen",  "Kitchen",     { wall: "#E7DCA8", wallLight: "#F0E7BE", wallShade: "#CFC28D", tileFloor: true }],
-  ["living",   "Living Room", { wall: "#D9C4A9", wallLight: "#E6D5BE", wallShade: "#C1AA8C" }],
-].forEach(([id, name, cfg]) => {
-  ROOMS[id] = { id, name, objects: [], sprites: {}, drawShell: makePlaceholderShell(cfg), floorKind: cfg.tileFloor ? "tile" : "plank", ceilTones: [cfg.wallShade, cfg.wall] };
-});
+ROOMS.dining = {
+  id: "dining", name: "Dining Room",
+  drawShell: drawDiningShell, floorKind: "plank", ceilTones: ["#D8CBA4", "#EDE3C4"],
+  sprites: DINING_SPRITES, objects: DINING_OBJECTS,
+};
+ROOMS.kitchen = {
+  id: "kitchen", name: "Kitchen",
+  drawShell: drawKitchenShell, floorKind: "tile", ceilTones: ["#D6C592", "#EDE0B4"],
+  sprites: KITCHEN_SPRITES, objects: KITCHEN_OBJECTS,
+};
+ROOMS.living = {
+  id: "living", name: "Living Room",
+  drawShell: drawLivingShell, floorKind: "plank", ceilTones: ["#D5C79E", "#EBDFC0"],
+  sprites: LIVING_SPRITES, objects: LIVING_OBJECTS,
+};
 
 ROOMS.bathroom = {
   id: "bathroom", name: "Bathroom",
