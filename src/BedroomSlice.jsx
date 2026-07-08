@@ -1363,20 +1363,54 @@ const LIVING_OBJECTS = [
     check: "Casts exactly one warm circle of light and no more. Very committed to its one job." },
 ];
 
-/* box stack sprite (grows near the door as you pack) */
-function drawBoxes(ctx, count) {
-  ctx.clearRect(0, 0, 40, 40);
-  const box = (x, y) => {
-    r(ctx, P.out, x, y, 16, 12);
-    r(ctx, P.card, x + 1, y + 1, 14, 10);
-    r(ctx, P.cardHi, x + 1, y + 1, 14, 2);
-    r(ctx, P.cardLo, x + 1, y + 5, 14, 1);
-    r(ctx, "#EBDDBE", x + 6, y + 1, 4, 10); // tape
+/* box stack sprite (grows near the door as you pack).
+   Geometry lives in constants so the pack-to-box fly animation can aim at the
+   exact slot the incoming item lands in. Bigger boxes than before, and the pile
+   grows one box per packed item (a widening pyramid) up to BOX_MAX. */
+const BOX_ORIGIN = { x: 56, y: 500 };   // stage px: top-left of the pile canvas
+const BOX_CW = 66, BOX_CH = 52;         // pile canvas size, cells
+const BOX_W = 20, BOX_H = 16;           // one box, cells
+// fill order: bottom row L→R, then middle row, then apex
+const BOX_SLOTS = [[2, 34], [23, 34], [44, 34], [12, 18], [33, 18], [23, 4]];
+const BOX_MAX = BOX_SLOTS.length;
+const boxSlotCenter = (i) => {
+  const [sx, sy] = BOX_SLOTS[Math.min(Math.max(i, 0), BOX_MAX - 1)];
+  return { x: BOX_ORIGIN.x + (sx + BOX_W / 2) * CELL, y: BOX_ORIGIN.y + (sy + BOX_H / 2) * CELL };
+};
+
+function drawBoxes(ctx, count, openIdx = -1) {
+  ctx.clearRect(0, 0, BOX_CW, BOX_CH);
+  const closed = (x, y) => {
+    r(ctx, P.out, x, y, BOX_W, BOX_H);
+    r(ctx, P.card, x + 1, y + 1, BOX_W - 2, BOX_H - 2);
+    r(ctx, P.cardHi, x + 1, y + 1, BOX_W - 2, 3);              // lit top edge
+    dith(ctx, P.cardLo, x + 11, y + 4, 8, BOX_H - 6, 2, 0);    // right-side shade
+    r(ctx, P.cardLo, x + 1, y + 8, BOX_W - 2, 1);              // flap seam
+    r(ctx, P.out, x + 1, y + BOX_H - 3, BOX_W - 2, 1);         // base shadow
+    r(ctx, "#EBDDBE", x + 8, y + 1, 4, BOX_H - 2);             // vertical tape
+    r(ctx, "#D9C79E", x + 1, y + 7, BOX_W - 2, 2);             // horizontal tape
   };
-  if (count >= 1) box(2, 26);
-  if (count >= 2) box(20, 26);
-  if (count >= 3) box(6, 13);
-  if (count >= 4) box(16, 0);
+  const open = (x, y) => {
+    // shorter body, top is open
+    r(ctx, P.out, x, y + 4, BOX_W, BOX_H - 4);
+    r(ctx, P.card, x + 1, y + 5, BOX_W - 2, BOX_H - 6);
+    dith(ctx, P.cardLo, x + 11, y + 6, 8, BOX_H - 9, 2, 0);
+    r(ctx, P.cardLo, x + 1, y + BOX_H - 3, BOX_W - 2, 1);
+    // dark interior mouth
+    r(ctx, "#2A1A0C", x + 2, y + 5, BOX_W - 4, 4);
+    r(ctx, "#160D06", x + 2, y + 5, BOX_W - 4, 2);
+    // two flaps opened up and out
+    const flap = (fx) => {
+      r(ctx, P.out, fx, y - 3, 8, 8);
+      r(ctx, P.card, fx + 1, y - 2, 6, 6);
+      r(ctx, P.cardHi, fx + 1, y - 2, 6, 2);
+      r(ctx, P.cardLo, fx + 1, y + 2, 6, 2);
+    };
+    flap(x - 2);             // left flap
+    flap(x + BOX_W - 6);     // right flap
+  };
+  for (let i = 0; i < Math.min(count, BOX_MAX); i++) closed(BOX_SLOTS[i][0], BOX_SLOTS[i][1]);
+  if (openIdx >= 0 && openIdx < BOX_MAX) open(BOX_SLOTS[openIdx][0], BOX_SLOTS[openIdx][1]);
 }
 
 /* ============================================================
@@ -2100,6 +2134,13 @@ export default function PackItUp() {
       }
       @keyframes sheetUp { from { transform: translateY(100%); } }
       @keyframes fadeIn { from { opacity: 0; } }
+      @keyframes boxReceive {
+        0% { transform: translateY(0) scaleY(1); }
+        40% { transform: translateY(-4px) scaleY(1.05); }
+        70% { transform: translateY(0) scaleY(0.96); }
+        100% { transform: translateY(0) scaleY(1); }
+      }
+      .boxReceiving { animation: boxReceive 0.52s ease-in-out; }
       .obj { cursor: pointer; transition: filter 120ms; }
       .obj:hover, .obj.sel { filter: drop-shadow(0 0 0 #FFD97A) drop-shadow(2px 0 0 #FFD97A) drop-shadow(-2px 0 0 #FFD97A) drop-shadow(0 2px 0 #FFD97A) drop-shadow(0 -2px 0 #FFD97A) brightness(1.06); }
       .obj.static { cursor: help; }
@@ -2139,7 +2180,10 @@ export default function PackItUp() {
 
   const roomArt = (rm, extCells = 180) => {
     const rmPacked = rm.objects.filter((o) => o.removable && objState[sk(rm.id, o.id)].packed).length;
-    const rmBoxes = Math.min(4, Math.ceil(rmPacked / 4));
+    const rmBoxes = Math.min(BOX_MAX, rmPacked);            // one box per packed item
+    const packingHere = rm.id === room.id && !!packingId;  // an item is flying to the pile now
+    const openIdx = packingHere ? Math.min(rmBoxes, BOX_MAX - 1) : -1; // box that opens to catch it
+    const boxTarget = boxSlotCenter(openIdx < 0 ? rmBoxes : openIdx);  // fly-to point (stage px)
     return (
       <>
         {/* LAYER 0 — room shell */}
@@ -2176,14 +2220,14 @@ export default function PackItUp() {
               </div>
             </div>;
           }
-          // pack-to-box: fly the sprite into the box stack near the door as it
-          // shrinks. Deltas are stage px from the sprite's top-left to the pile
-          // (~120,650); it lands as a speck on the boxes. Sell/donate just shrink
-          // in place (`removing`) — only packing goes to the box.
+          // pack-to-box: fly the sprite into the open box as it shrinks. Deltas
+          // are stage px from the sprite's top-left to the receiving box's mouth;
+          // it lands as a speck in the box. Sell/donate just shrink in place
+          // (`removing`) — only packing goes to the box.
           const packSc = placed.scale || 1;
           const packVars = isPacking ? {
-            "--pdx": `${120 - placed.x}px`,
-            "--pdy": `${650 - placed.y}px`,
+            "--pdx": `${boxTarget.x - placed.x}px`,
+            "--pdy": `${boxTarget.y - placed.y}px`,
             "--pscale": packSc,
           } : null;
           return (
@@ -2241,10 +2285,13 @@ export default function PackItUp() {
           </div>
         )}
 
-        {/* box stack near the open door */}
-        {rmPacked > 0 && (
-          <div style={{ position: "absolute", left: 70, top: 540, zIndex: 60, animation: "popIn 200ms ease-out" }}>
-            <PixelCanvas w={40} h={40} draw={(ctx) => drawBoxes(ctx, rmBoxes)} redrawKey={rmBoxes} />
+        {/* box stack near the open door — grows as you pack; the top box opens
+            to catch the incoming item, then closes as part of the pile */}
+        {(rmPacked > 0 || packingHere) && (
+          <div style={{ position: "absolute", left: BOX_ORIGIN.x, top: BOX_ORIGIN.y, zIndex: 60, animation: "popIn 220ms ease-out" }}>
+            <div className={packingHere ? "boxReceiving" : ""} style={{ transformOrigin: "bottom center" }}>
+              <PixelCanvas w={BOX_CW} h={BOX_CH} draw={(ctx) => drawBoxes(ctx, rmBoxes, openIdx)} redrawKey={`${rmBoxes}-${openIdx}`} />
+            </div>
           </div>
         )}
       </>
@@ -2432,14 +2479,15 @@ export default function PackItUp() {
             position: "absolute", top: 0, bottom: 0, left: 0, width: `${N * 100}%`, display: "flex",
             transform: `translateX(calc(${-roomIndex * (100 / N)}% + ${dragX}px))`,
             transition: dragging ? "none" : "transform 300ms cubic-bezier(0.22, 1, 0.36, 1)",
+            willChange: "transform",
           }}>
             {ROOMS_ORDER.map((rid, i) => {
-              // Only draw the current room and its immediate neighbors. A gesture
-              // or arrow only ever moves one room, so the destination is always
-              // already painted — the room you land on never assembles late. The
-              // frame + vignette below always render, so the doorway is present
-              // instantly even for not-yet-drawn rooms.
-              const near = Math.abs(i - roomIndex) <= 1;
+              // Draw the current room plus two rooms out in each direction, so a
+              // far room (e.g. the kitchen, 4 deep) starts rasterizing well before
+              // you swipe to it instead of assembling on arrival. The frame +
+              // vignette below always render, so the doorway is present instantly
+              // even for rooms not yet drawn.
+              const near = Math.abs(i - roomIndex) <= 2;
               return (
               <div key={rid} style={{
                 width: `${100 / N}%`, flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center",
@@ -2448,11 +2496,17 @@ export default function PackItUp() {
                 {/* doorway frame: outward wood jambs painted OUTSIDE the room box,
                     so they can never cover furniture */}
                 <div style={{
-                  position: "relative", width: frameW, height: stageH, overflow: "hidden", contain: "paint",
+                  position: "relative", width: frameW, height: stageH, overflow: "hidden",
                   boxShadow: "0 0 0 6px #3E2413, 0 0 0 10px #120A04, 0 0 0 13px #4A2E17, 0 16px 34px rgba(0,0,0,0.65)",
                 }}>
                   {near && (
-                    <div style={{ width: STAGE_W, height: extPx, transform: `translateX(${-cropX}px) scale(${stageScale})`, transformOrigin: "top left", position: "relative" }}>
+                    // willChange promotes each visible room to its own GPU layer so
+                    // it rasterizes as ONE unit up front, instead of the compositor
+                    // filling in right-side tiles late as the room slides in (the
+                    // "right-side pop-in"). Only the ±1 rooms mount this, so it's at
+                    // most 3 layers. (No `contain: paint` on the frame — that let the
+                    // browser skip rasterizing off-screen rooms, feeding the pop-in.)
+                    <div style={{ width: STAGE_W, height: extPx, transform: `translateX(${-cropX}px) scale(${stageScale})`, transformOrigin: "top left", position: "relative", willChange: "transform" }}>
                       {ceilCells > 0 && (
                         <div style={{ position: "absolute", top: 0, left: 0 }}>
                           <PixelCanvas w={240} h={ceilCells} draw={getCeilingDraw(ROOMS[rid], ceilCells)} redrawKey={ceilCells} />
