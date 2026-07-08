@@ -92,12 +92,7 @@ function drawShell(ctx) {
   r(ctx, P.out, 82, 74, 76, 1);
   r(ctx, P.cream, 82, 72, 76, 3); r(ctx, P.creamLo, 82, 74, 76, 1);
 
-  // white closet door (x 166..190, y 20..106)
-  r(ctx, P.out, 164, 18, 28, 89);
-  r(ctx, P.white, 166, 20, 24, 86);
-  outlineRect(ctx, P.whiteLo, 169, 26, 18, 34);
-  outlineRect(ctx, P.whiteLo, 169, 66, 18, 34);
-  r(ctx, P.gold, 186, 62, 2, 3);
+  // closet door is now a movable object (SPRITES.closet_door)
 
   // sunlight pooling on the floor under the window
   const sunX = 96, sunW = 54;
@@ -116,6 +111,13 @@ function drawShell(ctx) {
    SPRITES — one draw fn per object (low-res cells)
    ============================================================ */
 const SPRITES = {
+  closet_door: { w: 28, h: 89, draw(ctx) {
+    r(ctx, P.out, 0, 0, 28, 89);
+    r(ctx, P.white, 2, 2, 24, 86);
+    outlineRect(ctx, P.whiteLo, 5, 8, 18, 34);
+    outlineRect(ctx, P.whiteLo, 5, 48, 18, 34);
+    r(ctx, P.gold, 22, 44, 2, 3);
+  }},
   rug: { w: 100, h: 54, draw(ctx) {
     r(ctx, P.tealLo, 2, 2, 96, 50);
     r(ctx, P.teal, 5, 5, 90, 44);
@@ -577,9 +579,7 @@ function drawBathroomShell(ctx) {
   r(ctx, "#8A754F", 81, 69, 16, 18); r(ctx, "#9C8760", 81, 69, 16, 2);
   for (let j = 73; j < 85; j += 3) r(ctx, "#5C4B32", 83, j, 12, 1);
 
-  // toilet paper on the wall, left of the toilet
-  r(ctx, "#8A8272", 108, 72, 8, 2);
-  r(ctx, P.out, 108, 74, 8, 6); r(ctx, P.white, 109, 75, 6, 4); r(ctx, P.whiteLo, 109, 78, 6, 1);
+  // toilet paper is now a movable object (BATH_SPRITES.tp_roll)
 
   // corner vignettes
   dith(ctx, "#DCCDA8", 0, 0, 22, 90, 2, 0);
@@ -597,6 +597,10 @@ function extendFloorBathTile(ctx, extH) {
 }
 
 const BATH_SPRITES = {
+  tp_roll: { w: 8, h: 8, draw(ctx) {
+    r(ctx, "#8A8272", 0, 0, 8, 2);
+    r(ctx, P.out, 0, 2, 8, 6); r(ctx, P.white, 1, 3, 6, 4); r(ctx, P.whiteLo, 1, 6, 6, 1);
+  }},
   // lengthwise tub at the bed's 3/4 angle: inside of the far wall (with the
   // faucet) at top, basin interior in the middle, outer front panel + feet
   // at the bottom
@@ -779,18 +783,7 @@ function drawKitchenShell(ctx) {
       r(ctx, "#B4955C", tx, ty, 12, 1); r(ctx, "#B4955C", tx, ty, 1, 12);
     }
 
-  // back door on the left (towel hangs on it as a separate object)
-  r(ctx, P.out, 22, 10, 28, 102);
-  r(ctx, P.cream, 23, 11, 26, 100);
-  r(ctx, P.creamLo, 23, 11, 26, 2);
-  r(ctx, P.creamLo, 26, 50, 20, 1);
-  r(ctx, P.creamLo, 26, 80, 20, 1);
-  r(ctx, P.out, 28, 16, 16, 24);
-  r(ctx, "#BFD8CC", 29, 17, 14, 22);
-  r(ctx, P.out, 35, 17, 2, 22);
-  r(ctx, P.out, 29, 27, 14, 2);
-  r(ctx, P.gold, 44, 56, 2, 4);
-  r(ctx, P.out, 44, 60, 2, 1);
+  // back door is now a movable object (KITCHEN_SPRITES.kitchen_door)
 
   // green tile backsplash: window sill down to the counter line
   r(ctx, "#6FA482", 50, 58, 128, 20);
@@ -817,6 +810,15 @@ function drawKitchenShell(ctx) {
 }
 
 const KITCHEN_SPRITES = {
+  kitchen_door: { w: 32, h: 102, draw(ctx) {
+    r(ctx, P.out, 0, 0, 32, 102);
+    r(ctx, P.cream, 1, 1, 30, 100); r(ctx, P.creamLo, 1, 1, 30, 2);
+    r(ctx, P.out, 8, 14, 16, 26); r(ctx, "#BFD8CC", 9, 15, 14, 24);
+    r(ctx, P.out, 15, 15, 2, 24); r(ctx, P.out, 9, 26, 14, 2);
+    outlineRect(ctx, P.creamLo, 6, 46, 20, 22);
+    outlineRect(ctx, P.creamLo, 6, 72, 20, 22);
+    r(ctx, P.gold, 26, 56, 2, 4); r(ctx, P.out, 26, 60, 2, 1);
+  }},
   stove: { w: 30, h: 44, draw(ctx) {
     // back rail with dials
     r(ctx, P.out, 0, 0, 30, 8);
@@ -941,6 +943,8 @@ const KITCHEN_OBJECTS = [
     check: "Herbs that outlived three New Year's resolutions to cook more." },
   { id: "fridge_plant", name: "Fridge-top Plant", category: "plants", value: 7, x: 672, y: 178, z: 4, removable: true,
     check: "It's trailed off that fridge top so long it's basically a factory feature." },
+  { id: "kitchen_door", name: "Back Door", category: "furniture", x: 96, y: 40, z: 1, removable: false,
+    check: "The service door to the back stairs. Comes with the building." },
   { id: "door_towel", name: "Striped Towel", category: "textiles", value: 3, x: 128, y: 140, z: 2, removable: true,
     check: "Threadbare, stained, irreplaceable. It stays folded over that bar out of pure habit." },
 ];
@@ -982,19 +986,7 @@ function drawDiningShell(ctx) {
   r(ctx, P.woodDark, 0, 0, 5, 112);
   r(ctx, P.woodMid, 4, 4, 1, 104);
 
-  // window with blinds
-  const wx = 86, wy = 14, ww = 68, wh = 62;
-  r(ctx, P.out, wx - 2, wy - 2, ww + 4, wh + 4);
-  r(ctx, P.cream, wx - 1, wy - 1, ww + 2, wh + 2);
-  r(ctx, P.creamLo, wx - 1, wy + wh, ww + 2, 1);
-  r(ctx, P.sky, wx + 2, wy + 2, ww - 4, wh - 4);
-  for (let sy = wy + 3; sy < wy + wh - 3; sy += 4) {
-    r(ctx, P.glassHi, wx + 3, sy, ww - 6, 2);
-  }
-  r(ctx, P.cream, wx + ww / 2 - 1, wy, 2, wh);
-  r(ctx, P.out, wx - 5, wy + wh, ww + 10, 5);
-  r(ctx, P.creamLo, wx - 4, wy + wh + 1, ww + 8, 3);
-  r(ctx, P.woodDark, wx - 5, wy + wh + 4, ww + 10, 1);
+  // window is now a movable object (DINING_SPRITES.dining_window)
 
   dith(ctx, WALL_SHADE, 0, 0, 26, 112, 2, 0);
   dith(ctx, WALL_SHADE, 240 - 22, 0, 22, 112, 2, 1);
@@ -1026,6 +1018,17 @@ function drawDiningFrontFrame(ctx) {
 }
 
 const DINING_SPRITES = {
+  dining_window: { w: 78, h: 69, draw(ctx) {
+    r(ctx, P.out, 3, 0, 72, 66);
+    r(ctx, P.cream, 4, 1, 70, 64);
+    r(ctx, P.creamLo, 4, 64, 70, 1);
+    r(ctx, P.sky, 7, 4, 64, 58);
+    for (let sy = 5; sy < 61; sy += 4) r(ctx, P.glassHi, 8, sy, 62, 2);
+    r(ctx, P.cream, 38, 2, 2, 62);
+    r(ctx, P.out, 0, 64, 78, 5);
+    r(ctx, P.creamLo, 1, 65, 76, 3);
+    r(ctx, P.woodDark, 0, 68, 78, 1);
+  }},
   dining_curtains: { w: 80, h: 68, draw(ctx) {
     r(ctx, P.out, 0, 0, 80, 3);
     r(ctx, P.woodDark, 1, 1, 78, 1);
@@ -1127,6 +1130,8 @@ const DINING_SPRITES = {
 };
 
 const DINING_OBJECTS = [
+  { id: "dining_window", name: "Window", category: "furniture", x: 324, y: 48, z: 1, removable: false,
+    check: "Single-pane, drafty, yours to look through until the last box is out. It stays." },
   { id: "dining_curtains", name: "Green Curtains", category: "textiles", x: 320, y: 48, z: 2, removable: true, value: 10,
     check: "They never belonged to the landlord — take them, or leave them for the next tenant." },
   { id: "sill_plants_d", name: "Sill Succulents", category: "plants", x: 452, y: 280, z: 3, removable: true, value: 6,
@@ -1406,6 +1411,8 @@ const ROOMS = {
         check: "Two tiny companions from a good thrift run. They've seen things." },
       { id: "basket",         name: "Everything Basket",category: "decor",     x: 772, y: 308, z: 4, removable: true, value: 5,
         check: "Currently holding: keys, receipts, one dried orange." },
+      { id: "closet_door",    name: "Closet Door",      category: "furniture", x: 656, y: 72,  z: 1, removable: false,
+        check: "Built into the wall — it stays. You'll miss the way it never quite latched." },
     ],
   },
 };
@@ -1493,6 +1500,8 @@ ROOMS.bathroom = {
       check: "A perfume district. You use maybe two of these." },
     { id: "laundry_basket",  name: "Laundry Basket",      category: "textiles", x: 310, y: 500, z: 4, removable: true, value: 8,
       check: "One last load of “we'll deal with it at the new place.”" },
+    { id: "tp_roll",         name: "Toilet Paper",        category: "decor",    x: 432, y: 288, z: 2, removable: false,
+      check: "The last roll. Leave it for the next tenant — a small kindness." },
   ],
 };
 
