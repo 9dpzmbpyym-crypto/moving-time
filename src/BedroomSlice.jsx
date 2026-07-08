@@ -779,8 +779,8 @@ function drawKitchenShell(ctx) {
     }
 
   // back door on the left (towel hangs on it as a separate object)
-  r(ctx, P.out, 8, 10, 28, 96);
-  r(ctx, P.cream, 9, 11, 26, 94);
+  r(ctx, P.out, 8, 10, 28, 102);
+  r(ctx, P.cream, 9, 11, 26, 100);
   r(ctx, P.creamLo, 9, 11, 26, 2);
   r(ctx, P.creamLo, 12, 50, 20, 1);
   r(ctx, P.creamLo, 12, 80, 20, 1);
@@ -791,10 +791,10 @@ function drawKitchenShell(ctx) {
   r(ctx, P.gold, 30, 56, 2, 4);
   r(ctx, P.out, 30, 60, 2, 1);
 
-  // green tile backsplash behind the stove + counter run
-  r(ctx, "#6FA482", 46, 92, 104, 20);
-  r(ctx, "#7FB596", 46, 92, 104, 2);
-  for (let ty = 92; ty < 112; ty += 10)
+  // green tile backsplash: window sill down to the counter line
+  r(ctx, "#6FA482", 46, 58, 104, 20);
+  r(ctx, "#7FB596", 46, 58, 104, 2);
+  for (let ty = 58; ty < 78; ty += 10)
     for (let tx = 46; tx < 150; tx += 10) {
       r(ctx, "#4E7E5E", tx, ty, 10, 1);
       r(ctx, "#4E7E5E", tx, ty, 1, 10);
@@ -922,23 +922,23 @@ const KITCHEN_SPRITES = {
 };
 
 const KITCHEN_OBJECTS = [
-  { id: "stove", name: "Stove & Oven", category: "furniture", x: 210, y: 424, z: 3, removable: false,
+  { id: "stove", name: "Stove & Oven", category: "furniture", x: 210, y: 288, z: 3, removable: false,
     check: "Gas line's hooked in behind it — this range isn't budging from that wall." },
-  { id: "counter_sink", name: "Counter & Sink", category: "furniture", x: 340, y: 424, z: 3, removable: false,
+  { id: "counter_sink", name: "Counter & Sink", category: "furniture", x: 340, y: 288, z: 3, removable: false,
     check: "Plumbed straight into the wall. The sink comes with the house, not the boxes." },
-  { id: "fridge", name: "Refrigerator", category: "furniture", x: 610, y: 360, z: 3, removable: false,
+  { id: "fridge", name: "Refrigerator", category: "furniture", x: 610, y: 224, z: 3, removable: false,
     check: "That compressor's been humming since before you moved in — it'll keep humming after." },
-  { id: "pantry", name: "Pantry Cabinet", category: "furniture", x: 760, y: 312, z: 3, removable: false,
+  { id: "pantry", name: "Pantry Cabinet", category: "furniture", x: 760, y: 176, z: 3, removable: false,
     check: "Built in stud by stud. That cabinet is part of the wall now." },
-  { id: "kettle", name: "Blue Kettle", category: "decor", value: 12, x: 242, y: 418, z: 4, removable: true,
+  { id: "kettle", name: "Blue Kettle", category: "decor", value: 12, x: 242, y: 282, z: 4, removable: true,
     check: "It's announced every cup of tea in this kitchen for a decade. Still whistles right on cue." },
-  { id: "cutting_board", name: "Cutting Board", category: "decor", value: 5, x: 400, y: 430, z: 4, removable: true,
+  { id: "cutting_board", name: "Cutting Board", category: "decor", value: 5, x: 400, y: 294, z: 4, removable: true,
     check: "Scarred with a thousand onions. Somehow still your favorite one." },
-  { id: "dish_rack", name: "Dish Rack", category: "decor", value: 8, x: 500, y: 414, z: 4, removable: true,
+  { id: "dish_rack", name: "Dish Rack", category: "decor", value: 8, x: 500, y: 278, z: 4, removable: true,
     check: "Two plates and a prayer. It's held up the whole time you've lived here." },
   { id: "sill_plants_k", name: "Windowsill Herbs", category: "plants", value: 6, x: 440, y: 226, z: 4, removable: true,
     check: "Herbs that outlived three New Year's resolutions to cook more." },
-  { id: "fridge_plant", name: "Fridge-top Plant", category: "plants", value: 7, x: 642, y: 318, z: 4, removable: true,
+  { id: "fridge_plant", name: "Fridge-top Plant", category: "plants", value: 7, x: 642, y: 182, z: 4, removable: true,
     check: "It's trailed off that fridge top so long it's basically a factory feature." },
   { id: "door_towel", name: "Striped Towel", category: "textiles", value: 3, x: 72, y: 140, z: 2, removable: true,
     check: "Threadbare, stained, irreplaceable. It stays folded over that bar out of pure habit." },
@@ -958,6 +958,10 @@ function drawDiningShell(ctx) {
   r(ctx, WALL_LIGHT, 0, 17, W, 1);
   dith(ctx, WALL_SHADE, 0, 18, W, 4, 2, 0);
   r(ctx, WALL_SHADE, 0, 22, W, 1);
+  // chair rail with a slightly deeper lower wall band
+  r(ctx, "#E2D5B0", 0, 87, W, 19);
+  r(ctx, P.cream, 0, 84, W, 3);
+  r(ctx, "#C9BA92", 0, 87, W, 1);
   dith(ctx, WALL_SHADE, 0, 98, W, 8, 2, 0);
   r(ctx, P.cream, 0, 106, W, 6);
   r(ctx, P.creamLo, 0, 106, W, 1);
@@ -1063,26 +1067,39 @@ const DINING_SPRITES = {
     r(ctx, P.cream, 15, 41, 2, 8); r(ctx, P.cream, 47, 41, 2, 8);
   }},
   dining_chairs: { w: 96, h: 58, draw(ctx) {
-    function chair(ox, oy, backH, seatH, legH, w) {
-      r(ctx, P.out, ox, oy, w, backH);
-      r(ctx, P.woodDark, ox + 1, oy + 1, w - 2, backH - 2);
-      r(ctx, P.woodLight, ox + 1, oy + 1, w - 2, 2);
-      const spindles = 3, innerW = w - 4, gap = innerW / (spindles + 1);
-      for (let i = 1; i <= spindles; i++) {
-        r(ctx, P.woodMid, ox + 2 + Math.round(i * gap) - 1, oy + 4, 2, backH - 8);
+    // tall slatted backs with see-through gaps, cushioned seats, real legs
+    function chair(ox, top, backH, w, cushH) {
+      // stiles
+      r(ctx, P.out, ox, top, 3, backH + cushH + 2);
+      r(ctx, P.out, ox + w - 3, top, 3, backH + cushH + 2);
+      r(ctx, P.woodDark, ox + 1, top + 1, 1, backH);
+      r(ctx, P.woodDark, ox + w - 2, top + 1, 1, backH);
+      // top rail
+      r(ctx, P.out, ox, top, w, 4);
+      r(ctx, P.woodMid, ox + 1, top + 1, w - 2, 2);
+      // three thin slats, wall shows between them
+      const step = Math.floor((w - 8) / 3);
+      for (let i = 0; i < 3; i++) {
+        const sx = ox + 5 + i * step;
+        r(ctx, P.out, sx, top + 4, 2, backH - 4);
+        r(ctx, P.woodDark, sx, top + 5, 1, backH - 6);
       }
-      r(ctx, P.out, ox - 2, oy + backH, w + 4, seatH);
-      r(ctx, P.wood, ox - 1, oy + backH + 1, w + 2, seatH - 2);
-      r(ctx, "#5C6C80", ox, oy + backH + 2, w, seatH - 3);
-      dith(ctx, "#48566A", ox, oy + backH + 2, w, seatH - 3, 2, 0);
-      r(ctx, P.out, ox - 1, oy + backH + seatH, 3, legH);
-      r(ctx, P.out, ox + w - 2, oy + backH + seatH, 3, legH);
-      r(ctx, P.woodDark, ox, oy + backH + seatH + 1, 1, legH - 2);
-      r(ctx, P.woodDark, ox + w - 1, oy + backH + seatH + 1, 1, legH - 2);
+      // cushion
+      r(ctx, P.out, ox - 2, top + backH, w + 4, cushH);
+      r(ctx, "#5C6C80", ox - 1, top + backH + 1, w + 2, cushH - 2);
+      r(ctx, "#6E7E92", ox - 1, top + backH + 1, w + 2, 2);
+      // seat frame + legs + stretcher
+      r(ctx, P.out, ox - 1, top + backH + cushH, w + 2, 3);
+      r(ctx, P.wood, ox, top + backH + cushH + 1, w, 1);
+      r(ctx, P.out, ox, top + backH + cushH + 3, 3, 12);
+      r(ctx, P.out, ox + w - 3, top + backH + cushH + 3, 3, 12);
+      r(ctx, P.woodDark, ox + 1, top + backH + cushH + 3, 1, 11);
+      r(ctx, P.woodDark, ox + w - 2, top + backH + cushH + 3, 1, 11);
+      r(ctx, P.woodDark, ox + 3, top + backH + cushH + 9, w - 6, 1);
     }
-    chair(2, 12, 28, 8, 10, 24);
-    chair(70, 12, 28, 8, 10, 24);
-    chair(34, 20, 18, 10, 10, 28);
+    chair(2, 6, 26, 24, 7);
+    chair(70, 6, 26, 24, 7);
+    chair(34, 11, 23, 28, 8);
   }},
   candle_bowl: { w: 16, h: 12, draw(ctx) {
     r(ctx, P.out, 0, 6, 16, 6);
@@ -1134,15 +1151,15 @@ const DINING_OBJECTS = [
     check: "Low-maintenance succulents. They've survived worse landlords than this one." },
   { id: "shelf_art", name: "Still-life Print", category: "decor", x: 640, y: 148, z: 2, removable: true, value: 9,
     check: "A framed print of a shelf. The real shelf was sold separately, apparently." },
-  { id: "dining_table", name: "Dining Table", category: "furniture", x: 300, y: 400, z: 3, removable: true, value: 70,
+  { id: "dining_table", name: "Dining Table", category: "furniture", x: 300, y: 350, z: 3, removable: true, value: 70,
     check: "Hosted exactly one dinner party. It was, by all accounts, a triumph." },
-  { id: "dining_chairs", name: "Chair Set", category: "furniture", x: 236, y: 376, z: 4, removable: true, value: 60,
+  { id: "dining_chairs", name: "Chair Set", category: "furniture", x: 236, y: 332, z: 4, removable: true, value: 60,
     check: "Four chairs, three matching. Close enough." },
-  { id: "candle_bowl", name: "Candle Centerpiece", category: "decor", x: 396, y: 404, z: 5, removable: true, value: 6,
+  { id: "candle_bowl", name: "Candle Centerpiece", category: "decor", x: 396, y: 366, z: 5, removable: true, value: 6,
     check: "Never once lit. Purely decorative, deeply judgmental about it." },
-  { id: "bar_cabinet", name: "Bar Cabinet", category: "furniture", x: 688, y: 412, z: 3, removable: true, value: 45,
+  { id: "bar_cabinet", name: "Bar Cabinet", category: "furniture", x: 688, y: 369, z: 3, removable: true, value: 45,
     check: "Small, dark, and full of the good glasses. Mostly good glasses." },
-  { id: "bar_bottles", name: "Bar Collection", category: "decor", x: 720, y: 364, z: 4, removable: true, value: 18,
+  { id: "bar_bottles", name: "Bar Collection", category: "decor", x: 720, y: 316, z: 4, removable: true, value: 18,
     check: "The bar collection has opinions, mostly about your taste in wine." },
 ];
 
@@ -1261,26 +1278,25 @@ const LIVING_SPRITES = {
     r(ctx, P.redHi, 47, 25, 16, 3);
     [[50, 30], [56, 30], [53, 34], [50, 38], [56, 38]].forEach(([x, y]) => r(ctx, P.gold, x, y, 1, 1));
   }},
-  living_rug: { w: 120, h: 44, draw(ctx) {
-    r(ctx, "#3E2413", 2, 2, 116, 40);
-    r(ctx, "#8C5931", 4, 4, 112, 36);
-    [6, 12, 20, 26, 34].forEach((y, i) => r(ctx, i % 2 ? "#C9B48E" : "#5E351B", 4, y, 112, 4));
-    dith(ctx, "#5E351B", 4, 4, 112, 36, 6, 1);
-    for (let y = 4; y < 40; y += 3) { r(ctx, P.creamLo, 0, y, 2, 1); r(ctx, P.creamLo, 118, y, 2, 1); }
+  living_rug: { w: 150, h: 60, draw(ctx) {
+    r(ctx, "#3E2413", 2, 2, 146, 56);
+    r(ctx, "#8C5931", 4, 4, 142, 52);
+    [8, 16, 28, 36, 48].forEach((y, i) => r(ctx, i % 2 ? "#C9B48E" : "#5E351B", 4, y, 142, 5));
+    dith(ctx, "#5E351B", 4, 4, 142, 52, 6, 1);
+    for (let y = 4; y < 56; y += 3) { r(ctx, P.creamLo, 0, y, 2, 1); r(ctx, P.creamLo, 148, y, 2, 1); }
   }},
-  coffee_table: { w: 56, h: 34, draw(ctx) {
-    r(ctx, P.out, 0, 0, 56, 8);
-    r(ctx, P.wood, 1, 1, 54, 6);
-    r(ctx, P.woodHi, 1, 1, 54, 2);
-    r(ctx, P.out, 4, 8, 48, 4);
-    r(ctx, P.woodMid, 5, 9, 46, 2);
-    r(ctx, P.out, 4, 12, 6, 20);
-    r(ctx, P.woodDark, 5, 13, 4, 18);
-    r(ctx, P.out, 46, 12, 6, 20);
-    r(ctx, P.woodDark, 47, 13, 4, 18);
-    r(ctx, P.out, 8, 22, 40, 5);
-    r(ctx, P.woodMid, 9, 23, 38, 3);
-    dith(ctx, P.wood, 9, 23, 38, 3, 3, 0);
+  // 3/4 view: deep light-wood top plane, front edge, block legs, lower shelf
+  coffee_table: { w: 56, h: 36, draw(ctx) {
+    r(ctx, P.out, 0, 0, 56, 14);
+    r(ctx, "#C49964", 1, 1, 54, 12);
+    r(ctx, "#D9B27E", 1, 1, 54, 3);
+    r(ctx, "#A87A4A", 1, 6, 54, 1); r(ctx, "#A87A4A", 1, 10, 54, 1);
+    r(ctx, P.out, 0, 14, 56, 6);
+    r(ctx, "#A87A4A", 1, 15, 54, 4); r(ctx, "#8F6538", 1, 17, 54, 2);
+    r(ctx, P.out, 2, 20, 6, 16); r(ctx, "#8F6538", 3, 21, 4, 14);
+    r(ctx, P.out, 48, 20, 6, 16); r(ctx, "#8F6538", 49, 21, 4, 14);
+    r(ctx, P.out, 6, 26, 44, 5);
+    r(ctx, "#B98F5C", 7, 27, 42, 3); dith(ctx, "#8F6538", 7, 27, 42, 3, 3, 0);
   }},
   table_decor: { w: 34, h: 14, draw(ctx) {
     r(ctx, P.out, 1, 10, 10, 3);
@@ -1343,23 +1359,23 @@ const LIVING_SPRITES = {
 };
 
 const LIVING_OBJECTS = [
-  { id: "tv_hutch", name: "TV Hutch", category: "furniture", value: 120, x: 80, y: 256, z: 3, removable: true,
+  { id: "tv_hutch", name: "TV Hutch", category: "furniture", value: 120, x: 80, y: 186, z: 3, removable: true,
     check: "Every remote from the last decade is lost somewhere inside this thing." },
   { id: "wall_art_pair", name: "Wall Art", category: "decor", value: 12, x: 330, y: 110, z: 2, removable: true,
     check: "The night scene came first; the little black-and-white one followed you home from a yard sale." },
-  { id: "sofa", name: "Leather Loveseat", category: "furniture", value: 150, x: 430, y: 412, z: 3, removable: true,
+  { id: "sofa", name: "Leather Loveseat", category: "furniture", value: 150, x: 430, y: 356, z: 3, removable: true,
     check: "This is the couch that remembers every nap you've ever taken on it. It's coming with you." },
-  { id: "living_rug", name: "Striped Rug", category: "textiles", value: 20, x: 220, y: 470, z: 1, removable: true,
+  { id: "living_rug", name: "Striped Rug", category: "textiles", value: 20, x: 200, y: 500, z: 1, removable: true,
     check: "Vacuumed a thousand times, forgiven nothing. Roll it up carefully." },
-  { id: "coffee_table", name: "Coffee Table", category: "furniture", value: 40, x: 300, y: 504, z: 4, removable: true,
+  { id: "coffee_table", name: "Coffee Table", category: "furniture", value: 40, x: 300, y: 483, z: 4, removable: true,
     check: "Ring stains from a decade of mugs you swore you'd use a coaster for." },
-  { id: "table_decor", name: "Table Clutter", category: "decor", value: 8, x: 344, y: 486, z: 5, removable: true,
+  { id: "table_decor", name: "Table Clutter", category: "decor", value: 8, x: 344, y: 444, z: 5, removable: true,
     check: "A candle you're saving for a special occasion that never comes, plus two books you'll definitely finish." },
-  { id: "destijl_poster", name: "De Stijl Poster", category: "decor", value: 15, x: 726, y: 396, z: 3, removable: true,
+  { id: "destijl_poster", name: "De Stijl Poster", category: "decor", value: 15, x: 726, y: 372, z: 3, removable: true,
     check: "Picked it up on that museum trip you half remember — mostly you remember the gift shop." },
-  { id: "standing_mirror", name: "Standing Mirror", category: "furniture", value: 35, x: 770, y: 200, z: 2, removable: true,
+  { id: "standing_mirror", name: "Standing Mirror", category: "furniture", value: 35, x: 770, y: 285, z: 2, removable: true,
     check: "Leans just enough to make you check your posture on the way out the door." },
-  { id: "floor_lamp", name: "Torchiere Lamp", category: "lighting", value: 25, x: 824, y: 240, z: 3, removable: true,
+  { id: "floor_lamp", name: "Torchiere Lamp", category: "lighting", value: 25, x: 824, y: 290, z: 3, removable: true,
     check: "Casts exactly one warm circle of light and no more. Very committed to its one job." },
 ];
 
