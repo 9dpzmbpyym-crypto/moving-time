@@ -6,6 +6,10 @@ import SAVED_LAYOUT from "./layout.json";
 // hosted artifact's CSP blocks fetch of the audio; the play path decodes these
 // bytes via atob → decodeAudioData (see below).
 import SELL_CHIME_SRC from "./sell.mp3";
+// Stretchy the companion cat: one PNG sprite sheet, windowed via CSS
+// background-position. Inlined into the bundle as a data: URI at build time
+// (vite.config assetsInlineLimit) so it renders under the hosted artifact's CSP.
+import CAT_SHEET from "./assets/Cat-Sheet.png";
 
 /* ============================================================
    PACK IT UP — vertical slice: The Bedroom
@@ -1820,6 +1824,195 @@ function haptic(pattern) {
 const HAPTIC = { room: [10], pack: [20], sell: [15, 30, 15], donate: [12] };
 
 /* ============================================================
+   STRETCHY — decorative companion cat (sprite sheet)
+   ============================================================ */
+const CAT_CELL = 32;                    // source px per frame
+const CAT_SHEET_W = 256, CAT_SHEET_H = 1632;
+const CAT_PX = 6.2;                     // stage px per source px (display scale)
+const CAT_FOOT_FRAC = 0.84;             // where his feet sit inside the 32px frame
+const CAT_FACES_RIGHT = true;           // source art faces RIGHT by default
+
+// animation table — { row, n(frames from col 0), fps, once? }
+const CAT_ANIM = {
+  walk:  { row: 4,  n: 8, fps: 11 },    // Walk_1
+  idle:  { row: 2,  n: 8, fps: 6 },     // Idle_1 (tail flick / blink)
+  idle2: { row: 3,  n: 8, fps: 6 },     // Idle_2 (ear twitch / head turn)
+  sit:   { row: 0,  n: 8, fps: 5 },     // Sit_1
+  rest:  { row: 10, n: 8, fps: 4 },     // Rest_2 (lie down)
+  look:  { row: 25, n: 4, fps: 5 },     // Look_Around_Right_1
+  run:   { row: 8,  n: 3, fps: 13 },    // Run_2
+};
+
+// frame of the look row where his head is turned fully toward you (eye contact)
+const LOOK_FACE_FRAME = CAT_ANIM.look.n - 1;
+
+// per-room safe floor spots (stage px, cat's feet). Kept in the deep
+// foreground band BELOW where the rugs end and spread wide across the room.
+// Clear of the box pile (left), major furniture, and UI.
+const CAT_SPOTS = {
+  bedroom:  [{ x: 220, y: 745 }, { x: 380, y: 771 }, { x: 545, y: 759 }, { x: 695, y: 747 }, { x: 760, y: 737 }],
+  bathroom: [{ x: 215, y: 741 }, { x: 380, y: 767 }, { x: 545, y: 755 }, { x: 690, y: 743 }, { x: 755, y: 733 }],
+  office:   [{ x: 220, y: 743 }, { x: 390, y: 769 }, { x: 560, y: 757 }, { x: 700, y: 745 }, { x: 760, y: 735 }],
+  dining:   [{ x: 215, y: 743 }, { x: 385, y: 769 }, { x: 560, y: 757 }, { x: 700, y: 745 }, { x: 760, y: 735 }],
+  kitchen:  [{ x: 220, y: 743 }, { x: 390, y: 769 }, { x: 560, y: 757 }, { x: 700, y: 745 }, { x: 760, y: 735 }],
+  living:   [{ x: 210, y: 745 }, { x: 385, y: 771 }, { x: 560, y: 759 }, { x: 705, y: 747 }, { x: 760, y: 737 }],
+};
+
+function Stretchy({ spots, enterSide }) {
+  const list = spots && spots.length ? spots : [{ x: STAGE_W / 2, y: 520 }];
+  const startY = list[0].y;
+  const fw = CAT_CELL * CAT_PX;          // display frame size (stage px)
+  const HALF = fw / 2;
+  const OFF = HALF + 24;                  // spawn fully off the side
+  const CLAMP_MIN = HALF, CLAMP_MAX = STAGE_W - HALF; // keep frame on-stage
+  const [view, setView] = useState(() => ({
+    x: enterSide < 0 ? -OFF : STAGE_W + OFF,
+    y: startY,
+    anim: "idle",
+    frame: 0,
+    facing: enterSide < 0 ? 1 : -1,
+  }));
+
+  useEffect(() => {
+    const pick = (cur) => {
+      let t = cur;
+      for (let i = 0; i < 8 && t === cur; i++) t = list[(Math.random() * list.length) | 0];
+      return t || list[0];
+    };
+    const s = {
+      x: enterSide < 0 ? -OFF : STAGE_W + OFF,
+      y: startY,
+      facing: enterSide < 0 ? 1 : -1,
+      anim: "idle",
+      frame: 0,
+      frameT: 0,
+      mode: "delay",                                  // short pause, then trot in
+      wait: 0.45 + Math.random() * 0.5,
+      pauseAnim: "idle",
+      target: pick(null),
+      last: 0,
+    };
+
+    const advance = (dt) => {
+      switch (s.mode) {
+        case "delay":
+          s.anim = "idle";
+          s.wait -= dt;
+          if (s.wait <= 0) { s.mode = "enter"; s.target = pick(null); }
+          break;
+        case "enter":
+        case "walk": {
+          s.anim = s.mode === "enter" ? "run" : "walk";
+          const dx = s.target.x - s.x, dy = s.target.y - s.y;
+          const dist = Math.hypot(dx, dy) || 1;
+          const speed = s.mode === "enter" ? 120 : 46;
+          if (Math.abs(dx) > 2) s.facing = dx > 0 ? 1 : -1;
+          if (dist < 3) {
+            const roll = Math.random();
+            if (roll < 0.30) {
+              s.mode = "lookturn";
+              s.anim = "look";
+              s.frame = 0;
+              s.frameT = 0;
+            } else {
+              s.mode = "pause";
+              if (roll < 0.55) { s.pauseAnim = "sit"; s.wait = 9.0 + Math.random() * 6.0; }
+              else if (roll < 0.72) { s.pauseAnim = "idle"; s.wait = 9.0 + Math.random() * 4.5; }
+              else if (roll < 0.85) { s.pauseAnim = "idle2"; s.wait = 9.0 + Math.random() * 4.5; }
+              else { s.pauseAnim = "rest"; s.wait = 12.0 + Math.random() * 6.0; }
+              s.frame = 0;
+            }
+          } else {
+            s.x += (dx / dist) * speed * dt;
+            s.y += (dy / dist) * speed * dt;
+          }
+          break;
+        }
+        case "pause":
+          s.anim = s.pauseAnim;
+          s.wait -= dt;
+          if (s.wait <= 0) { s.mode = "walk"; s.target = pick(s.target); }
+          break;
+        case "lookturn": {
+          s.anim = "look";
+          const spf = 1 / CAT_ANIM.look.fps;
+          s.frameT += dt;
+          while (s.frameT >= spf) { s.frameT -= spf; s.frame += 1; }
+          if (s.frame >= LOOK_FACE_FRAME) { s.frame = LOOK_FACE_FRAME; s.mode = "lookhold"; s.wait = 2.2; }
+          break;
+        }
+        case "lookhold":
+          s.anim = "look";
+          s.frame = LOOK_FACE_FRAME;
+          s.wait -= dt;
+          if (s.wait <= 0) { s.mode = "lookreturn"; s.frameT = 0; }
+          break;
+        case "lookreturn": {
+          s.anim = "look";
+          const spf = 1 / CAT_ANIM.look.fps;
+          s.frameT += dt;
+          while (s.frameT >= spf) { s.frameT -= spf; s.frame -= 1; }
+          if (s.frame <= 0) { s.frame = 0; s.mode = "walk"; s.target = pick(s.target); }
+          break;
+        }
+        default:
+          break;
+      }
+    };
+
+    let raf;
+    const step = (t) => {
+      if (!s.last) s.last = t;
+      let dt = (t - s.last) / 1000;
+      s.last = t;
+      if (dt > 0.1) dt = 0.1;                          // clamp after tab-switch
+      advance(dt);
+      if (s.mode === "walk" || s.mode === "pause") {
+        s.x = Math.max(CLAMP_MIN, Math.min(CLAMP_MAX, s.x));
+        s.y = Math.min(STAGE_H + 60, s.y);
+      }
+      if (s.mode !== "lookturn" && s.mode !== "lookhold" && s.mode !== "lookreturn") {
+        const a = CAT_ANIM[s.anim] || CAT_ANIM.idle;
+        s.frameT += dt;
+        while (s.frameT >= 1 / a.fps) {
+          s.frameT -= 1 / a.fps;
+          s.frame = a.once ? Math.min(s.frame + 1, a.n - 1) : (s.frame + 1) % a.n;
+        }
+      }
+      setView({ x: s.x, y: s.y, anim: s.anim, frame: s.frame, facing: s.facing });
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const a = CAT_ANIM[view.anim] || CAT_ANIM.idle;
+  const flip = view.facing * (CAT_FACES_RIGHT ? 1 : -1);
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: "absolute",
+        left: view.x - fw / 2,
+        top: view.y - fw * CAT_FOOT_FRAC,
+        width: fw,
+        height: fw,
+        backgroundImage: `url(${CAT_SHEET})`,
+        backgroundRepeat: "no-repeat",
+        backgroundSize: `${CAT_SHEET_W * CAT_PX}px ${CAT_SHEET_H * CAT_PX}px`,
+        backgroundPosition: `-${view.frame * CAT_CELL * CAT_PX}px -${a.row * CAT_CELL * CAT_PX}px`,
+        imageRendering: "pixelated",
+        transform: `scaleX(${flip})`,
+        transformOrigin: "center",
+        pointerEvents: "none",
+        zIndex: 55,
+      }}
+    />
+  );
+}
+
+/* ============================================================
    APP
    ============================================================ */
 export default function PackItUp() {
@@ -1838,6 +2031,13 @@ export default function PackItUp() {
 
   const [roomIndex, setRoomIndex] = useState(0);
   const room = isMobile ? ROOMS[ROOMS_ORDER[roomIndex]] : ROOMS.bedroom;
+
+  // Stretchy enters from the side you came FROM: moving forward (higher index)
+  // → trot in from the left; moving back → from the right. prevRoomIdxRef holds
+  // the room you were in during this render; it updates after commit.
+  const prevRoomIdxRef = useRef(roomIndex);
+  useEffect(() => { prevRoomIdxRef.current = roomIndex; }, [roomIndex]);
+  const catEnterSide = roomIndex >= prevRoomIdxRef.current ? -1 : 1;
 
   // object state: { [`${roomId}:${id}`]: { packed, sold, soldFor, donated } }
   const [objState, setObjState] = useState(() =>
@@ -2309,6 +2509,12 @@ export default function PackItUp() {
               <PixelCanvas w={BOX_CW} h={BOX_CH} draw={(ctx) => drawBoxes(ctx, rmBoxes, openIdx)} redrawKey={`${rmBoxes}-${openIdx}`} />
             </div>
           </div>
+        )}
+
+        {/* Stretchy — only in the current room; keyed by room id so he re-mounts
+            and trots back in on each room change */}
+        {rm.id === room.id && (
+          <Stretchy key={rm.id} spots={CAT_SPOTS[rm.id]} enterSide={catEnterSide} />
         )}
       </>
     );
