@@ -2448,9 +2448,10 @@ export default function PackItUp({ glowMode = "split" }) {
     const storageObj = room.objects.find((o) => o.id === storageId);
     const storageSpr = room.sprites[storageId];
     if (spr && storageObj && storageSpr) {
-      // origin: storage object's center, in stage px
-      const ox = storageObj.x + (storageSpr.w * CELL) / 2;
-      const oy = storageObj.y + (storageSpr.h * CELL) / 2;
+      // origin: storage object's top-left in stage px (same anchor the furniture
+      // pack uses — transformOrigin: top left, left/top = sprite top-left).
+      const ox = storageObj.x;
+      const oy = storageObj.y;
       // target: next box slot mouth (rmPacked count determines which slot)
       const rmPacked = room.objects.filter(
         (o) => o.removable && objState[sk(room.id, o.id)].packed
@@ -2462,7 +2463,10 @@ export default function PackItUp({ glowMode = "split" }) {
       const totalPacked = rmPacked + contentPacked;
       const boxIdx = Math.min(totalPacked, BOX_MAX - 1);
       const boxTarget = boxSlotCenter(boxIdx);
-      const pscale = 1;
+      // small speck — the item appears as a tiny dot flying to the box,
+      // matching how furniture lands as a speck. The packToBox keyframe
+      // shrinks it further to 0.12x by the end.
+      const pscale = 0.18;
       setContentFlyFx({
         spr,
         x: ox, y: oy,
@@ -2970,7 +2974,9 @@ export default function PackItUp({ glowMode = "split" }) {
         {/* content pack-to-box fly: when a stored item is packed from the
             storage overlay, we close back to the apartment and spawn the item's
             sprite flying from the storage object to the box pile's mouth.
-            Reuses the furniture packToBox keyframe + CSS vars. */}
+            Reuses the furniture packToBox keyframe + CSS vars. The sprite is
+            scaled way down so the raw-dim PNG renders as a small speck (the
+            packToBox keyframe shrinks it to 0.12x of --pscale as it lands). */}
         {contentFlyFx && rm.id === room.id && contentFlyFx.spr && (
           <div
             className="packing"
@@ -2982,7 +2988,7 @@ export default function PackItUp({ glowMode = "split" }) {
               "--pdx": `${contentFlyFx.pdx}px`,
               "--pdy": `${contentFlyFx.pdy}px`,
               "--pscale": contentFlyFx.pscale,
-              transformOrigin: "center",
+              transformOrigin: "top left",
             }}
           >
             <PixelCanvas w={contentFlyFx.spr.w} h={contentFlyFx.spr.h} draw={contentFlyFx.spr.draw} />
