@@ -6,6 +6,14 @@ import SAVED_LAYOUT from "./layout.json";
 // hosted artifact's CSP blocks fetch of the audio; the play path decodes these
 // bytes via atob → decodeAudioData (see below).
 import SELL_CHIME_SRC from "./sell.mp3";
+// Stretchy the cat: a real PNG sprite sheet (the only image asset in the game —
+// everything else is procedural). 256x1632 px = 8 columns x 51 rows of 32x32
+// frames. Vite serves it as a hashed, same-origin asset (no CSP issue for img).
+import CAT_SHEET from "./assets/Cat-Sheet.png";
+// Next-layer screens (Menu/Desk/Health/etc.) + the task/urgency scaffold.
+// The apartment stays the hub; these render as full-screen overlays above it.
+import ScreenLayer from "./Screens.jsx";
+import { INITIAL_TASKS, isOpen as isTaskOpen, taskPressure } from "./tasks.js";
 
 /* ============================================================
    PACK IT UP — vertical slice: The Bedroom
@@ -1367,7 +1375,9 @@ const LIVING_OBJECTS = [
    Geometry lives in constants so the pack-to-box fly animation can aim at the
    exact slot the incoming item lands in. Bigger boxes than before, and the pile
    grows one box per packed item (a widening pyramid) up to BOX_MAX. */
-const BOX_ORIGIN = { x: 26, y: 440 };   // stage px: top-left of the pile canvas
+const BOX_ORIGIN = { x: 212, y: 452 };  // stage px: top-left of the pile canvas
+                                         // centered in the foreground so the pile
+                                         // clears fixtures (tub, etc.) in every room
 const BOX_CW = 124, BOX_CH = 72;        // pile canvas size, cells
 const BOX_W = 34, BOX_H = 26;           // one box, cells (~2x the old boxes)
 // fill order: bottom row L→R, then middle row, then apex
@@ -1616,6 +1626,218 @@ function PixelCanvas({ w, h, draw, redrawKey, style }) {
   );
 }
 
+/* ============================================================
+   STRETCHY — the cat companion
+   The one image asset in the game. Sheet is 256x1632, 8 cols x
+   51 rows of 32x32 frames, arranged by animation ROW (col 0..n-1
+   per row), NOT continuous Aseprite frame number. Rendered as a
+   background-image window scaled with image-rendering:pixelated
+   to match the game's crisp low-res look. He lives in stage-px
+   space inside roomArt() so he scales with the room on both
+   desktop and mobile. Purely decorative: pointer-events:none, so
+   he's never selectable/packable/etc.
+   ============================================================ */
+const CAT_CELL = 32;                    // source px per frame
+const CAT_SHEET_W = 256, CAT_SHEET_H = 1632;
+const CAT_PX = 6.2;                     // stage px per source px (display scale)
+const CAT_FOOT_FRAC = 0.84;             // where his feet sit inside the 32px frame
+const CAT_FACES_RIGHT = true;           // source art faces RIGHT by default
+
+// animation table — { row, n(frames from col 0), fps, once? }
+const CAT_ANIM = {
+  walk:  { row: 4,  n: 8, fps: 11 },    // Walk_1
+  idle:  { row: 2,  n: 8, fps: 6 },     // Idle_1 (tail flick / blink)
+  idle2: { row: 3,  n: 8, fps: 6 },     // Idle_2 (ear twitch / head turn)
+  sit:   { row: 0,  n: 8, fps: 5 },     // Sit_1
+  rest:  { row: 10, n: 8, fps: 4 },     // Rest_2 (lie down)
+  look:  { row: 25, n: 4, fps: 5 },     // Look_Around_Right_1
+  run:   { row: 8,  n: 3, fps: 13 },    // Run_2
+};
+
+// frame of the look row where his head is turned fully toward you (eye contact)
+const LOOK_FACE_FRAME = CAT_ANIM.look.n - 1;
+
+// per-room safe floor spots (stage px, cat's feet). Kept in the deep
+// foreground band BELOW where the rugs end (well under the horizon at px
+// y 448) and spread wide across the room so he covers a big stretch of
+// screen. Clear of the box pile (left), major furniture, and UI.
+const CAT_SPOTS = {
+  bedroom:  [{ x: 220, y: 745 }, { x: 380, y: 771 }, { x: 545, y: 759 }, { x: 695, y: 747 }, { x: 760, y: 737 }],
+  bathroom: [{ x: 215, y: 741 }, { x: 380, y: 767 }, { x: 545, y: 755 }, { x: 690, y: 743 }, { x: 755, y: 733 }],
+  office:   [{ x: 220, y: 743 }, { x: 390, y: 769 }, { x: 560, y: 757 }, { x: 700, y: 745 }, { x: 760, y: 735 }],
+  dining:   [{ x: 215, y: 743 }, { x: 385, y: 769 }, { x: 560, y: 757 }, { x: 700, y: 745 }, { x: 760, y: 735 }],
+  kitchen:  [{ x: 220, y: 743 }, { x: 390, y: 769 }, { x: 560, y: 757 }, { x: 700, y: 745 }, { x: 760, y: 735 }],
+  living:   [{ x: 210, y: 745 }, { x: 385, y: 771 }, { x: 560, y: 759 }, { x: 705, y: 747 }, { x: 760, y: 737 }],
+};
+
+function Stretchy({ spots, enterSide }) {
+  const list = spots && spots.length ? spots : [{ x: STAGE_W / 2, y: 520 }];
+  const startY = list[0].y;
+  const fw = CAT_CELL * CAT_PX;          // display frame size (stage px)
+  const HALF = fw / 2;
+  const OFF = HALF + 24;                  // spawn fully off the side
+  const CLAMP_MIN = HALF, CLAMP_MAX = STAGE_W - HALF; // keep frame on-stage
+  const [view, setView] = useState(() => ({
+    x: enterSide < 0 ? -OFF : STAGE_W + OFF,
+    y: startY,
+    anim: "idle",
+    frame: 0,
+    facing: enterSide < 0 ? 1 : -1,
+  }));
+
+  useEffect(() => {
+    const pick = (cur) => {
+      let t = cur;
+      for (let i = 0; i < 8 && t === cur; i++) t = list[(Math.random() * list.length) | 0];
+      return t || list[0];
+    };
+    const s = {
+      x: enterSide < 0 ? -OFF : STAGE_W + OFF,
+      y: startY,
+      facing: enterSide < 0 ? 1 : -1,
+      anim: "idle",
+      frame: 0,
+      frameT: 0,
+      mode: "delay",                                  // short pause, then trot in
+      wait: 0.45 + Math.random() * 0.5,
+      pauseAnim: "idle",
+      target: pick(null),
+      last: 0,
+    };
+
+    const advance = (dt) => {
+      switch (s.mode) {
+        case "delay":
+          s.anim = "idle";
+          s.wait -= dt;
+          if (s.wait <= 0) { s.mode = "enter"; s.target = pick(null); }
+          break;
+        case "enter":
+        case "walk": {
+          s.anim = s.mode === "enter" ? "run" : "walk";
+          const dx = s.target.x - s.x, dy = s.target.y - s.y;
+          const dist = Math.hypot(dx, dy) || 1;
+          const speed = s.mode === "enter" ? 120 : 46;
+          if (Math.abs(dx) > 2) s.facing = dx > 0 ? 1 : -1;
+          if (dist < 3) {
+            // settle in for a while — long, deliberate stationary beats so he
+            // isn't constantly on the move.
+            const roll = Math.random();
+            if (roll < 0.30) {
+              // "look at you" beat: turn his head to meet your eyes, hold that
+              // eye-contact frame, then reverse the turn back to forward before
+              // walking off again.
+              s.mode = "lookturn";
+              s.anim = "look";
+              s.frame = 0;
+              s.frameT = 0;
+            } else {
+              s.mode = "pause";
+              // other idle beats ~3x longer than before, like the lie-down.
+              if (roll < 0.55) { s.pauseAnim = "sit"; s.wait = 9.0 + Math.random() * 6.0; }      // 9-15s sit
+              else if (roll < 0.72) { s.pauseAnim = "idle"; s.wait = 9.0 + Math.random() * 4.5; }  // 9-13.5s idle
+              else if (roll < 0.85) { s.pauseAnim = "idle2"; s.wait = 9.0 + Math.random() * 4.5; } // 9-13.5s idle
+              else { s.pauseAnim = "rest"; s.wait = 12.0 + Math.random() * 6.0; }                  // 12-18s lie down
+              s.frame = 0;
+            }
+          } else {
+            s.x += (dx / dist) * speed * dt;
+            s.y += (dy / dist) * speed * dt;
+          }
+          break;
+        }
+        case "pause":
+          s.anim = s.pauseAnim;
+          s.wait -= dt;
+          if (s.wait <= 0) { s.mode = "walk"; s.target = pick(s.target); }
+          break;
+        case "lookturn": {
+          // turn head to meet the viewer's eyes
+          s.anim = "look";
+          const spf = 1 / CAT_ANIM.look.fps;
+          s.frameT += dt;
+          while (s.frameT >= spf) { s.frameT -= spf; s.frame += 1; }
+          if (s.frame >= LOOK_FACE_FRAME) { s.frame = LOOK_FACE_FRAME; s.mode = "lookhold"; s.wait = 2.2; }
+          break;
+        }
+        case "lookhold":
+          // hold eye contact, dead still, for a beat
+          s.anim = "look";
+          s.frame = LOOK_FACE_FRAME;
+          s.wait -= dt;
+          if (s.wait <= 0) { s.mode = "lookreturn"; s.frameT = 0; }
+          break;
+        case "lookreturn": {
+          // reverse the turn — head back to forward — then walk off
+          s.anim = "look";
+          const spf = 1 / CAT_ANIM.look.fps;
+          s.frameT += dt;
+          while (s.frameT >= spf) { s.frameT -= spf; s.frame -= 1; }
+          if (s.frame <= 0) { s.frame = 0; s.mode = "walk"; s.target = pick(s.target); }
+          break;
+        }
+        default:
+          break;
+      }
+    };
+
+    let raf;
+    const step = (t) => {
+      if (!s.last) s.last = t;
+      let dt = (t - s.last) / 1000;
+      s.last = t;
+      if (dt > 0.1) dt = 0.1;                          // clamp after tab-switch
+      advance(dt);
+      // safety net: once he's wandering (not making his off-screen entrance),
+      // never let him leave the stage horizontally
+      if (s.mode === "walk" || s.mode === "pause") {
+        s.x = Math.max(CLAMP_MIN, Math.min(CLAMP_MAX, s.x));
+        s.y = Math.min(STAGE_H + 60, s.y);             // allow him low on the floor near the bottom
+      }
+      // the look beat drives its own frame (turn in, hold, turn back), so leave
+      // it alone; every other state uses the normal looping frame clock.
+      if (s.mode !== "lookturn" && s.mode !== "lookhold" && s.mode !== "lookreturn") {
+        const a = CAT_ANIM[s.anim] || CAT_ANIM.idle;
+        s.frameT += dt;
+        while (s.frameT >= 1 / a.fps) {
+          s.frameT -= 1 / a.fps;
+          s.frame = a.once ? Math.min(s.frame + 1, a.n - 1) : (s.frame + 1) % a.n;
+        }
+      }
+      setView({ x: s.x, y: s.y, anim: s.anim, frame: s.frame, facing: s.facing });
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const a = CAT_ANIM[view.anim] || CAT_ANIM.idle;
+  const flip = view.facing * (CAT_FACES_RIGHT ? 1 : -1);
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: "absolute",
+        left: view.x - fw / 2,
+        top: view.y - fw * CAT_FOOT_FRAC,
+        width: fw,
+        height: fw,
+        backgroundImage: `url(${CAT_SHEET})`,
+        backgroundRepeat: "no-repeat",
+        backgroundSize: `${CAT_SHEET_W * CAT_PX}px ${CAT_SHEET_H * CAT_PX}px`,
+        backgroundPosition: `-${view.frame * CAT_CELL * CAT_PX}px -${a.row * CAT_CELL * CAT_PX}px`,
+        imageRendering: "pixelated",
+        transform: `scaleX(${flip})`,
+        transformOrigin: "center",
+        pointerEvents: "none",
+        // above the box pile (60) and all furniture so he's never clipped
+        zIndex: 90,
+      }}
+    />
+  );
+}
+
 /* Dev-only visual layout editor, opened with ?edit=1. It keeps drafts in
    localStorage and exports stage coordinates without changing game state. */
 export function LayoutEditor() {
@@ -1839,6 +2061,12 @@ export default function PackItUp() {
   const [roomIndex, setRoomIndex] = useState(0);
   const room = isMobile ? ROOMS[ROOMS_ORDER[roomIndex]] : ROOMS.bedroom;
 
+  /* Stretchy re-mounts per room and trots in from the side the player came
+     from (moved to a higher-index room → he follows in from the left). */
+  const prevRoomIdxRef = useRef(roomIndex);
+  const catEnterSide = roomIndex >= prevRoomIdxRef.current ? -1 : 1;
+  useEffect(() => { prevRoomIdxRef.current = roomIndex; }, [roomIndex]);
+
   // object state: { [`${roomId}:${id}`]: { packed, sold, soldFor, donated } }
   const [objState, setObjState] = useState(() =>
     Object.fromEntries(
@@ -1855,6 +2083,11 @@ export default function PackItUp() {
   const [donateToast, setDonateToast] = useState(null); // { name } receipt
   const [invOpen, setInvOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false); // mobile object-detail bottom sheet
+  /* next-layer navigation: apartment is the hub, everything else is an
+     overlay screen (menu/desk/health/inventory/log/stretchy/settings) */
+  const [screen, setScreen] = useState("apartment");
+  /* task/urgency scaffold — sample data only, drives the paper fan + badges */
+  const [tasks, setTasks] = useState(INITIAL_TASKS);
   const [minutes, setMinutes] = useState(0); // game time advances as you pack/sell
   const [coins, setCoins] = useState(125);
   const [scale, setScale] = useState(1);
@@ -2115,6 +2348,22 @@ export default function PackItUp() {
         return a.z - b.z || (av.y + rm.sprites[a.id].h * CELL * (av.scale || 1)) - (bv.y + rm.sprites[b.id].h * CELL * (bv.scale || 1));
       });
 
+  /* urgency scaffold: overall pressure + how many papers are on the desk */
+  const pressure = taskPressure(tasks);
+  const deskPaperCount = tasks.filter((t) => isTaskOpen(t) && ["job", "admin", "move"].includes(t.category)).length;
+
+  /* everything handled across ALL rooms — feeds Inventory + Log screens */
+  const handled = [];
+  for (const rid of ROOMS_ORDER) {
+    for (const o of ROOMS[rid].objects) {
+      const st = objState[sk(rid, o.id)];
+      if (!st) continue;
+      if (st.packed) handled.push({ name: o.name, room: ROOMS[rid].name, state: "packed" });
+      else if (st.sold) handled.push({ name: o.name, room: ROOMS[rid].name, state: "sold", amount: st.soldFor });
+      else if (st.donated) handled.push({ name: o.name, room: ROOMS[rid].name, state: "donated" });
+    }
+  }
+
   const selected = room.objects.find((o) => o.id === selectedId) || null;
   const packedList = removable.filter((o) => objState[sk(room.id, o.id)].packed);
   const soldList = removable.filter((o) => objState[sk(room.id, o.id)].sold);
@@ -2166,6 +2415,16 @@ export default function PackItUp() {
       .coin { animation: coinBurst 0.8s cubic-bezier(0.3, 0.4, 0.7, 1) both; }
       .sellAmt { animation: sellAmt 0.9s ease-out both; }
       .sheet { animation: sheetUp 240ms cubic-bezier(0.22, 1, 0.36, 1); }
+      /* paper fan urgency: an occasional twitch, more insistent as pressure rises */
+      @keyframes fanNudge {
+        0%, 86%, 100% { transform: translateY(0) rotate(0deg); }
+        88% { transform: translateY(-3px) rotate(-1.4deg); }
+        91% { transform: translateY(1px) rotate(1deg); }
+        94% { transform: translateY(-2px) rotate(-0.7deg); }
+        97% { transform: translateY(0) rotate(0.4deg); }
+      }
+      .fanNudge2 { animation: fanNudge 4.6s ease-in-out infinite; }
+      .fanNudge3 { animation: fanNudge 2.3s ease-in-out infinite; }
       button { font-family: 'Courier New', monospace; touch-action: manipulation; }
     `}</style>
   );
@@ -2270,6 +2529,12 @@ export default function PackItUp() {
             </div>
           );
         })}
+
+        {/* STRETCHY — the cat, only in the current room, above the floor/furniture
+            but non-interactive. Keyed by room so he re-mounts and trots back in. */}
+        {rm.id === room.id && (
+          <Stretchy key={rm.id} spots={CAT_SPOTS[rm.id]} enterSide={catEnterSide} />
+        )}
 
         {/* coin burst + floating amount — own overlay on its own timer so the
             item's shrink-away animation can't swallow or cut it short */}
@@ -2440,7 +2705,7 @@ export default function PackItUp() {
       { key: "pack",   icon: "📦", label: "Pack",   disabled: !selected || !selected.removable || !!busy, onClick: () => packObject(selected.id) },
       { key: "sell",   icon: "💰", label: "Sell",   disabled: !selected || !selected.removable || !!busy, onClick: () => sellObject(selected.id) },
       { key: "donate", icon: "🎁", label: "Donate", disabled: !selected || !selected.removable || !!busy, onClick: () => donateObject(selected.id) },
-      { key: "menu",   icon: "☰",  label: "Menu",   disabled: false, onClick: () => setInvOpen(true) },
+      { key: "menu",   icon: "☰",  label: "Menu",   disabled: false, onClick: () => setScreen("menu") },
     ];
 
     const invRow = (o, tagColor, tagText, btnText, btnFn) => (
@@ -2623,9 +2888,20 @@ export default function PackItUp() {
           ))}
         </div>
 
-        {/* ---- paper fan: 2 job apps + 1 admin card, visual only, tucked
-             partly behind the action bar ---- */}
-        <div style={{ position: "absolute", left: 8, bottom: "calc(env(safe-area-inset-bottom, 0px) + 34px)", zIndex: 110, pointerEvents: "none", width: 130, height: 100 }}>
+        {/* ---- paper fan: 2 job apps + 1 admin card, tucked partly behind
+             the action bar. Now the physical face of the task pile: it peeks
+             out further and twitches as pressure rises, and tapping it opens
+             the Desk. ---- */}
+        <div
+          className={pressure >= 3 ? "fanNudge3" : pressure === 2 ? "fanNudge2" : undefined}
+          onClick={() => setScreen("desk")}
+          style={{
+            position: "absolute", left: 8, zIndex: 110, width: 130, height: 100, cursor: "pointer",
+            /* peek: papers ride up out from behind the bar as things pile up */
+            bottom: `calc(env(safe-area-inset-bottom, 0px) + ${34 + pressure * 8}px)`,
+            transition: "bottom 400ms ease",
+          }}
+        >
           {[
             { rot: -14, dx: 0,  bg: "#E4B4A8", lo: "#C08578", label: "Job App", icon: "💼" },
             { rot: -4,  dx: 26, bg: "#E9BFB2", lo: "#C08578", label: "Job App", icon: "💼" },
@@ -2641,18 +2917,32 @@ export default function PackItUp() {
               {[0, 1, 2, 3].map((j) => (
                 <div key={j} style={{ height: 3, marginTop: 4, background: c.lo, width: `${88 - j * 14}%` }} />
               ))}
+              {/* red marker: urgent scrawl shows up when pressure is high */}
+              {pressure >= 2 && i < pressure - 1 && (
+                <div style={{ position: "absolute", top: 3, right: 4, color: "#C43B34", fontSize: 12, fontWeight: 700, transform: "rotate(8deg)", ...ui.label }}>!</div>
+              )}
             </div>
           ))}
+          {deskPaperCount > 0 && (
+            <span style={{
+              position: "absolute", top: -8, right: 24, zIndex: 5, minWidth: 20, height: 20, padding: "0 4px",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: "#C43B34", color: "#F3EDDD", fontSize: 11, border: "2px solid #120A04", ...ui.label,
+            }}>{deskPaperCount}</span>
+          )}
         </div>
 
-        {/* ---- Tasks: reserved spot, no system behind it yet ---- */}
+        {/* ---- Tasks chip: shows live open-task count, opens the overview.
+             Full task system still to come — this is just the doorbell. ---- */}
         <div style={{ position: "absolute", right: 10, bottom: "calc(env(safe-area-inset-bottom, 0px) + 84px)", zIndex: 105 }}>
-          <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 7, padding: "9px 13px", ...ui.frame }}>
+          <button onClick={() => setScreen("menu")} style={{ position: "relative", display: "flex", alignItems: "center", gap: 7, padding: "9px 13px", cursor: "pointer", ...ui.frame }}>
             <span style={{ fontSize: 14 }}>📋</span>
             <span style={{ color: "#F2E4C0", fontSize: 13, ...ui.label }}>Tasks</span>
-            <span style={{ fontSize: 9, color: "#8A7350", ...ui.label }}>(soon)</span>
-            <span style={{ position: "absolute", top: -5, right: -5, width: 12, height: 12, borderRadius: "50%", background: "#C43B34", border: "2px solid #120A04" }} />
-          </div>
+            <span style={{ fontSize: 11, color: "#C9B896", ...ui.label }}>{tasks.filter(isTaskOpen).length}</span>
+            {pressure > 0 && (
+              <span style={{ position: "absolute", top: -5, right: -5, width: 12, height: 12, borderRadius: "50%", background: "#C43B34", border: "2px solid #120A04" }} />
+            )}
+          </button>
         </div>
 
         {donateToastEl}
@@ -2819,6 +3109,17 @@ export default function PackItUp() {
             </div>
           </>
         )}
+
+        {/* ---- next-layer screens: full-screen overlays above the hub.
+             The apartment stays mounted underneath, state intact. ---- */}
+        <ScreenLayer
+          screen={screen}
+          go={setScreen}
+          tasks={tasks}
+          setTasks={setTasks}
+          handled={handled}
+          openHandledSheet={() => { setScreen("apartment"); setInvOpen(true); }}
+        />
       </div>
     );
   }

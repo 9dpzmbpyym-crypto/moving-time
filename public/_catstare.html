@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>stare frames</title>
+<style>
+  body {
+    margin: 0;
+    background: #2b2b2b;
+    display: flex;
+    gap: 24px;
+    padding: 40px;
+    font-family: "Courier New", monospace;
+    color: #f2e4c0;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .cell { text-align: center; }
+  .spr {
+    width: 384px;
+    height: 384px;
+    background-image: url(/src/assets/Cat-Sheet.png);
+    background-repeat: no-repeat;
+    background-size: 3072px 19584px; /* 256x1632 sheet scaled x12 */
+    image-rendering: pixelated;
+    border: 2px solid #ffd97a;
+    margin-top: 8px;
+  }
+  .label { font-size: 18px; }
+</style>
+</head>
+<body>
+  <div class="cell"><div class="label">frame 0<br>(forward)</div>
+    <div class="spr" style="background-position: 0px -9600px"></div></div>
+  <div class="cell"><div class="label">frame 1<br>(turning)</div>
+    <div class="spr" style="background-position: -384px -9600px"></div></div>
+  <div class="cell"><div class="label">frame 2<br>(turning)</div>
+    <div class="spr" style="background-position: -768px -9600px"></div></div>
+  <div class="cell"><div class="label">frame 3<br>(eye contact / HOLD)</div>
+    <div class="spr" style="background-position: -1152px -9600px"></div></div>
+</body>
+</html>
