@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "Pack It Up"
+version = "1.0.0"
+id = "artifacts/pack-it-up"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20185
+
+[services.development]
+run = "pnpm --filter @workspace/pack-it-up run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/pack-it-up", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/pack-it-up/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20185"
+BASE_PATH = "/"

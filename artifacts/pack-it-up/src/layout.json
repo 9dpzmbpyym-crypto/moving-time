@@ -1,0 +1,85 @@
+{
+  "bedroom": {
+    "rug": { "x": 298, "y": 446, "scale": 1.15 },
+    "curtains": { "x": 304, "y": 46, "scale": 1 },
+    "art_tree": { "x": 269, "y": 278, "scale": 1 },
+    "art_poster": { "x": 670, "y": 70, "scale": 1.4 },
+    "sill_plants": { "x": 431, "y": 236, "scale": 1 },
+    "hanging_plant": { "x": 195, "y": 7, "scale": 1 },
+    "bed": { "x": 373, "y": 312, "scale": 0.95 },
+    "nightstand": { "x": 263, "y": 341, "scale": 1 },
+    "vanity": { "x": 634, "y": 231, "scale": 0.95 },
+    "dresser": { "x": 75, "y": 104, "scale": 1 },
+    "lamp": { "x": 304, "y": 265, "scale": 1 },
+    "stool": { "x": 703, "y": 420, "scale": 1 },
+    "vase": { "x": 85, "y": 207, "scale": 1 },
+    "figurines": { "x": 202, "y": 220, "scale": 1 },
+    "basket": { "x": 127, "y": 239, "scale": 1 },
+    "closet_door": { "x": 801, "y": 126, "scale": 0.9 }
+  },
+  "bathroom": {
+    "crossstitch_art": { "x": 120, "y": 213, "scale": 1 },
+    "red_towels": { "x": 511, "y": 152, "scale": 1 },
+    "mirror_cabinet": { "x": 651, "y": 97, "scale": 1.1 },
+    "sill_bottles": { "x": 208, "y": 208, "scale": 0.9 },
+    "bathtub": { "x": 76, "y": 349, "scale": 0.95 },
+    "toilet": { "x": 402, "y": 284, "scale": 1 },
+    "bath_vanity": { "x": 603, "y": 241, "scale": 1 },
+    "toilet_decor": { "x": 424, "y": 227, "scale": 1 },
+    "toiletries": { "x": 767, "y": 233, "scale": 0.85 },
+    "laundry_basket": { "x": 302, "y": 580, "scale": 0.9 },
+    "tp_roll": { "x": 352, "y": 383, "scale": 1 }
+  },
+  "office": {
+    "office_curtains": { "x": 463, "y": 45, "scale": 1 },
+    "wall_frames": { "x": 193, "y": 73, "scale": 1 },
+    "desk_hutch": { "x": 66, "y": 138, "scale": 1.05 },
+    "sewing_machine": { "x": 102, "y": 75, "scale": 1 },
+    "desk_lamp": { "x": 208, "y": 221, "scale": 1.1 },
+    "computer": { "x": 362, "y": 244, "scale": 1.1 },
+    "desk_clutter": { "x": 110, "y": 271, "scale": 1 },
+    "office_chair": { "x": 382, "y": 317, "scale": 1.15 },
+    "storage_bin": { "x": 791, "y": 277, "scale": 0.9 },
+    "waste_bin": { "x": 797, "y": 569, "scale": 1.45 },
+    "side_cabinet": { "x": 691, "y": 263, "scale": 1.05 }
+  },
+  "dining": {
+    "dining_window": { "x": 216, "y": 43, "scale": 1 },
+    "dining_curtains": { "x": 196, "y": 33, "scale": 1 },
+    "sill_plants_d": { "x": 452, "y": 280, "scale": 1 },
+    "shelf_art": { "x": 631, "y": 50, "scale": 1.1 },
+    "dining_table": { "x": 210, "y": 330, "scale": 1.15 },
+    "dining_chairs": { "x": 111, "y": 291, "scale": 1.25, "parts": {
+      "sides": { "x": 0, "y": 0, "scaleX": 1, "scaleY": 1 },
+      "cushion": { "x": 36, "y": 52, "scaleX": 0.85, "scaleY": 0.8 },
+      "frame": { "x": 38, "y": 25, "scaleX": 0.65, "scaleY": 1.35 }
+    } },
+    "candle_bowl": { "x": 321, "y": 325, "scale": 1 },
+    "bar_cabinet": { "x": 618, "y": 316, "scale": 1 },
+    "bar_bottles": { "x": 673, "y": 267, "scale": 0.95 }
+  },
+  "kitchen": {
+    "stove": { "x": 189, "y": 275, "scale": 1 },
+    "counter_sink": { "x": 304, "y": 270, "scale": 1.05 },
+    "fridge": { "x": 640, "y": 195, "scale": 1.1 },
+    "pantry": { "x": 784, "y": 134, "scale": 1.1 },
+    "kettle": { "x": 249, "y": 288, "scale": 0.9 },
+    "cutting_board": { "x": 342, "y": 293, "scale": 1.45 },
+    "dish_rack": { "x": 537, "y": 277, "scale": 1 },
+    "sill_plants_k": { "x": 432, "y": 214, "scale": 1 },
+    "fridge_plant": { "x": 682, "y": 148, "scale": 1 },
+    "kitchen_door": { "x": 66, "y": 41, "scale": 1 },
+    "door_towel": { "x": 96, "y": 91, "scale": 1.35 }
+  },
+  "living": {
+    "tv_hutch": { "x": 72, "y": 44, "scale": 1.15 },
+    "wall_art_pair": { "x": 374, "y": 130, "scale": 1.1 },
+    "sofa": { "x": 351, "y": 276, "scale": 0.9 },
+    "living_rug": { "x": 188, "y": 457, "scale": 1 },
+    "coffee_table": { "x": 314, "y": 451, "scale": 0.85 },
+    "table_decor": { "x": 412, "y": 424, "scale": 1 },
+    "destijl_poster": { "x": 630, "y": 309, "scale": 1.1 },
+    "standing_mirror": { "x": 747, "y": 238, "scale": 1 },
+    "floor_lamp": { "x": 825, "y": 170, "scale": 1.05 }
+  }
+}
