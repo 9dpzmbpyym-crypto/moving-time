@@ -1,0 +1,57 @@
+---
+description: Rules for working on Pack It Up, a pixel-art moving game
+globs: ["artifacts/pack-it-up/**"]
+alwaysApply: true
+---
+
+# Pack It Up — Cursor Rules
+
+## What this is
+Pixel-art moving game. Player walks through apartment rooms and packs/sells/donates furniture. Personal motivation tool. No backend, no database, no UI libraries.
+
+## File map
+```
+artifacts/pack-it-up/src/
+  BedroomSlice.jsx    ← THE ENTIRE GAME (~3,300 lines)
+  main.tsx            ← 15-line entry point only
+  layout.json         ← furniture positions (x/y/scale) per room
+  sell.mp3            ← sell chime
+  assets/Cat-Sheet.png ← cat sprite sheet
+  dev/spritePreview.jsx ← dev tool only (?preview=bed)
+```
+
+## BedroomSlice.jsx section map
+| Lines | Content |
+|-------|---------|
+| 1–60 | Imports, constants, color palette (`P`), canvas helpers |
+| 61–334 | Bedroom shell + sprites |
+| 335–543 | Office shell + sprites |
+| 544–772 | Bathroom shell + sprites |
+| 773–961 | Kitchen shell + sprites + objects |
+| 962–1162 | Dining room shell + sprites + objects |
+| 1163–1428 | Living room shell + sprites + objects + box stack |
+| 1429–1589 | ROOMS model + ROOMS_ORDER + helpers |
+| 1590–1624 | PixelCanvas component |
+| 1625–1790 | LayoutEditor dev tool |
+| 1791–1860 | Haptics + audio |
+| 1861–2017 | Stretchy the cat |
+| 2018–3311 | PackItUp main component |
+
+## Hard rules
+- Game code goes in `BedroomSlice.jsx` only
+- No Tailwind — not installed, don't use classes
+- No UI libraries — no Radix, no shadcn, nothing. Inline styles + canvas only.
+- Do NOT import: react-query, wouter, framer-motion, recharts, zod
+- Layout tweaks → edit `layout.json`, not BedroomSlice.jsx
+- Do NOT split BedroomSlice.jsx yet (in-flight work from other sessions)
+- Do NOT touch files outside `artifacts/pack-it-up/`
+
+## Sprite pattern
+```js
+const CELL = 4; // 1 sprite px = 4 screen px
+const r = (ctx, color, x, y, w=1, h=1) => { ctx.fillStyle=color; ctx.fillRect(x,y,w,h); }
+// Use colors from the P palette at top of file
+```
+
+## Git discipline
+Always pull before starting. Always commit when done. Multiple AI sessions run concurrently.
