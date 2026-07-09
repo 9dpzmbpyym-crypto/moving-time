@@ -2289,6 +2289,23 @@ export default function PackItUp() {
   const clearSfxRef = useRef(null);
   const stampSfxRef = useRef(null);
 
+  /* Timeout registry — every animation/toast timer goes through schedule() so
+     they can all be cancelled if the component unmounts mid-flight (otherwise
+     the callbacks would set state on an unmounted tree). */
+  const timeoutsRef = useRef(new Set());
+  const schedule = useCallback((fn, ms) => {
+    const id = setTimeout(() => {
+      timeoutsRef.current.delete(id);
+      fn();
+    }, ms);
+    timeoutsRef.current.add(id);
+    return id;
+  }, []);
+  useEffect(() => () => {
+    for (const id of timeoutsRef.current) clearTimeout(id);
+    timeoutsRef.current.clear();
+  }, []);
+
   const removable = room.objects.filter((o) => o.removable);
   const packedCount = removable.filter((o) => objState[sk(room.id, o.id)].packed).length;
   const soldCount = removable.filter((o) => objState[sk(room.id, o.id)].sold).length;
@@ -2327,14 +2344,14 @@ export default function PackItUp() {
     const prev = objState[k];
     haptic(HAPTIC.pack);
     setPackingId(id);
-    setTimeout(() => {
+    schedule(() => {
       setObjState((s) => ({ ...s, [k]: { ...s[k], packed: true } }));
       setUndoStack((stack) => [...stack, undoEntry(id, prev, 0, 10)]);
       setPackingId(null);
       setSelectedId(null);
       setMinutes((m) => m + 10);
     }, 520);
-  }, [room, objState, busy]);
+  }, [room, objState, busy, schedule]);
 
   const sellObject = useCallback((id, amount) => {
     const k = sk(room.id, id);
@@ -2347,10 +2364,10 @@ export default function PackItUp() {
     // burst effect lives on its own timer so the sell animation ending
     // doesn't cut it short
     setSellFx({ roomId: room.id, x: obj.x + (spr.w * CELL) / 2, y: obj.y + (spr.h * CELL) / 2, amount: credit });
-    setTimeout(() => setSellFx(null), 1000);
+    schedule(() => setSellFx(null), 1000);
     haptic(HAPTIC.sell);
     playSellSound();
-    setTimeout(() => {
+    schedule(() => {
       setObjState((s) => ({ ...s, [k]: { ...s[k], sold: true, soldFor: credit } }));
       setCoins((c) => c + credit);
       setUndoStack((stack) => [...stack, undoEntry(id, prev, credit, 5)]);
@@ -2358,7 +2375,7 @@ export default function PackItUp() {
       setSelectedId(null);
       setMinutes((m) => m + 5);
     }, 520);
-  }, [room, objState, busy]);
+  }, [room, objState, busy, schedule]);
 
   const donateObject = useCallback((id) => {
     const k = sk(room.id, id);
@@ -2367,16 +2384,16 @@ export default function PackItUp() {
     const prev = objState[k];
     haptic(HAPTIC.donate);
     setDonatingId(id);
-    setTimeout(() => {
+    schedule(() => {
       setObjState((s) => ({ ...s, [k]: { ...s[k], donated: true } }));
       setUndoStack((stack) => [...stack, undoEntry(id, prev, 0, 5)]);
       setDonatingId(null);
       setSelectedId(null);
       setMinutes((m) => m + 5);
       setDonateToast({ name: obj.name });
-      setTimeout(() => setDonateToast((t) => (t && t.name === obj.name ? null : t)), 3500);
+      schedule(() => setDonateToast((t) => (t && t.name === obj.name ? null : t)), 3500);
     }, 520);
-  }, [room, objState, busy]);
+  }, [room, objState, busy, schedule]);
 
   /* ---- content actions: pack/sell/donate items from inside storage ----
      All three close the storage overlay first (close-then-fly), then flip
@@ -2395,13 +2412,13 @@ export default function PackItUp() {
     haptic(HAPTIC.pack);
     setScreen("apartment"); // close-then-fly: close overlay so the box pile is visible
     setPackingContentKey(k);
-    setTimeout(() => {
+    schedule(() => {
       setContentsState((s) => ({ ...s, [k]: { ...s[k], packed: true } }));
       setUndoStack((stack) => [...stack, undoContentEntry(storageId, itemId, prev, 0, 10)]);
       setPackingContentKey(null);
       setMinutes((m) => m + 10);
     }, 520);
-  }, [room, contentsState, busy]);
+  }, [room, contentsState, busy, schedule]);
 
   const sellContent = useCallback((storageId, itemId) => {
     const k = `${room.id}:${storageId}:${itemId}`;
@@ -2417,18 +2434,18 @@ export default function PackItUp() {
     const spr = room.sprites[storageId];
     if (storageObj && spr) {
       setSellFx({ roomId: room.id, x: storageObj.x + (spr.w * CELL) / 2, y: storageObj.y + (spr.h * CELL) / 2, amount: credit });
-      setTimeout(() => setSellFx(null), 1000);
+      schedule(() => setSellFx(null), 1000);
     }
     haptic(HAPTIC.sell);
     playSellSound();
-    setTimeout(() => {
+    schedule(() => {
       setContentsState((s) => ({ ...s, [k]: { ...s[k], sold: true, soldFor: credit } }));
       setCoins((c) => c + credit);
       setUndoStack((stack) => [...stack, undoContentEntry(storageId, itemId, prev, credit, 5)]);
       setSellingId(null);
       setMinutes((m) => m + 5);
     }, 520);
-  }, [room, contentsState, busy]);
+  }, [room, contentsState, busy, schedule]);
 
   const donateContent = useCallback((storageId, itemId) => {
     const k = `${room.id}:${storageId}:${itemId}`;
@@ -2439,17 +2456,17 @@ export default function PackItUp() {
     haptic(HAPTIC.donate);
     setScreen("apartment");
     setDonatingId(itemId);
-    setTimeout(() => {
+    schedule(() => {
       setContentsState((s) => ({ ...s, [k]: { ...s[k], donated: true } }));
       setUndoStack((stack) => [...stack, undoContentEntry(storageId, itemId, prev, 0, 5)]);
       setDonatingId(null);
       setMinutes((m) => m + 5);
       if (it) {
         setDonateToast({ name: it.name });
-        setTimeout(() => setDonateToast((t) => (t && t.name === it.name ? null : t)), 3500);
+        schedule(() => setDonateToast((t) => (t && t.name === it.name ? null : t)), 3500);
       }
     }, 520);
-  }, [room, contentsState, busy]);
+  }, [room, contentsState, busy, schedule]);
 
   const unpackObject = (id) => {
     const k = sk(room.id, id);
@@ -2978,7 +2995,7 @@ export default function PackItUp() {
       let delta = 0;
       if (d.intent) {
         suppressClickRef.current = true;
-        setTimeout(() => { suppressClickRef.current = false; }, 80);
+        schedule(() => { suppressClickRef.current = false; }, 80);
         const threshold = Math.max(60, viewSize.w * 0.18);
         if (dragX <= -threshold) delta = roomIndex < N - 1 ? 1 : 0;
         else if (dragX >= threshold) delta = roomIndex > 0 ? -1 : 0;
