@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import CAT_SHEET from "./assets/Cat-Sheet.png";
-import { itemArtReady } from "./contents.js";
+import STRETCHY_ICON from "./assets/Stretchy Icon.png";
 import {
   TASK_CATEGORIES, SAMPLE_JOBS, isOpen, taskPressure,
   PRESSURE_LABELS, PRESSURE_COLORS,
 } from "./tasks.js";
-import { PixelCanvas, CELL, COIN_BURSTS } from "./BedroomSlice.jsx";
+import { PixelCanvas } from "./BedroomSlice.jsx";
 
 /* ============================================================
    SCREENS — the "next layer" on top of the apartment hub.
@@ -523,10 +522,8 @@ function StretchyScreen({ go, tasks }) {
       <div style={{ display: "flex", gap: 14, alignItems: "center", padding: "14px", ...FR }}>
         <div style={{
           width: 128, height: 128, flex: "0 0 auto", imageRendering: "pixelated",
-          backgroundImage: `url(${CAT_SHEET})`,
-          // row 25 = "look around"; its last frame (col 3) is the head-turned-toward-you
-          // eye-contact pose. 32px frames on an 8-col sheet (256px wide, 1632px tall).
-          backgroundPosition: "-96px -800px", backgroundSize: "1024px 6528px",
+          backgroundImage: `url(${STRETCHY_ICON})`,
+          backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat",
           border: "3px solid #120A04", backgroundColor: "#3A2410",
         }} />
         <div>
@@ -600,145 +597,12 @@ function SettingsScreen({ go }) {
   );
 }
 
-/* ================= STORAGE (inside cabinets/drawers/closets) ================= */
-/* Tapping a storage object on the hub opens this overlay. Shows the items
-   inside as a grid of tappable sprites. Tap an item = pack immediately;
-   sell/donate are secondary buttons on each card. The cabinet sprite itself
-   is rendered as a header so you remember what you're inside. */
-function StorageScreen({ go, storageId, room, storageObj, items, contentsState, onPack, onSell, onDonate, busy, storageSellFx }) {
-  const [itemArtRedrawKey, setItemArtRedrawKey] = useState(0);
-  useEffect(() => {
-    let mounted = true;
-    itemArtReady.then(() => {
-      if (mounted) setItemArtRedrawKey((key) => key + 1);
-    });
-    return () => { mounted = false; };
-  }, []);
-
-  if (!storageObj) return null;
-  const storageKey = `${room.id}:${storageId}`;
-  const remaining = items.filter((it) => {
-    const st = contentsState[`${storageKey}:${it.id}`];
-    // missing state = fresh/unhandled item, counts toward remaining
-    if (!st) return true;
-    return !st.packed && !st.sold && !st.donated;
-  }).length;
-
-  return (
-    <Screen title={storageObj.name} icon="≡" onBack={() => go("apartment")}>
-      {/* header: cabinet sprite (scaled to fit) + count of remaining items */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", marginBottom: 12, ...FR }}>
-        <div style={{ flex: "0 0 auto", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", background: "#241509", border: "2px solid #4A2E17", overflow: "hidden" }}>
-          {(() => {
-            const spr = storageObj.spr;
-            if (!spr) return null;
-            const maxDim = 40;
-            const fit = Math.min(maxDim / (spr.w * CELL), maxDim / (spr.h * CELL));
-            return (
-              <div style={{ transform: `scale(${fit})`, transformOrigin: "center", imageRendering: "pixelated" }}>
-                <PixelCanvas w={spr.w} h={spr.h} draw={spr.draw} />
-              </div>
-            );
-          })()}
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ color: "#F2E4C0", fontSize: 14, ...LB }}>{storageObj.name}</div>
-          <div style={{ color: remaining > 0 ? "#C9B896" : "#5D7C3B", fontSize: 11, ...LB }}>
-            {remaining > 0 ? `${remaining} item${remaining === 1 ? "" : "s"} inside` : "empty — safe to pack the whole thing"}
-          </div>
-        </div>
-      </div>
-
-      {/* item grid: each card shows sprite + name + (state tag or action row) */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10 }}>
-        {items.map((it) => {
-          const k = `${storageKey}:${it.id}`;
-          const st = contentsState[k] || { packed: false, sold: false, soldFor: 0, donated: false };
-          const done = st.packed || st.sold || st.donated;
-          // sprite thumbnail fit — matches the header sprite math: sprites are
-          // drawn at low-res and CSS-scaled by CELL, so the canvas's on-screen
-          // size is w*CELL × h*CELL. Fit the larger of those into maxDim.
-          const maxDim = 40;
-          const fit = it.spr ? Math.min(maxDim / (it.spr.w * CELL), maxDim / (it.spr.h * CELL)) : 0;
-          return (
-            <div key={it.id} style={{
-              position: "relative",
-              padding: 10, background: done ? "#0F0904" : "#1A0F06", border: "2px solid #4A2E17",
-              opacity: done ? 0.5 : 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-            }}>
-              {/* coin burst + floating amount when this item is sold — mirrors
-                  the apartment's sell FX so selling from the storage overlay
-                  has the same feedback as selling furniture from the room. */}
-              {storageSellFx && storageSellFx.itemId === it.id && (
-                <div style={{ position: "absolute", left: "50%", top: "50%", zIndex: 500, pointerEvents: "none" }}>
-                  {COIN_BURSTS.map(({ tx, ty, d }, i) => (
-                    <span
-                      key={i}
-                      className="coin"
-                      style={{
-                        position: "absolute", left: 0, top: 0, width: 16, height: 16,
-                        background: "#EFC463", border: "3px solid #8A5E14", borderRadius: "50%",
-                        boxShadow: "inset 2px 2px 0 #FFE9A8",
-                        animationDelay: `${d}ms`,
-                        "--tx": `${tx}px`, "--ty": `${ty}px`,
-                      }}
-                    />
-                  ))}
-                  <div
-                    className="sellAmt"
-                    style={{
-                      position: "absolute", left: 0, top: -34, whiteSpace: "nowrap",
-                      color: "#FFD97A", fontSize: 22, textShadow: "2px 2px 0 #120A04, -2px 2px 0 #120A04, 2px -2px 0 #120A04, -2px -2px 0 #120A04",
-                      fontFamily: "'Courier New', monospace", fontWeight: 700,
-                    }}
-                  >
-                    +${storageSellFx.amount}
-                  </div>
-                </div>
-              )}
-              {it.spr && (
-                <div style={{ width: maxDim, height: maxDim, display: "flex", alignItems: "center", justifyContent: "center", background: "#241509", border: "2px solid #4A2E17", overflow: "hidden" }}>
-                  <div style={{ transform: `scale(${fit})`, transformOrigin: "center", imageRendering: "pixelated" }}>
-                    <PixelCanvas w={it.spr.w} h={it.spr.h} draw={it.spr.draw} redrawKey={itemArtRedrawKey} />
-                  </div>
-                </div>
-              )}
-              <div style={{ color: "#F2E4C0", fontSize: 11, textAlign: "center", ...LB }}>{it.name}</div>
-              {st.packed && <div style={{ color: "#C9B896", fontSize: 10, ...LB }}>packed</div>}
-              {st.sold   && <div style={{ color: "#D9A33C", fontSize: 10, ...LB }}>sold ${st.soldFor}</div>}
-              {st.donated && <div style={{ color: "#77974C", fontSize: 10, ...LB }}>donated</div>}
-              {!done && (
-                <div style={{ display: "flex", gap: 4, marginTop: 2 }}>
-                  <button onClick={() => onPack(storageId, it.id)} disabled={busy}
-                    style={{ flex: 1, padding: "5px 6px", fontSize: 10, cursor: busy ? "not-allowed" : "pointer", color: "#F2E4C0", background: "#3A2410", border: "2px solid #120A04", ...LB }}>
-                    📦 Pack
-                  </button>
-                  <button onClick={() => onSell(storageId, it.id)} disabled={busy || !it.value}
-                    title={it.value ? `sell for ~$${it.value}` : "can't sell this"}
-                    style={{ flex: 0, padding: "5px 6px", fontSize: 10, cursor: busy || !it.value ? "not-allowed" : "pointer", color: "#FFD97A", background: "#3A2410", border: "2px solid #120A04", ...LB, opacity: it.value ? 1 : 0.4 }}>
-                    💰
-                  </button>
-                  <button onClick={() => onDonate(storageId, it.id)} disabled={busy}
-                    style={{ flex: 0, padding: "5px 6px", fontSize: 10, cursor: busy ? "not-allowed" : "pointer", color: "#9CC76F", background: "#3A2410", border: "2px solid #120A04", ...LB }}>
-                    🎁
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </Screen>
-  );
-}
-
 /* ================= ROUTER ================= */
-export default function ScreenLayer({ screen, go, tasks, setTasks, handled, openHandledSheet, storageId, room, storageObj, storageItems, contentsState, onPackContent, onSellContent, onDonateContent, storageSellFx, busy }) {
+export default function ScreenLayer({ screen, go, tasks, setTasks, handled, openHandledSheet, busy }) {
   if (screen === "apartment") return null;
   if (screen === "menu")      return <MenuScreen go={go} tasks={tasks} />;
   if (screen === "desk")      return <DeskScreen go={go} tasks={tasks} setTasks={setTasks} />;
   if (screen === "health")    return <HealthScreen go={go} />;
-  if (screen === "storage")   return <StorageScreen go={go} storageId={storageId} room={room} storageObj={storageObj} items={storageItems} contentsState={contentsState} onPack={onPackContent} onSell={onSellContent} onDonate={onDonateContent} storageSellFx={storageSellFx} busy={busy} />;
   if (screen === "inventory") return <InventoryScreen go={go} handled={handled} openHandledSheet={openHandledSheet} />;
   if (screen === "log")       return <LogScreen go={go} handled={handled} />;
   if (screen === "stretchy")  return <StretchyScreen go={go} tasks={tasks} />;
