@@ -1828,7 +1828,7 @@ const HAPTIC = { room: [10], pack: [20], sell: [15, 30, 15], donate: [12] };
    ============================================================ */
 const CAT_CELL = 32;                    // source px per frame
 const CAT_SHEET_W = 256, CAT_SHEET_H = 1632;
-const CAT_PX = 6.2;                     // stage px per source px (display scale)
+const CAT_PX = 6.8;                     // stage px per source px (display scale, ~10% up)
 const CAT_FOOT_FRAC = 0.84;             // where his feet sit inside the 32px frame
 const CAT_FACES_RIGHT = true;           // source art faces RIGHT by default
 
@@ -1846,16 +1846,18 @@ const CAT_ANIM = {
 // frame of the look row where his head is turned fully toward you (eye contact)
 const LOOK_FACE_FRAME = CAT_ANIM.look.n - 1;
 
-// per-room safe floor spots (stage px, cat's feet). Kept in the deep
-// foreground band BELOW where the rugs end and spread wide across the room.
-// Clear of the box pile (left), major furniture, and UI.
+// per-room safe floor spots (stage px, cat's feet). Six spots per room, spread
+// in BOTH x and y so he crosses the room on varied diagonals ("more
+// directions"), all kept in the deep foreground band (lower quarter of screen).
+// The lowest spots sit centrally in x so he never wanders into the bottom-corner
+// UI (paper fan / tasks). Clear of the box pile (left) and major furniture.
 const CAT_SPOTS = {
-  bedroom:  [{ x: 220, y: 745 }, { x: 380, y: 771 }, { x: 545, y: 759 }, { x: 695, y: 747 }, { x: 760, y: 737 }],
-  bathroom: [{ x: 215, y: 741 }, { x: 380, y: 767 }, { x: 545, y: 755 }, { x: 690, y: 743 }, { x: 755, y: 733 }],
-  office:   [{ x: 220, y: 743 }, { x: 390, y: 769 }, { x: 560, y: 757 }, { x: 700, y: 745 }, { x: 760, y: 735 }],
-  dining:   [{ x: 215, y: 743 }, { x: 385, y: 769 }, { x: 560, y: 757 }, { x: 700, y: 745 }, { x: 760, y: 735 }],
-  kitchen:  [{ x: 220, y: 743 }, { x: 390, y: 769 }, { x: 560, y: 757 }, { x: 700, y: 745 }, { x: 760, y: 735 }],
-  living:   [{ x: 210, y: 745 }, { x: 385, y: 771 }, { x: 560, y: 759 }, { x: 705, y: 747 }, { x: 760, y: 737 }],
+  bedroom:  [{ x: 250, y: 830 }, { x: 700, y: 842 }, { x: 430, y: 918 }, { x: 585, y: 888 }, { x: 345, y: 872 }, { x: 615, y: 852 }],
+  bathroom: [{ x: 250, y: 826 }, { x: 695, y: 838 }, { x: 430, y: 914 }, { x: 585, y: 884 }, { x: 345, y: 868 }, { x: 615, y: 848 }],
+  office:   [{ x: 255, y: 830 }, { x: 705, y: 842 }, { x: 435, y: 918 }, { x: 590, y: 888 }, { x: 350, y: 872 }, { x: 620, y: 852 }],
+  dining:   [{ x: 250, y: 830 }, { x: 700, y: 842 }, { x: 430, y: 918 }, { x: 585, y: 888 }, { x: 345, y: 872 }, { x: 615, y: 852 }],
+  kitchen:  [{ x: 255, y: 830 }, { x: 705, y: 842 }, { x: 435, y: 918 }, { x: 590, y: 888 }, { x: 350, y: 872 }, { x: 620, y: 852 }],
+  living:   [{ x: 245, y: 830 }, { x: 700, y: 842 }, { x: 430, y: 918 }, { x: 585, y: 888 }, { x: 345, y: 872 }, { x: 615, y: 852 }],
 };
 
 function Stretchy({ spots, enterSide }) {
@@ -1905,21 +1907,23 @@ function Stretchy({ spots, enterSide }) {
           s.anim = s.mode === "enter" ? "run" : "walk";
           const dx = s.target.x - s.x, dy = s.target.y - s.y;
           const dist = Math.hypot(dx, dy) || 1;
-          const speed = s.mode === "enter" ? 120 : 46;
+          const speed = s.mode === "enter" ? 120 : 51;   // walk ~10% faster
           if (Math.abs(dx) > 2) s.facing = dx > 0 ? 1 : -1;
           if (dist < 3) {
             const roll = Math.random();
-            if (roll < 0.30) {
+            if (roll < 0.40) {                 // stare — a featured long beat, now more common
               s.mode = "lookturn";
               s.anim = "look";
               s.frame = 0;
               s.frameT = 0;
             } else {
               s.mode = "pause";
-              if (roll < 0.55) { s.pauseAnim = "sit"; s.wait = 9.0 + Math.random() * 6.0; }
-              else if (roll < 0.72) { s.pauseAnim = "idle"; s.wait = 9.0 + Math.random() * 4.5; }
-              else if (roll < 0.85) { s.pauseAnim = "idle2"; s.wait = 9.0 + Math.random() * 4.5; }
-              else { s.pauseAnim = "rest"; s.wait = 12.0 + Math.random() * 6.0; }
+              // standing/sitting idles: ~half as long and ~half as common as the
+              // stare/sleep beats, so the featured beats dominate.
+              if (roll < 0.53) { s.pauseAnim = "sit"; s.wait = 5.0 + Math.random() * 3.5; }        // 5-8.5s
+              else if (roll < 0.615) { s.pauseAnim = "idle"; s.wait = 5.0 + Math.random() * 2.5; }  // 5-7.5s
+              else if (roll < 0.68) { s.pauseAnim = "idle2"; s.wait = 5.0 + Math.random() * 2.5; }
+              else { s.pauseAnim = "rest"; s.wait = 12.0 + Math.random() * 6.0; }                    // 12-18s sleep
               s.frame = 0;
             }
           } else {
@@ -1969,7 +1973,7 @@ function Stretchy({ spots, enterSide }) {
       advance(dt);
       if (s.mode === "walk" || s.mode === "pause") {
         s.x = Math.max(CLAMP_MIN, Math.min(CLAMP_MAX, s.x));
-        s.y = Math.min(STAGE_H + 60, s.y);
+        s.y = Math.max(STAGE_H + 60, Math.min(STAGE_H + 220, s.y)); // hold him in the low foreground band
       }
       if (s.mode !== "lookturn" && s.mode !== "lookhold" && s.mode !== "lookreturn") {
         const a = CAT_ANIM[s.anim] || CAT_ANIM.idle;
@@ -2006,7 +2010,7 @@ function Stretchy({ spots, enterSide }) {
         transform: `scaleX(${flip})`,
         transformOrigin: "center",
         pointerEvents: "none",
-        zIndex: 55,
+        zIndex: 450,   // front-most in the stage so the box pile never eclipses him
       }}
     />
   );
