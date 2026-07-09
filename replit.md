@@ -11,9 +11,10 @@ A single-page React app. No backend, no database, no API. Just one big game file
 ```
 artifacts/pack-it-up/         ← the entire game lives here
   src/
-    BedroomSlice.jsx          ← THE hub + game. All ~3,500 lines. Do not split yet.
+    BedroomSlice.jsx          ← THE hub + game. All ~3,800 lines. Do not split yet.
     Screens.jsx               ← full-screen overlays (Menu/Desk/Health/Storage/etc.)
     contents.js               ← storage contents data (items inside cabinets/drawers)
+    tasks.js                  ← task/urgency scaffold (sample data for the overlay shells)
     main.tsx                  ← 15-line entry point. Just mounts the game.
     layout.json               ← Furniture X/Y positions for every room.
     sell.mp3                  ← Sell chime sound effect.
@@ -40,11 +41,11 @@ Because the file is large, here's where things are so you don't have to read all
 | 965–1165 | **Dining room** — shell + sprites + objects list |
 | 1165–1430 | **Living room** — shell + sprites + objects list + box stack sprite |
 | 1430–1590 | ROOMS data model + floor/ceiling helpers + ROOMS_ORDER |
-| 1590–1625 | PixelCanvas component + category colors |
-| 1625–1790 | **LayoutEditor** — dev tool only, visible at `?edit=1` |
-| 1791–1860 | Coin bursts + haptics + audio setup |
-| 1861–2017 | **Stretchy the cat** — sprite animation + wander AI |
-| 2018–3560 | **PackItUp** — main game component, all state + logic + mobile + desktop UI (incl. storage feature + drawer glow) |
+| 1590–1650 | PixelCanvas component + category colors |
+| 1650–1885 | **Stretchy the cat** — sprite animation + wander AI |
+| 1885–2055 | **LayoutEditor** — dev tool only, visible at `?edit=1` |
+| 2055–2090 | Haptics + audio setup |
+| 2091–3783 | **PackItUp** — main game component, all state + logic + mobile + desktop UI (incl. storage feature + drawer glow) |
 
 `Screens.jsx` and `contents.js` are imported by BedroomSlice but kept as separate files (overlays + data, not game logic).
 
@@ -80,6 +81,14 @@ Dev tools:
 ## Known issues to fix eventually
 
 - BedroomSlice.jsx should be split into modules (sprites, game state, UI, cat, audio)
-- `setTimeout` calls in the game aren't cancelled on unmount (can cause stale state)
-- Negative custom sale prices aren't validated
-- Cat animation causes full-game re-renders (should be isolated)
+
+Fixed (don't re-fix): action timers are cancelled on unmount via the
+`schedule()` registry in PackItUp — route any new game timers through it. Sale
+prices are clamped to ≥ 0. The cat writes its position straight to the DOM and
+only re-renders on sprite-frame changes.
+
+## Next planned work
+
+Wire real systems into the placeholder overlay screens in `Screens.jsx`
+(Menu/Desk/Health/Inventory/Log/Stretchy/Settings are visual shells), and fill
+in storage contents for rooms beyond the pantry pilot in `contents.js`.

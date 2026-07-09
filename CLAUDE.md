@@ -8,9 +8,10 @@ A pixel-art moving game. The player walks through apartment rooms and packs, sel
 
 ```
 artifacts/pack-it-up/src/
-  BedroomSlice.jsx    ← the entire hub + game (~3,500 lines). This is everything.
+  BedroomSlice.jsx    ← the entire hub + game (~3,800 lines). This is everything.
   Screens.jsx         ← full-screen overlays (Menu/Desk/Health/Storage/etc.)
   contents.js         ← storage contents data (items inside cabinets/drawers)
+  tasks.js            ← task/urgency scaffold (sample data for the overlay shells)
   main.tsx            ← mounts the game. 15 lines. Don't touch.
   layout.json         ← furniture positions (x, y, scale) per room
   sell.mp3            ← sell chime (base64-inlined at build time for iOS CSP)
@@ -34,11 +35,11 @@ Line numbers below are approximate — the file grows as features land. Search f
 | 965–1165 | Dining room (shell + sprites + objects) |
 | 1165–1430 | Living room (shell + sprites + objects + box stack) |
 | 1430–1590 | ROOMS model + ROOMS_ORDER + helpers |
-| 1590–1625 | PixelCanvas component |
-| 1625–1790 | LayoutEditor dev tool (`?edit=1`) |
-| 1791–1860 | Haptics + audio |
-| 1861–2017 | Stretchy the cat |
-| 2018–3560 | PackItUp — main component (all state + logic + UI, incl. storage feature + drawer glow) |
+| 1590–1650 | PixelCanvas component |
+| 1650–1885 | Stretchy the cat |
+| 1885–2055 | LayoutEditor dev tool (`?edit=1`) |
+| 2055–2090 | Haptics + audio |
+| 2091–3783 | PackItUp — main component (all state + logic + UI, incl. storage feature + drawer glow) |
 
 `Screens.jsx` and `contents.js` are imported by BedroomSlice but kept separate (overlays + data, not game logic).
 
@@ -78,6 +79,14 @@ Always `git pull` before starting work. Always commit when done. Other sessions 
 ## Known issues — do not fix unless asked
 
 - BedroomSlice.jsx should be split into modules eventually
-- Unmanaged `setTimeout` calls (no cleanup on unmount)  
-- Negative sale prices accepted without validation
-- Cat animation rerenders the whole game (isolation needed)
+
+Fixed (don't re-fix): action timers are cancelled on unmount via the
+`schedule()` registry in PackItUp — route any new game timers through it. Sale
+prices are clamped to ≥ 0. The cat writes its position straight to the DOM and
+only re-renders on sprite-frame changes.
+
+## Next planned work
+
+Wire real systems into the placeholder overlay screens in `Screens.jsx`
+(Menu/Desk/Health/Inventory/Log/Stretchy/Settings are visual shells), and fill
+in storage contents for rooms beyond the pantry pilot in `contents.js`.

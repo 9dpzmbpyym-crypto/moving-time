@@ -12,9 +12,10 @@ Pixel-art moving game. Player walks through apartment rooms and packs/sells/dona
 ## File map
 ```
 artifacts/pack-it-up/src/
-  BedroomSlice.jsx    ← THE ENTIRE hub + game (~3,500 lines)
+  BedroomSlice.jsx    ← THE ENTIRE hub + game (~3,800 lines)
   Screens.jsx         ← full-screen overlays (Menu/Desk/Health/Storage/etc.)
   contents.js         ← storage contents data (items inside cabinets/drawers)
+  tasks.js            ← task/urgency scaffold (sample data for the overlay shells)
   main.tsx            ← 15-line entry point only
   layout.json         ← furniture positions (x/y/scale) per room
   sell.mp3            ← sell chime
@@ -34,11 +35,11 @@ Line numbers below are approximate — the file grows as features land. Search f
 | 965–1165 | Dining room shell + sprites + objects |
 | 1165–1430 | Living room shell + sprites + objects + box stack |
 | 1430–1590 | ROOMS model + ROOMS_ORDER + helpers |
-| 1590–1625 | PixelCanvas component |
-| 1625–1790 | LayoutEditor dev tool |
-| 1791–1860 | Haptics + audio |
-| 1861–2017 | Stretchy the cat |
-| 2018–3560 | PackItUp main component (incl. storage feature + drawer glow) |
+| 1590–1650 | PixelCanvas component |
+| 1650–1885 | Stretchy the cat |
+| 1885–2055 | LayoutEditor dev tool |
+| 2055–2090 | Haptics + audio |
+| 2091–3783 | PackItUp main component (incl. storage feature + drawer glow) |
 
 `Screens.jsx` and `contents.js` are imported by BedroomSlice but kept as separate files (overlays + data, not game logic).
 
