@@ -9,10 +9,12 @@ A personal pixel-art moving game built with React + HTML canvas. The player walk
 ## The only files that matter for the game
 
 ```
-artifacts/pack-it-up/src/BedroomSlice.jsx   ← entire game (~3,300 lines)
-artifacts/pack-it-up/src/main.tsx           ← 15-line entry point
-artifacts/pack-it-up/src/layout.json        ← furniture X/Y positions per room
-artifacts/pack-it-up/src/sell.mp3           ← sell sound
+artifacts/pack-it-up/src/BedroomSlice.jsx   ← entire hub + game (~3,500 lines)
+artifacts/pack-it-up/src/Screens.jsx       ← full-screen overlays (Menu/Desk/Health/Storage/etc.)
+artifacts/pack-it-up/src/contents.js       ← storage contents data (items inside cabinets/drawers)
+artifacts/pack-it-up/src/main.tsx          ← 15-line entry point
+artifacts/pack-it-up/src/layout.json       ← furniture X/Y positions per room
+artifacts/pack-it-up/src/sell.mp3          ← sell sound
 artifacts/pack-it-up/src/assets/Cat-Sheet.png ← cat sprite sheet
 artifacts/pack-it-up/src/dev/spritePreview.jsx ← dev tool only
 ```
@@ -21,24 +23,26 @@ Everything else at the root is monorepo config. Do not touch it.
 
 ## BedroomSlice.jsx — where to look
 
-Don't read the whole file. Find your section first:
+Line numbers below are approximate — the file grows as features land. Find your section by searching for the labels shown.
 
 | Lines | Content |
 |-------|---------|
-| 1–28 | Imports + stage size constants |
-| 29–60 | Color palette (`P` object) + canvas helpers (`r`, `dith`, `outlineRect`) |
-| 61–334 | Bedroom shell + sprites |
-| 335–543 | Office shell + sprites |
-| 544–772 | Bathroom shell + sprites |
-| 773–961 | Kitchen shell + sprites + objects |
-| 962–1162 | Dining room shell + sprites + objects |
-| 1163–1428 | Living room shell + sprites + objects + box stack |
-| 1429–1589 | ROOMS data model + ROOMS_ORDER + floor/ceiling helpers |
-| 1590–1624 | PixelCanvas component + CATEGORY_COLORS |
+| 1–30 | Imports + stage size constants |
+| 30–60 | Color palette (`P` object) + canvas helpers (`r`, `dith`, `outlineRect`) |
+| 60–335 | Bedroom shell + sprites |
+| 335–545 | Office shell + sprites |
+| 545–775 | Bathroom shell + sprites |
+| 775–965 | Kitchen shell + sprites + objects |
+| 965–1165 | Dining room shell + sprites + objects |
+| 1165–1430 | Living room shell + sprites + objects + box stack |
+| 1430–1590 | ROOMS data model + ROOMS_ORDER + floor/ceiling helpers |
+| 1590–1625 | PixelCanvas component + CATEGORY_COLORS |
 | 1625–1790 | LayoutEditor (dev tool, `?edit=1` only) |
 | 1791–1860 | Haptics + audio init |
 | 1861–2017 | Stretchy the cat (sprite AI + animation loop) |
-| 2018–3311 | PackItUp main component (state, game logic, mobile UI, desktop UI) |
+| 2018–3560 | PackItUp main component (state, storage feature, drawer glow, game logic, mobile UI, desktop UI) |
+
+`Screens.jsx` and `contents.js` are imported by BedroomSlice but kept as separate files (overlays + data, not game logic).
 
 ## Hard rules
 

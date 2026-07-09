@@ -8,7 +8,9 @@ A pixel-art moving game. The player walks through apartment rooms and packs, sel
 
 ```
 artifacts/pack-it-up/src/
-  BedroomSlice.jsx    ← the entire game (~3,300 lines). This is everything.
+  BedroomSlice.jsx    ← the entire hub + game (~3,500 lines). This is everything.
+  Screens.jsx         ← full-screen overlays (Menu/Desk/Health/Storage/etc.)
+  contents.js         ← storage contents data (items inside cabinets/drawers)
   main.tsx            ← mounts the game. 15 lines. Don't touch.
   layout.json         ← furniture positions (x, y, scale) per room
   sell.mp3            ← sell chime (base64-inlined at build time for iOS CSP)
@@ -20,21 +22,25 @@ Root-level files (`lib/`, `scripts/`, monorepo config) are infrastructure. Leave
 
 ## BedroomSlice.jsx section map
 
+Line numbers below are approximate — the file grows as features land. Search for the labels shown.
+
 | Lines | What |
 |-------|------|
 | 1–60 | Imports, constants, color palette `P`, canvas helpers |
-| 61–334 | Bedroom (shell + sprites) |
-| 335–543 | Office (shell + sprites) |
-| 544–772 | Bathroom (shell + sprites) |
-| 773–961 | Kitchen (shell + sprites + objects) |
-| 962–1162 | Dining room (shell + sprites + objects) |
-| 1163–1428 | Living room (shell + sprites + objects + box stack) |
-| 1429–1589 | ROOMS model + ROOMS_ORDER + helpers |
-| 1590–1624 | PixelCanvas component |
+| 60–335 | Bedroom (shell + sprites) |
+| 335–545 | Office (shell + sprites) |
+| 545–775 | Bathroom (shell + sprites) |
+| 775–965 | Kitchen (shell + sprites + objects) |
+| 965–1165 | Dining room (shell + sprites + objects) |
+| 1165–1430 | Living room (shell + sprites + objects + box stack) |
+| 1430–1590 | ROOMS model + ROOMS_ORDER + helpers |
+| 1590–1625 | PixelCanvas component |
 | 1625–1790 | LayoutEditor dev tool (`?edit=1`) |
 | 1791–1860 | Haptics + audio |
 | 1861–2017 | Stretchy the cat |
-| 2018–3311 | PackItUp — main component (all state + logic + UI) |
+| 2018–3560 | PackItUp — main component (all state + logic + UI, incl. storage feature + drawer glow) |
+
+`Screens.jsx` and `contents.js` are imported by BedroomSlice but kept separate (overlays + data, not game logic).
 
 ## Rules
 

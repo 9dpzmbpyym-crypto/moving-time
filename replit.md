@@ -11,7 +11,9 @@ A single-page React app. No backend, no database, no API. Just one big game file
 ```
 artifacts/pack-it-up/         ← the entire game lives here
   src/
-    BedroomSlice.jsx          ← THE game. All 3,300+ lines. Do not split yet.
+    BedroomSlice.jsx          ← THE hub + game. All ~3,500 lines. Do not split yet.
+    Screens.jsx               ← full-screen overlays (Menu/Desk/Health/Storage/etc.)
+    contents.js               ← storage contents data (items inside cabinets/drawers)
     main.tsx                  ← 15-line entry point. Just mounts the game.
     layout.json               ← Furniture X/Y positions for every room.
     sell.mp3                  ← Sell chime sound effect.
@@ -25,24 +27,26 @@ Everything else at the root (`lib/`, `scripts/`, `artifacts/api-server/`) is mon
 
 ## BedroomSlice.jsx section map
 
-Because the file is large, here's where things are so you don't have to read all of it:
+Because the file is large, here's where things are so you don't have to read all of it. Line numbers are approximate — search for the labels shown.
 
 | Lines | What's there |
 |-------|-------------|
 | 1–28 | Imports + stage constants (CELL, STAGE_W, STAGE_H) |
 | 29–60 | Color palette (the `P` object) + tiny canvas helpers |
-| 61–334 | **Bedroom** — shell (walls/floor) + all furniture sprites |
-| 335–543 | **Office** — shell + sprites |
-| 544–772 | **Bathroom** — shell + sprites |
-| 773–961 | **Kitchen** — shell + sprites + objects list |
-| 962–1162 | **Dining room** — shell + sprites + objects list |
-| 1163–1428 | **Living room** — shell + sprites + objects list + box stack sprite |
-| 1429–1589 | ROOMS data model + floor/ceiling helpers + ROOMS_ORDER |
-| 1590–1624 | PixelCanvas component + category colors |
+| 60–335 | **Bedroom** — shell (walls/floor) + all furniture sprites |
+| 335–545 | **Office** — shell + sprites |
+| 545–775 | **Bathroom** — shell + sprites |
+| 775–965 | **Kitchen** — shell + sprites + objects list |
+| 965–1165 | **Dining room** — shell + sprites + objects list |
+| 1165–1430 | **Living room** — shell + sprites + objects list + box stack sprite |
+| 1430–1590 | ROOMS data model + floor/ceiling helpers + ROOMS_ORDER |
+| 1590–1625 | PixelCanvas component + category colors |
 | 1625–1790 | **LayoutEditor** — dev tool only, visible at `?edit=1` |
 | 1791–1860 | Coin bursts + haptics + audio setup |
 | 1861–2017 | **Stretchy the cat** — sprite animation + wander AI |
-| 2018–3311 | **PackItUp** — main game component, all state + logic + mobile + desktop UI |
+| 2018–3560 | **PackItUp** — main game component, all state + logic + mobile + desktop UI (incl. storage feature + drawer glow) |
+
+`Screens.jsx` and `contents.js` are imported by BedroomSlice but kept as separate files (overlays + data, not game logic).
 
 ## Rules for any AI working on this
 

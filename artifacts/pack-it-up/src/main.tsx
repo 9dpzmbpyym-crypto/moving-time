@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+﻿import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 // @ts-ignore - JSX source files from original project
 import PackItUp, { LayoutEditor } from "./BedroomSlice.jsx";
