@@ -2358,7 +2358,8 @@ export default function PackItUp() {
     const obj = room.objects.find((o) => o.id === id);
     if (!obj || !obj.removable || objState[k].packed || objState[k].sold || objState[k].donated || busy) return;
     const prev = objState[k];
-    const credit = Number.isFinite(amount) ? amount : (obj.value || 0);
+    // negative custom prices are user error — never debit the player on a sale
+    const credit = Math.max(0, Number.isFinite(amount) ? amount : (obj.value || 0));
     const spr = room.sprites[id];
     setSellingId(id);
     // burst effect lives on its own timer so the sell animation ending
@@ -3334,6 +3335,7 @@ export default function PackItUp() {
                       <span style={{ color: "#DACBA6", fontSize: 15, ...ui.label }}>Sold for $</span>
                       <input
                         type="number"
+                        min="0"
                         autoFocus
                         value={sellAmount}
                         onChange={(e) => setSellAmount(e.target.value)}
@@ -3346,7 +3348,7 @@ export default function PackItUp() {
                     <div style={{ display: "flex", gap: 8 }}>
                       <button
                         onClick={() => sellObject(selected.id, parseFloat(sellAmount))}
-                        disabled={!!busy || sellAmount === "" || Number.isNaN(parseFloat(sellAmount))}
+                        disabled={!!busy || sellAmount === "" || Number.isNaN(parseFloat(sellAmount)) || parseFloat(sellAmount) < 0}
                         style={{
                           flex: 1, minHeight: 50, fontSize: 15, cursor: "pointer",
                           background: "linear-gradient(#E0B65A,#B8862E)", color: "#2A1B08",
@@ -3577,6 +3579,7 @@ export default function PackItUp() {
                         <span style={{ color: "#DACBA6", fontSize: 13, ...ui.label }}>Sold for $</span>
                         <input
                           type="number"
+                          min="0"
                           autoFocus
                           value={sellAmount}
                           onChange={(e) => setSellAmount(e.target.value)}
@@ -3589,7 +3592,7 @@ export default function PackItUp() {
                       <div style={{ display: "flex", gap: 8 }}>
                         <button
                           onClick={() => sellObject(selected.id, parseFloat(sellAmount))}
-                          disabled={!!packingId || !!sellingId || sellAmount === "" || Number.isNaN(parseFloat(sellAmount))}
+                          disabled={!!packingId || !!sellingId || sellAmount === "" || Number.isNaN(parseFloat(sellAmount)) || parseFloat(sellAmount) < 0}
                           style={{
                             flex: 1, padding: "8px 0", fontSize: 14, cursor: "pointer",
                             background: "linear-gradient(#E0B65A,#B8862E)", color: "#2A1B08",
