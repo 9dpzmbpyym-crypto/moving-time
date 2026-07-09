@@ -5,7 +5,7 @@ import {
   TASK_CATEGORIES, SAMPLE_JOBS, isOpen, taskPressure,
   PRESSURE_LABELS, PRESSURE_COLORS,
 } from "./tasks.js";
-import { PixelCanvas, CELL } from "./BedroomSlice.jsx";
+import { PixelCanvas, CELL, COIN_BURSTS } from "./BedroomSlice.jsx";
 
 /* ============================================================
    SCREENS — the "next layer" on top of the apartment hub.
@@ -605,7 +605,7 @@ function SettingsScreen({ go }) {
    inside as a grid of tappable sprites. Tap an item = pack immediately;
    sell/donate are secondary buttons on each card. The cabinet sprite itself
    is rendered as a header so you remember what you're inside. */
-function StorageScreen({ go, storageId, room, storageObj, items, contentsState, onPack, onSell, onDonate, busy }) {
+function StorageScreen({ go, storageId, room, storageObj, items, contentsState, onPack, onSell, onDonate, busy, storageSellFx }) {
   const [itemArtRedrawKey, setItemArtRedrawKey] = useState(0);
   useEffect(() => {
     let mounted = true;
@@ -662,9 +662,40 @@ function StorageScreen({ go, storageId, room, storageObj, items, contentsState, 
           const fit = it.spr ? Math.min(maxDim / (it.spr.w * CELL), maxDim / (it.spr.h * CELL)) : 0;
           return (
             <div key={it.id} style={{
+              position: "relative",
               padding: 10, background: done ? "#0F0904" : "#1A0F06", border: "2px solid #4A2E17",
               opacity: done ? 0.5 : 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
             }}>
+              {/* coin burst + floating amount when this item is sold — mirrors
+                  the apartment's sell FX so selling from the storage overlay
+                  has the same feedback as selling furniture from the room. */}
+              {storageSellFx && storageSellFx.itemId === it.id && (
+                <div style={{ position: "absolute", left: "50%", top: "50%", zIndex: 500, pointerEvents: "none" }}>
+                  {COIN_BURSTS.map(({ tx, ty, d }, i) => (
+                    <span
+                      key={i}
+                      className="coin"
+                      style={{
+                        position: "absolute", left: 0, top: 0, width: 16, height: 16,
+                        background: "#EFC463", border: "3px solid #8A5E14", borderRadius: "50%",
+                        boxShadow: "inset 2px 2px 0 #FFE9A8",
+                        animationDelay: `${d}ms`,
+                        "--tx": `${tx}px`, "--ty": `${ty}px`,
+                      }}
+                    />
+                  ))}
+                  <div
+                    className="sellAmt"
+                    style={{
+                      position: "absolute", left: 0, top: -34, whiteSpace: "nowrap",
+                      color: "#FFD97A", fontSize: 22, textShadow: "2px 2px 0 #120A04, -2px 2px 0 #120A04, 2px -2px 0 #120A04, -2px -2px 0 #120A04",
+                      fontFamily: "'Courier New', monospace", fontWeight: 700,
+                    }}
+                  >
+                    +${storageSellFx.amount}
+                  </div>
+                </div>
+              )}
               {it.spr && (
                 <div style={{ width: maxDim, height: maxDim, display: "flex", alignItems: "center", justifyContent: "center", background: "#241509", border: "2px solid #4A2E17", overflow: "hidden" }}>
                   <div style={{ transform: `scale(${fit})`, transformOrigin: "center", imageRendering: "pixelated" }}>
@@ -702,12 +733,12 @@ function StorageScreen({ go, storageId, room, storageObj, items, contentsState, 
 }
 
 /* ================= ROUTER ================= */
-export default function ScreenLayer({ screen, go, tasks, setTasks, handled, openHandledSheet, storageId, room, storageObj, storageItems, contentsState, onPackContent, onSellContent, onDonateContent, busy }) {
+export default function ScreenLayer({ screen, go, tasks, setTasks, handled, openHandledSheet, storageId, room, storageObj, storageItems, contentsState, onPackContent, onSellContent, onDonateContent, storageSellFx, busy }) {
   if (screen === "apartment") return null;
   if (screen === "menu")      return <MenuScreen go={go} tasks={tasks} />;
   if (screen === "desk")      return <DeskScreen go={go} tasks={tasks} setTasks={setTasks} />;
   if (screen === "health")    return <HealthScreen go={go} />;
-  if (screen === "storage")   return <StorageScreen go={go} storageId={storageId} room={room} storageObj={storageObj} items={storageItems} contentsState={contentsState} onPack={onPackContent} onSell={onSellContent} onDonate={onDonateContent} busy={busy} />;
+  if (screen === "storage")   return <StorageScreen go={go} storageId={storageId} room={room} storageObj={storageObj} items={storageItems} contentsState={contentsState} onPack={onPackContent} onSell={onSellContent} onDonate={onDonateContent} storageSellFx={storageSellFx} busy={busy} />;
   if (screen === "inventory") return <InventoryScreen go={go} handled={handled} openHandledSheet={openHandledSheet} />;
   if (screen === "log")       return <LogScreen go={go} handled={handled} />;
   if (screen === "stretchy")  return <StretchyScreen go={go} tasks={tasks} />;

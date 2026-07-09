@@ -9,14 +9,12 @@ const normalizedAssetModules = import.meta.glob(
  *
  * Each key is `${roomId}:${storageId}` (matching the objState sk() namespace).
  * Each value is an array of items:
- *   { id, name, spr: { w, h, draw(ctx) }, value? }
+ *   { id, name, spr: { w, h, draw(ctx) } | null, value? }
  *
- * `spr` follows the same { w, h, draw } shape PixelCanvas expects, so swapping
- * a procedural sprite for a PNG later is a one-line change (replace draw() with
- * an image-draw helper, or extend PixelCanvas to accept an img src).
- *
- * Final item art comes from the normalized transparent PNG asset pack. The tiny
- * procedural sprites remain as graceful fallbacks for items without custom art.
+ * `spr` follows the same { w, h, draw } shape PixelCanvas expects. All item art
+ * comes from the normalized transparent PNG asset pack; there are no procedural
+ * placeholder sprites anymore — if a PNG is missing the item renders with no
+ * thumbnail (the name + actions still work) rather than a hand-drawn stand-in.
  */
 
 const normalizedModuleKey = (filename) =>
@@ -40,7 +38,7 @@ export const ITEM_ASSETS = Object.fromEntries(
       // the actual content only occupies `rawWidth` × `rawHeight` of it. Reporting
       // the raw dims as the sprite's w/h keeps every existing thumbnail / layout
       // formula (which expects low-res content dims, not the full canvas) working
-      // unchanged for both PNG and procedural sprites.
+      // unchanged.
       rawWidth: entry.raw_width,
       rawHeight: entry.raw_height,
     },
@@ -91,295 +89,167 @@ const pngSprite = (filename) => {
   };
 };
 
-// local copies of the palette + helpers so this file is standalone until PNGs arrive.
-// (kept in sync with BedroomSlice.jsx — once sprites move to PNGs these are moot)
-const P = {
-  out: "#221306",
-  wood: "#5A381F", woodDark: "#3E2413", woodMid: "#6E452A", woodLight: "#7F5230", woodHi: "#96653C",
-  cream: "#EFE7D2", creamLo: "#DBCFAF",
-  white: "#F3EDDD", whiteLo: "#DDD4BD",
-  mustard: "#C9942E", mustardHi: "#DDAB45", mustardLo: "#A87823",
-  burgundy: "#7C2E37", burgundyLo: "#591F27",
-  teal: "#5C8C7C", tealLo: "#44695B", tealHi: "#6FA08E",
-  green: "#5D7C3B", greenLo: "#465F2B", greenHi: "#77974C",
-  red: "#A3252C", redHi: "#C74B4F",
-  gold: "#D9A33C", goldHi: "#EFC463",
-  glass: "#C9DCD2", glassHi: "#E9F0E4", glassLo: "#AEC6BA",
-  card: "#C08A4A", cardLo: "#9C6C36", cardHi: "#D3A263",
-};
-
-const r = (ctx, c, x, y, w = 1, h = 1) => { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); };
-const outlineRect = (ctx, c, x, y, w, h) => {
-  r(ctx, c, x, y, w, 1); r(ctx, c, x + y + h - 1, w, 1);
-  r(ctx, c, x, y, 1, h); r(ctx, c, x + w - 1, y, 1, h);
-};
-
-// ---- tiny placeholder item sprites (procedural, swappable for PNGs later) ----
-
-const cerealBox = {
-  w: 8, h: 12,
-  draw(ctx) {
-    r(ctx, P.red, 0, 0, 8, 12);
-    outlineRect(ctx, P.out, 0, 0, 8, 12);
-    r(ctx, P.mustardHi, 1, 2, 6, 1);
-    r(ctx, P.cream, 1, 9, 6, 1);
-  },
-};
-
-const pastaBag = {
-  w: 7, h: 9,
-  draw(ctx) {
-    r(ctx, P.creamLo, 0, 0, 7, 9);
-    outlineRect(ctx, P.out, 0, 0, 7, 9);
-    r(ctx, P.mustard, 1, 1, 5, 2);
-  },
-};
-
-const soupCan = {
-  w: 6, h: 8,
-  draw(ctx) {
-    r(ctx, P.teal, 0, 0, 6, 8);
-    outlineRect(ctx, P.out, 0, 0, 6, 8);
-    r(ctx, P.whiteLo, 0, 0, 6, 1);
-    r(ctx, P.cream, 1, 3, 4, 2);
-  },
-};
-
-const spiceJar = {
-  w: 5, h: 7,
-  draw(ctx) {
-    r(ctx, P.burgundy, 0, 0, 5, 7);
-    outlineRect(ctx, P.out, 0, 0, 5, 7);
-    r(ctx, P.gold, 1, 0, 3, 1);
-  },
-};
-
-const mug = {
-  w: 6, h: 6,
-  draw(ctx) {
-    r(ctx, P.white, 0, 1, 5, 5);
-    outlineRect(ctx, P.out, 0, 1, 5, 5);
-    r(ctx, P.out, 5, 2, 1, 3);
-    r(ctx, P.whiteLo, 0, 0, 5, 1);
-  },
-};
-
-const towel = {
-  w: 8, h: 5,
-  draw(ctx) {
-    r(ctx, P.tealHi, 0, 0, 8, 5);
-    outlineRect(ctx, P.out, 0, 0, 8, 5);
-    r(ctx, P.tealLo, 0, 2, 8, 1);
-  },
-};
-
-const book = {
-  w: 7, h: 10,
-  draw(ctx) {
-    r(ctx, P.burgundy, 0, 0, 7, 10);
-    outlineRect(ctx, P.out, 0, 0, 7, 10);
-    r(ctx, P.gold, 1, 1, 5, 1);
-    r(ctx, P.cream, 1, 8, 5, 1);
-  },
-};
-
-const sock = {
-  w: 6, h: 8,
-  draw(ctx) {
-    r(ctx, P.teal, 0, 0, 6, 8);
-    outlineRect(ctx, P.out, 0, 0, 6, 8);
-    r(ctx, P.tealHi, 0, 0, 6, 2);
-  },
-};
-
-const bottle = {
-  w: 5, h: 10,
-  draw(ctx) {
-    r(ctx, P.out, 1, 0, 3, 2);
-    r(ctx, P.out, 0, 2, 5, 8);
-    r(ctx, P.green, 1, 3, 3, 6); r(ctx, P.greenHi, 1, 3, 3, 1);
-  },
-};
-
-const binder = {
-  w: 8, h: 10,
-  draw(ctx) {
-    r(ctx, P.burgundy, 0, 0, 8, 10);
-    outlineRect(ctx, P.out, 0, 0, 8, 10);
-    r(ctx, P.white, 2, 2, 4, 1);
-    r(ctx, P.white, 2, 7, 4, 1);
-  },
-};
-
-const photo = {
-  w: 7, h: 9,
-  draw(ctx) {
-    r(ctx, P.woodDark, 0, 0, 7, 9);
-    outlineRect(ctx, P.out, 0, 0, 7, 9);
-    r(ctx, P.cream, 1, 1, 5, 7);
-    r(ctx, P.red, 2, 3, 3, 2);
-  },
-};
-
-const remote = {
-  w: 8, h: 4,
-  draw(ctx) {
-    r(ctx, P.out, 0, 0, 8, 4);
-    r(ctx, P.woodDark, 1, 1, 6, 2);
-    r(ctx, P.red, 2, 1, 1, 1); r(ctx, P.red, 5, 1, 1, 1);
-  },
-};
-
-const plate = {
-  w: 8, h: 8,
-  draw(ctx) {
-    r(ctx, P.white, 0, 0, 8, 8);
-    outlineRect(ctx, P.out, 0, 0, 8, 8);
-    r(ctx, P.whiteLo, 2, 2, 4, 4);
-    outlineRect(ctx, P.creamLo, 2, 2, 4, 4);
-  },
-};
-
-const glass_cup = {
-  w: 5, h: 6,
-  draw(ctx) {
-    r(ctx, P.glass, 0, 0, 5, 6);
-    outlineRect(ctx, P.out, 0, 0, 5, 6);
-    r(ctx, P.glassHi, 1, 1, 1, 4);
-  },
-};
-
-const withArt = (filename, fallback) => pngSprite(filename) || fallback;
-
-const ART = {
-  cereal: withArt("s1_r01_i01_cereal_box.png", cerealBox),
-  pasta: withArt("s1_r01_i02_pasta_box.png", pastaBag),
-  cannedFood: withArt("s1_r01_i05_green_canned_food.png", soupCan),
-  sauce: withArt("s1_r01_i07_red_sauce_jar.png", soupCan),
-  spiceGreen: withArt("s1_r02_i01_green_spice_jar.png", spiceJar),
-  spiceRed: withArt("s1_r02_i03_paprika_red_spice_jar.png", spiceJar),
-  plate: withArt("s1_r08_i01_dinner_plate.png", plate),
-  bowl: withArt("s1_r08_i03_bowl.png", plate),
-  redMug: withArt("s1_r08_i04_red_mug.png", mug),
-  foldedSweater: withArt("s2_r01_i01_green_folded_sweater.png", sock),
-  foldedJeans: withArt("s2_r01_i03_folded_jeans.png", sock),
-  sweaterStack: withArt("s2_r01_i06_purple_folded_sweater_stack.png", sock),
-  journal: withArt("s2_r08_i02_blue_journal_keepsake_book.png", book),
-  letter: withArt("s2_r08_i04_letter_postcard.png", photo),
-  lipstick: withArt("s2_r09_i01_lipstick.png", spiceJar),
-  blush: withArt("s2_r09_i03_blush_compact.png", spiceJar),
-  eyeshadow: withArt("s2_r09_i04_eyeshadow_palette.png", spiceJar),
-  mascara: withArt("s2_r09_i05_mascara_tube_wand.png", spiceJar),
-  perfume: withArt("s2_r09_i08_perfume_bottle.png", mug),
-  shirt: withArt("s2_r02_i01_white_button_up_shirt.png", towel),
-  dress: withArt("s2_r02_i03_green_dress.png", towel),
-  coat: withArt("s2_r03_i01_brown_long_coat.png", book),
-  peacoat: withArt("s2_r03_i05_navy_peacoat.png", book),
-  prescription: withArt("s3_r01_i01_prescription_bottle.png", bottle),
-  blisterPack: withArt("s3_r01_i03_pill_blister_pack.png", spiceJar),
-  pillOrganizer: withArt("s3_r01_i08_weekly_pill_organizer.png", binder),
-  toothpaste: withArt("s3_r04_i02_toothpaste.png", bottle),
-  deodorant: withArt("s3_r04_i03_deodorant.png", bottle),
-  soap: withArt("s3_r04_i04_soap_bar.png", towel),
-  razor: withArt("s3_r04_i05_razor.png", bottle),
-  lotion: withArt("s3_r04_i06_lotion_bottle.png", bottle),
-  passport: withArt("s3_r05_i01_passport.png", book),
-  fileFolders: withArt("s3_r05_i03_blue_file_folders.png", binder),
-  penCup: withArt("s3_r08_i01_pen_cup.png", mug),
-  stickyNotes: withArt("s3_r08_i06_sticky_notes.png", spiceJar),
-  notebook: withArt("s3_r08_i07_blue_notebook.png", book),
-  wine: withArt("s4_r01_i01_red_wine_bottle.png", bottle),
-  liquor: withArt("s4_r01_i04_liquor_bottle.png", bottle),
-  wineGlass: withArt("s4_r02_i01_red_wine_glass.png", glass_cup),
-  champagne: withArt("s4_r02_i02_champagne_flute.png", glass_cup),
-  gameConsole: withArt("s4_r05_i01_game_console.png", remote),
-  controller: withArt("s4_r05_i03_game_controller.png", remote),
-  cards: withArt("s4_r06_i02_playing_card_deck.png", book),
-  dice: withArt("s4_r06_i03_dice.png", spiceJar),
-};
+// Look up a sprite by manifest filename. Returns the PNG sprite or null (never a
+// procedural placeholder) so missing art degrades gracefully to "no thumbnail"
+// instead of showing hand-drawn stand-ins.
+const art = (filename) => pngSprite(filename);
 
 // ---- the map: which storage objects contain what ----
+// Curated 3–6 items per container per the asset-usage plan. Items whose PNG
+// exists get a real sprite; items without art get spr: null and render as
+// name-only cards in the storage grid.
 
 export const CONTENTS = {
-  // kitchen — pilot room
+  // ===================== KITCHEN =====================
   "kitchen:pantry": [
-    { id: "cereal_1",  name: "Cereal Box",          spr: ART.cereal, value: 2 },
-    { id: "pasta_1",   name: "Pasta Box",           spr: ART.pasta, value: 1 },
-    { id: "soup_1",    name: "Canned Food",         spr: ART.cannedFood, value: 1 },
-    { id: "soup_2",    name: "Sauce Jar",           spr: ART.sauce, value: 1 },
-    { id: "spice_1",   name: "Green Spice Jar",     spr: ART.spiceGreen, value: 3 },
-    { id: "spice_2",   name: "Paprika",             spr: ART.spiceRed, value: 3 },
+    { id: "cereal_1",  name: "Cereal Box",        spr: art("s1_r01_i01_cereal_box.png"),                 value: 2 },
+    { id: "pasta_1",   name: "Pasta Box",          spr: art("s1_r01_i02_pasta_box.png"),                   value: 1 },
+    { id: "canned_1",  name: "Canned Food",        spr: art("s1_r01_i05_green_canned_food.png"),           value: 1 },
+    { id: "sauce_1",   name: "Sauce Jar",           spr: art("s1_r01_i07_red_sauce_jar.png"),               value: 1 },
+    { id: "oil_1",     name: "Oil Bottle",          spr: art("s1_r01_i10_oil_bottle.png"),                  value: 4 },
+    { id: "cracker_1", name: "Cracker Box",        spr: art("s1_r01_i12_cracker_cookie_box.png"),          value: 3 },
+    { id: "chip_1",    name: "Chip Bag",            spr: art("s1_r01_i13_chip_snack_bag.png"),              value: 2 },
+    { id: "spice_g",   name: "Green Spice Jar",     spr: art("s1_r02_i01_green_spice_jar.png"),             value: 3 },
+    { id: "spice_r",   name: "Paprika",             spr: art("s1_r02_i03_paprika_red_spice_jar.png"),       value: 3 },
+    { id: "salt_1",    name: "Salt Shaker",         spr: art("s1_r02_i06_salt_shaker.png"),                 value: 2 },
+    { id: "pepper_1",  name: "Pepper Grinder",      spr: art("s1_r02_i07_pepper_grinder.png"),              value: 5 },
+    { id: "herb_1",    name: "Green Herb Jar",      spr: art("s1_r02_i08_green_herb_jar.png"),              value: 3 },
   ],
   "kitchen:fridge": [
-    { id: "leftovers", name: "Leftovers",          spr: soupCan,   value: 0 },
+    { id: "leftovers", name: "Leftovers",          spr: art("s1_r01_i05_green_canned_food.png"),           value: 0 },
   ],
-  // bathroom
+  "kitchen:counter_sink": [
+    { id: "plate_1",   name: "Dinner Plate",       spr: art("s1_r08_i01_dinner_plate.png"),                value: 4 },
+    { id: "plate_2",   name: "Dinner Plate",       spr: art("s1_r08_i01_dinner_plate.png"),                value: 4 },
+    { id: "bowl_1",    name: "Bowl",                spr: art("s1_r08_i03_bowl.png"),                        value: 4 },
+    { id: "mug_1",     name: "Red Mug",            spr: art("s1_r08_i04_red_mug.png"),                     value: 2 },
+    { id: "mug_2",     name: "Red Mug",            spr: art("s1_r08_i04_red_mug.png"),                     value: 2 },
+    { id: "plate_stack", name: "Plate Stack",      spr: art("s1_r08_i06_plate_stack.png"),                 value: 6 },
+  ],
+
+  // ===================== BATHROOM =====================
   "bathroom:bath_vanity": [
-    { id: "towel_1",   name: "Toothpaste",          spr: ART.toothpaste, value: 4 },
-    { id: "towel_2",   name: "Deodorant",           spr: ART.deodorant, value: 4 },
-    { id: "mug_1",     name: "Soap",                spr: ART.soap, value: 2 },
-    { id: "razor_1",   name: "Razor",               spr: ART.razor, value: 3 },
-    { id: "lotion_1",  name: "Lotion",              spr: ART.lotion, value: 5 },
+    // toiletries
+    { id: "toothpaste", name: "Toothpaste",         spr: art("s3_r04_i02_toothpaste.png"),                 value: 4 },
+    { id: "deodorant",  name: "Deodorant",          spr: art("s3_r04_i03_deodorant.png"),                   value: 4 },
+    { id: "soap",       name: "Soap Bar",           spr: art("s3_r04_i04_soap_bar.png"),                   value: 2 },
+    { id: "razor",      name: "Razor",              spr: art("s3_r04_i05_razor.png"),                      value: 3 },
+    { id: "lotion",     name: "Lotion",             spr: art("s3_r04_i06_lotion_bottle.png"),              value: 5 },
+    { id: "floss",      name: "Floss",              spr: art("s3_r04_i07_floss_container.png"),            value: 2 },
+    // hair
+    { id: "curl_cream", name: "Curl Cream",         spr: art("s3_r02_i04_curl_cream_jar.png"),             value: 6 },
+    { id: "hair_oil",   name: "Hair Oil",           spr: art("s3_r02_i06_hair_oil_bottle.png"),            value: 5 },
+    { id: "mousse",     name: "Mousse",             spr: art("s3_r02_i08_mousse_bottle.png"),              value: 4 },
+    // nails
+    { id: "nail_polish", name: "Purple Nail Polish", spr: art("s3_r03_i02_purple_nail_polish.png"),         value: 4 },
+    { id: "polish_remover", name: "Polish Remover", spr: art("s3_r03_i03_nail_polish_remover.png"),        value: 3 },
+    { id: "nail_file",  name: "Nail File",          spr: art("s3_r03_i05_pink_nail_file.png"),             value: 1 },
+    { id: "cuticle",    name: "Cuticle Nippers",    spr: art("s3_r03_i06_cuticle_nippers.png"),            value: 6 },
+    { id: "gel_lamp",   name: "UV Gel Lamp",        spr: art("s5_r07_i05_uv_gel_nail_lamp.png"),           value: 25 },
   ],
-  // bedroom
+
+  // ===================== BEDROOM =====================
   "bedroom:nightstand": [
-    { id: "book_1",    name: "Blue Journal",        spr: ART.journal, value: 5 },
-    { id: "mug_2",     name: "Letter / Postcard",   spr: ART.letter, value: 1 },
+    { id: "journal",   name: "Blue Journal",       spr: art("s2_r08_i02_blue_journal_keepsake_book.png"),  value: 5 },
+    { id: "letter",    name: "Letter / Postcard",  spr: art("s2_r08_i04_letter_postcard.png"),             value: 1 },
+    { id: "admit_one", name: "Admit One Ticket",   spr: art("s2_r08_i05_admit_one_ticket.png"),            value: 2 },
+    { id: "keepsake",  name: "Green Keepsake Box", spr: art("s2_r08_i09_green_keepsake_box.png"),          value: 8 },
+    { id: "pouch",     name: "Quilted Pouch",      spr: art("s5_r08_i01_quilted_pouch.png"),              value: 4 },
+    { id: "zip_case",  name: "Small Zip Case",     spr: art("s5_r08_i03_small_zip_case.png"),             value: 3 },
   ],
   "bedroom:vanity": [
-    { id: "lip_balm",  name: "Lipstick",            spr: ART.lipstick, value: 2 },
-    { id: "hair_tie",  name: "Blush Compact",       spr: ART.blush, value: 1 },
-    { id: "eyeshadow", name: "Eyeshadow Palette",   spr: ART.eyeshadow, value: 8 },
-    { id: "mascara",   name: "Mascara",             spr: ART.mascara, value: 4 },
-    { id: "perfume",   name: "Perfume",             spr: ART.perfume, value: 15 },
+    { id: "lipstick",  name: "Lipstick",           spr: art("s2_r09_i01_lipstick.png"),                   value: 2 },
+    { id: "blush",     name: "Blush Compact",      spr: art("s2_r09_i03_blush_compact.png"),              value: 1 },
+    { id: "eyeshadow", name: "Eyeshadow Palette",  spr: art("s2_r09_i04_eyeshadow_palette.png"),          value: 8 },
+    { id: "mascara",   name: "Mascara",            spr: art("s2_r09_i05_mascara_tube_wand.png"),          value: 4 },
+    { id: "m_brush",   name: "Makeup Brush",       spr: art("s2_r09_i07_makeup_brush.png"),               value: 3 },
+    { id: "perfume",   name: "Perfume",            spr: art("s2_r09_i08_perfume_bottle.png"),             value: 15 },
+    { id: "ring",      name: "Ring",               spr: art("s5_r04_i01_ring.png"),                       value: 40 },
+    { id: "earrings",  name: "Hoop Earrings",      spr: art("s5_r04_i02_hoop_earrings.png"),               value: 18 },
+    { id: "necklace",  name: "Necklace",           spr: art("s5_r04_i03_necklace.png"),                   value: 30 },
+    { id: "claw_clip", name: "Claw Clip",          spr: art("s5_r04_i07_claw_clip.png"),                  value: 2 },
   ],
   "bedroom:dresser": [
-    { id: "sock_1",    name: "Green Sweater",       spr: ART.foldedSweater, value: 8 },
-    { id: "sock_2",    name: "Folded Jeans",        spr: ART.foldedJeans, value: 10 },
-    { id: "sock_3",    name: "Purple Sweater Stack", spr: ART.sweaterStack, value: 12 },
+    { id: "sweater_g", name: "Green Sweater",      spr: art("s2_r01_i01_green_folded_sweater.png"),        value: 8 },
+    { id: "jeans",     name: "Folded Jeans",       spr: art("s2_r01_i03_folded_jeans.png"),               value: 10 },
+    { id: "sweater_p", name: "Purple Sweater Stack", spr: art("s2_r01_i06_purple_folded_sweater_stack.png"), value: 12 },
   ],
   "bedroom:closet_door": [
-    { id: "coat_1",    name: "Brown Coat",          spr: ART.coat, value: 25 },
-    { id: "jacket_1",  name: "Navy Peacoat",       spr: ART.peacoat, value: 18 },
-    { id: "shirt_1",   name: "White Shirt",         spr: ART.shirt, value: 8 },
-    { id: "dress_1",   name: "Green Dress",         spr: ART.dress, value: 14 },
+    { id: "shirt_w",   name: "White Shirt",        spr: art("s2_r02_i01_white_button_up_shirt.png"),       value: 8 },
+    { id: "dress_g",   name: "Green Dress",        spr: art("s2_r02_i03_green_dress.png"),                value: 14 },
+    { id: "pants_b",   name: "Black Pants",        spr: art("s2_r02_i05_black_pants.png"),                value: 12 },
+    { id: "cardigan",  name: "Beige Cardigan",     spr: art("s2_r02_i06_beige_cardigan.png"),             value: 10 },
+    { id: "coat_b",    name: "Brown Coat",        spr: art("s2_r03_i01_brown_long_coat.png"),            value: 25 },
+    { id: "peacoat",   name: "Navy Peacoat",       spr: art("s2_r03_i05_navy_peacoat.png"),               value: 18 },
+    { id: "sweater_w", name: "Winter Sweater",     spr: art("s2_r04_i01_cream_winter_sweater.png"),       value: 15 },
+    { id: "scarf",     name: "Green Scarf",        spr: art("s2_r04_i03_green_scarf.png"),                value: 6 },
+    { id: "boots",     name: "Winter Boots",       spr: art("s2_r04_i07_brown_winter_boots.png"),         value: 20 },
+    { id: "tote",      name: "Cream Tote",         spr: art("s2_r05_i01_cream_tote_bag.png"),             value: 12 },
+    { id: "satchel",   name: "Green Satchel",      spr: art("s2_r05_i05_green_satchel.png"),              value: 16 },
+    { id: "sheets",    name: "White Sheet Stack",  spr: art("s2_r07_i02_white_sheet_stack.png"),           value: 7 },
+    { id: "quilt",     name: "Patchwork Quilt",    spr: art("s2_r07_i07_patchwork_quilt.png"),             value: 22 },
   ],
-  // office
+
+  // ===================== OFFICE =====================
   "office:desk_hutch": [
-    { id: "binder_1",  name: "Binder",             spr: binder,    value: 3 },
-    { id: "binder_2",  name: "Blue File Folders",  spr: ART.fileFolders, value: 3 },
-    { id: "notebook",  name: "Blue Notebook",      spr: ART.notebook, value: 2 },
-    { id: "pen_cup",   name: "Pen Cup",            spr: ART.penCup, value: 1 },
-    { id: "sticky",    name: "Sticky Notes",       spr: ART.stickyNotes, value: 1 },
+    { id: "pen_cup",   name: "Pen Cup",            spr: art("s3_r08_i01_pen_cup.png"),                    value: 1 },
+    { id: "stapler",   name: "Stapler",            spr: art("s3_r08_i03_stapler.png"),                    value: 4 },
+    { id: "binder_clip", name: "Binder Clip",      spr: art("s3_r08_i05_binder_clip.png"),               value: 1 },
+    { id: "sticky",    name: "Sticky Notes",       spr: art("s3_r08_i06_sticky_notes.png"),               value: 1 },
+    { id: "notebook",  name: "Blue Notebook",      spr: art("s3_r08_i07_blue_notebook.png"),              value: 2 },
   ],
   "office:side_cabinet": [
-    { id: "photo_1",   name: "Passport",           spr: ART.passport, value: 9 },
-    { id: "binder_3",  name: "Blue File Folders",  spr: ART.fileFolders, value: 4 },
-    { id: "book_2",    name: "Reference Book",     spr: book,      value: 12 },
+    { id: "passport",  name: "Passport",           spr: art("s3_r05_i01_passport.png"),                   value: 9 },
+    { id: "id_card",   name: "ID Card",            spr: art("s3_r05_i02_id_card.png"),                    value: 5 },
+    { id: "file_folders", name: "Blue File Folders", spr: art("s3_r05_i03_blue_file_folders.png"),        value: 3 },
+    { id: "manila_env", name: "Manila Envelope",   spr: art("s3_r05_i04_manila_envelope.png"),            value: 2 },
+    { id: "certificate", name: "Certificate",      spr: art("s3_r05_i05_certificate_official_document.png"), value: 10 },
+    { id: "confidential", name: "Confidential Envelope", spr: art("s3_r05_i08_confidential_envelope.png"), value: 8 },
+    { id: "bill",      name: "Bill",               spr: art("s3_r06_i03_bill.png"),                       value: 0 },
+    { id: "lined_paper", name: "Lined Paper",      spr: art("s3_r06_i05_loose_lined_paper.png"),          value: 1 },
+    { id: "yellow_note", name: "Yellow Note",      spr: art("s3_r06_i06_yellow_note.png"),               value: 1 },
   ],
-  // dining
+
+  // ===================== DINING =====================
   "dining:bar_cabinet": [
-    { id: "bottle_1",  name: "Red Wine",           spr: ART.wine, value: 14 },
-    { id: "bottle_2",  name: "Liquor Bottle",      spr: ART.liquor, value: 22 },
-    { id: "glass_1",   name: "Wine Glass",         spr: ART.wineGlass, value: 5 },
-    { id: "glass_2",   name: "Champagne Flute",    spr: ART.champagne, value: 5 },
+    // alcohol
+    { id: "wine",       name: "Red Wine",          spr: art("s4_r01_i01_red_wine_bottle.png"),            value: 14 },
+    { id: "liquor",     name: "Liquor Bottle",     spr: art("s4_r01_i04_liquor_bottle.png"),              value: 22 },
+    { id: "shaker",     name: "Cocktail Shaker",   spr: art("s4_r01_i05_cocktail_shaker.png"),            value: 12 },
+    { id: "jigger",     name: "Jigger",            spr: art("s4_r01_i06_jigger.png"),                     value: 6 },
+    { id: "corkscrew",  name: "Corkscrew",        spr: art("s4_r01_i07_corkscrew.png"),                  value: 4 },
+    { id: "opener",     name: "Bottle Opener",    spr: art("s4_r01_i08_bottle_opener.png"),              value: 3 },
+    // glassware
+    { id: "wine_glass", name: "Wine Glass",        spr: art("s4_r02_i01_red_wine_glass.png"),             value: 5 },
+    { id: "champagne",  name: "Champagne Flute",   spr: art("s4_r02_i02_champagne_flute.png"),            value: 5 },
+    { id: "rocks",      name: "Rocks Glass",       spr: art("s4_r02_i03_rocks_glass.png"),                value: 4 },
+    { id: "martini",    name: "Martini Glass",     spr: art("s4_r02_i05_martini_glass.png"),              value: 6 },
+    { id: "shot",       name: "Shot Glass",        spr: art("s4_r02_i07_shot_glass.png"),                 value: 3 },
+    // vases
+    { id: "vase_bw",    name: "Blue-and-White Vase", spr: art("s4_r03_i01_blue_and_white_vase.png"),      value: 15 },
+    { id: "vase_bud",   name: "Green Bud Vase",    spr: art("s4_r03_i02_green_bud_vase_with_leaves.png"),  value: 8 },
+    { id: "vase_round", name: "Round Blue Vase",   spr: art("s4_r03_i04_round_blue_and_white_vase.png"),   value: 12 },
+    { id: "vase_cream", name: "Tall Cream Vase",   spr: art("s4_r03_i05_tall_cream_vase.png"),            value: 14 },
+    { id: "vase_pitch", name: "Green Pitcher Vase", spr: art("s4_r03_i06_green_pitcher_vase.png"),       value: 11 },
+    // candles / incense
+    { id: "candle_brown", name: "Brown Jar Candle", spr: art("s4_r04_i01_brown_jar_candle.png"),          value: 5 },
+    { id: "candle_pillar", name: "Pillar Candle",  spr: art("s4_r04_i02_white_pillar_candle.png"),        value: 5 },
+    { id: "candle_tapers", name: "Green Tapers",    spr: art("s4_r04_i03_pair_of_green_taper_candles.png"), value: 4 },
+    { id: "incense",     name: "Incense Burner",   spr: art("s4_r04_i06_black_incense_burner.png"),       value: 7 },
+    { id: "matchbox",    name: "Matchbox",         spr: art("s4_r04_i08_matchbox.png"),                   value: 2 },
+    { id: "holder",      name: "Incense Holder",   spr: art("s4_r04_i09_blue_holder_with_lighters_incense_sticks.png"), value: 4 },
   ],
-  // living
+
+  // ===================== LIVING =====================
   "living:tv_hutch": [
-    { id: "remote_1",  name: "Game Console",       spr: ART.gameConsole, value: 80 },
-    { id: "photo_2",   name: "Game Controller",    spr: ART.controller, value: 25 },
-    { id: "book_3",    name: "Playing Cards",      spr: ART.cards, value: 7 },
-    { id: "binder_4",  name: "Dice",               spr: ART.dice, value: 2 },
-  ],
-  // kitchen — counter & sink cabinets
-  "kitchen:counter_sink": [
-    { id: "plate_1",   name: "Dinner Plate",       spr: ART.plate, value: 4 },
-    { id: "plate_2",   name: "Dinner Plate",       spr: ART.plate, value: 4 },
-    { id: "plate_3",   name: "Bowl",               spr: ART.bowl, value: 4 },
-    { id: "glass_3",   name: "Drinking Glass",     spr: glass_cup, value: 2 },
-    { id: "glass_4",   name: "Drinking Glass",     spr: glass_cup, value: 2 },
-    { id: "mug_3",     name: "Red Mug",            spr: ART.redMug, value: 2 },
-    { id: "mug_4",     name: "Red Mug",            spr: ART.redMug, value: 2 },
+    { id: "console",   name: "Game Console",       spr: art("s4_r05_i01_game_console.png"),                value: 80 },
+    { id: "controller", name: "Game Controller",   spr: art("s4_r05_i03_game_controller.png"),             value: 25 },
+    { id: "cards",      name: "Playing Cards",      spr: art("s4_r06_i02_playing_card_deck.png"),          value: 7 },
+    { id: "dice",       name: "Dice",               spr: art("s4_r06_i03_dice.png"),                       value: 2 },
+    { id: "chess",      name: "Chess Knight",       spr: art("s4_r06_i04_chess_knight.png"),               value: 10 },
+    { id: "puzzle",     name: "Puzzle Box",         spr: art("s4_r06_i07_puzzle_box.png"),                 value: 8 },
+    { id: "fabric_floral", name: "Floral Fabric",  spr: art("s4_r07_i01_floral_folded_fabric.png"),        value: 5 },
+    { id: "fabric_plaid",  name: "Plaid Fabric",   spr: art("s4_r07_i02_green_plaid_folded_fabric.png"),   value: 5 },
   ],
 };
 

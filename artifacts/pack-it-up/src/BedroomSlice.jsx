@@ -2050,7 +2050,7 @@ export function LayoutEditor() {
 }
 
 /* coin-burst trajectories: horizontal spread, arc peak height, start delay(ms) */
-const COIN_BURSTS = [
+export const COIN_BURSTS = [
   { tx: -52, ty: -50, d: 0 }, { tx: -14, ty: -60, d: 90 },
   { tx: 24,  ty: -56, d: 30 }, { tx: 56,  ty: -40, d: 120 },
 ];
@@ -2130,6 +2130,17 @@ export default function PackItUp({ glowMode = "split" }) {
   );
   // a storage item is mid pack/sell/donate animation (drives fly-to-box)
   const [packingContentKey, setPackingContentKey] = useState(null);
+  // tracks which stored item is animating INSIDE the storage overlay, plus the
+  // kind of animation ("pack" | "sell" | "donate"). Drives the in-overlay shrink
+  // and the local coin burst so the storage screen never has to close-then-fly
+  // back to the apartment to show feedback.
+  const [contentAnim, setContentAnim] = useState(null); // { key, kind }
+  const [storageSellFx, setStorageSellFx] = useState(null); // { itemId, amount }
+  // content pack-to-box fly: when a content item is packed, we close the storage
+  // overlay and spawn a small sprite flying from the storage object's center to
+  // the box pile's mouth, reusing the furniture packToBox keyframe. Holds the
+  // item's sprite + computed CSS vars for the fly; null when idle.
+  const [contentFlyFx, setContentFlyFx] = useState(null); // { spr, x, y, pdx, pdy, pscale }
   const [selectedId, setSelectedId] = useState(null);
   const [hoverId, setHoverId] = useState(null);
   const [packingId, setPackingId] = useState(null); // mid pack animation
@@ -2427,15 +2438,52 @@ export default function PackItUp({ glowMode = "split" }) {
     const prev = contentsState[k];
     if (!prev || prev.packed || prev.sold || prev.donated || busy) return;
     haptic(HAPTIC.pack);
-    setScreen("apartment"); // close-then-fly: close overlay so the box pile is visible
+    // Close back to the apartment so the box stack is visible, then fly the
+    // item sprite from the storage object to the box pile's mouth — same
+    // packToBox keyframe the furniture uses. The content state flips to
+    // packed when the fly lands, which grows the box pile by one.
+    const items = CONTENTS[`${room.id}:${storageId}`] || [];
+    const it = items.find((x) => x.id === itemId);
+    const spr = it?.spr;
+    const storageObj = room.objects.find((o) => o.id === storageId);
+    const storageSpr = room.sprites[storageId];
+    if (spr && storageObj && storageSpr) {
+      // origin: storage object's center, in stage px
+      const ox = storageObj.x + (storageSpr.w * CELL) / 2;
+      const oy = storageObj.y + (storageSpr.h * CELL) / 2;
+      // target: next box slot mouth (rmPacked count determines which slot)
+      const rmPacked = room.objects.filter(
+        (o) => o.removable && objState[sk(room.id, o.id)].packed
+      ).length;
+      // also count already-packed contents so multiple content packs stack
+      const contentPacked = Object.entries(contentsState)
+        .filter(([key, st]) => key.startsWith(`${room.id}:${storageId}:`) && st.packed)
+        .length;
+      const totalPacked = rmPacked + contentPacked;
+      const boxIdx = Math.min(totalPacked, BOX_MAX - 1);
+      const boxTarget = boxSlotCenter(boxIdx);
+      const pscale = 1;
+      setContentFlyFx({
+        spr,
+        x: ox, y: oy,
+        pdx: boxTarget.x - ox,
+        pdy: boxTarget.y - oy,
+        pscale,
+      });
+    }
+    setScreen("apartment");
+    setStorageId(null);
     setPackingContentKey(k);
+    setContentAnim({ key: k, kind: "pack" });
     schedule(() => {
       setContentsState((s) => ({ ...s, [k]: { ...s[k], packed: true } }));
       setUndoStack((stack) => [...stack, undoContentEntry(storageId, itemId, prev, 0, 10)]);
       setPackingContentKey(null);
+      setContentAnim(null);
+      setContentFlyFx(null);
       setMinutes((m) => m + 10);
     }, 520);
-  }, [room, contentsState, busy, schedule]);
+  }, [room, objState, contentsState, busy, schedule]);
 
   const sellContent = useCallback((storageId, itemId) => {
     const k = `${room.id}:${storageId}:${itemId}`;
@@ -2444,22 +2492,18 @@ export default function PackItUp({ glowMode = "split" }) {
     const items = CONTENTS[`${room.id}:${storageId}`] || [];
     const it = items.find((x) => x.id === itemId);
     const credit = it?.value || 0;
-    setScreen("apartment");
-    setSellingId(itemId);
-    // sell fx at the storage object's stage position
-    const storageObj = room.objects.find((o) => o.id === storageId);
-    const spr = room.sprites[storageId];
-    if (storageObj && spr) {
-      setSellFx({ roomId: room.id, x: storageObj.x + (spr.w * CELL) / 2, y: storageObj.y + (spr.h * CELL) / 2, amount: credit });
-      schedule(() => setSellFx(null), 1000);
-    }
+    // Stay in the storage overlay; play the coin burst + floating amount locally
+    // over the item thumbnail instead of closing back to the apartment.
+    setContentAnim({ key: k, kind: "sell" });
+    setStorageSellFx({ itemId, amount: credit });
     haptic(HAPTIC.sell);
     playSellSound();
+    schedule(() => setStorageSellFx(null), 1000);
     schedule(() => {
       setContentsState((s) => ({ ...s, [k]: { ...s[k], sold: true, soldFor: credit } }));
       setCoins((c) => c + credit);
       setUndoStack((stack) => [...stack, undoContentEntry(storageId, itemId, prev, credit, 5)]);
-      setSellingId(null);
+      setContentAnim(null);
       setMinutes((m) => m + 5);
     }, 520);
   }, [room, contentsState, busy, schedule]);
@@ -2471,12 +2515,12 @@ export default function PackItUp({ glowMode = "split" }) {
     const items = CONTENTS[`${room.id}:${storageId}`] || [];
     const it = items.find((x) => x.id === itemId);
     haptic(HAPTIC.donate);
-    setScreen("apartment");
-    setDonatingId(itemId);
+    // Stay in the storage overlay; the shrink animation plays locally.
+    setContentAnim({ key: k, kind: "donate" });
     schedule(() => {
       setContentsState((s) => ({ ...s, [k]: { ...s[k], donated: true } }));
       setUndoStack((stack) => [...stack, undoContentEntry(storageId, itemId, prev, 0, 5)]);
-      setDonatingId(null);
+      setContentAnim(null);
       setMinutes((m) => m + 5);
       if (it) {
         setDonateToast({ name: it.name });
@@ -2920,6 +2964,28 @@ export default function PackItUp({ glowMode = "split" }) {
             <div className={packingHere ? "boxReceiving" : ""} style={{ transformOrigin: "bottom center" }}>
               <PixelCanvas w={BOX_CW} h={BOX_CH} draw={(ctx) => drawBoxes(ctx, rmBoxes, openIdx)} redrawKey={`${rmBoxes}-${openIdx}`} />
             </div>
+          </div>
+        )}
+
+        {/* content pack-to-box fly: when a stored item is packed from the
+            storage overlay, we close back to the apartment and spawn the item's
+            sprite flying from the storage object to the box pile's mouth.
+            Reuses the furniture packToBox keyframe + CSS vars. */}
+        {contentFlyFx && rm.id === room.id && contentFlyFx.spr && (
+          <div
+            className="packing"
+            style={{
+              position: "absolute",
+              left: contentFlyFx.x,
+              top: contentFlyFx.y,
+              zIndex: 200,
+              "--pdx": `${contentFlyFx.pdx}px`,
+              "--pdy": `${contentFlyFx.pdy}px`,
+              "--pscale": contentFlyFx.pscale,
+              transformOrigin: "center",
+            }}
+          >
+            <PixelCanvas w={contentFlyFx.spr.w} h={contentFlyFx.spr.h} draw={contentFlyFx.spr.draw} />
           </div>
         )}
       </>
@@ -3502,6 +3568,7 @@ export default function PackItUp({ glowMode = "split" }) {
           onPackContent={packContent}
           onSellContent={sellContent}
           onDonateContent={donateContent}
+          storageSellFx={storageSellFx}
           busy={!!busy}
         />
       </div>
