@@ -13,7 +13,8 @@ import CAT_SHEET from "./assets/Cat-Sheet.png";
 // Next-layer screens (Menu/Desk/Health/etc.) + the task/urgency scaffold.
 // The apartment stays the hub; these render as full-screen overlays above it.
 import ScreenLayer from "./Screens.jsx";
-import { INITIAL_TASKS, isOpen as isTaskOpen, taskPressure } from "./tasks.js";
+import { INITIAL_TASKS, isOpen as isTaskOpen, taskPressure, SAMPLE_JOBS, TASK_CATEGORIES } from "./tasks.js";
+import { CONTENTS, hasContents } from "./contents.js";
 
 /* ============================================================
    PACK IT UP — vertical slice: The Bedroom
@@ -170,7 +171,7 @@ const SPRITES = {
     r(ctx, P.woodDark, 5, 69, 2, 4); r(ctx, P.woodDark, 59, 69, 2, 4);
   }},
 
-  nightstand: { w: 28, h: 34, draw(ctx) {
+  nightstand: { w: 28, h: 34, glowRegions: [[3, 7, 22, 8]], draw(ctx) {
     r(ctx, P.out, 0, 2, 28, 26);
     r(ctx, P.woodLight, 1, 3, 26, 2);                 // top slab
     r(ctx, P.woodDark, 1, 5, 26, 22);
@@ -254,7 +255,7 @@ const SPRITES = {
   }},
 
   // vanity desk + its standing mirror leaning behind/beside it, one composite sprite
-  vanity: { w: 46, h: 66, draw(ctx) {
+  vanity: { w: 46, h: 66, glowRegions: [[2, 34, 20, 12], [22, 34, 22, 12]], draw(ctx) {
     // standing mirror, leaning at the back, top of frame rising above the desk
     r(ctx, P.out, 13, 0, 26, 28);
     r(ctx, P.woodMid, 14, 1, 24, 26); r(ctx, P.woodHi, 14, 1, 24, 1);
@@ -284,7 +285,7 @@ const SPRITES = {
   }},
 
   // dresser + its wall mirror mounted just above it, one composite sprite
-  dresser: { w: 48, h: 99, draw(ctx) {
+  dresser: { w: 48, h: 99, glowRegions: [[3, 45, 20, 9], [25, 45, 20, 9], [3, 56, 42, 10], [3, 68, 42, 10], [3, 80, 42, 9]], draw(ctx) {
     // mirror, centered above
     r(ctx, P.out, 4, 0, 40, 36);
     r(ctx, P.woodMid, 5, 1, 38, 34); r(ctx, P.woodHi, 5, 1, 38, 1);
@@ -407,7 +408,7 @@ const OFFICE_SPRITES = {
     panel(1); panel(76);
   }},
 
-  desk_hutch: { w: 150, h: 96, draw(ctx) {
+  desk_hutch: { w: 150, h: 96, glowRegions: [[37, 54, 22, 10], [37, 66, 22, 10], [37, 78, 22, 10]], draw(ctx) {
     // hutch shelves
     r(ctx, P.out, 2, 0, 60, 46);
     r(ctx, P.woodMid, 3, 1, 58, 44); r(ctx, P.woodHi, 3, 1, 58, 2);
@@ -499,7 +500,7 @@ const OFFICE_SPRITES = {
     r(ctx, "#B8AE96", 5, 9, 6, 4);                                         // label
   }},
 
-  side_cabinet: { w: 48, h: 62, draw(ctx) {
+  side_cabinet: { w: 48, h: 62, glowRegions: [[4, 25, 19, 27], [25, 25, 19, 27]], draw(ctx) {
     // book stack
     r(ctx, P.out, 2, 10, 12, 8);
     r(ctx, P.burgundy, 3, 11, 10, 2); r(ctx, P.teal, 3, 13, 10, 2); r(ctx, "#B08A4A", 3, 15, 10, 2);
@@ -677,7 +678,7 @@ const BATH_SPRITES = {
     r(ctx, P.white, 8, 45, 16, 2); r(ctx, P.whiteLo, 8, 46, 16, 1);
   }},
 
-  bath_vanity: { w: 66, h: 68, draw(ctx) {
+  bath_vanity: { w: 66, h: 68, glowRegions: [[9, 25, 23, 34], [34, 25, 23, 34]], draw(ctx) {
     // faucet
     r(ctx, P.out, 30, 0, 3, 8); r(ctx, "#B8AE96", 31, 1, 1, 6);
     r(ctx, P.out, 30, 0, 8, 3); r(ctx, "#B8AE96", 31, 1, 6, 1);
@@ -852,7 +853,11 @@ const KITCHEN_SPRITES = {
     r(ctx, P.out, 1, 38, 28, 1);
     r(ctx, P.whiteLo, 1, 39, 28, 4);
   }},
-  counter_sink: { w: 80, h: 44, draw(ctx) {
+  counter_sink: { w: 80, h: 44,
+    glowRegions: [
+      [3, 18, 17, 8], [22, 18, 17, 8], [41, 18, 17, 8], [60, 18, 17, 8],
+      [3, 27, 17, 10], [22, 27, 17, 10], [41, 27, 17, 10], [60, 27, 17, 10],
+    ], draw(ctx) {
     // faucet rising above the counter
     r(ctx, P.out, 39, 0, 2, 6); r(ctx, "#B8AE96", 39, 1, 1, 5);
     r(ctx, P.out, 39, 0, 8, 2); r(ctx, "#B8AE96", 40, 0, 6, 1);
@@ -1115,7 +1120,7 @@ const DINING_SPRITES = {
     r(ctx, P.cream, 7, 0, 2, 4);
     r(ctx, P.mustardHi, 7, 0, 2, 1);
   }},
-  bar_cabinet: { w: 54, h: 50, draw(ctx) {
+  bar_cabinet: { w: 54, h: 50, glowRegions: [[4, 7, 21, 36], [29, 7, 21, 36]], draw(ctx) {
     r(ctx, P.out, 0, 0, 54, 5); r(ctx, P.woodLight, 1, 1, 52, 3);
     r(ctx, P.out, 2, 5, 50, 40); r(ctx, P.woodDark, 3, 6, 48, 38);
     r(ctx, P.out, 26, 6, 2, 38);
@@ -1197,7 +1202,7 @@ function drawLivingShell(ctx) {
 }
 
 const LIVING_SPRITES = {
-  tv_hutch: { w: 56, h: 96, draw(ctx) {
+  tv_hutch: { w: 56, h: 96, glowRegions: [[3, 61, 24, 31], [29, 61, 24, 31]], draw(ctx) {
     r(ctx, P.woodDark, 24, 6, 8, 4);
     r(ctx, P.green, 22, 0, 3, 7); r(ctx, P.greenHi, 25, 0, 2, 6);
     r(ctx, P.green, 28, 1, 3, 6); r(ctx, P.greenLo, 26, 3, 2, 4);
@@ -1604,7 +1609,7 @@ const CATEGORY_COLORS = {
 /* ============================================================
    PIXEL CANVAS
    ============================================================ */
-function PixelCanvas({ w, h, draw, redrawKey, style }) {
+export function PixelCanvas({ w, h, draw, redrawKey, style }) {
   const ref = useRef(null);
   // useLayoutEffect (not useEffect) so the canvas is painted BEFORE the browser
   // shows the frame — otherwise there's a blank frame where the <canvas> exists
@@ -1639,7 +1644,7 @@ function PixelCanvas({ w, h, draw, redrawKey, style }) {
    ============================================================ */
 const CAT_CELL = 32;                    // source px per frame
 const CAT_SHEET_W = 256, CAT_SHEET_H = 1632;
-const CAT_PX = 6.2;                     // stage px per source px (display scale)
+const CAT_PX = 7.2;                     // stage px per source px (display scale)
 const CAT_FOOT_FRAC = 0.84;             // where his feet sit inside the 32px frame
 const CAT_FACES_RIGHT = true;           // source art faces RIGHT by default
 
@@ -1670,7 +1675,7 @@ const CAT_SPOTS = {
   living:   [{ x: 210, y: 745 }, { x: 385, y: 771 }, { x: 560, y: 759 }, { x: 705, y: 747 }, { x: 760, y: 737 }],
 };
 
-function Stretchy({ spots, enterSide }) {
+function Stretchy({ spots, enterSide, pressure = 0, onOpen }) {
   const list = spots && spots.length ? spots : [{ x: STAGE_W / 2, y: 520 }];
   const startY = list[0].y;
   const fw = CAT_CELL * CAT_PX;          // display frame size (stage px)
@@ -1814,27 +1819,50 @@ function Stretchy({ spots, enterSide }) {
 
   const a = CAT_ANIM[view.anim] || CAT_ANIM.idle;
   const flip = view.facing * (CAT_FACES_RIGHT ? 1 : -1);
+  const guilty = pressure >= 2;
   return (
     <div
-      aria-hidden
+      aria-hidden={guilty ? undefined : "true"}
+      onClick={guilty && onOpen ? (e) => { e.stopPropagation(); onOpen(); } : undefined}
       style={{
         position: "absolute",
         left: view.x - fw / 2,
         top: view.y - fw * CAT_FOOT_FRAC,
         width: fw,
         height: fw,
-        backgroundImage: `url(${CAT_SHEET})`,
-        backgroundRepeat: "no-repeat",
-        backgroundSize: `${CAT_SHEET_W * CAT_PX}px ${CAT_SHEET_H * CAT_PX}px`,
-        backgroundPosition: `-${view.frame * CAT_CELL * CAT_PX}px -${a.row * CAT_CELL * CAT_PX}px`,
-        imageRendering: "pixelated",
-        transform: `scaleX(${flip})`,
-        transformOrigin: "center",
-        pointerEvents: "none",
-        // above the box pile (60) and all furniture so he's never clipped
+        pointerEvents: guilty && onOpen ? "auto" : "none",
+        cursor: guilty && onOpen ? "pointer" : "default",
         zIndex: 90,
       }}
-    />
+    >
+      <div
+        style={{
+          width: fw, height: fw,
+          backgroundImage: `url(${CAT_SHEET})`,
+          backgroundRepeat: "no-repeat",
+          backgroundSize: `${CAT_SHEET_W * CAT_PX}px ${CAT_SHEET_H * CAT_PX}px`,
+          backgroundPosition: `-${view.frame * CAT_CELL * CAT_PX}px -${a.row * CAT_CELL * CAT_PX}px`,
+          imageRendering: "pixelated",
+          transform: `scaleX(${flip})`,
+          transformOrigin: "center",
+          // guilt glow: a soft red halo around him when tasks are piling up
+          filter: guilty ? "drop-shadow(0 0 6px rgba(196,59,52,0.8))" : "none",
+        }}
+      />
+      {/* guilt bubble: a red "!" that floats above his head at high pressure,
+          a little nudge to go handle things. */}
+      {guilty && (
+        <div className="redPulse guiltBubble" style={{
+          position: "absolute", top: -fw * 0.08 + 70, left: `${50 + view.facing * 15}%`, transform: "translateX(-50%)",
+          width: Math.max(11, fw * 0.15), height: Math.max(11, fw * 0.15),
+          borderRadius: "50%", background: "#C43B34", border: "2px solid #120A04",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          color: "#F3EDDD", fontSize: Math.max(9, fw * 0.11),
+          fontFamily: "'Courier New', monospace", fontWeight: 700, letterSpacing: "0.5px",
+          filter: "drop-shadow(0 0 6px rgba(196,59,52,0.8))",
+        }}>!</div>
+      )}
+    </div>
   );
 }
 
@@ -2075,6 +2103,17 @@ export default function PackItUp() {
       )
     )
   );
+  // contents state: per-storage-item flags, keyed `${roomId}:${storageId}:${itemId}`.
+  // Mirrors objState's shape so the same undo/handled patterns reuse cleanly.
+  const [contentsState, setContentsState] = useState(() =>
+    Object.fromEntries(
+      Object.entries(CONTENTS).flatMap(([storageKey, items]) =>
+        items.map((it) => [`${storageKey}:${it.id}`, { packed: false, sold: false, soldFor: 0, donated: false }])
+      )
+    )
+  );
+  // a storage item is mid pack/sell/donate animation (drives fly-to-box)
+  const [packingContentKey, setPackingContentKey] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [hoverId, setHoverId] = useState(null);
   const [packingId, setPackingId] = useState(null); // mid pack animation
@@ -2086,6 +2125,9 @@ export default function PackItUp() {
   /* next-layer navigation: apartment is the hub, everything else is an
      overlay screen (menu/desk/health/inventory/log/stretchy/settings) */
   const [screen, setScreen] = useState("apartment");
+  // which storage object's contents are open in the StorageScreen overlay.
+  // Set when a storage object (cabinet/drawer/closet) is tapped.
+  const [storageId, setStorageId] = useState(null);
   /* task/urgency scaffold — sample data only, drives the paper fan + badges */
   const [tasks, setTasks] = useState(INITIAL_TASKS);
   const [minutes, setMinutes] = useState(0); // game time advances as you pack/sell
@@ -2098,6 +2140,7 @@ export default function PackItUp() {
   const wrapRef = useRef(null);
   const audioCtxRef = useRef(null);
   const sellBufferRef = useRef(null);
+  const keepAliveBufferRef = useRef(null);
   const audioPrimedRef = useRef(false);
 
   /* mobile pan-strip state: live drag offset + measured viewport box */
@@ -2167,6 +2210,18 @@ export default function PackItUp() {
     } catch {
       // sound stays off; the game itself is unaffected
     }
+    /* keep-alive: build a ~1s near-silent buffer that, once primed, loops
+       forever at inaudible gain. iOS will suspend an idle AudioContext and
+       then sometimes refuses to resume it through the mute switch; a
+       continuously-running silent source keeps the session "active" so the
+       real sell chime can fire even when the phone is muted. */
+    try {
+      const sr = ctx.sampleRate;
+      const keep = ctx.createBuffer(1, Math.floor(sr * 1.0), sr);
+      const data = keep.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = 0; // true digital silence
+      keepAliveBufferRef.current = { buffer: keep, started: false };
+    } catch {}
     return () => { ctx.close().catch(() => {}); };
   }, []);
 
@@ -2176,7 +2231,25 @@ export default function PackItUp() {
     // re-assert the playback session on the actual user gesture (some iOS
     // versions only honor it once a gesture has engaged audio), then resume.
     try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}
-    audioCtxRef.current?.resume().catch(() => {});
+    const ctx = audioCtxRef.current;
+    ctx?.resume().catch(() => {});
+    // start the silent keep-alive loop now that we're inside a user gesture.
+    // iOS only allows starting sources from a gesture; doing it here means the
+    // context stays "active" and later sounds (incl. through the mute switch)
+    // can fire without another gesture.
+    const ka = keepAliveBufferRef.current;
+    if (ctx && ka && !ka.started) {
+      try {
+        const src = ctx.createBufferSource();
+        src.buffer = ka.buffer;
+        src.loop = true;
+        const gain = ctx.createGain();
+        gain.gain.value = 0; // truly silent
+        src.connect(gain).connect(ctx.destination);
+        src.start(0);
+        ka.started = true;
+      } catch {}
+    }
   };
 
   const playSellSound = () => {
@@ -2194,6 +2267,27 @@ export default function PackItUp() {
     src.connect(ctx.destination);
     src.start(0);
   };
+
+  /* Generic SFX player — the same mute-proof path as the sell chime.
+     When pack/donate/room-clear/stamp sound files arrive, decode each into
+     its own ref (mirroring sellBufferRef) and call playSfx(thatRef).
+     Safe to call before any buffer is decoded (no-op). */
+  const playSfx = (bufRef) => {
+    const ctx = audioCtxRef.current;
+    const buf = bufRef?.current;
+    if (!ctx || !buf) return;
+    try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}
+    if (ctx.state === "suspended") ctx.resume().catch(() => {});
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+  };
+  // placeholder refs for future SFX — populated when their files are wired in
+  const packSfxRef = useRef(null);
+  const donateSfxRef = useRef(null);
+  const clearSfxRef = useRef(null);
+  const stampSfxRef = useRef(null);
 
   const removable = room.objects.filter((o) => o.removable);
   const packedCount = removable.filter((o) => objState[sk(room.id, o.id)].packed).length;
@@ -2284,6 +2378,79 @@ export default function PackItUp() {
     }, 520);
   }, [room, objState, busy]);
 
+  /* ---- content actions: pack/sell/donate items from inside storage ----
+     All three close the storage overlay first (close-then-fly), then flip
+     contentsState. The box pile grows as the receiving cue; the cabinet's
+     storage badge count drops. Undo restores via the storageId marker. */
+  const undoContentEntry = (storageId, itemId, prev, coinsDelta, minutesDelta) => ({
+    roomId: room.id, id: itemId, storageId,
+    prevPacked: prev.packed, prevSold: prev.sold, prevSoldFor: prev.soldFor, prevDonated: prev.donated,
+    coinsDelta, minutesDelta,
+  });
+
+  const packContent = useCallback((storageId, itemId) => {
+    const k = `${room.id}:${storageId}:${itemId}`;
+    const prev = contentsState[k];
+    if (!prev || prev.packed || prev.sold || prev.donated || busy) return;
+    haptic(HAPTIC.pack);
+    setScreen("apartment"); // close-then-fly: close overlay so the box pile is visible
+    setPackingContentKey(k);
+    setTimeout(() => {
+      setContentsState((s) => ({ ...s, [k]: { ...s[k], packed: true } }));
+      setUndoStack((stack) => [...stack, undoContentEntry(storageId, itemId, prev, 0, 10)]);
+      setPackingContentKey(null);
+      setMinutes((m) => m + 10);
+    }, 520);
+  }, [room, contentsState, busy]);
+
+  const sellContent = useCallback((storageId, itemId) => {
+    const k = `${room.id}:${storageId}:${itemId}`;
+    const prev = contentsState[k];
+    if (!prev || prev.packed || prev.sold || prev.donated || busy) return;
+    const items = CONTENTS[`${room.id}:${storageId}`] || [];
+    const it = items.find((x) => x.id === itemId);
+    const credit = it?.value || 0;
+    setScreen("apartment");
+    setSellingId(itemId);
+    // sell fx at the storage object's stage position
+    const storageObj = room.objects.find((o) => o.id === storageId);
+    const spr = room.sprites[storageId];
+    if (storageObj && spr) {
+      setSellFx({ roomId: room.id, x: storageObj.x + (spr.w * CELL) / 2, y: storageObj.y + (spr.h * CELL) / 2, amount: credit });
+      setTimeout(() => setSellFx(null), 1000);
+    }
+    haptic(HAPTIC.sell);
+    playSellSound();
+    setTimeout(() => {
+      setContentsState((s) => ({ ...s, [k]: { ...s[k], sold: true, soldFor: credit } }));
+      setCoins((c) => c + credit);
+      setUndoStack((stack) => [...stack, undoContentEntry(storageId, itemId, prev, credit, 5)]);
+      setSellingId(null);
+      setMinutes((m) => m + 5);
+    }, 520);
+  }, [room, contentsState, busy]);
+
+  const donateContent = useCallback((storageId, itemId) => {
+    const k = `${room.id}:${storageId}:${itemId}`;
+    const prev = contentsState[k];
+    if (!prev || prev.packed || prev.sold || prev.donated || busy) return;
+    const items = CONTENTS[`${room.id}:${storageId}`] || [];
+    const it = items.find((x) => x.id === itemId);
+    haptic(HAPTIC.donate);
+    setScreen("apartment");
+    setDonatingId(itemId);
+    setTimeout(() => {
+      setContentsState((s) => ({ ...s, [k]: { ...s[k], donated: true } }));
+      setUndoStack((stack) => [...stack, undoContentEntry(storageId, itemId, prev, 0, 5)]);
+      setDonatingId(null);
+      setMinutes((m) => m + 5);
+      if (it) {
+        setDonateToast({ name: it.name });
+        setTimeout(() => setDonateToast((t) => (t && t.name === it.name ? null : t)), 3500);
+      }
+    }, 520);
+  }, [room, contentsState, busy]);
+
   const unpackObject = (id) => {
     const k = sk(room.id, id);
     const prev = objState[k];
@@ -2308,9 +2475,17 @@ export default function PackItUp() {
 
   const undoLast = () => {
     if (undoStack.length === 0) return;
-    const { roomId, id, prevPacked, prevSold, prevSoldFor, prevDonated, coinsDelta, minutesDelta } = undoStack[undoStack.length - 1];
-    const k = sk(roomId, id);
-    setObjState((s) => ({ ...s, [k]: { ...s[k], packed: prevPacked, sold: prevSold, soldFor: prevSoldFor, donated: prevDonated } }));
+    const entry = undoStack[undoStack.length - 1];
+    const { roomId, id, storageId, prevPacked, prevSold, prevSoldFor, prevDonated, coinsDelta, minutesDelta } = entry;
+    if (storageId) {
+      // content undo: restore contentsState at ${roomId}:${storageId}:${id}
+      const ck = `${roomId}:${storageId}:${id}`;
+      setContentsState((s) => ({ ...s, [ck]: { ...s[ck], packed: prevPacked, sold: prevSold, soldFor: prevSoldFor, donated: prevDonated } }));
+    } else {
+      // object undo: restore objState at ${roomId}:${id}
+      const k = sk(roomId, id);
+      setObjState((s) => ({ ...s, [k]: { ...s[k], packed: prevPacked, sold: prevSold, soldFor: prevSoldFor, donated: prevDonated } }));
+    }
     setCoins((c) => c - coinsDelta);
     setMinutes((m) => m - minutesDelta);
     setUndoStack((stack) => stack.slice(0, -1));
@@ -2350,17 +2525,54 @@ export default function PackItUp() {
 
   /* urgency scaffold: overall pressure + how many papers are on the desk */
   const pressure = taskPressure(tasks);
-  const deskPaperCount = tasks.filter((t) => isTaskOpen(t) && ["job", "admin", "move"].includes(t.category)).length;
+  const deskTasksOpen = tasks.filter((t) => isTaskOpen(t) && ["job", "admin", "move"].includes(t.category));
+  const deskPaperCount = deskTasksOpen.length;
+  /* the physical fan in the corner: the 3 most urgent desk papers, colored by
+     kind (job = pink/red, admin/move = blue) and labeled with the real task */
+  const fanCards = [...deskTasksOpen]
+    .sort((a, b) => b.urgency - a.urgency)
+    .slice(0, 3)
+    .map((t) => {
+      const job = t.jobId ? SAMPLE_JOBS[t.jobId] : null;
+      const isJob = t.category === "job";
+      return {
+        id: t.id,
+        name: job ? job.title : t.title,
+        due: job ? job.deadline : t.due,
+        urgency: t.urgency,
+        icon: TASK_CATEGORIES[t.category]?.icon || "📄",
+        bg: isJob ? "#E9BFB2" : "#B9CEDC",
+        lo: isJob ? "#C08578" : "#8AA6B8",
+      };
+    });
 
-  /* everything handled across ALL rooms — feeds Inventory + Log screens */
+  /* everything handled across ALL rooms — feeds Inventory + Log screens.
+     Carries the object's own sprite so the screens can draw tiny thumbnails. */
   const handled = [];
   for (const rid of ROOMS_ORDER) {
     for (const o of ROOMS[rid].objects) {
       const st = objState[sk(rid, o.id)];
       if (!st) continue;
-      if (st.packed) handled.push({ name: o.name, room: ROOMS[rid].name, state: "packed" });
-      else if (st.sold) handled.push({ name: o.name, room: ROOMS[rid].name, state: "sold", amount: st.soldFor });
-      else if (st.donated) handled.push({ name: o.name, room: ROOMS[rid].name, state: "donated" });
+      const spr = ROOMS[rid].sprites[o.id];
+      const base = { key: sk(rid, o.id), name: o.name, room: ROOMS[rid].name, spr };
+      if (st.packed) handled.push({ ...base, state: "packed" });
+      else if (st.sold) handled.push({ ...base, state: "sold", amount: st.soldFor });
+      else if (st.donated) handled.push({ ...base, state: "donated" });
+    }
+  }
+  // storage contents: items packed/sold/donated from inside cabinets/drawers
+  for (const [storageKey, items] of Object.entries(CONTENTS)) {
+    const [rid, sid] = storageKey.split(":");
+    const storageObj = ROOMS[rid]?.objects.find((o) => o.id === sid);
+    if (!storageObj) continue;
+    for (const it of items) {
+      const ck = `${storageKey}:${it.id}`;
+      const st = contentsState[ck];
+      if (!st) continue;
+      const base = { key: ck, name: it.name, room: ROOMS[rid].name, spr: it.spr };
+      if (st.packed) handled.push({ ...base, state: "packed" });
+      else if (st.sold) handled.push({ ...base, state: "sold", amount: st.soldFor });
+      else if (st.donated) handled.push({ ...base, state: "donated" });
     }
   }
 
@@ -2425,6 +2637,50 @@ export default function PackItUp() {
       }
       .fanNudge2 { animation: fanNudge 4.6s ease-in-out infinite; }
       .fanNudge3 { animation: fanNudge 2.3s ease-in-out infinite; }
+      /* portal glow: hugs the furniture silhouette (drop-shadow follows the
+         sprite's alpha, unlike box-shadow which hugs the border-box rectangle).
+         Two layered drop-shadows blend green + yellow; the opacity breathes. */
+      @keyframes portalGlow {
+        0%, 100% { filter: drop-shadow(0 0 6px rgba(143,209,79,0.45)) drop-shadow(0 0 3px rgba(218,200,90,0.4)); }
+        50%      { filter: drop-shadow(0 0 12px rgba(143,209,79,0.8)) drop-shadow(0 0 6px rgba(218,200,90,0.7)); }
+      }
+      .portal { animation: portalGlow 2.6s ease-in-out infinite; }
+      /* drawer-level glow: modeled on the closet door's .portal — filter: drop-shadow
+         hugs the silhouette of the element it's applied to. Here the element is a
+         transparent div sized to each drawer rect, with a very faint green fill so
+         the drop-shadow has alpha to wrap (the fill itself is nearly invisible on
+         the drawer face). Two layered drop-shadows blend green + yellow, more
+         delicate than .portal (smaller blur, lower opacity). Pulses per-drawer. */
+      @keyframes drawerGlowPulse {
+        0%, 100% { filter: drop-shadow(0 0 4px rgba(143,209,79,0.45)) drop-shadow(0 0 2px rgba(218,200,90,0.35)); }
+        50%      { filter: drop-shadow(0 0 9px rgba(143,209,79,0.75)) drop-shadow(0 0 5px rgba(218,200,90,0.60)); }
+      }
+      .drawerGlow {
+        animation: drawerGlowPulse 2.8s ease-in-out infinite;
+        pointer-events: none;
+        background: rgba(143,209,79,0.10);
+        border-radius: 1px;
+      }
+      /* red dot pulse for the Tasks chip when pressure is high */
+      @keyframes redPulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(196,59,52,0); }
+        50%      { box-shadow: 0 0 8px 2px rgba(196,59,52,0.8); }
+      }
+      .redPulse { animation: redPulse 1.8s ease-in-out infinite; }
+      /* guilt bubble scale pulse: grows the "!" and eases back, on its own loop.
+         translateX(-50%) is baked into each keyframe so centering isn't lost. */
+      @keyframes guiltBubbleScale {
+        0%, 100% { transform: translateX(-50%) scale(1); }
+        50%      { transform: translateX(-50%) scale(1.25); }
+      }
+      .guiltBubble { animation: guiltBubbleScale 2.2s ease-in-out infinite; }
+      /* pressure vignette: a red edge-tint that breathes, stronger as the
+         open-task load climbs. Purely a guilt cue on the apartment hub. */
+      @keyframes pressurePulse {
+        0%, 100% { opacity: var(--pmin, 0.10); }
+        50%      { opacity: var(--pmax, 0.22); }
+      }
+      .pressureVignette { animation: pressurePulse 3.4s ease-in-out infinite; }
       button { font-family: 'Courier New', monospace; touch-action: manipulation; }
     `}</style>
   );
@@ -2508,14 +2764,63 @@ export default function PackItUp() {
           return (
             <div
               key={o.id}
-              className={`obj ${isSel ? "sel" : ""} ${isPacking ? "packing" : ""} ${isRemoving ? "removing" : ""} ${o.removable ? "" : "static"}`}
+              className={`obj ${isSel ? "sel" : ""} ${isPacking ? "packing" : ""} ${isRemoving ? "removing" : ""} ${o.removable ? "" : "static"} ${rm.id === "bathroom" && o.id === "mirror_cabinet" ? "portal" : ""} ${(hasContents(rm.id, o.id) && !spr?.glowRegions) ? "portal" : ""}`}
               style={{ position: "absolute", left: placed.x, top: placed.y, zIndex: o.z * 10, transform: `scale(${placed.scale || 1})`, transformOrigin: "top left", ...packVars }}
-              onClick={(e) => { e.stopPropagation(); setSelectedId(o.id); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                // the medicine cabinet is a doorway to the Health screen
+                if (rm.id === "bathroom" && o.id === "mirror_cabinet") { setScreen("health"); return; }
+                // other storage objects (cabinets/drawers/closets) open the contents overlay
+                if (hasContents(rm.id, o.id)) { setStorageId(o.id); setScreen("storage"); return; }
+                setSelectedId(o.id);
+              }}
               onMouseEnter={() => setHoverId(o.id)}
               onMouseLeave={() => setHoverId((h) => (h === o.id ? null : h))}
               title=""
             >
               <PixelCanvas w={spr.w} h={spr.h} draw={spr.draw} />
+              {/* drawer-level glow: one transparent div per drawer rect, using
+                  box-shadow (outward-only) so the drawer face stays clean and
+                  only the surrounding furniture body glows. Same outward-only
+                  behavior as the closet door's .portal, but rect-shaped since
+                  drawers are rectangles. Pulses via .drawerGlow keyframe.
+                  Only shows while the storage still has unpacked items. */}
+              {hasContents(rm.id, o.id) && spr.glowRegions && (() => {
+                const storageKey = sk(rm.id, o.id);
+                const remaining = (CONTENTS[storageKey] || []).filter((it) => {
+                  const st = contentsState[`${storageKey}:${it.id}`];
+                  if (!st) return true;
+                  return !st.packed && !st.sold && !st.donated;
+                }).length;
+                if (remaining === 0) return null;
+                // stagger each drawer's pulse so they don't all breathe in unison
+                const delays = ["0s", "0.7s", "1.4s", "2.1s", "0.35s", "1.05s", "1.75s", "2.45s"];
+                return spr.glowRegions.map(([gx, gy, gw, gh], i) => (
+                  <div
+                    key={`drawerGlow-${i}`}
+                    className="drawerGlow"
+                    style={{
+                      position: "absolute",
+                      left: gx * CELL,
+                      top: gy * CELL,
+                      width: gw * CELL,
+                      height: gh * CELL,
+                      animationDelay: delays[i % delays.length],
+                      zIndex: 2,
+                    }}
+                  />
+                ));
+              })()}
+              {/* portal hint: a tiny cross-icon badge so the glow reads as "doorway" */}
+              {rm.id === "bathroom" && o.id === "mirror_cabinet" && (
+                <div style={{
+                  position: "absolute", top: -10, right: -10, zIndex: 5,
+                  width: 18, height: 18, borderRadius: "50%",
+                  background: "#8FD14F", border: "2px solid #120A04",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: "#120A04", fontSize: 10, ...ui.label,
+                }}>+</div>
+              )}
               {!isMobile && isCur && hoverId === o.id && !isBusy && (
                 <div style={{
                   position: "absolute", left: "50%", top: -30, transform: "translateX(-50%)",
@@ -2533,7 +2838,7 @@ export default function PackItUp() {
         {/* STRETCHY — the cat, only in the current room, above the floor/furniture
             but non-interactive. Keyed by room so he re-mounts and trots back in. */}
         {rm.id === room.id && (
-          <Stretchy key={rm.id} spots={CAT_SPOTS[rm.id]} enterSide={catEnterSide} />
+          <Stretchy key={rm.id} spots={CAT_SPOTS[rm.id]} enterSide={catEnterSide} pressure={pressure} onOpen={() => setScreen("stretchy")} />
         )}
 
         {/* coin burst + floating amount — own overlay on its own timer so the
@@ -2700,11 +3005,22 @@ export default function PackItUp() {
       </button>
     );
 
+    // empty-first rule: a removable storage object (bar cabinet, nightstand, etc.)
+    // can't be packed/sold/donated as a whole while it still has items inside.
+    const selectedHasContents = selected && hasContents(room.id, selected.id);
+    const selectedContentsRemaining = selectedHasContents
+      ? (CONTENTS[sk(room.id, selected.id)] || []).filter((it) => {
+          const st = contentsState[`${sk(room.id, selected.id)}:${it.id}`];
+          if (!st) return true;
+          return !st.packed && !st.sold && !st.donated;
+        }).length
+      : 0;
+    const blockedByContents = selectedHasContents && selectedContentsRemaining > 0;
     const actions = [
       { key: "check",  icon: "🔍", label: "Check",  disabled: !selected, onClick: () => setSheetOpen(true) },
-      { key: "pack",   icon: "📦", label: "Pack",   disabled: !selected || !selected.removable || !!busy, onClick: () => packObject(selected.id) },
-      { key: "sell",   icon: "💰", label: "Sell",   disabled: !selected || !selected.removable || !!busy, onClick: () => sellObject(selected.id) },
-      { key: "donate", icon: "🎁", label: "Donate", disabled: !selected || !selected.removable || !!busy, onClick: () => donateObject(selected.id) },
+      { key: "pack",   icon: "📦", label: "Pack",   disabled: !selected || !selected.removable || !!busy || blockedByContents, onClick: () => packObject(selected.id) },
+      { key: "sell",   icon: "💰", label: "Sell",   disabled: !selected || !selected.removable || !!busy || blockedByContents, onClick: () => sellObject(selected.id) },
+      { key: "donate", icon: "🎁", label: "Donate", disabled: !selected || !selected.removable || !!busy || blockedByContents, onClick: () => donateObject(selected.id) },
       { key: "menu",   icon: "☰",  label: "Menu",   disabled: false, onClick: () => setScreen("menu") },
     ];
 
@@ -2736,6 +3052,21 @@ export default function PackItUp() {
         onPointerDownCapture={primeSellAudio}
       >
         {styleTag}
+
+        {/* pressure vignette — a red edge tint that grows with the open-task
+            load. Only on the hub (screen === "apartment"); never over a sheet
+            or overlay screen. */}
+        {screen === "apartment" && pressure > 0 && (
+          <div
+            className="pressureVignette"
+            style={{
+              position: "fixed", inset: 0, zIndex: 140, pointerEvents: "none",
+              background: "radial-gradient(120% 90% at 50% 60%, transparent 52%, rgba(163,37,44,0.55) 100%)",
+              ["--pmin"]: 0.06 + pressure * 0.05,
+              ["--pmax"]: 0.16 + pressure * 0.10,
+            }}
+          />
+        )}
 
         {/* ---- top HUD: native-sized chrome, never scales with the room ---- */}
         <div style={{ flex: "0 0 auto", display: "flex", alignItems: "stretch", gap: 8, padding: "calc(env(safe-area-inset-top, 0px) + 10px) 10px 8px", zIndex: 130 }}>
@@ -2892,45 +3223,46 @@ export default function PackItUp() {
              the action bar. Now the physical face of the task pile: it peeks
              out further and twitches as pressure rises, and tapping it opens
              the Desk. ---- */}
+        {fanCards.length > 0 && (
         <div
           className={pressure >= 3 ? "fanNudge3" : pressure === 2 ? "fanNudge2" : undefined}
           onClick={() => setScreen("desk")}
           style={{
-            position: "absolute", left: 8, zIndex: 110, width: 130, height: 100, cursor: "pointer",
-            /* peek: papers ride up out from behind the bar as things pile up */
-            bottom: `calc(env(safe-area-inset-bottom, 0px) + ${34 + pressure * 8}px)`,
+            position: "absolute", left: 22, zIndex: 110, width: 130, height: 100, cursor: "pointer",
+            /* peek: papers ride up out from behind the bar as things pile up.
+               Kept low so the fan never climbs over Stretchy in the foreground. */
+            bottom: `calc(env(safe-area-inset-bottom, 0px) + ${22 + pressure * 5}px)`,
             transition: "bottom 400ms ease",
           }}
         >
-          {[
-            { rot: -14, dx: 0,  bg: "#E4B4A8", lo: "#C08578", label: "Job App", icon: "💼" },
-            { rot: -4,  dx: 26, bg: "#E9BFB2", lo: "#C08578", label: "Job App", icon: "💼" },
-            { rot: 7,   dx: 54, bg: "#B9CEDC", lo: "#8AA6B8", label: "Admin",   icon: "👤" },
-          ].map((c, i) => (
-            <div key={i} style={{
-              position: "absolute", left: c.dx, bottom: 0, width: 58, height: 92, background: c.bg,
-              border: "2px solid #120A04", boxShadow: "2px 2px 0 rgba(0,0,0,0.45)",
-              transform: `rotate(${c.rot}deg)`, transformOrigin: "50% 90%", padding: "5px 5px 0", zIndex: i,
-            }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: "#3A2018", ...ui.label }}>{c.label}</div>
-              <div style={{ marginTop: 3, fontSize: 11 }}>{c.icon}</div>
-              {[0, 1, 2, 3].map((j) => (
-                <div key={j} style={{ height: 3, marginTop: 4, background: c.lo, width: `${88 - j * 14}%` }} />
-              ))}
-              {/* red marker: urgent scrawl shows up when pressure is high */}
-              {pressure >= 2 && i < pressure - 1 && (
-                <div style={{ position: "absolute", top: 3, right: 4, color: "#C43B34", fontSize: 12, fontWeight: 700, transform: "rotate(8deg)", ...ui.label }}>!</div>
-              )}
-            </div>
-          ))}
+          {fanCards.map((c, i) => {
+            const pos = [{ rot: -14, dx: 0 }, { rot: -4, dx: 26 }, { rot: 7, dx: 54 }][i] || { rot: 0, dx: 54 };
+            return (
+              <div key={c.id} style={{
+                position: "absolute", left: pos.dx, bottom: 0, width: 58, height: 92, background: c.bg,
+                border: "2px solid #120A04", boxShadow: "2px 2px 0 rgba(0,0,0,0.45)",
+                transform: `rotate(${pos.rot}deg)`, transformOrigin: "50% 90%", padding: "5px 5px 0", zIndex: i,
+                overflow: "hidden",
+              }}>
+                <div style={{ fontSize: 11, marginBottom: 2 }}>{c.icon}</div>
+                <div style={{ fontSize: 8, lineHeight: 1.15, fontWeight: 700, color: "#3A2018", maxHeight: 38, overflow: "hidden", ...ui.label }}>{c.name}</div>
+                <div style={{ position: "absolute", left: 5, right: 5, bottom: 4, fontSize: 7, color: c.urgency >= 3 ? "#A3252C" : "#5A4636", ...ui.label }}>{c.due}</div>
+                {/* red marker: urgent scrawl on the loudest papers */}
+                {c.urgency >= 3 && (
+                  <div style={{ position: "absolute", top: 3, right: 4, color: "#C43B34", fontSize: 12, fontWeight: 700, transform: "rotate(8deg)", ...ui.label }}>!</div>
+                )}
+              </div>
+            );
+          })}
           {deskPaperCount > 0 && (
             <span style={{
-              position: "absolute", top: -8, right: 24, zIndex: 5, minWidth: 20, height: 20, padding: "0 4px",
+              position: "absolute", top: -8, right: -16, zIndex: 5, minWidth: 20, height: 20, padding: "0 4px",
               display: "flex", alignItems: "center", justifyContent: "center",
               background: "#C43B34", color: "#F3EDDD", fontSize: 11, border: "2px solid #120A04", ...ui.label,
             }}>{deskPaperCount}</span>
           )}
         </div>
+        )}
 
         {/* ---- Tasks chip: shows live open-task count, opens the overview.
              Full task system still to come — this is just the doorbell. ---- */}
@@ -2940,7 +3272,7 @@ export default function PackItUp() {
             <span style={{ color: "#F2E4C0", fontSize: 13, ...ui.label }}>Tasks</span>
             <span style={{ fontSize: 11, color: "#C9B896", ...ui.label }}>{tasks.filter(isTaskOpen).length}</span>
             {pressure > 0 && (
-              <span style={{ position: "absolute", top: -5, right: -5, width: 12, height: 12, borderRadius: "50%", background: "#C43B34", border: "2px solid #120A04" }} />
+              <span className={pressure >= 2 ? "redPulse" : undefined} style={{ position: "absolute", top: -5, right: -5, width: 12, height: 12, borderRadius: "50%", background: "#C43B34", border: "2px solid #120A04" }} />
             )}
           </button>
         </div>
@@ -3119,6 +3451,15 @@ export default function PackItUp() {
           setTasks={setTasks}
           handled={handled}
           openHandledSheet={() => { setScreen("apartment"); setInvOpen(true); }}
+          storageId={storageId}
+          room={room}
+          storageObj={storageId ? { ...room.objects.find((o) => o.id === storageId), spr: room.sprites[storageId] } : null}
+          storageItems={storageId ? (CONTENTS[sk(room.id, storageId)] || []) : []}
+          contentsState={contentsState}
+          onPackContent={packContent}
+          onSellContent={sellContent}
+          onDonateContent={donateContent}
+          busy={!!busy}
         />
       </div>
     );

@@ -4,6 +4,7 @@ import {
   TASK_CATEGORIES, SAMPLE_JOBS, isOpen, taskPressure,
   PRESSURE_LABELS, PRESSURE_COLORS,
 } from "./tasks.js";
+import { PixelCanvas } from "./BedroomSlice.jsx";
 
 /* ============================================================
    SCREENS — the "next layer" on top of the apartment hub.
@@ -34,6 +35,17 @@ const screenCss = (
       75%  { transform: rotate(-14deg) scale(1.06); }
       100% { opacity: 1; transform: rotate(-14deg) scale(1); }
     }
+    /* the physical stamp block that lifts from the desk corner and
+       travels over the paper before slamming down. Used as an overlay
+       layer above the inspected card; art can be swapped for a PNG later. */
+    @keyframes stampTravel {
+      0%   { transform: translate(-140px, 90px) rotate(20deg) scale(0.6); opacity: 0; }
+      35%  { opacity: 1; }
+      70%  { transform: translate(0, 0) rotate(-14deg) scale(1.15); opacity: 1; }
+      85%  { transform: translate(0, 0) rotate(-14deg) scale(0.92); }
+      100% { transform: translate(0, 0) rotate(-14deg) scale(1); opacity: 0; }
+    }
+    .stampTravel { animation: stampTravel 420ms cubic-bezier(0.2, 1.2, 0.4, 1) both; }
     @keyframes cardOff  { to { transform: translate(120%, -30px) rotate(14deg); opacity: 0; } }
     @keyframes cardFile { to { transform: translate(60%, 140%) rotate(6deg) scale(0.5); opacity: 0; } }
     @keyframes reliefUp {
@@ -75,13 +87,19 @@ const soonTag = <span style={{ fontSize: 9, color: "#8A7350", ...LB }}>(soon)</s
 function MenuScreen({ go, tasks }) {
   const pressure = taskPressure(tasks);
   const count = (cats) => tasks.filter((t) => isOpen(t) && cats.includes(t.category)).length;
+  // soonest open due date per category group, for a "due: X" line on tiles
+  const soonest = (cats) => {
+    const t = tasks.filter((x) => isOpen(x) && cats.includes(x.category));
+    if (!t.length) return null;
+    return t.slice().sort((a, b) => b.urgency - a.urgency)[0].due;
+  };
   const tiles = [
-    { key: "desk",      icon: "🗂️", label: "Desk / Admin",    sub: "papers & job apps", badge: count(["job", "admin", "move"]) },
-    { key: "health",    icon: "🩺", label: "Health / Body",    sub: "use it while covered", badge: count(["health"]) },
-    { key: "inventory", icon: "📦", label: "Inventory",        sub: "packed items", badge: 0 },
-    { key: "log",       icon: "💰", label: "Sold / Donated",   sub: "the money log", badge: 0 },
-    { key: "stretchy",  icon: "🐈", label: "Stretchy",         sub: "orange & fine", badge: count(["cat"]) },
-    { key: "settings",  icon: "⚙️", label: "Settings",         sub: "sound & such", badge: 0 },
+    { key: "desk",      icon: "🗂️", label: "Desk / Admin",    sub: "papers & job apps", badge: count(["job", "admin", "move"]), due: soonest(["job", "admin", "move"]) },
+    { key: "health",    icon: "🩺", label: "Health / Body",    sub: "use it while covered", badge: count(["health"]), due: soonest(["health"]) },
+    { key: "inventory", icon: "📦", label: "Inventory",        sub: "packed items", badge: 0, due: null },
+    { key: "log",       icon: "💰", label: "Sold / Donated",   sub: "the money log", badge: 0, due: null },
+    { key: "stretchy",  icon: "🐈", label: "Stretchy",         sub: "orange & fine", badge: count(["cat"]), due: soonest(["cat"]) },
+    { key: "settings",  icon: "⚙️", label: "Settings",         sub: "sound & such", badge: 0, due: null },
   ];
   return (
     <Screen title="Overview" icon="☰" onBack={() => go("apartment")}>
@@ -110,6 +128,9 @@ function MenuScreen({ go, tasks }) {
             <span style={{ fontSize: 24, marginBottom: 4 }}>{t.icon}</span>
             <span style={{ color: "#F2E4C0", fontSize: 13 }}>{t.label}</span>
             <span style={{ color: "#8A7350", fontSize: 10 }}>{t.sub}</span>
+            {t.due && (
+              <span style={{ color: "#C74B4F", fontSize: 10, marginTop: 2, ...LB }}>due: {t.due}</span>
+            )}
             {t.badge > 0 && (
               <span style={{
                 position: "absolute", top: 8, right: 8, minWidth: 20, height: 20, padding: "0 4px",
@@ -160,9 +181,19 @@ function DeskCard({ task, small, onClick, resolving }) {
           </div>
         )
       ) : (
-        <div style={{ fontSize: small ? 8 : 11, marginTop: small ? 3 : 8, opacity: 0.8, ...LB }}>
-          {small ? task.due : `due: ${task.due}`}
-        </div>
+        // non-job tasks get the same grid treatment, colored blue like the fan's admin card
+        small ? (
+          <div style={{ fontSize: 8, marginTop: 3, opacity: 0.75, ...LB }}>
+            <span style={{ color: "#A3252C" }}>{task.due}</span>
+          </div>
+        ) : (
+          <div style={{ fontSize: 11, marginTop: 8, display: "grid", gridTemplateColumns: "auto 1fr", gap: "4px 10px", ...LB }}>
+            <span style={{ opacity: 0.6 }}>kind</span><span>{TASK_CATEGORIES[task.category].label}</span>
+            <span style={{ opacity: 0.6 }}>due</span><span style={{ color: "#A3252C" }}>{task.due}</span>
+            <span style={{ opacity: 0.6 }}>status</span><span>{task.status}</span>
+            <span style={{ opacity: 0.6 }}>relief</span><span>{task.relief === "stamp" ? "stamp it" : task.relief === "file" ? "file it" : "slide it away"}</span>
+          </div>
+        )
       )}
       {!small && task.jobId && SAMPLE_JOBS[task.jobId].notes && (
         <div style={{ fontSize: 10, marginTop: 8, padding: "5px 7px", background: "rgba(255,255,255,0.35)", border: "1px dashed rgba(0,0,0,0.3)", ...LB }}>
@@ -274,6 +305,24 @@ function DeskScreen({ go, tasks, setTasks }) {
           ) : (
             <div style={{ color: "#8A7350", fontSize: 12, textAlign: "center", ...LB }}>
               Tap a paper above to inspect it.
+            </div>
+          )}
+          {/* the traveling stamp block — sweeps in from the desk corner and
+              slams onto the paper. Procedural for now; swap the inner block for
+              a PNG of a real rubber stamp when one is provided. */}
+          {resolving && (
+            <div className="stampTravel" style={{
+              position: "absolute", top: "32%", left: "18%", zIndex: 6, pointerEvents: "none",
+              width: 64, height: 64, display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <div style={{
+                width: "100%", height: "100%", background: "#2A1709",
+                border: `5px solid ${resolving.mode === "file" ? "#44695B" : "#A3252C"}`,
+                borderRadius: 10, boxShadow: "0 4px 0 rgba(0,0,0,0.4)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: resolving.mode === "file" ? "#44695B" : "#A3252C",
+                fontSize: 26, ...LB,
+              }}>★</div>
             </div>
           )}
           {relief && (
@@ -395,12 +444,25 @@ function HealthScreen({ go }) {
 }
 
 /* ================= INVENTORY & LOG (read-only overviews) ================= */
-function listRow(key, name, room, tag, tagColor) {
+function listRow(key, name, room, tag, tagColor, spr) {
+  // tiny sprite thumbnail: fit the object's sprite into ~28px on its largest side
+  const maxDim = 28;
+  const w = spr ? spr.w : 0, h = spr ? spr.h : 0;
+  const fit = w && h ? Math.min(maxDim / w, maxDim / h) : 0;
   return (
-    <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, padding: "10px 12px", background: "#1A0F06", border: "2px solid #4A2E17" }}>
-      <div>
-        <div style={{ color: "#F2E4C0", fontSize: 13, ...LB }}>{name}</div>
-        <div style={{ color: "#8A7350", fontSize: 10, ...LB }}>{room}</div>
+    <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginTop: 8, padding: "10px 12px", background: "#1A0F06", border: "2px solid #4A2E17" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {spr && (
+          <div style={{ flex: "0 0 auto", width: maxDim, height: maxDim, display: "flex", alignItems: "center", justifyContent: "center", background: "#241509", border: "2px solid #4A2E17", overflow: "hidden" }}>
+            <div style={{ transform: `scale(${fit})`, transformOrigin: "center", imageRendering: "pixelated" }}>
+              <PixelCanvas w={w} h={h} draw={spr.draw} />
+            </div>
+          </div>
+        )}
+        <div>
+          <div style={{ color: "#F2E4C0", fontSize: 13, ...LB }}>{name}</div>
+          <div style={{ color: "#8A7350", fontSize: 10, ...LB }}>{room}</div>
+        </div>
       </div>
       <div style={{ color: tagColor, fontSize: 12, ...LB }}>{tag}</div>
     </div>
@@ -417,7 +479,7 @@ function InventoryScreen({ go, handled, openHandledSheet }) {
       {packed.length === 0 && (
         <div style={{ color: "#8A7350", fontSize: 12, marginTop: 12, ...LB }}>Nothing packed yet. The boxes are waiting.</div>
       )}
-      {packed.map((h, i) => listRow(i, h.name, h.room, "packed", "#B07A3C"))}
+      {packed.map((h, i) => listRow(i, h.name, h.room, "packed", "#B07A3C", h.spr))}
       <button onClick={openHandledSheet} style={{ marginTop: 14, width: "100%", padding: "12px", color: "#FFD97A", fontSize: 12, cursor: "pointer", ...FR, ...LB }}>
         Manage this room's items (unpack / take back)
       </button>
@@ -438,8 +500,8 @@ function LogScreen({ go, handled }) {
       {sold.length === 0 && donated.length === 0 && (
         <div style={{ color: "#8A7350", fontSize: 12, marginTop: 12, ...LB }}>No sales or donations logged yet.</div>
       )}
-      {sold.map((h, i) => listRow(`s${i}`, h.name, h.room, `+$${h.amount}`, "#D9A33C"))}
-      {donated.map((h, i) => listRow(`d${i}`, h.name, h.room, "donated ♥", "#B9CEDC"))}
+      {sold.map((h, i) => listRow(`s${i}`, h.name, h.room, `+$${h.amount}`, "#D9A33C", h.spr))}
+      {donated.map((h, i) => listRow(`d${i}`, h.name, h.room, "donated ♥", "#B9CEDC", h.spr))}
       <div style={{ marginTop: 14, color: "#6B563B", fontSize: 10, textAlign: "center", ...LB }}>
         Full log with dates & receipts {soonTag}
       </div>
@@ -460,7 +522,10 @@ function StretchyScreen({ go, tasks }) {
       <div style={{ display: "flex", gap: 14, alignItems: "center", padding: "14px", ...FR }}>
         <div style={{
           width: 128, height: 128, flex: "0 0 auto", imageRendering: "pixelated",
-          backgroundImage: `url(${CAT_SHEET})`, backgroundPosition: "0 0", backgroundSize: "1024px 6528px",
+          backgroundImage: `url(${CAT_SHEET})`,
+          // row 25 = "look around"; its last frame (col 3) is the head-turned-toward-you
+          // eye-contact pose. 32px frames on an 8-col sheet (256px wide, 1632px tall).
+          backgroundPosition: "-96px -800px", backgroundSize: "1024px 6528px",
           border: "3px solid #120A04", backgroundColor: "#3A2410",
         }} />
         <div>
@@ -496,12 +561,29 @@ function SettingsScreen({ go }) {
       {rows.map(([k, label]) => (
         <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, padding: "12px", background: "#1A0F06", border: "2px solid #4A2E17" }}>
           <span style={{ color: "#F2E4C0", fontSize: 13, ...LB }}>{label} {soonTag}</span>
-          <button onClick={() => flip(k)} style={{
-            width: 52, height: 26, padding: 2, border: "3px solid #120A04", cursor: "pointer",
-            background: t[k] ? "#5D7C3B" : "#241509", display: "flex", justifyContent: t[k] ? "flex-end" : "flex-start",
-          }}>
-            <span style={{ width: 16, height: "100%", background: "#EFE7D2", border: "2px solid #120A04", display: "block" }} />
-          </button>
+          {/* a real native checkbox on top of the styled track is what makes
+             iOS produce a tiny toggle haptic — purely cosmetic haptics on a
+             web button don't fire. The checkbox is visually hidden but drives
+             the same `flip` state. */}
+          <div style={{ position: "relative", width: 52, height: 26 }}>
+            <div style={{
+              width: 52, height: 26, padding: 2, border: "3px solid #120A04",
+              background: t[k] ? "#5D7C3B" : "#241509", display: "flex", justifyContent: t[k] ? "flex-end" : "flex-start",
+              pointerEvents: "none",
+            }}>
+              <span style={{ width: 16, height: "100%", background: "#EFE7D2", border: "2px solid #120A04", display: "block" }} />
+            </div>
+            <input
+              type="checkbox"
+              checked={t[k]}
+              onChange={() => flip(k)}
+              aria-label={label}
+              style={{
+                position: "absolute", inset: 0, width: "100%", height: "100%",
+                margin: 0, padding: 0, opacity: 0, cursor: "pointer",
+              }}
+            />
+          </div>
         </div>
       ))}
       {["Reset save", "Export save", "Import save"].map((label) => (
@@ -517,12 +599,103 @@ function SettingsScreen({ go }) {
   );
 }
 
+/* ================= STORAGE (inside cabinets/drawers/closets) ================= */
+/* Tapping a storage object on the hub opens this overlay. Shows the items
+   inside as a grid of tappable sprites. Tap an item = pack immediately;
+   sell/donate are secondary buttons on each card. The cabinet sprite itself
+   is rendered as a header so you remember what you're inside. */
+function StorageScreen({ go, storageId, room, storageObj, items, contentsState, onPack, onSell, onDonate, busy }) {
+  if (!storageObj) return null;
+  const storageKey = `${room.id}:${storageId}`;
+  const remaining = items.filter((it) => {
+    const st = contentsState[`${storageKey}:${it.id}`];
+    // missing state = fresh/unhandled item, counts toward remaining
+    if (!st) return true;
+    return !st.packed && !st.sold && !st.donated;
+  }).length;
+
+  return (
+    <Screen title={storageObj.name} icon="≡" onBack={() => go("apartment")}>
+      {/* header: cabinet sprite (scaled to fit) + count of remaining items */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", marginBottom: 12, ...FR }}>
+        <div style={{ flex: "0 0 auto", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", background: "#241509", border: "2px solid #4A2E17", overflow: "hidden" }}>
+          {(() => {
+            const spr = storageObj.spr;
+            if (!spr) return null;
+            const maxDim = 40;
+            const fit = Math.min(maxDim / (spr.w * CELL), maxDim / (spr.h * CELL));
+            return (
+              <div style={{ transform: `scale(${fit})`, transformOrigin: "center", imageRendering: "pixelated" }}>
+                <PixelCanvas w={spr.w} h={spr.h} draw={spr.draw} />
+              </div>
+            );
+          })()}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ color: "#F2E4C0", fontSize: 14, ...LB }}>{storageObj.name}</div>
+          <div style={{ color: remaining > 0 ? "#C9B896" : "#5D7C3B", fontSize: 11, ...LB }}>
+            {remaining > 0 ? `${remaining} item${remaining === 1 ? "" : "s"} inside` : "empty — safe to pack the whole thing"}
+          </div>
+        </div>
+      </div>
+
+      {/* item grid: each card shows sprite + name + (state tag or action row) */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10 }}>
+        {items.map((it) => {
+          const k = `${storageKey}:${it.id}`;
+          const st = contentsState[k] || { packed: false, sold: false, soldFor: 0, donated: false };
+          const done = st.packed || st.sold || st.donated;
+          // sprite thumbnail fit
+          const maxDim = 40;
+          const fit = it.spr ? Math.min(maxDim / it.spr.w, maxDim / it.spr.h) : 0;
+          return (
+            <div key={it.id} style={{
+              padding: 10, background: done ? "#0F0904" : "#1A0F06", border: "2px solid #4A2E17",
+              opacity: done ? 0.5 : 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+            }}>
+              {it.spr && (
+                <div style={{ width: maxDim, height: maxDim, display: "flex", alignItems: "center", justifyContent: "center", background: "#241509", border: "2px solid #4A2E17", overflow: "hidden" }}>
+                  <div style={{ transform: `scale(${fit})`, transformOrigin: "center", imageRendering: "pixelated" }}>
+                    <PixelCanvas w={it.spr.w} h={it.spr.h} draw={it.spr.draw} />
+                  </div>
+                </div>
+              )}
+              <div style={{ color: "#F2E4C0", fontSize: 11, textAlign: "center", ...LB }}>{it.name}</div>
+              {st.packed && <div style={{ color: "#C9B896", fontSize: 10, ...LB }}>packed</div>}
+              {st.sold   && <div style={{ color: "#D9A33C", fontSize: 10, ...LB }}>sold ${st.soldFor}</div>}
+              {st.donated && <div style={{ color: "#77974C", fontSize: 10, ...LB }}>donated</div>}
+              {!done && (
+                <div style={{ display: "flex", gap: 4, marginTop: 2 }}>
+                  <button onClick={() => onPack(storageId, it.id)} disabled={busy}
+                    style={{ flex: 1, padding: "5px 6px", fontSize: 10, cursor: busy ? "not-allowed" : "pointer", color: "#F2E4C0", background: "#3A2410", border: "2px solid #120A04", ...LB }}>
+                    📦 Pack
+                  </button>
+                  <button onClick={() => onSell(storageId, it.id)} disabled={busy || !it.value}
+                    title={it.value ? `sell for ~$${it.value}` : "can't sell this"}
+                    style={{ flex: 0, padding: "5px 6px", fontSize: 10, cursor: busy || !it.value ? "not-allowed" : "pointer", color: "#FFD97A", background: "#3A2410", border: "2px solid #120A04", ...LB, opacity: it.value ? 1 : 0.4 }}>
+                    💰
+                  </button>
+                  <button onClick={() => onDonate(storageId, it.id)} disabled={busy}
+                    style={{ flex: 0, padding: "5px 6px", fontSize: 10, cursor: busy ? "not-allowed" : "pointer", color: "#9CC76F", background: "#3A2410", border: "2px solid #120A04", ...LB }}>
+                    🎁
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </Screen>
+  );
+}
+
 /* ================= ROUTER ================= */
-export default function ScreenLayer({ screen, go, tasks, setTasks, handled, openHandledSheet }) {
+export default function ScreenLayer({ screen, go, tasks, setTasks, handled, openHandledSheet, storageId, room, storageObj, storageItems, contentsState, onPackContent, onSellContent, onDonateContent, busy }) {
   if (screen === "apartment") return null;
   if (screen === "menu")      return <MenuScreen go={go} tasks={tasks} />;
   if (screen === "desk")      return <DeskScreen go={go} tasks={tasks} setTasks={setTasks} />;
   if (screen === "health")    return <HealthScreen go={go} />;
+  if (screen === "storage")   return <StorageScreen go={go} storageId={storageId} room={room} storageObj={storageObj} items={storageItems} contentsState={contentsState} onPack={onPackContent} onSell={onSellContent} onDonate={onDonateContent} busy={busy} />;
   if (screen === "inventory") return <InventoryScreen go={go} handled={handled} openHandledSheet={openHandledSheet} />;
   if (screen === "log")       return <LogScreen go={go} handled={handled} />;
   if (screen === "stretchy")  return <StretchyScreen go={go} tasks={tasks} />;
