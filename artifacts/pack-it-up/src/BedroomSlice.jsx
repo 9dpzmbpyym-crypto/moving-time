@@ -1682,9 +1682,12 @@ function Stretchy({ spots, enterSide, pressure = 0, onOpen }) {
   const HALF = fw / 2;
   const OFF = HALF + 24;                  // spawn fully off the side
   const CLAMP_MIN = HALF, CLAMP_MAX = STAGE_W - HALF; // keep frame on-stage
+  /* Position lives in a ref and is written straight to the DOM every rAF tick;
+     React state only holds what changes the rendered sprite (anim row, frame,
+     facing), so the component re-renders a few times a second instead of 60. */
+  const wrapRef = useRef(null);
+  const posRef = useRef({ x: enterSide < 0 ? -OFF : STAGE_W + OFF, y: startY });
   const [view, setView] = useState(() => ({
-    x: enterSide < 0 ? -OFF : STAGE_W + OFF,
-    y: startY,
     anim: "idle",
     frame: 0,
     facing: enterSide < 0 ? 1 : -1,
@@ -1809,7 +1812,19 @@ function Stretchy({ spots, enterSide, pressure = 0, onOpen }) {
           s.frame = a.once ? Math.min(s.frame + 1, a.n - 1) : (s.frame + 1) % a.n;
         }
       }
-      setView({ x: s.x, y: s.y, anim: s.anim, frame: s.frame, facing: s.facing });
+      // position: straight to the DOM, no re-render
+      posRef.current = { x: s.x, y: s.y };
+      const el = wrapRef.current;
+      if (el) {
+        el.style.left = `${s.x - HALF}px`;
+        el.style.top = `${s.y - fw * CAT_FOOT_FRAC}px`;
+      }
+      // sprite: re-render only when the visible frame actually changes
+      setView((v) =>
+        v.anim === s.anim && v.frame === s.frame && v.facing === s.facing
+          ? v
+          : { anim: s.anim, frame: s.frame, facing: s.facing }
+      );
       raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
@@ -1822,12 +1837,13 @@ function Stretchy({ spots, enterSide, pressure = 0, onOpen }) {
   const guilty = pressure >= 2;
   return (
     <div
+      ref={wrapRef}
       aria-hidden={guilty ? undefined : "true"}
       onClick={guilty && onOpen ? (e) => { e.stopPropagation(); onOpen(); } : undefined}
       style={{
         position: "absolute",
-        left: view.x - fw / 2,
-        top: view.y - fw * CAT_FOOT_FRAC,
+        left: posRef.current.x - fw / 2,
+        top: posRef.current.y - fw * CAT_FOOT_FRAC,
         width: fw,
         height: fw,
         pointerEvents: guilty && onOpen ? "auto" : "none",
