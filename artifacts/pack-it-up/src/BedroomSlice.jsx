@@ -14,7 +14,7 @@ import CAT_SHEET from "./assets/Cat-Sheet.png";
 // The apartment stays the hub; these render as full-screen overlays above it.
 import ScreenLayer from "./Screens.jsx";
 import { INITIAL_TASKS, isOpen as isTaskOpen, taskPressure, SAMPLE_JOBS, TASK_CATEGORIES } from "./tasks.js";
-import { CONTENTS, hasContents } from "./contents.js";
+import { CONTENTS, hasContents, remainingCount } from "./contents.js";
 
 /* ============================================================
    PACK IT UP — vertical slice: The Bedroom
@@ -126,7 +126,7 @@ function drawShell(ctx) {
    SPRITES — one draw fn per object (low-res cells)
    ============================================================ */
 const SPRITES = {
-  closet_door: { w: 28, h: 89, draw(ctx) {
+  closet_door: { w: 28, h: 89, faceGlowRegions: [[5, 8, 18, 34], [5, 48, 18, 34]], draw(ctx) {
     r(ctx, P.out, 0, 0, 28, 89);
     r(ctx, P.white, 2, 2, 24, 86);
     outlineRect(ctx, P.whiteLo, 5, 8, 18, 34);
@@ -880,7 +880,7 @@ const KITCHEN_SPRITES = {
     r(ctx, P.whiteLo, 4, 39, 72, 4);
     r(ctx, P.out, 4, 43, 72, 1);
   }},
-  fridge: { w: 32, h: 60, draw(ctx) {
+  fridge: { w: 32, h: 60, faceGlowRegions: [[4, 3, 21, 18], [4, 23, 21, 32]], draw(ctx) {
     r(ctx, P.out, 0, 0, 32, 60);
     r(ctx, P.white, 1, 1, 30, 58);
     r(ctx, "#FBF6E6", 1, 1, 30, 2);
@@ -890,7 +890,7 @@ const KITCHEN_SPRITES = {
     r(ctx, "#B8AE96", 25, 28, 2, 26);
     r(ctx, P.whiteLo, 1, 56, 30, 3);
   }},
-  pantry: { w: 26, h: 72, draw(ctx) {
+  pantry: { w: 26, h: 72, faceGlowRegions: [[4, 5, 18, 30], [4, 39, 18, 28]], draw(ctx) {
     r(ctx, P.out, 0, 0, 26, 72);
     r(ctx, P.cream, 1, 1, 24, 70); r(ctx, "#FBF6E6", 1, 1, 24, 2);
     outlineRect(ctx, P.creamLo, 4, 5, 18, 30);
@@ -2088,7 +2088,7 @@ const HAPTIC = { room: [10], pack: [20], sell: [15, 30, 15], donate: [12] };
 /* ============================================================
    APP
    ============================================================ */
-export default function PackItUp() {
+export default function PackItUp({ glowMode = "split" }) {
   /* mobile = portrait phone layout with its own UI chrome; desktop keeps the
      original single-scale stage. */
   const mobileQuery = "(max-width: 760px), (orientation: portrait)";
@@ -2679,20 +2679,20 @@ export default function PackItUp() {
         50%      { filter: drop-shadow(0 0 12px rgba(143,209,79,0.8)) drop-shadow(0 0 6px rgba(218,200,90,0.7)); }
       }
       .portal { animation: portalGlow 2.6s ease-in-out infinite; }
-      /* drawer-level glow: modeled on the closet door's .portal — filter: drop-shadow
-         hugs the silhouette of the element it's applied to. Here the element is a
-         transparent div sized to each drawer rect, with a very faint green fill so
-         the drop-shadow has alpha to wrap (the fill itself is nearly invisible on
-         the drawer face). Two layered drop-shadows blend green + yellow, more
-         delicate than .portal (smaller blur, lower opacity). Pulses per-drawer. */
+      /* drawer-level glow: animates box-shadow (outer glow + small spread) and a
+         breathing background alpha so the drawer FACE itself visibly brightens
+         and dims. Two layered box-shadows blend green + yellow, more delicate
+         than .portal (smaller blur, lower opacity). Pulses per-drawer.
+         box-shadow is used instead of drop-shadow because the old drop-shadow
+         on a 10%-opaque div inherited that alpha and was nearly invisible. */
       @keyframes drawerGlowPulse {
-        0%, 100% { filter: drop-shadow(0 0 4px rgba(143,209,79,0.45)) drop-shadow(0 0 2px rgba(218,200,90,0.35)); }
-        50%      { filter: drop-shadow(0 0 9px rgba(143,209,79,0.75)) drop-shadow(0 0 5px rgba(218,200,90,0.60)); }
+        0%, 100% { box-shadow: 0 0 5px 1px rgba(143,209,79,0.45), 0 0 2px 0 rgba(218,200,90,0.35); background: rgba(143,209,79,0.08); }
+        50%      { box-shadow: 0 0 10px 2px rgba(143,209,79,0.75), 0 0 5px 1px rgba(218,200,90,0.60); background: rgba(143,209,79,0.22); }
       }
       .drawerGlow {
         animation: drawerGlowPulse 2.8s ease-in-out infinite;
         pointer-events: none;
-        background: rgba(143,209,79,0.10);
+        background: rgba(143,209,79,0.15);
         border-radius: 1px;
       }
       /* red dot pulse for the Tasks chip when pressure is high */
@@ -2765,6 +2765,21 @@ export default function PackItUp() {
           const isPacking = isCur && packingId === o.id;
           const isRemoving = isCur && (sellingId === o.id || donatingId === o.id);
           const isBusy = isPacking || isRemoving;
+          const storageHasRemaining =
+            hasContents(rm.id, o.id) &&
+            remainingCount(rm.id, o.id, contentsState) > 0;
+          const activeGlowRegions =
+            glowMode === "face"
+              ? (spr?.glowRegions || spr?.faceGlowRegions)
+              : spr?.glowRegions;
+          const useOutlineGlow =
+            storageHasRemaining &&
+            (glowMode === "outline" ||
+              (glowMode === "split" && !spr?.glowRegions));
+          const useFaceGlow =
+            storageHasRemaining &&
+            glowMode !== "outline" &&
+            !!activeGlowRegions;
           if (rm.id === "dining" && o.id === "dining_chairs" && placed.parts) {
             const p = placed.parts;
             const common = { position: "absolute", left: placed.x, top: placed.y, transform: `scale(${placed.scale || 1})`, transformOrigin: "top left" };
@@ -2798,7 +2813,7 @@ export default function PackItUp() {
           return (
             <div
               key={o.id}
-              className={`obj ${isSel ? "sel" : ""} ${isPacking ? "packing" : ""} ${isRemoving ? "removing" : ""} ${o.removable ? "" : "static"} ${rm.id === "bathroom" && o.id === "mirror_cabinet" ? "portal" : ""} ${(hasContents(rm.id, o.id) && !spr?.glowRegions) ? "portal" : ""}`}
+              className={`obj ${isSel ? "sel" : ""} ${isPacking ? "packing" : ""} ${isRemoving ? "removing" : ""} ${o.removable ? "" : "static"} ${rm.id === "bathroom" && o.id === "mirror_cabinet" ? "portal" : ""} ${useOutlineGlow ? "portal" : ""}`}
               style={{ position: "absolute", left: placed.x, top: placed.y, zIndex: o.z * 10, transform: `scale(${placed.scale || 1})`, transformOrigin: "top left", ...packVars }}
               onClick={(e) => {
                 e.stopPropagation();
@@ -2819,17 +2834,10 @@ export default function PackItUp() {
                   behavior as the closet door's .portal, but rect-shaped since
                   drawers are rectangles. Pulses via .drawerGlow keyframe.
                   Only shows while the storage still has unpacked items. */}
-              {hasContents(rm.id, o.id) && spr.glowRegions && (() => {
-                const storageKey = sk(rm.id, o.id);
-                const remaining = (CONTENTS[storageKey] || []).filter((it) => {
-                  const st = contentsState[`${storageKey}:${it.id}`];
-                  if (!st) return true;
-                  return !st.packed && !st.sold && !st.donated;
-                }).length;
-                if (remaining === 0) return null;
+              {useFaceGlow && (() => {
                 // stagger each drawer's pulse so they don't all breathe in unison
                 const delays = ["0s", "0.7s", "1.4s", "2.1s", "0.35s", "1.05s", "1.75s", "2.45s"];
-                return spr.glowRegions.map(([gx, gy, gw, gh], i) => (
+                return activeGlowRegions.map(([gx, gy, gw, gh], i) => (
                   <div
                     key={`drawerGlow-${i}`}
                     className="drawerGlow"

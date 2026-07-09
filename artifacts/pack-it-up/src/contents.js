@@ -1,3 +1,10 @@
+import assetManifest from "./assets/items/packitup_cropped_assets/manifest.json";
+
+const normalizedAssetModules = import.meta.glob(
+  "./assets/items/packitup_cropped_assets/normalized/*.png",
+  { eager: true, import: "default" },
+);
+
 /* contents.js — items living inside closed-storage objects across the apartment.
  *
  * Each key is `${roomId}:${storageId}` (matching the objState sk() namespace).
@@ -8,11 +15,62 @@
  * a procedural sprite for a PNG later is a one-line change (replace draw() with
  * an image-draw helper, or extend PixelCanvas to accept an img src).
  *
- * For now these use tiny procedural sprites built from the BedroomSlice palette
- * + helpers (r, outlineRect) so the feature is clickable end-to-end without
- * needing the final PNGs. Pantry is the pilot; other rooms are stubbed so the
- * wiring is visible but not overwhelming.
+ * Final item art comes from the normalized transparent PNG asset pack. The tiny
+ * procedural sprites remain as graceful fallbacks for items without custom art.
  */
+
+const normalizedModuleKey = (filename) =>
+  `./assets/items/packitup_cropped_assets/normalized/${filename}`;
+
+// Manifest-backed registry. Keeping every metadata field here makes this useful
+// for later inventory/task/log screens without coupling those screens to files.
+export const ITEM_ASSETS = Object.fromEntries(
+  assetManifest.map((entry) => [
+    entry.asset_filename.replace(/\.png$/i, ""),
+    {
+      id: entry.asset_filename.replace(/\.png$/i, ""),
+      filename: entry.asset_filename,
+      src: normalizedAssetModules[normalizedModuleKey(entry.asset_filename)] || null,
+      room: entry.rooms,
+      category: entry.categories,
+      usageType: entry.usage_type,
+      displayName: entry.source_label,
+      canvasSize: entry.canvas_size_actual,
+    },
+  ]),
+);
+
+const loadedImages = new Map();
+const imageReadyPromises = [];
+
+const pngSprite = (filename) => {
+  const asset = ITEM_ASSETS[filename.replace(/\.png$/i, "")];
+  if (!asset?.src || typeof Image === "undefined") return null;
+
+  let image = loadedImages.get(filename);
+  if (!image) {
+    image = new Image();
+    image.decoding = "async";
+    const ready = new Promise((resolve) => {
+      image.addEventListener("load", resolve, { once: true });
+      // A broken optional asset must never block the storage screen.
+      image.addEventListener("error", resolve, { once: true });
+    });
+    imageReadyPromises.push(ready);
+    image.src = asset.src;
+    loadedImages.set(filename, image);
+  }
+
+  return {
+    w: asset.canvasSize,
+    h: asset.canvasSize,
+    draw(ctx) {
+      if (!image.complete || !image.naturalWidth) return;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(image, 0, 0, asset.canvasSize, asset.canvasSize);
+    },
+  };
+};
 
 // local copies of the palette + helpers so this file is standalone until PNGs arrive.
 // (kept in sync with BedroomSlice.jsx — once sprites move to PNGs these are moot)
@@ -172,85 +230,160 @@ const glass_cup = {
   },
 };
 
+const withArt = (filename, fallback) => pngSprite(filename) || fallback;
+
+const ART = {
+  cereal: withArt("s1_r01_i01_cereal_box.png", cerealBox),
+  pasta: withArt("s1_r01_i02_pasta_box.png", pastaBag),
+  cannedFood: withArt("s1_r01_i05_green_canned_food.png", soupCan),
+  sauce: withArt("s1_r01_i07_red_sauce_jar.png", soupCan),
+  spiceGreen: withArt("s1_r02_i01_green_spice_jar.png", spiceJar),
+  spiceRed: withArt("s1_r02_i03_paprika_red_spice_jar.png", spiceJar),
+  plate: withArt("s1_r08_i01_dinner_plate.png", plate),
+  bowl: withArt("s1_r08_i03_bowl.png", plate),
+  redMug: withArt("s1_r08_i04_red_mug.png", mug),
+  foldedSweater: withArt("s2_r01_i01_green_folded_sweater.png", sock),
+  foldedJeans: withArt("s2_r01_i03_folded_jeans.png", sock),
+  sweaterStack: withArt("s2_r01_i06_purple_folded_sweater_stack.png", sock),
+  journal: withArt("s2_r08_i02_blue_journal_keepsake_book.png", book),
+  letter: withArt("s2_r08_i04_letter_postcard.png", photo),
+  lipstick: withArt("s2_r09_i01_lipstick.png", spiceJar),
+  blush: withArt("s2_r09_i03_blush_compact.png", spiceJar),
+  eyeshadow: withArt("s2_r09_i04_eyeshadow_palette.png", spiceJar),
+  mascara: withArt("s2_r09_i05_mascara_tube_wand.png", spiceJar),
+  perfume: withArt("s2_r09_i08_perfume_bottle.png", mug),
+  shirt: withArt("s2_r02_i01_white_button_up_shirt.png", towel),
+  dress: withArt("s2_r02_i03_green_dress.png", towel),
+  coat: withArt("s2_r03_i01_brown_long_coat.png", book),
+  peacoat: withArt("s2_r03_i05_navy_peacoat.png", book),
+  prescription: withArt("s3_r01_i01_prescription_bottle.png", bottle),
+  blisterPack: withArt("s3_r01_i03_pill_blister_pack.png", spiceJar),
+  pillOrganizer: withArt("s3_r01_i08_weekly_pill_organizer.png", binder),
+  toothpaste: withArt("s3_r04_i02_toothpaste.png", bottle),
+  deodorant: withArt("s3_r04_i03_deodorant.png", bottle),
+  soap: withArt("s3_r04_i04_soap_bar.png", towel),
+  razor: withArt("s3_r04_i05_razor.png", bottle),
+  lotion: withArt("s3_r04_i06_lotion_bottle.png", bottle),
+  passport: withArt("s3_r05_i01_passport.png", book),
+  fileFolders: withArt("s3_r05_i03_blue_file_folders.png", binder),
+  penCup: withArt("s3_r08_i01_pen_cup.png", mug),
+  stickyNotes: withArt("s3_r08_i06_sticky_notes.png", spiceJar),
+  notebook: withArt("s3_r08_i07_blue_notebook.png", book),
+  wine: withArt("s4_r01_i01_red_wine_bottle.png", bottle),
+  liquor: withArt("s4_r01_i04_liquor_bottle.png", bottle),
+  wineGlass: withArt("s4_r02_i01_red_wine_glass.png", glass_cup),
+  champagne: withArt("s4_r02_i02_champagne_flute.png", glass_cup),
+  gameConsole: withArt("s4_r05_i01_game_console.png", remote),
+  controller: withArt("s4_r05_i03_game_controller.png", remote),
+  cards: withArt("s4_r06_i02_playing_card_deck.png", book),
+  dice: withArt("s4_r06_i03_dice.png", spiceJar),
+};
+
 // ---- the map: which storage objects contain what ----
 
 export const CONTENTS = {
   // kitchen — pilot room
   "kitchen:pantry": [
-    { id: "cereal_1",  name: "Cereal Box",        spr: cerealBox, value: 2 },
-    { id: "pasta_1",   name: "Pasta Bag",          spr: pastaBag,  value: 1 },
-    { id: "soup_1",    name: "Soup Can",            spr: soupCan,   value: 1 },
-    { id: "soup_2",    name: "Soup Can",            spr: soupCan,   value: 1 },
-    { id: "spice_1",   name: "Spice Jar",           spr: spiceJar,  value: 3 },
-    { id: "spice_2",   name: "Spice Jar",           spr: spiceJar,  value: 3 },
+    { id: "cereal_1",  name: "Cereal Box",          spr: ART.cereal, value: 2 },
+    { id: "pasta_1",   name: "Pasta Box",           spr: ART.pasta, value: 1 },
+    { id: "soup_1",    name: "Canned Food",         spr: ART.cannedFood, value: 1 },
+    { id: "soup_2",    name: "Sauce Jar",           spr: ART.sauce, value: 1 },
+    { id: "spice_1",   name: "Green Spice Jar",     spr: ART.spiceGreen, value: 3 },
+    { id: "spice_2",   name: "Paprika",             spr: ART.spiceRed, value: 3 },
   ],
   "kitchen:fridge": [
     { id: "leftovers", name: "Leftovers",          spr: soupCan,   value: 0 },
   ],
   // bathroom
   "bathroom:bath_vanity": [
-    { id: "towel_1",   name: "Hand Towel",          spr: towel,     value: 4 },
-    { id: "towel_2",   name: "Hand Towel",          spr: towel,     value: 4 },
-    { id: "mug_1",     name: "Toothbrush Mug",      spr: mug,       value: 2 },
+    { id: "towel_1",   name: "Toothpaste",          spr: ART.toothpaste, value: 4 },
+    { id: "towel_2",   name: "Deodorant",           spr: ART.deodorant, value: 4 },
+    { id: "mug_1",     name: "Soap",                spr: ART.soap, value: 2 },
+    { id: "razor_1",   name: "Razor",               spr: ART.razor, value: 3 },
+    { id: "lotion_1",  name: "Lotion",              spr: ART.lotion, value: 5 },
   ],
   // bedroom
   "bedroom:nightstand": [
-    { id: "book_1",    name: "Paperback",           spr: book,      value: 5 },
-    { id: "mug_2",     name: "Water Glass",         spr: mug,       value: 1 },
+    { id: "book_1",    name: "Blue Journal",        spr: ART.journal, value: 5 },
+    { id: "mug_2",     name: "Letter / Postcard",   spr: ART.letter, value: 1 },
   ],
   "bedroom:vanity": [
-    { id: "lip_balm",  name: "Lip Balm",            spr: spiceJar,   value: 2 },
-    { id: "hair_tie",  name: "Hair Tie",            spr: sock,       value: 1 },
-    { id: "perfume",   name: "Perfume",             spr: mug,        value: 15 },
+    { id: "lip_balm",  name: "Lipstick",            spr: ART.lipstick, value: 2 },
+    { id: "hair_tie",  name: "Blush Compact",       spr: ART.blush, value: 1 },
+    { id: "eyeshadow", name: "Eyeshadow Palette",   spr: ART.eyeshadow, value: 8 },
+    { id: "mascara",   name: "Mascara",             spr: ART.mascara, value: 4 },
+    { id: "perfume",   name: "Perfume",             spr: ART.perfume, value: 15 },
   ],
   "bedroom:dresser": [
-    { id: "sock_1",    name: "Sock",               spr: sock,      value: 1 },
-    { id: "sock_2",    name: "Sock",               spr: sock,      value: 1 },
-    { id: "sock_3",    name: "Sock",               spr: sock,      value: 1 },
+    { id: "sock_1",    name: "Green Sweater",       spr: ART.foldedSweater, value: 8 },
+    { id: "sock_2",    name: "Folded Jeans",        spr: ART.foldedJeans, value: 10 },
+    { id: "sock_3",    name: "Purple Sweater Stack", spr: ART.sweaterStack, value: 12 },
   ],
   "bedroom:closet_door": [
-    { id: "coat_1",    name: "Winter Coat",        spr: book,      value: 25 },
-    { id: "jacket_1",  name: "Denim Jacket",       spr: sock,      value: 18 },
-    { id: "shirt_1",   name: "Hang Shirt",         spr: towel,     value: 8 },
+    { id: "coat_1",    name: "Brown Coat",          spr: ART.coat, value: 25 },
+    { id: "jacket_1",  name: "Navy Peacoat",       spr: ART.peacoat, value: 18 },
+    { id: "shirt_1",   name: "White Shirt",         spr: ART.shirt, value: 8 },
+    { id: "dress_1",   name: "Green Dress",         spr: ART.dress, value: 14 },
   ],
   // office
   "office:desk_hutch": [
     { id: "binder_1",  name: "Binder",             spr: binder,    value: 3 },
-    { id: "binder_2",  name: "Binder",             spr: binder,    value: 3 },
-    { id: "notebook",  name: "Notebook",           spr: book,      value: 2 },
-    { id: "pen_cup",   name: "Pen Cup",            spr: mug,       value: 1 },
-    { id: "sticky",    name: "Sticky Notes",       spr: spiceJar,  value: 1 },
+    { id: "binder_2",  name: "Blue File Folders",  spr: ART.fileFolders, value: 3 },
+    { id: "notebook",  name: "Blue Notebook",      spr: ART.notebook, value: 2 },
+    { id: "pen_cup",   name: "Pen Cup",            spr: ART.penCup, value: 1 },
+    { id: "sticky",    name: "Sticky Notes",       spr: ART.stickyNotes, value: 1 },
   ],
   "office:side_cabinet": [
-    { id: "photo_1",   name: "Photo Album",        spr: photo,     value: 9 },
-    { id: "binder_3",  name: "Archive Binder",     spr: binder,    value: 4 },
+    { id: "photo_1",   name: "Passport",           spr: ART.passport, value: 9 },
+    { id: "binder_3",  name: "Blue File Folders",  spr: ART.fileFolders, value: 4 },
     { id: "book_2",    name: "Reference Book",     spr: book,      value: 12 },
   ],
   // dining
   "dining:bar_cabinet": [
-    { id: "bottle_1",  name: "Wine Bottle",        spr: bottle,    value: 14 },
-    { id: "bottle_2",  name: "Whiskey Bottle",     spr: bottle,    value: 22 },
-    { id: "glass_1",   name: "Crystal Glass",      spr: glass_cup, value: 5 },
-    { id: "glass_2",   name: "Crystal Glass",      spr: glass_cup, value: 5 },
+    { id: "bottle_1",  name: "Red Wine",           spr: ART.wine, value: 14 },
+    { id: "bottle_2",  name: "Liquor Bottle",      spr: ART.liquor, value: 22 },
+    { id: "glass_1",   name: "Wine Glass",         spr: ART.wineGlass, value: 5 },
+    { id: "glass_2",   name: "Champagne Flute",    spr: ART.champagne, value: 5 },
   ],
   // living
   "living:tv_hutch": [
-    { id: "remote_1",  name: "Remote",            spr: remote,    value: 3 },
-    { id: "photo_2",    name: "Framed Photo",      spr: photo,     value: 10 },
-    { id: "book_3",     name: "Coffee-Table Book", spr: book,      value: 7 },
-    { id: "binder_4",   name: "Manual Binder",     spr: binder,    value: 2 },
+    { id: "remote_1",  name: "Game Console",       spr: ART.gameConsole, value: 80 },
+    { id: "photo_2",   name: "Game Controller",    spr: ART.controller, value: 25 },
+    { id: "book_3",    name: "Playing Cards",      spr: ART.cards, value: 7 },
+    { id: "binder_4",  name: "Dice",               spr: ART.dice, value: 2 },
   ],
   // kitchen — counter & sink cabinets
   "kitchen:counter_sink": [
-    { id: "plate_1",   name: "Dinner Plate",       spr: plate,     value: 4 },
-    { id: "plate_2",   name: "Dinner Plate",       spr: plate,     value: 4 },
-    { id: "plate_3",   name: "Dinner Plate",       spr: plate,     value: 4 },
+    { id: "plate_1",   name: "Dinner Plate",       spr: ART.plate, value: 4 },
+    { id: "plate_2",   name: "Dinner Plate",       spr: ART.plate, value: 4 },
+    { id: "plate_3",   name: "Bowl",               spr: ART.bowl, value: 4 },
     { id: "glass_3",   name: "Drinking Glass",     spr: glass_cup, value: 2 },
     { id: "glass_4",   name: "Drinking Glass",     spr: glass_cup, value: 2 },
-    { id: "mug_3",     name: "Coffee Mug",         spr: mug,       value: 2 },
-    { id: "mug_4",     name: "Coffee Mug",         spr: mug,       value: 2 },
+    { id: "mug_3",     name: "Red Mug",            spr: ART.redMug, value: 2 },
+    { id: "mug_4",     name: "Red Mug",            spr: ART.redMug, value: 2 },
   ],
 };
 
+// Promise consumed by StorageScreen to force a repaint after asynchronously
+// decoded PNGs become drawable. In production the URLs are base64-inlined, but
+// image decode can still finish just after the first canvas paint.
+export const itemArtReady = Promise.all(imageReadyPromises);
+
 // convenience predicate: does this room+object have interior contents?
 export const hasContents = (roomId, objectId) => !!CONTENTS[`${roomId}:${objectId}`];
+
+// shared count of how many items inside a storage object are still unhandled
+// (not packed / sold / donated). Used by both the drawer-glow render block and
+// the .portal silhouette glow so they turn off together once a container is
+// emptied. `contentsState` is the per-item state map keyed by `${storageKey}:${itemId}`.
+export const remainingCount = (roomId, objectId, contentsState) => {
+  const storageKey = `${roomId}:${objectId}`;
+  const items = CONTENTS[storageKey];
+  if (!items) return 0;
+  let remaining = 0;
+  for (const it of items) {
+    const st = contentsState[`${storageKey}:${it.id}`];
+    if (!st || (!st.packed && !st.sold && !st.donated)) remaining += 1;
+  }
+  return remaining;
+};

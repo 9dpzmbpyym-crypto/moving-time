@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CAT_SHEET from "./assets/Cat-Sheet.png";
+import { itemArtReady } from "./contents.js";
 import {
   TASK_CATEGORIES, SAMPLE_JOBS, isOpen, taskPressure,
   PRESSURE_LABELS, PRESSURE_COLORS,
@@ -605,6 +606,15 @@ function SettingsScreen({ go }) {
    sell/donate are secondary buttons on each card. The cabinet sprite itself
    is rendered as a header so you remember what you're inside. */
 function StorageScreen({ go, storageId, room, storageObj, items, contentsState, onPack, onSell, onDonate, busy }) {
+  const [itemArtRedrawKey, setItemArtRedrawKey] = useState(0);
+  useEffect(() => {
+    let mounted = true;
+    itemArtReady.then(() => {
+      if (mounted) setItemArtRedrawKey((key) => key + 1);
+    });
+    return () => { mounted = false; };
+  }, []);
+
   if (!storageObj) return null;
   const storageKey = `${room.id}:${storageId}`;
   const remaining = items.filter((it) => {
@@ -656,7 +666,7 @@ function StorageScreen({ go, storageId, room, storageObj, items, contentsState, 
               {it.spr && (
                 <div style={{ width: maxDim, height: maxDim, display: "flex", alignItems: "center", justifyContent: "center", background: "#241509", border: "2px solid #4A2E17", overflow: "hidden" }}>
                   <div style={{ transform: `scale(${fit})`, transformOrigin: "center", imageRendering: "pixelated" }}>
-                    <PixelCanvas w={it.spr.w} h={it.spr.h} draw={it.spr.draw} />
+                    <PixelCanvas w={it.spr.w} h={it.spr.h} draw={it.spr.draw} redrawKey={itemArtRedrawKey} />
                   </div>
                 </div>
               )}
