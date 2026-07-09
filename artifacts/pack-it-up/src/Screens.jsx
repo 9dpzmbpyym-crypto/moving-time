@@ -5,7 +5,7 @@ import {
   TASK_CATEGORIES, SAMPLE_JOBS, isOpen, taskPressure,
   PRESSURE_LABELS, PRESSURE_COLORS,
 } from "./tasks.js";
-import { PixelCanvas } from "./BedroomSlice.jsx";
+import { PixelCanvas, CELL } from "./BedroomSlice.jsx";
 
 /* ============================================================
    SCREENS — the "next layer" on top of the apartment hub.
@@ -655,9 +655,11 @@ function StorageScreen({ go, storageId, room, storageObj, items, contentsState, 
           const k = `${storageKey}:${it.id}`;
           const st = contentsState[k] || { packed: false, sold: false, soldFor: 0, donated: false };
           const done = st.packed || st.sold || st.donated;
-          // sprite thumbnail fit
+          // sprite thumbnail fit — matches the header sprite math: sprites are
+          // drawn at low-res and CSS-scaled by CELL, so the canvas's on-screen
+          // size is w*CELL × h*CELL. Fit the larger of those into maxDim.
           const maxDim = 40;
-          const fit = it.spr ? Math.min(maxDim / it.spr.w, maxDim / it.spr.h) : 0;
+          const fit = it.spr ? Math.min(maxDim / (it.spr.w * CELL), maxDim / (it.spr.h * CELL)) : 0;
           return (
             <div key={it.id} style={{
               padding: 10, background: done ? "#0F0904" : "#1A0F06", border: "2px solid #4A2E17",

@@ -36,6 +36,13 @@ export const ITEM_ASSETS = Object.fromEntries(
       usageType: entry.usage_type,
       displayName: entry.source_label,
       canvasSize: entry.canvas_size_actual,
+      // The transparent PNG is centered on a square canvas of `canvasSize`, but
+      // the actual content only occupies `rawWidth` × `rawHeight` of it. Reporting
+      // the raw dims as the sprite's w/h keeps every existing thumbnail / layout
+      // formula (which expects low-res content dims, not the full canvas) working
+      // unchanged for both PNG and procedural sprites.
+      rawWidth: entry.raw_width,
+      rawHeight: entry.raw_height,
     },
   ]),
 );
@@ -61,13 +68,25 @@ const pngSprite = (filename) => {
     loadedImages.set(filename, image);
   }
 
+  // The PNG canvas is `canvasSize`×`canvasSize` with the content centered inside
+  // an `rawWidth`×`rawHeight` region. We report w/h as the raw content dims so
+  // existing thumbnail math (tuned for low-res procedural sprites) works the same,
+  // and crop-draw only the content region so no extra transparent padding is
+  // baked into the sprite.
+  const offsetX = Math.floor((asset.canvasSize - asset.rawWidth) / 2);
+  const offsetY = Math.floor((asset.canvasSize - asset.rawHeight) / 2);
+
   return {
-    w: asset.canvasSize,
-    h: asset.canvasSize,
+    w: asset.rawWidth,
+    h: asset.rawHeight,
     draw(ctx) {
       if (!image.complete || !image.naturalWidth) return;
       ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(image, 0, 0, asset.canvasSize, asset.canvasSize);
+      ctx.drawImage(
+        image,
+        offsetX, offsetY, asset.rawWidth, asset.rawHeight,
+        0, 0, asset.rawWidth, asset.rawHeight,
+      );
     },
   };
 };

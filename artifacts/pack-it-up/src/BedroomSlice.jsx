@@ -27,7 +27,7 @@ import { CONTENTS, hasContents, remainingCount } from "./contents.js";
    - ROOMS data model → extensible to more rooms / camera pan
    ============================================================ */
 
-const CELL = 4; // 1 sprite pixel = 4 screen px
+export const CELL = 4; // 1 sprite pixel = 4 screen px
 const STAGE_W = 960;
 const STAGE_H = 720;
 
