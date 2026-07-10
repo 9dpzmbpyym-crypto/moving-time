@@ -8,16 +8,18 @@
 
    A task:
    {
-     id: string,               // unique
+     id: string,
      title: string,
      category: "move" | "job" | "admin" | "health" | "cat",
-     urgency: 1 | 2 | 3,       // 1 chill · 2 soon · 3 loud
-     due: string,              // freeform for now ("Move day −6", "Fri")
+     urgency: 1 | 2 | 3,
+     due: string,
      status: "pending" | "active" | "done" | "dismissed",
-     room: string | null,      // related room id (future: deep-link)
-     objectId: string | null,  // related object id (future)
-     relief: "stamp" | "file" | "slide", // how completion should FEEL
-     jobId: string | null,     // links to SAMPLE_JOBS for desk cards
+     room: string | null,
+     objectId: string | null,
+     relief: "stamp" | "file" | "slide",
+     jobId: string | null,
+     zone: string | null,       // Body Board zone id
+     needsInfo: boolean,        // Desk "Needs Info" stamp
    }
    ============================================================ */
 
@@ -30,19 +32,22 @@ export const TASK_CATEGORIES = {
 };
 
 export const INITIAL_TASKS = [
-  { id: "t_van",     title: "Book the moving van",              category: "move",   urgency: 2, due: "Move day −6", status: "pending", room: null,      objectId: null, relief: "stamp", jobId: null },
-  { id: "t_bedroom", title: "Finish clearing the bedroom",      category: "move",   urgency: 1, due: "This week",   status: "pending", room: "bedroom", objectId: null, relief: "slide", jobId: null },
-  { id: "t_job1",    title: "Apply: Program Coordinator",       category: "job",    urgency: 3, due: "Fri",         status: "pending", room: null,      objectId: null, relief: "stamp", jobId: "job_cuny" },
-  { id: "t_job2",    title: "Apply: Patient Care Associate",    category: "job",    urgency: 2, due: "Next week",   status: "pending", room: null,      objectId: null, relief: "stamp", jobId: "job_hh" },
-  { id: "t_job3",    title: "Follow up: Office Assistant",      category: "job",    urgency: 1, due: "Sitting 9d",  status: "pending", room: null,      objectId: null, relief: "stamp", jobId: "job_nys" },
-  { id: "t_id",      title: "Update ID before the move",        category: "admin",  urgency: 2, due: "Move day −3", status: "pending", room: null,      objectId: null, relief: "file",  jobId: null },
-  { id: "t_health",  title: "Book checkups while covered",      category: "health", urgency: 2, due: "This month",  status: "pending", room: null,      objectId: null, relief: "slide", jobId: null },
-  { id: "t_vet",     title: "Stretchy: vet visit (meds + cert)", category: "cat",   urgency: 1, due: "Mid-month",   status: "pending", room: null,      objectId: null, relief: "slide", jobId: null },
+  { id: "t_van",     title: "Book the moving van",              category: "move",   urgency: 2, due: "Move day −6", status: "pending", room: null,      objectId: null, relief: "stamp", jobId: null, zone: null, needsInfo: false },
+  { id: "t_bedroom", title: "Finish clearing the bedroom",      category: "move",   urgency: 1, due: "This week",   status: "pending", room: "bedroom", objectId: null, relief: "slide", jobId: null, zone: null, needsInfo: false },
+  { id: "t_job1",    title: "Apply: Program Coordinator",       category: "job",    urgency: 3, due: "Fri",         status: "pending", room: null,      objectId: null, relief: "stamp", jobId: "job_cuny", zone: null, needsInfo: false },
+  { id: "t_job2",    title: "Apply: Patient Care Associate",    category: "job",    urgency: 2, due: "Next week",   status: "pending", room: null,      objectId: null, relief: "stamp", jobId: "job_hh", zone: null, needsInfo: false },
+  { id: "t_job3",    title: "Follow up: Office Assistant",      category: "job",    urgency: 1, due: "Sitting 9d",  status: "pending", room: null,      objectId: null, relief: "stamp", jobId: "job_nys", zone: null, needsInfo: false },
+  { id: "t_id",      title: "Update ID before the move",        category: "admin",  urgency: 2, due: "Move day −3", status: "pending", room: null,      objectId: null, relief: "file",  jobId: null, zone: null, needsInfo: false },
+  { id: "t_brain",   title: "Psychiatry / med renewals",        category: "health", urgency: 2, due: "This month",  status: "pending", room: null,      objectId: null, relief: "slide", jobId: null, zone: "brain", needsInfo: false },
+  { id: "t_teeth",   title: "Dentist visit",                    category: "health", urgency: 1, due: "This month",  status: "pending", room: null,      objectId: null, relief: "slide", jobId: null, zone: "teeth", needsInfo: false },
+  { id: "t_heart",   title: "Cardiology appointment",           category: "health", urgency: 2, due: "This month",  status: "pending", room: null,      objectId: null, relief: "slide", jobId: null, zone: "heart", needsInfo: false },
+  { id: "t_lymph",   title: "Rheumatology appointment",         category: "health", urgency: 3, due: "This month",  status: "pending", room: null,      objectId: null, relief: "slide", jobId: null, zone: "lymph", needsInfo: false },
+  { id: "t_stomach", title: "Diet — gentle, steady",            category: "health", urgency: 1, due: "Ongoing",     status: "pending", room: null,      objectId: null, relief: "slide", jobId: null, zone: "stomach", needsInfo: false },
+  { id: "t_skin",    title: "Dermatology appointment",          category: "health", urgency: 1, due: "This month",  status: "pending", room: null,      objectId: null, relief: "slide", jobId: null, zone: "skin", needsInfo: false },
+  { id: "t_nerves",  title: "Self-care + healthy habits",       category: "health", urgency: 2, due: "This week",   status: "pending", room: null,      objectId: null, relief: "slide", jobId: null, zone: "nerves", needsInfo: false },
+  { id: "t_vet",     title: "Stretchy: vet visit (meds + cert)", category: "cat",   urgency: 1, due: "Mid-month",   status: "pending", room: null,      objectId: null, relief: "slide", jobId: null, zone: null, needsInfo: false },
 ];
 
-/* 3 hand-written sample job cards — stand-ins until the real
-   tracker (job-tracker-sandy-two.vercel.app) is wired in later.
-   Field shape intentionally matches the future import mapping. */
 export const SAMPLE_JOBS = {
   job_cuny: {
     title: "Program Coordinator",
@@ -84,8 +89,6 @@ export const SAMPLE_JOBS = {
 
 export const isOpen = (t) => t.status === "pending" || t.status === "active";
 
-/* Overall pressure 0–3, from summed urgency of open tasks.
-   Drives the paper fan (peek / shake / red marker) and badges. */
 export function taskPressure(tasks) {
   const load = tasks.filter(isOpen).reduce((s, t) => s + t.urgency, 0);
   if (load === 0) return 0;

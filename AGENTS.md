@@ -9,9 +9,10 @@ A personal pixel-art moving game built with React + HTML canvas. The player walk
 ## The only files that matter for the game
 
 ```
-artifacts/pack-it-up/src/BedroomSlice.jsx   ← entire hub + game (~3,500 lines)
+artifacts/pack-it-up/src/BedroomSlice.jsx   ← entire hub + game (~3,800 lines)
 artifacts/pack-it-up/src/Screens.jsx       ← full-screen overlays (Menu/Desk/Health/Storage/etc.)
 artifacts/pack-it-up/src/contents.js       ← storage contents data (items inside cabinets/drawers)
+artifacts/pack-it-up/src/tasks.js          ← task/urgency scaffold (sample data for the overlay shells)
 artifacts/pack-it-up/src/main.tsx          ← 15-line entry point
 artifacts/pack-it-up/src/layout.json       ← furniture X/Y positions per room
 artifacts/pack-it-up/src/sell.mp3          ← sell sound
@@ -36,11 +37,11 @@ Line numbers below are approximate — the file grows as features land. Find you
 | 965–1165 | Dining room shell + sprites + objects |
 | 1165–1430 | Living room shell + sprites + objects + box stack |
 | 1430–1590 | ROOMS data model + ROOMS_ORDER + floor/ceiling helpers |
-| 1590–1625 | PixelCanvas component + CATEGORY_COLORS |
-| 1625–1790 | LayoutEditor (dev tool, `?edit=1` only) |
-| 1791–1860 | Haptics + audio init |
-| 1861–2017 | Stretchy the cat (sprite AI + animation loop) |
-| 2018–3560 | PackItUp main component (state, storage feature, drawer glow, game logic, mobile UI, desktop UI) |
+| 1590–1650 | PixelCanvas component + CATEGORY_COLORS |
+| 1650–1885 | Stretchy the cat (sprite sheet config + AI + animation loop) |
+| 1885–2055 | LayoutEditor (dev tool, `?edit=1` only) |
+| 2055–2090 | Haptics + audio init |
+| 2091–3783 | PackItUp main component (state, storage feature, drawer glow, game logic, mobile UI, desktop UI) |
 
 `Screens.jsx` and `contents.js` are imported by BedroomSlice but kept as separate files (overlays + data, not game logic).
 
@@ -91,6 +92,16 @@ This project is worked on from Replit, Claude.ai, Cursor, and ChatGPT/Codex.
 ## Known tech debt (do not fix unless asked)
 
 - BedroomSlice.jsx should eventually be split into modules — not yet
-- `setTimeout` calls aren't cancelled on unmount
-- Negative custom sale prices not validated
-- Cat animation triggers full-game re-renders
+
+Fixed (don't re-fix): action timers are cancelled on unmount via the `schedule()`
+registry in PackItUp — route any new game timers through it. Sale prices are
+clamped to ≥ 0. The cat writes its position straight to the DOM and only
+re-renders on sprite-frame changes.
+
+## Next planned work
+
+**Canonical plan (short + long):** [`FINISH_PLAN.md`](./FINISH_PLAN.md)  
+**Latest session handoff:** [`HANDOFF.md`](./HANDOFF.md)  
+**History:** [`DEVLOG.md`](./DEVLOG.md)
+
+Do not maintain a second todo list here.
