@@ -30,7 +30,7 @@ Sub-agents start cold. Every spawn re-derives project context — pay that cost 
 | **Task `explore`** | Fan-out search across many angles or large files | No | N/A |
 | **Task `generalPurpose` / `shell`** | Bounded multi-step grunt the lead will review | Sometimes | Still Grok’s commit |
 | **Switch chat to Composer 2.5** | Tiny isolated patch (one obvious edit, clear done-condition) | Yes | **Never** — Grok or Eloisa reviews + commits |
-| **Paid API model in Cursor** (GLM / Luna via OpenRouter) | Overflow only | Yes | Ask Eloisa first — API budget is often maxed / out-of-pocket |
+| **API-pool model in Cursor** (Claude/GPT/Gemini, Max Mode, BYOK) | Overflow only — burns **API** quota | Yes | Ask Eloisa first. Jul 10: API was **100%**; stay on Grok/Composer |
 
 ## Model choice per Task spawn
 
@@ -75,9 +75,33 @@ Default: inherit the lead model only when the Task needs lead-level judgment —
 
 At session start (and mid-long sessions), know the meter:
 
-1. If Cursor shows usage/credits, read it.  
-2. If not visible, ask: *“Where is Cursor usage at right now? Is the monthly API budget still maxed?”*  
-3. Route paid overflow only after a clear yes. Prefer Codex credits for Luna-shaped work when Cursor API is maxed.
+1. Open **Cursor Settings** (`Ctrl+Shift+J`) → **Plan & Usage**, or [cursor.com/dashboard/usage](https://cursor.com/dashboard/usage).
+2. Read **both** Pro pools:
+   - **Auto + Composer** (first-party: Auto, Composer, Grok) — preferred for Pack It Up.
+   - **API** — Claude/GPT/Gemini/Max Mode / third-party; burns the included API $ then on-demand.
+3. If Usage Summary isn’t visible in-chat: Settings → **Agents** → **Usage Summary** → **Always** (`cursor.composer.usageSummaryDisplay`: `"always"`).
+4. Route paid / API-pool work only after Eloisa confirms. Prefer Codex credits for Luna-shaped work when Cursor **API** is maxed.
+
+**Observed Jul 10, 2026 (Eloisa’s Pro):** Total ~55% · Auto+Composer **41%** · API **100%**. Until API resets or she approves on-demand: stay on **Grok / Composer / Auto**; do not pick frontier API models or Max Mode casually.
+
+## Cursor IDE settings (team defaults)
+
+Exact paths Eloisa should keep for this harness. GUI-only items have no reliable `settings.json` key unless noted.
+
+| What | Path | Setting label | Value |
+|---|---|---|---|
+| Usage bar | Settings → **Agents** | **Usage Summary** | **Always** |
+| Terminal autonomy | Settings → **Agents** → **Approvals & Execution** | run mode | **Auto-review** (not **Run Everything**) |
+| Privacy | Settings → **General** | **Privacy Mode** | **On** |
+| Lead chat model | Agent panel **model picker** (top of chat); also try Settings → **Models** | model | **Grok 4.5** for lead sessions; **Composer** only for tiny intern patches |
+| Max context | Same model picker | **Max Mode** | **Off** unless a huge-context task is explicit |
+| Explore worker | Settings → **Agents** → **Subagents** | **Explore subagent model** (may show as “automatic subagent”) | **Composer** / Cursor first-party — **not** the main chat brain |
+
+### Default model vs Explore subagent (don’t confuse them)
+
+- **Chat model picker = parent Agent** for this conversation. Selection **persists across new chats** until changed — that *is* the practical default. There may also be a default under Settings → **Models**; if the UI doesn’t show one, the sticky picker is enough.
+- **Explore subagent model** only affects the built-in **Explore** Task when the lead auto-delegates search. It does **not** set the chat to Composer.
+- Correct combo when API is maxed: chat = **Grok**, Explore subagent = **Composer/cursor**. Optional: Explore = **Inherit from parent** if you want Explore on Grok too (same first-party pool).
 
 ## Known failure modes
 
@@ -88,6 +112,7 @@ At session start (and mid-long sessions), know the meter:
 - **Parallel BedroomSlice editors** — one FINISH_PLAN lane at a time; small frequent merges to `main`.  
 - **Standing branch drift** — first act: pull `main` into `cursor` (or current Cursor team branch). Don’t pile session branches.  
 - **Duplicate audio tree** — never commit `artifacts/pack-it-up/src/assets/audio/`; `public/assets/audio/` is home.
+- **Confusing Explore setting with chat default** — “automatic subagent = cursor” is fine; it is not “I am Composer now.”
 
 ## Commit & close reminder
 
