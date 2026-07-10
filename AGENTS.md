@@ -103,8 +103,9 @@ re-renders on sprite-frame changes.
 See `FINISH_PLAN.md` (weekend cut) and `DEVLOG.md` (Jul 5–9 history).
 
 **P0:** host on Vercel, persist progress (`localStorage`), one daily ritual.  
-**P1:** desk finished pile; read-only job tracker sync (`job-tracker-sandy-two.vercel.app`).  
-**P2:** Operation-style health board; more contents polish only if P0–P1 feel good.
+**P1:** desk finished pile (toward Paperwork Desk mockup); read-only job tracker sync (`job-tracker-sandy-two.vercel.app`).  
+**P2:** Operation-style health board (toward Body Board mockup); more contents polish only if P0–P1 feel good.
 
+Original concept mockups live in `artifacts/pack-it-up/docs/mockups/` (desk, hub, diorama, body board).  
 `CODEX_TASKS.md` dining/kitchen/living pixel list = **done** (Jul 9).  
 Overlay screens in `Screens.jsx` (Desk/Health/Inventory/Log/Stretchy) are still mostly shells — Settings has volume sliders. Storage contents exist beyond the pantry pilot for most rooms.

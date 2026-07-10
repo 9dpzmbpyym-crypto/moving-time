@@ -28,9 +28,25 @@ import {
 import CAT_SHEET from "./assets/Cat-Sheet.png";
 // Next-layer screens (Menu/Desk/Health/etc.) + the task/urgency scaffold.
 // The apartment stays the hub; these render as full-screen overlays above it.
-import ScreenLayer from "./Screens.jsx";
+import ScreenLayer, { RewardToast } from "./Screens.jsx";
 import { INITIAL_TASKS, isOpen as isTaskOpen, taskPressure, SAMPLE_JOBS, TASK_CATEGORIES } from "./tasks.js";
 import { CONTENTS, hasContents, remainingCount, itemArtReady } from "./contents.js";
+import {
+  loadSave,
+  writeSave,
+  mergeFlagMap,
+  mergeTasks,
+  clampCoins,
+  clampMinutes,
+  clampRoomIndex,
+} from "./save.js";
+import { mergeSession, bumpSession } from "./session.js";
+import {
+  sanitizeAppointments,
+  markMissed,
+  getNudge,
+  scrambleBookableHealthUrgencies,
+} from "./receptionist.js";
 
 /* ============================================================
    PACK IT UP — vertical slice: The Bedroom
@@ -46,6 +62,30 @@ import { CONTENTS, hasContents, remainingCount, itemArtReady } from "./contents.
 export const CELL = 4; // 1 sprite pixel = 4 screen px
 const STAGE_W = 960;
 const STAGE_H = 720;
+
+/** Real move target — drives the "days left" HUD chip. */
+const MOVE_DATE = new Date(2026, 6, 31); // Jul 31, 2026 (local)
+
+function daysUntilMove(now = new Date()) {
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const end = new Date(MOVE_DATE.getFullYear(), MOVE_DATE.getMonth(), MOVE_DATE.getDate());
+  return Math.max(0, Math.round((end - start) / 86400000));
+}
+
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function formatRealTime(d) {
+  let h = d.getHours();
+  const m = d.getMinutes();
+  const am = h < 12;
+  h = h % 12 || 12;
+  return `${h}:${String(m).padStart(2, "0")}${am ? "am" : "pm"}`;
+}
+
+function formatRealDate(d) {
+  return `${WEEKDAYS[d.getDay()]} ${MONTHS[d.getMonth()]} ${d.getDate()}`;
+}
 
 /* ---------- palette ---------- */
 const P = {
@@ -2205,7 +2245,38 @@ export default function PackItUp({ glowMode = "split" }) {
     return () => mq.removeEventListener("change", on);
   }, []);
 
-  const [roomIndex, setRoomIndex] = useState(0);
+  // Progress restore — one localStorage key (`pack-it-up-save`). Audio volumes
+  // stay in gameAudio's own key. Defaults always built fresh so new furniture
+  // / contents / tasks appear even when an older save is present.
+  const bootSave = useMemo(() => loadSave(), []);
+  const defaultObjState = useMemo(
+    () =>
+      Object.fromEntries(
+        ROOMS_ORDER.flatMap((rid) =>
+          ROOMS[rid].objects.map((o) => [
+            sk(rid, o.id),
+            { packed: false, sold: false, soldFor: 0, donated: false },
+          ])
+        )
+      ),
+    []
+  );
+  const defaultContentsState = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(CONTENTS).flatMap(([storageKey, items]) =>
+          items.map((it) => [
+            `${storageKey}:${it.id}`,
+            { packed: false, sold: false, soldFor: 0, donated: false },
+          ])
+        )
+      ),
+    []
+  );
+
+  const [roomIndex, setRoomIndex] = useState(() =>
+    clampRoomIndex(bootSave?.roomIndex, ROOMS_ORDER.length)
+  );
   const room = isMobile ? ROOMS[ROOMS_ORDER[roomIndex]] : ROOMS.bedroom;
 
   /* Stretchy re-mounts per room and trots in from the side the player came
@@ -2216,20 +2287,12 @@ export default function PackItUp({ glowMode = "split" }) {
 
   // object state: { [`${roomId}:${id}`]: { packed, sold, soldFor, donated } }
   const [objState, setObjState] = useState(() =>
-    Object.fromEntries(
-      ROOMS_ORDER.flatMap((rid) =>
-        ROOMS[rid].objects.map((o) => [sk(rid, o.id), { packed: false, sold: false, soldFor: 0, donated: false }])
-      )
-    )
+    mergeFlagMap(defaultObjState, bootSave?.objState)
   );
   // contents state: per-storage-item flags, keyed `${roomId}:${storageId}:${itemId}`.
   // Mirrors objState's shape so the same undo/handled patterns reuse cleanly.
   const [contentsState, setContentsState] = useState(() =>
-    Object.fromEntries(
-      Object.entries(CONTENTS).flatMap(([storageKey, items]) =>
-        items.map((it) => [`${storageKey}:${it.id}`, { packed: false, sold: false, soldFor: 0, donated: false }])
-      )
-    )
+    mergeFlagMap(defaultContentsState, bootSave?.contentsState)
   );
   // a storage item is mid pack/sell/donate animation (drives fly-to-box)
   const [packingContentKey, setPackingContentKey] = useState(null);
@@ -2279,15 +2342,57 @@ export default function PackItUp({ glowMode = "split" }) {
   const [radioUi, setRadioUi] = useState(() => getRadioState());
   const refreshRadioUi = useCallback(() => setRadioUi(getRadioState()), []);
   /* task/urgency scaffold — sample data only, drives the paper fan + badges */
-  const [tasks, setTasks] = useState(INITIAL_TASKS);
-  const [minutes, setMinutes] = useState(0); // game time advances as you pack/sell
-  const [coins, setCoins] = useState(125);
+  const [tasks, setTasks] = useState(() =>
+    scrambleBookableHealthUrgencies(mergeTasks(INITIAL_TASKS, bootSave?.tasks))
+  );
+  const [minutes, setMinutes] = useState(() => clampMinutes(bootSave?.minutes ?? 0)); // game time advances as you pack/sell
+  const [coins, setCoins] = useState(() =>
+    bootSave && typeof bootSave.coins === "number" ? clampCoins(bootSave.coins) : 125
+  );
+  const [session, setSession] = useState(() => mergeSession(bootSave?.session));
+  const [appointments, setAppointments] = useState(() =>
+    markMissed(sanitizeAppointments(bootSave?.appointments))
+  );
+  const [phoneNudge, setPhoneNudge] = useState(null);
+  const phoneNudgeShownRef = useRef(false);
+  useEffect(() => {
+    if (phoneNudgeShownRef.current) return;
+    phoneNudgeShownRef.current = true;
+    const n = getNudge(appointments, tasks);
+    // Soft desk nudge for remind/overdue; cold open is available anytime via landline
+    if (n && (n.kind === "remind" || n.kind === "overdue")) {
+      setPhoneNudge(n);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps — boot once
+  const [rewardToast, setRewardToast] = useState(null);
   const [scale, setScale] = useState(1);
   const [sellFormOpen, setSellFormOpen] = useState(false);
   const [sellAmount, setSellAmount] = useState("");
   const [undoStack, setUndoStack] = useState([]); // undo history, most recent last
   const [sellFx, setSellFx] = useState(null); // { x, y, amount } coin-burst overlay
   const wrapRef = useRef(null);
+
+  /* Debounced persist — pack/sell/donate/tasks/room. Flush on hide so a
+     phone lock mid-pack still keeps progress. */
+  const savePayloadRef = useRef(null);
+  savePayloadRef.current = { objState, contentsState, coins, minutes, tasks, roomIndex, session, appointments };
+  useEffect(() => {
+    const id = setTimeout(() => writeSave(savePayloadRef.current), 250);
+    return () => clearTimeout(id);
+  }, [objState, contentsState, coins, minutes, tasks, roomIndex, session]);
+  useEffect(() => {
+    const flush = () => writeSave(savePayloadRef.current);
+    const onVis = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onVis);
+      flush(); // unmount / HMR — don't lose the last pack
+    };
+  }, []);
 
   /* mobile pan-strip state: live drag offset + measured viewport box */
   const viewRef = useRef(null);
@@ -2375,6 +2480,20 @@ export default function PackItUp({ glowMode = "split" }) {
   const done = total > 0 && clearedCount === total;
   const boxCount = Math.min(4, Math.ceil(packedCount / 4));
 
+  /* Global packing progress (hub mockup chips). daysLeft comes from real clock below. */
+  const { globalPacked, globalTotal } = useMemo(() => {
+    let packed = 0;
+    let tot = 0;
+    for (const rid of ROOMS_ORDER) {
+      for (const o of ROOMS[rid].objects) {
+        if (!o.removable) continue;
+        tot += 1;
+        if (objState[sk(rid, o.id)]?.packed) packed += 1;
+      }
+    }
+    return { globalPacked: packed, globalTotal: tot };
+  }, [objState]);
+
   /* fit stage to viewport */
   useEffect(() => {
     const fit = () => {
@@ -2397,6 +2516,24 @@ export default function PackItUp({ glowMode = "split" }) {
   });
   const busy = packingId || sellingId || donatingId;
 
+  const showReward = useCallback((label) => {
+    if (!label) return;
+    setRewardToast(label);
+    schedule(() => setRewardToast(null), 1800);
+  }, [schedule]);
+
+  const onSessionBump = useCallback((key, amount = 1, rewardLabel, extra) => {
+    setSession((prev) => {
+      const { session: next, justCompletedGoal, rewardLabel: auto } = bumpSession(prev, key, amount, rewardLabel);
+      if (extra?.calmedZone) {
+        next.calmedZones = { ...next.calmedZones, [extra.calmedZone]: true };
+      }
+      const toast = rewardLabel || (justCompletedGoal ? auto : null);
+      if (toast) schedule(() => showReward(toast), 0);
+      return next;
+    });
+  }, [schedule, showReward]);
+
   const packObject = useCallback((id) => {
     const k = sk(room.id, id);
     const obj = room.objects.find((o) => o.id === id);
@@ -2411,8 +2548,9 @@ export default function PackItUp({ glowMode = "split" }) {
       setPackingId(null);
       setSelectedId(null);
       setMinutes((m) => m + 10);
+      onSessionBump("cleared", 1, "Cleared +1");
     }, 520);
-  }, [room, objState, busy, schedule]);
+  }, [room, objState, busy, schedule, onSessionBump]);
 
   const sellObject = useCallback((id, amount) => {
     const k = sk(room.id, id);
@@ -2436,8 +2574,9 @@ export default function PackItUp({ glowMode = "split" }) {
       setSellingId(null);
       setSelectedId(null);
       setMinutes((m) => m + 5);
+      onSessionBump("cleared", 1, "Cleared +1");
     }, 520);
-  }, [room, objState, busy, schedule]);
+  }, [room, objState, busy, schedule, onSessionBump]);
 
   const donateObject = useCallback((id) => {
     const k = sk(room.id, id);
@@ -2455,8 +2594,9 @@ export default function PackItUp({ glowMode = "split" }) {
       setMinutes((m) => m + 5);
       setDonateToast({ name: obj.name });
       schedule(() => setDonateToast((t) => (t && t.name === obj.name ? null : t)), 3500);
+      onSessionBump("cleared", 1, "Cleared +1");
     }, 520);
-  }, [room, objState, busy, schedule]);
+  }, [room, objState, busy, schedule, onSessionBump]);
 
   /* ---- content actions: pack/sell/donate items from inside storage ----
      All three close the storage overlay first (close-then-fly), then flip
@@ -2535,8 +2675,9 @@ export default function PackItUp({ glowMode = "split" }) {
       setContentAnim(null);
       setContentFlyFx(null);
       setMinutes((m) => m + 10);
+      onSessionBump("cleared", 1, "Cleared +1");
     }, 520);
-  }, [room, objState, contentsState, busy, schedule]);
+  }, [room, objState, contentsState, busy, schedule, onSessionBump]);
 
   const sellContent = useCallback((storageId, itemId) => {
     const k = `${room.id}:${storageId}:${itemId}`;
@@ -2558,8 +2699,9 @@ export default function PackItUp({ glowMode = "split" }) {
       setUndoStack((stack) => [...stack, undoContentEntry(storageId, itemId, prev, credit, 5)]);
       setContentAnim(null);
       setMinutes((m) => m + 5);
+      onSessionBump("cleared", 1, "Cleared +1");
     }, 520);
-  }, [room, contentsState, busy, schedule]);
+  }, [room, contentsState, busy, schedule, onSessionBump]);
 
   const donateContent = useCallback((storageId, itemId) => {
     const k = `${room.id}:${storageId}:${itemId}`;
@@ -2576,12 +2718,13 @@ export default function PackItUp({ glowMode = "split" }) {
       setUndoStack((stack) => [...stack, undoContentEntry(storageId, itemId, prev, 0, 5)]);
       setContentAnim(null);
       setMinutes((m) => m + 5);
+      onSessionBump("cleared", 1, "Cleared +1");
       if (it) {
         setDonateToast({ name: it.name });
         schedule(() => setDonateToast((t) => (t && t.name === it.name ? null : t)), 3500);
       }
     }, 520);
-  }, [room, contentsState, busy, schedule]);
+  }, [room, contentsState, busy, schedule, onSessionBump]);
 
   const unpackObject = (id) => {
     const k = sk(room.id, id);
@@ -2636,10 +2779,15 @@ export default function PackItUp({ glowMode = "split" }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [selectedId, hoverId, packObject]);
 
-  /* clock */
-  const t0 = 10 * 60 + 15 + minutes; // Sun 10:15am + packing time
-  const hr12 = (Math.floor(t0 / 60) % 12) || 12;
-  const clock = `Sun. ${hr12}:${String(t0 % 60).padStart(2, "0")}${Math.floor(t0 / 60) < 12 ? "am" : "pm"}`;
+  /* Real wall-clock — ticks every second so the HUD stays honest. */
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const clock = formatRealTime(now);
+  const dateLabel = formatRealDate(now);
+  const daysLeft = daysUntilMove(now);
 
   /* per-room visible objects (mid-animation items stay visible while shrinking) */
   const visibleObjectsFor = (rm) =>
@@ -2716,7 +2864,8 @@ export default function PackItUp({ glowMode = "split" }) {
   const lastUndoObj = lastUndo && ROOMS[lastUndo.roomId].objects.find((o) => o.id === lastUndo.id);
 
   const ui = {
-    frame: { background: "#241509", border: "3px solid #120A04", boxShadow: "inset 0 0 0 2px #4A2E17, 0 3px 0 #000" },
+    // Match Screens.jsx mockup chrome (gold-warm inset, hard outer border)
+    frame: { background: "#241509", border: "3px solid #120A04", boxShadow: "inset 0 0 0 2px #6B4423, 0 3px 0 #000" },
     label: { fontFamily: "'Courier New', monospace", fontWeight: 700, letterSpacing: "0.5px" },
   };
 
@@ -3629,24 +3778,38 @@ export default function PackItUp({ glowMode = "split" }) {
         )}
 
         {/* ---- top HUD: native-sized chrome, never scales with the room ---- */}
-        <div style={{ flex: "0 0 auto", display: "flex", alignItems: "stretch", gap: 8, padding: "calc(env(safe-area-inset-top, 0px) + 10px) 10px 8px", zIndex: 130 }}>
+        <div style={{ flex: "0 0 auto", display: "flex", alignItems: "stretch", gap: 6, padding: "calc(env(safe-area-inset-top, 0px) + 10px) 10px 8px", zIndex: 130 }}>
           <div style={{ padding: "7px 10px", flex: "1 1 auto", minWidth: 0, ...ui.frame }}>
-            <div style={{ color: "#F2E4C0", fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", ...ui.label }}>{clock.replace(/^\w+\.\s*/, "")}</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-              <span style={{ color: "#D94A4A", fontSize: 11 }}>♥</span>
-              <div style={{ flex: 1, maxWidth: 70, height: 9, background: "#120A04", border: "2px solid #4A2E17" }}>
-                <div style={{ width: "100%", height: "100%", background: "linear-gradient(#8FD14F,#5EA032)" }} />
-              </div>
+            <div style={{ color: "#F2E4C0", fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", ...ui.label }}>{clock}</div>
+            <div style={{ color: "#C9B896", fontSize: 10, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", ...ui.label }}>
+              {dateLabel}
+            </div>
+            <div style={{ color: "#8A7350", fontSize: 9, marginTop: 2, whiteSpace: "nowrap", ...ui.label }}>
+              {daysLeft === 0 ? "Move day" : `${daysLeft}d left`}
             </div>
           </div>
-          <div style={{ padding: "7px 12px", display: "flex", alignItems: "center", gap: 7, color: "#F2E4C0", fontSize: 15, ...ui.frame, ...ui.label }}>
+          <div style={{ padding: "7px 10px", display: "flex", alignItems: "center", gap: 6, color: "#F2E4C0", fontSize: 14, ...ui.frame, ...ui.label }}>
             <span style={{ width: 12, height: 12, background: P.gold, border: "2px solid #8A5E14", borderRadius: "50%", display: "inline-block" }} />
             {coins}
           </div>
-          <div style={{ padding: "6px 9px", textAlign: "right", ...ui.frame }}>
+          <div style={{ padding: "6px 9px", textAlign: "center", minWidth: 56, ...ui.frame }}>
             <div style={{ color: "#F2E4C0", fontSize: 11, whiteSpace: "nowrap", ...ui.label }}>{room.name}</div>
             <div style={{ color: "#C9B896", fontSize: 10, marginTop: 2, whiteSpace: "nowrap", ...ui.label }}>
-              {total > 0 ? `${clearedCount}/${total} cleared` : "soon"}
+              {total > 0 ? `${clearedCount}/${total}` : "—"}
+            </div>
+            {total > 0 && (
+              <div style={{ marginTop: 4, width: "100%", height: 6, background: "#120A04", border: "1px solid #4A2E17" }}>
+                <div style={{
+                  width: `${Math.round((clearedCount / total) * 100)}%`, height: "100%",
+                  background: "linear-gradient(#8FD14F,#5EA032)",
+                }} />
+              </div>
+            )}
+          </div>
+          <div style={{ padding: "6px 9px", textAlign: "center", ...ui.frame }} title="Furniture packed into boxes (apartment-wide)">
+            <div style={{ color: "#F2E4C0", fontSize: 11, whiteSpace: "nowrap", ...ui.label }}>📦</div>
+            <div style={{ color: "#C9B896", fontSize: 10, marginTop: 2, whiteSpace: "nowrap", ...ui.label }}>
+              {globalPacked}/{globalTotal}
             </div>
           </div>
           <button
@@ -3654,7 +3817,7 @@ export default function PackItUp({ glowMode = "split" }) {
             disabled={undoStack.length === 0}
             title={lastUndoObj ? `Undo: ${lastUndoObj.name}` : "Nothing to undo"}
             style={{
-              padding: "7px 12px", fontSize: 17, minWidth: 52, cursor: undoStack.length ? "pointer" : "default",
+              padding: "7px 12px", fontSize: 17, minWidth: 48, cursor: undoStack.length ? "pointer" : "default",
               color: undoStack.length ? "#F2E4C0" : "#6B563B", ...ui.frame, ...ui.label,
             }}
           >
@@ -4014,7 +4177,15 @@ export default function PackItUp({ glowMode = "split" }) {
           openHandledSheet={() => { setScreen("apartment"); setInvOpen(true); }}
           busy={!!busy}
           playSfx={(name) => { if (name === "stamp") playStampSfx(); }}
+          session={session}
+          onSessionBump={onSessionBump}
+          rewardToast={rewardToast}
+          appointments={appointments}
+          setAppointments={setAppointments}
+          phoneNudge={phoneNudge}
+          clearPhoneNudge={() => setPhoneNudge(null)}
         />
+        <RewardToast text={screen === "apartment" ? rewardToast : null} />
       </div>
     );
   }
@@ -4039,15 +4210,34 @@ export default function PackItUp({ glowMode = "split" }) {
               <span style={{ display: "inline-block", width: 14, height: 14, background: "#E0A05A", border: "2px solid #120A04", borderRadius: 3 }} />
               {clock}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
-              <span style={{ color: "#D94A4A", fontSize: 14 }}>♥</span>
-              <div style={{ width: 110, height: 12, background: "#120A04", border: "2px solid #4A2E17" }}>
-                <div style={{ width: "100%", height: "100%", background: "linear-gradient(#8FD14F,#5EA032)" }} />
-              </div>
+            <div style={{ color: "#C9B896", fontSize: 13, marginTop: 5, ...ui.label }}>
+              {dateLabel}
+            </div>
+            <div style={{ color: "#8A7350", fontSize: 12, marginTop: 3, ...ui.label }}>
+              {daysLeft === 0 ? "Move day" : `${daysLeft} days left`}
             </div>
           </div>
 
-          {/* ---- HUD: top-right coins + inventory + undo ---- */}
+          {/* ---- HUD: room quest (center-top) ---- */}
+          <div style={{
+            position: "absolute", left: "50%", top: 12, transform: "translateX(-50%)",
+            padding: "8px 16px", textAlign: "center", zIndex: 200, minWidth: 120, ...ui.frame,
+          }}>
+            <div style={{ color: "#F2E4C0", fontSize: 15, ...ui.label }}>{room.name}</div>
+            <div style={{ color: "#C9B896", fontSize: 12, marginTop: 3, ...ui.label }}>
+              {total > 0 ? `${clearedCount}/${total}` : "—"}
+            </div>
+            {total > 0 && (
+              <div style={{ marginTop: 5, width: "100%", height: 8, background: "#120A04", border: "2px solid #4A2E17" }}>
+                <div style={{
+                  width: `${Math.round((clearedCount / total) * 100)}%`, height: "100%",
+                  background: "linear-gradient(#8FD14F,#5EA032)",
+                }} />
+              </div>
+            )}
+          </div>
+
+          {/* ---- HUD: top-right coins + boxes + undo ---- */}
           <div style={{ position: "absolute", right: 14, top: 12, display: "flex", gap: 8, zIndex: 200 }}>
             <button
               onClick={undoLast}
@@ -4066,9 +4256,10 @@ export default function PackItUp({ glowMode = "split" }) {
             </div>
             <button
               onClick={() => setInvOpen((v) => !v)}
+              title="Boxes packed (apartment-wide)"
               style={{ padding: "6px 12px", color: "#F2E4C0", fontSize: 14, cursor: "pointer", ...ui.frame, ...ui.label }}
             >
-              📦 {clearedCount}
+              📦 {globalPacked}/{globalTotal}
             </button>
           </div>
 
@@ -4290,13 +4481,35 @@ export default function PackItUp({ glowMode = "split" }) {
             ))}
             <span style={{ width: 2, height: 22, background: "#4A2E17" }} />
             <span style={{ color: "#C9B896", fontSize: 13, ...ui.label }}>
-              {room.name} · {clearedCount}/{total} cleared
+              {room.name} · {clearedCount}/{total}
+              <span style={{ color: "#8A7350" }}> · </span>
+              📦 {globalPacked}/{globalTotal}
+              <span style={{ color: "#8A7350" }}> · </span>
+              {daysLeft === 0 ? "Move day" : `${daysLeft}d left`}
             </span>
           </div>
         </div>
       </div>
 
       {donateToastEl}
+      <RewardToast text={screen === "apartment" ? rewardToast : null} />
+      <ScreenLayer
+        screen={screen}
+        go={setScreen}
+        tasks={tasks}
+        setTasks={setTasks}
+        handled={handled}
+        openHandledSheet={() => { setScreen("apartment"); setInvOpen(true); }}
+        busy={!!busy}
+        playSfx={(name) => { if (name === "stamp") playStampSfx(); }}
+        session={session}
+        onSessionBump={onSessionBump}
+        rewardToast={rewardToast}
+        appointments={appointments}
+        setAppointments={setAppointments}
+        phoneNudge={phoneNudge}
+        clearPhoneNudge={() => setPhoneNudge(null)}
+      />
     </div>
   );
 }

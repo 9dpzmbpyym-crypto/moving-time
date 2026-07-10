@@ -5,9 +5,9 @@
 const root = (import.meta.env.BASE_URL || "/").replace(/\/?$/, "/");
 const AUDIO_BASE = `${root}assets/audio/`;
 const SETTINGS_KEY = "pack-it-up-audio";
-const MUSIC_VOL_MAX = 0.175; // was 0.35 — overall game volume −50%
-const RADIO_VOL_MAX = 0.14;  // was 0.28 — stay slightly quieter than main
-const SFX_VOL_MAX = 0.5;     // SFX master (overall −50%)
+const MUSIC_VOL_MAX = 0.0875; // was 0.175 — another −50% (Jul 9)
+const RADIO_VOL_MAX = 0.07;   // was 0.14 — stay slightly quieter than main
+const SFX_VOL_MAX = 0.25;     // SFX master (another −50%)
 /** Hard rule: never overlap songs. Stop previous → silence → start next. */
 const SONG_GAP_MS = 1000;
 
@@ -726,6 +726,69 @@ export function playStampSfx() {
 
 export function playRoomSwitchSfx() {
   playBuffer(state.roomSwitch, 0.7);
+}
+
+/* ---- Landline / Shirley ceremony (procedural — no mp3 required) ---- */
+let phoneRingTimer = null;
+
+function toneBurst(freq, dur, vol = 0.35, type = "square") {
+  if (state.sfxVol <= 0.001) return;
+  const ctx = resumeCtx();
+  if (!ctx) return;
+  try {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    const now = ctx.currentTime;
+    const v = vol * state.sfxVol * SFX_VOL_MAX;
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(v, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + dur + 0.02);
+  } catch {}
+}
+
+/** Soft click when lifting the handset. */
+export function playPhonePickupSfx() {
+  toneBurst(420, 0.06, 0.22, "triangle");
+  setTimeout(() => toneBurst(280, 0.08, 0.18, "triangle"), 40);
+}
+
+/** Classic double-ring cadence; auto-stops after ~loops. */
+export function playPhoneRingSfx(loops = 2) {
+  stopPhoneRingSfx();
+  if (state.sfxVol <= 0.001) return;
+  const pair = () => {
+    toneBurst(880, 0.18, 0.28, "square");
+    setTimeout(() => toneBurst(740, 0.18, 0.26, "square"), 200);
+  };
+  let n = 0;
+  pair();
+  phoneRingTimer = setInterval(() => {
+    n += 1;
+    if (n >= loops) {
+      stopPhoneRingSfx();
+      return;
+    }
+    pair();
+  }, 1100);
+}
+
+export function stopPhoneRingSfx() {
+  if (phoneRingTimer) {
+    clearInterval(phoneRingTimer);
+    phoneRingTimer = null;
+  }
+}
+
+/** Clunk when hanging up. */
+export function playPhoneHangupSfx() {
+  stopPhoneRingSfx();
+  toneBurst(180, 0.1, 0.3, "sawtooth");
+  setTimeout(() => toneBurst(120, 0.12, 0.22, "triangle"), 50);
 }
 
 function containerKind(objectId, zone) {

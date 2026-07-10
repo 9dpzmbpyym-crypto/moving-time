@@ -1,9 +1,19 @@
 # Pack It Up — Dev Log
 
-Covers **July 5–9, 2026**. Combines:
+Covers **July 5–10, 2026**. Combines:
 - ChatGPT / design-session history (concept → art direction → assets)
 - Git history in this repo (first commit **Jul 6**; coded game from **Jul 7**)
-- Uncommitted Jul 9 night work (audio / radio)
+- Jul 9–10: audio/radio, save/session, Shirley landline
+
+---
+
+## July 10, 2026 — Shirley landline + open todos
+
+- Desk **landline ceremony** (pickup → dial → ring → call UI) + OpenRouter improv with bank fallback
+- `receptionist.js` / `receptionistCall.js`; appointments persisted in `save.js`; Body Board attend gated on booked+due
+- Character still in flux: stop pasting example convos literally; next = ChatGPT style/ruleset prompt as source of truth
+- Audio notes: replace room-switch + cabinet SFX; more clips incoming
+- Open checklist: top of `FINISH_PLAN.md` (“Open next”)
 
 ---
 
@@ -31,9 +41,17 @@ Ideas locked in:
 
 Influences noted: Unpacking, Habitica/Duolingo, Dave the Diver, Papers Please, Potion Craft, Do Not Feed the Monkeys, gentle completion bars.
 
+**Original mockups** (saved under `artifacts/pack-it-up/docs/mockups/`):
+1. **Paperwork Desk** — trays, stamps, outbox, drag-to-process
+2. **Hub dashboard** — room strip + cards in hand + body meters + days left
+3. **Apartment diorama** — side cutaway + Death Closet + labeled boxes
+4. **Body Board** — Operation zones + care items + appointments
+
+These are denser than the current playable build; they remain the emotional north star for Desk / Health / daily ritual — not a mandate to rebuild the apartment as a cutaway.
+
 **Milestone:** coherent product idea, not just a coping mechanism.
 
-*Not in this git repo yet — design/chat only.*
+*Not in this git repo yet as code — design/chat + mockup images.*
 
 ---
 
