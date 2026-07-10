@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import SAVED_LAYOUT from "./layout.json";
 // Sell sound: a real file in the repo (src/sell.mp3). Vite inlines it into the
 // bundle as a base64 data: URI at build time (forced via build.assetsInlineLimit
@@ -2462,23 +2463,25 @@ export default function PackItUp({ glowMode = "split" }) {
       // sits), so visually the item flies out of the open UI and into the box.
       // We keep the panel open (don't clear storageId) until the fly lands.
       const saved = SAVED_LAYOUT[room.id]?.[storageId] || {};
+      const placed = { ...storageObj, ...saved };
       const sScale = saved.scale ?? storageObj.scale ?? 1;
       const sw = (storageSpr.w || 32) * CELL * sScale;
-      // adaptive pscale: target an ~18px on-screen speck regardless of the
-      // raw PNG dimensions, so every item starts as the same small dot.
-      const targetPx = 18;
+      // Keep the departing item clearly readable while normalizing sprites with
+      // very different source dimensions to one visual size.
+      const targetPx = 40;
       const pscale = Math.min(targetPx / ((spr.w || 16) * CELL), targetPx / ((spr.h || 16) * CELL));
       const iw = (spr.w || 16) * CELL * pscale;
+      const ih = (spr.h || 16) * CELL * pscale;
       // start centered horizontally over the storage sprite, at its top edge
-      const ox = storageObj.x + (sw - iw) / 2;
-      const oy = storageObj.y - 4;
+      const ox = placed.x + (sw - iw) / 2;
+      const oy = placed.y - Math.max(8, ih * 0.35);
       // target: next box slot mouth (rmPacked count determines which slot)
       const rmPacked = room.objects.filter(
         (o) => o.removable && objState[sk(room.id, o.id)].packed
       ).length;
       // also count already-packed contents so multiple content packs stack
       const contentPacked = Object.entries(contentsState)
-        .filter(([key, st]) => key.startsWith(`${room.id}:${storageId}:`) && st.packed)
+        .filter(([key, st]) => key.startsWith(`${room.id}:`) && st.packed)
         .length;
       const totalPacked = rmPacked + contentPacked;
       const boxIdx = Math.min(totalPacked, BOX_MAX - 1);
@@ -2486,8 +2489,8 @@ export default function PackItUp({ glowMode = "split" }) {
       setContentFlyFx({
         spr,
         x: ox, y: oy,
-        pdx: boxTarget.x - ox,
-        pdy: boxTarget.y - oy,
+        pdx: boxTarget.x - (ox + iw / 2),
+        pdy: boxTarget.y - (oy + ih / 2),
         pscale,
       });
     }
@@ -2693,7 +2696,7 @@ export default function PackItUp({ glowMode = "split" }) {
       @keyframes packToBox {
         0%   { transform: translate(0px, 0px) scale(var(--pscale, 1)); opacity: 1; }
         30%  { transform: translate(calc(var(--pdx) * 0.25), calc(var(--pdy) * 0.25 - 40px)) scale(calc(var(--pscale, 1) * 0.82)); opacity: 1; }
-        100% { transform: translate(var(--pdx), var(--pdy)) scale(0.12); opacity: 0; }
+        100% { transform: translate(var(--pdx), var(--pdy)) scale(calc(var(--pscale, 1) * 0.18)); opacity: 0; }
       }
       @keyframes popIn { from { transform: scale(0.6); opacity: 0; } }
       @keyframes bounce { 0%,100% { transform: translateY(0);} 50% { transform: translateY(-3px);} }
@@ -2721,6 +2724,7 @@ export default function PackItUp({ glowMode = "split" }) {
       .obj:hover, .obj.sel { filter: drop-shadow(0 0 0 #FFD97A) drop-shadow(2px 0 0 #FFD97A) drop-shadow(-2px 0 0 #FFD97A) drop-shadow(0 2px 0 #FFD97A) drop-shadow(0 -2px 0 #FFD97A) brightness(1.06); }
       .obj.static { cursor: help; }
       .obj.packing { animation: packToBox 0.52s cubic-bezier(0.4, 0, 0.7, 1) forwards; }
+      .contentPacking { animation: packToBox 0.52s cubic-bezier(0.4, 0, 0.7, 1) forwards; pointer-events: none; }
       .obj.removing { animation: packAway 0.5s ease-in forwards; }
       .panel { animation: popIn 140ms ease-out; }
       .coin { animation: coinBurst 0.8s cubic-bezier(0.3, 0.4, 0.7, 1) both; }
@@ -2744,20 +2748,16 @@ export default function PackItUp({ glowMode = "split" }) {
         50%      { filter: drop-shadow(0 0 12px rgba(143,209,79,0.8)) drop-shadow(0 0 6px rgba(218,200,90,0.7)); }
       }
       .portal { animation: portalGlow 2.6s ease-in-out infinite; }
-      /* drawer-level glow: animates box-shadow (outer glow + small spread) and a
-         breathing background alpha so the drawer FACE itself visibly brightens
-         and dims. Two layered box-shadows blend green + yellow, more delicate
-         than .portal (smaller blur, lower opacity). Pulses per-drawer.
-         box-shadow is used instead of drop-shadow because the old drop-shadow
-         on a 10%-opaque div inherited that alpha and was nearly invisible. */
+      /* All drawer faces breathe together. A slower, continuous curve reads as
+         one storage cue instead of several unrelated blinking rectangles. */
       @keyframes drawerGlowPulse {
-        0%, 100% { box-shadow: 0 0 5px 1px rgba(143,209,79,0.45), 0 0 2px 0 rgba(218,200,90,0.35); background: rgba(143,209,79,0.08); }
-        50%      { box-shadow: 0 0 10px 2px rgba(143,209,79,0.75), 0 0 5px 1px rgba(218,200,90,0.60); background: rgba(143,209,79,0.22); }
+        0%, 100% { box-shadow: 0 0 5px 1px rgba(143,209,79,0.42), 0 0 2px rgba(218,200,90,0.30); background: rgba(143,209,79,0.09); }
+        50%      { box-shadow: 0 0 9px 2px rgba(143,209,79,0.68), 0 0 4px 1px rgba(218,200,90,0.50); background: rgba(143,209,79,0.19); }
       }
       .drawerGlow {
-        animation: drawerGlowPulse 2.8s ease-in-out infinite;
+        animation: drawerGlowPulse 3.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
         pointer-events: none;
-        background: rgba(143,209,79,0.15);
+        background: rgba(143,209,79,0.09);
         border-radius: 1px;
       }
       /* red dot pulse for the Tasks chip when pressure is high */
@@ -2810,7 +2810,10 @@ export default function PackItUp({ glowMode = "split" }) {
 
   const roomArt = (rm, extCells = 180) => {
     const rmPacked = rm.objects.filter((o) => o.removable && objState[sk(rm.id, o.id)].packed).length;
-    const rmBoxes = Math.min(BOX_MAX, rmPacked);            // one box per packed item
+    const rmContentPacked = Object.entries(contentsState)
+      .filter(([key, st]) => key.startsWith(`${rm.id}:`) && st.packed)
+      .length;
+    const rmBoxes = Math.min(BOX_MAX, rmPacked + rmContentPacked);
     // an item is flying to the pile now — furniture (packingId) OR a content
     // item (packingContentKey). Both must open the box to catch it.
     const packingHere = rm.id === room.id && (!!packingId || !!packingContentKey);
@@ -2880,6 +2883,8 @@ export default function PackItUp({ glowMode = "split" }) {
           return (
             <div
               key={o.id}
+              data-object-id={o.id}
+              data-room-id={rm.id}
               className={`obj ${isSel ? "sel" : ""} ${isPacking ? "packing" : ""} ${isRemoving ? "removing" : ""} ${o.removable ? "" : "static"} ${rm.id === "bathroom" && o.id === "mirror_cabinet" ? "portal" : ""} ${useOutlineGlow ? "portal" : ""}`}
               style={{ position: "absolute", left: placed.x, top: placed.y, zIndex: o.z * 10, transform: `scale(${placed.scale || 1})`, transformOrigin: "top left", ...packVars }}
               onClick={(e) => {
@@ -2904,8 +2909,6 @@ export default function PackItUp({ glowMode = "split" }) {
                   drawers are rectangles. Pulses via .drawerGlow keyframe.
                   Only shows while the storage still has unpacked items. */}
               {useFaceGlow && (() => {
-                // stagger each drawer's pulse so they don't all breathe in unison
-                const delays = ["0s", "0.7s", "1.4s", "2.1s", "0.35s", "1.05s", "1.75s", "2.45s"];
                 return activeGlowRegions.map(([gx, gy, gw, gh], i) => (
                   <div
                     key={`drawerGlow-${i}`}
@@ -2916,7 +2919,6 @@ export default function PackItUp({ glowMode = "split" }) {
                       top: gy * CELL,
                       width: gw * CELL,
                       height: gh * CELL,
-                      animationDelay: delays[i % delays.length],
                       zIndex: 2,
                     }}
                   />
@@ -2972,16 +2974,24 @@ export default function PackItUp({ glowMode = "split" }) {
           const padX = 4;
           const pLeft = Math.max(padX, Math.min(placed.x, STAGE_W - panelW - padX));
           const pTop = Math.max(padTop, Math.min(placed.y - 410, STAGE_H - 420));
-          return (
+          const panel = (
             <div
+              data-testid="storage-panel"
               style={{
-                position: "absolute", left: pLeft, top: pTop,
-                width: panelW, zIndex: 9999, pointerEvents: "auto",
+                ...(isMobile
+                  ? {
+                      position: "fixed", left: "50%", top: "calc(env(safe-area-inset-top, 0px) + 74px)",
+                      bottom: "calc(env(safe-area-inset-bottom, 0px) + 82px)",
+                      width: "min(560px, calc(100vw - 24px))", transform: "translateX(-50%)",
+                    }
+                  : { position: "absolute", left: pLeft, top: pTop, width: panelW }),
+                zIndex: 9999, pointerEvents: "auto", boxSizing: "border-box",
                 background: "#1D1006", border: "3px solid #120A04",
                 boxShadow: "inset 0 0 0 2px #4A2E17, 0 8px 24px rgba(0,0,0,0.8)",
                 padding: 12, ...ui.frame,
                 scrollbarColor: "#4A2E17 #1A0F06",
                 scrollbarWidth: "thin",
+                display: "flex", flexDirection: "column", overflow: "hidden",
               }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -2992,17 +3002,17 @@ export default function PackItUp({ glowMode = "split" }) {
                 .storageScroll::-webkit-scrollbar-thumb:hover { background: #6B4A28; }
               `}</style>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <div style={{ color: "#FFD97A", fontSize: 18, ...ui.label }}>{o.name}</div>
+                <div style={{ color: "#FFD97A", fontSize: isMobile ? 20 : 18, ...ui.label }}>{o.name}</div>
                 <button
                   onClick={(e) => { e.stopPropagation(); setStorageId(null); setSelectedContentId(null); }}
-                  style={{ background: "none", border: "none", color: "#C9B896", fontSize: 22, cursor: "pointer", lineHeight: 1, ...ui.label }}
+                  style={{ background: "none", border: "none", color: "#C9B896", fontSize: 24, cursor: "pointer", lineHeight: 1, minWidth: 44, minHeight: 44, ...ui.label }}
                   title="close"
                 >×</button>
               </div>
-              <div style={{ color: rem > 0 ? "#C9B896" : "#5D7C3B", fontSize: 14, marginBottom: 10, ...ui.label }}>
+              <div style={{ color: rem > 0 ? "#C9B896" : "#5D7C3B", fontSize: isMobile ? 16 : 14, marginBottom: 10, ...ui.label }}>
                 {rem > 0 ? `${rem} inside` : "empty — safe to pack whole"}
               </div>
-              <div className="storageScroll" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 10, maxHeight: 270, overflowY: "auto", paddingRight: 4 }}>
+              <div className="storageScroll" style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, minmax(0, 1fr))" : "repeat(auto-fill, minmax(120px, 1fr))", gap: 10, maxHeight: isMobile ? "none" : 270, minHeight: 0, flex: isMobile ? "1 1 auto" : "0 1 auto", overflowY: "auto", paddingRight: 4 }}>
                 {items.map((it) => {
                   const k = `${sKey}:${it.id}`;
                   const st = contentsState[k] || { packed: false, sold: false, soldFor: 0, donated: false };
@@ -3011,7 +3021,7 @@ export default function PackItUp({ glowMode = "split" }) {
                   const maxDim = 64;
                   const fit = it.spr ? Math.min(maxDim / (it.spr.w * CELL), maxDim / (it.spr.h * CELL)) : 0;
                   return (
-                    <div key={it.id} style={{
+                    <div key={it.id} data-content-id={it.id} style={{
                       position: "relative", padding: 8,
                       background: done ? "#0F0904" : (isSel ? "#3A2410" : "#1A0F06"),
                       border: isSel ? "2px solid #FFD97A" : "2px solid #4A2E17",
@@ -3045,7 +3055,7 @@ export default function PackItUp({ glowMode = "split" }) {
                           </div>
                         </div>
                       )}
-                      <div style={{ color: "#F2E4C0", fontSize: 14, textAlign: "center", lineHeight: 1.2, ...ui.label }}>{it.name}</div>
+                      <div style={{ color: "#F2E4C0", fontSize: isMobile ? 16 : 14, textAlign: "center", lineHeight: 1.2, ...ui.label }}>{it.name}</div>
                       {st.packed && <div style={{ color: "#C9B896", fontSize: 12, ...ui.label }}>packed</div>}
                       {st.sold && <div style={{ color: "#D9A33C", fontSize: 12, ...ui.label }}>sold ${st.soldFor}</div>}
                       {st.donated && <div style={{ color: "#77974C", fontSize: 12, ...ui.label }}>donated</div>}
@@ -3058,24 +3068,39 @@ export default function PackItUp({ glowMode = "split" }) {
                   buttons the user found too tiny to tap reliably. */}
               <div style={{ display: "flex", gap: 8, marginTop: 12, padding: "10px 10px 0", borderTop: "2px solid #4A2E17" }}>
                 <button
+                  data-storage-action="pack"
                   onClick={() => { if (sel) { packContent(o.id, sel.id); } }}
                   disabled={!sel || !!selDone || !!busy}
-                  style={{ flex: 1, padding: "12px 8px", fontSize: 16, cursor: (!sel || selDone || busy) ? "not-allowed" : "pointer", color: "#F2E4C0", background: sel ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (!sel || selDone) ? 0.4 : 1, ...ui.label }}
+                  style={{ flex: 1, padding: "12px 6px", fontSize: isMobile ? 14 : 16, cursor: (!sel || selDone || busy) ? "not-allowed" : "pointer", color: "#F2E4C0", background: sel ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (!sel || selDone) ? 0.4 : 1, ...ui.label }}
                 >📦 Pack</button>
                 <button
+                  data-storage-action="sell"
                   onClick={() => { if (sel) { sellContent(o.id, sel.id); } }}
                   disabled={!sel || !!selDone || !!busy || !sel?.value}
                   title={sel?.value ? `sell ~$${sel.value}` : "can't sell"}
-                  style={{ flex: 1, padding: "12px 8px", fontSize: 16, cursor: (!sel || selDone || busy || !sel?.value) ? "not-allowed" : "pointer", color: "#FFD97A", background: sel ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (!sel || selDone || !sel?.value) ? 0.4 : 1, ...ui.label }}
+                  style={{ flex: 1, padding: "12px 6px", fontSize: isMobile ? 14 : 16, cursor: (!sel || selDone || busy || !sel?.value) ? "not-allowed" : "pointer", color: "#FFD97A", background: sel ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (!sel || selDone || !sel?.value) ? 0.4 : 1, ...ui.label }}
                 >💰 Sell{sel?.value ? ` $${sel.value}` : ""}</button>
                 <button
+                  data-storage-action="donate"
                   onClick={() => { if (sel) { donateContent(o.id, sel.id); } }}
                   disabled={!sel || !!selDone || !!busy}
-                  style={{ flex: 1, padding: "12px 8px", fontSize: 16, cursor: (!sel || selDone || busy) ? "not-allowed" : "pointer", color: "#9CC76F", background: sel ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (!sel || selDone) ? 0.4 : 1, ...ui.label }}
+                  style={{ flex: 1, padding: "12px 6px", fontSize: isMobile ? 14 : 16, cursor: (!sel || selDone || busy) ? "not-allowed" : "pointer", color: "#9CC76F", background: sel ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (!sel || selDone) ? 0.4 : 1, ...ui.label }}
                 >🎁 Donate</button>
               </div>
             </div>
           );
+          return isMobile
+            ? createPortal(
+                <>
+                  <div
+                    onClick={() => { setStorageId(null); setSelectedContentId(null); }}
+                    style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(10, 5, 2, 0.22)" }}
+                  />
+                  {panel}
+                </>,
+                document.body
+              )
+            : panel;
         })()}
 
         {/* STRETCHY — the cat, only in the current room, above the floor/furniture
@@ -3132,7 +3157,7 @@ export default function PackItUp({ glowMode = "split" }) {
             packToBox keyframe shrinks it to 0.12x of --pscale as it lands). */}
         {contentFlyFx && rm.id === room.id && contentFlyFx.spr && (
           <div
-            className="packing"
+            className="contentPacking"
             style={{
               position: "absolute",
               left: contentFlyFx.x,
@@ -3142,7 +3167,6 @@ export default function PackItUp({ glowMode = "split" }) {
               "--pdy": `${contentFlyFx.pdy}px`,
               "--pscale": contentFlyFx.pscale,
               transformOrigin: "top left",
-              transform: `scale(${contentFlyFx.pscale})`,
             }}
           >
             <PixelCanvas w={contentFlyFx.spr.w} h={contentFlyFx.spr.h} draw={contentFlyFx.spr.draw} />
