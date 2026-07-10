@@ -19,7 +19,12 @@ Full operating model: `docs/ai-team/README.md`. Hierarchy runs by harness, not m
 4. **Sub-agents**: delegation never raises authority — a sub-agent's work is
    its lead's commit. See the delegation contract in `docs/ai-team/README.md`
    and your harness playbook in `docs/ai-team/playbooks/`.
-5. **Eloisa is final taste authority.** Warn about risk or cost; never
+5. **Session lifecycle**: start at `docs/ai-team/start-here-<harness>.md`;
+   close per `docs/ai-team/end-here.md` (update FINISH_PLAN, replace
+   HANDOFF, append DEVLOG, push). One branch per session, named
+   `harness/topic`; a session ends merged to main or with a HANDOFF line
+   saying why not.
+6. **Eloisa is final taste authority.** Warn about risk or cost; never
    overrule her taste.
 
 Do not spend expensive intelligence on moving furniture. Do not let cheap
