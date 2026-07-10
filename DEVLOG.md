@@ -9,6 +9,15 @@ Covers **July 5–10, 2026**. Combines:
 
 ---
 
+## July 10, 2026 — [Codex / GPT-5.6 Sol] Codex team configuration
+
+- Replaced the Codex playbook stub with the real delegation, authority, review, usage, and failure-handling contract
+- Added pinned project agents: Luna/high for approved narrow implementation and Terra/medium for read-only exploration
+- Capped agent fan-out at three threads and one level; required exact agent selection with no silent fallback
+- Added the append-only Codex session report; no game code or canonical plan items changed
+
+---
+
 ## July 10, 2026 — [Claude / Fable 5] AI team operating model + docs/branch reorg
 
 - Org chart redesign + full operating model (`docs/ai-team/`): commit ladder, routing, sub-agent contract, per-team folders
