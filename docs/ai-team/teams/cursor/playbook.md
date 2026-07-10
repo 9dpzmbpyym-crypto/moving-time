@@ -117,3 +117,37 @@ Exact paths Eloisa should keep for this harness. GUI-only items have no reliable
 ## Commit & close reminder
 
 Grok leads commits for Cursor work. Close per `docs/ai-team/end-here.md`: update `FINISH_PLAN.md`, new `docs/sessions/` file, signed `DEVLOG.md` entry, merge team branch → `main`.
+
+## Notes for Fable review (Jul 10)
+
+Please sanity-check taste/ops alignment — not game code:
+
+1. **API maxed on Eloisa’s Pro** — playbook tells Grok to stay on first-party (Grok/Composer/Auto). Confirm that matches how you want overflow routed (Codex vs ask-first on-demand).
+2. **Explore subagent = Composer while chat = Grok** — intentional cheap search; flag if you’d rather Explore inherit Grok.
+3. **Standing branch:** docs say `cursor`; this playbook still lives on `cursor/storage-glow-7a01` until someone creates/merges the standing `cursor` branch. Call out if that’s a process smell.
+4. **Voice/pixels still yours** — Shirley style prompt + glow “does it look right?” stay Claude; Grok only implements.
+5. **Codex playbook still a stub** — Sol owes `teams/codex/playbook.md`; don’t treat Cursor’s playbook as covering Codex mechanics.
+
+## Plain-English roster (who’s who)
+
+**Boss:** Eloisa — product, taste, final yes/no.
+
+**Cursor — main floor (this playbook)**  
+- **Grok 4.5** ★ — team lead / repair tech. Builds and fixes the game in Cursor. Commits.  
+- **Composer 2.5** — intern. Tiny patches only; never leads a commit.  
+- Paid overflow (GLM / API Luna) — only if Eloisa says spend is OK.
+
+**Codex — heavy machinery**  
+- **GPT-5.6 Sol** ★ — senior engineer / team lead. Opens the hard stuff: multi-file work, stubborn bugs, test/fix loops. Commits.  
+- **GPT-5.6 Luna** — implementation engineer. Builds from clear tickets; may commit only when the ticket is narrow and pre-approved.  
+- **GPT-5.6 Terra** (if available) — mid-tier helper between Sol and Luna; same caution as Luna.
+
+**Claude — design studio**  
+- **Fable 5** ★ — creative director / principal. What “good” looks like; docs/design commits; voice & pixel standards.  
+- **Opus 4.8** — senior taste reviewer.  
+- Sonnet/Haiku — Claude Code interns for grunt search/QA.
+
+**ChatGPT — front office**  
+- **GPT-5.6 Sol** (chat) — exec assistant. Thinks and writes prompts/tickets; **cannot** edit the repo. (Same “Sol” name as Codex lead, different room.)
+
+One-liner: Fable decides good · ChatGPT Sol writes orders · Codex Sol opens the machine · Grok runs the floor · Luna builds tickets · Composer moves the furniture.
