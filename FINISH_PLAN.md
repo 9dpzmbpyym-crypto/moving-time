@@ -42,7 +42,7 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 
 ### Ship / host
 - [x] Commit Shirley + save/session/desk/health on `cursor/storage-glow-7a01` (Jul 10)
-- [ ] Commit storage-glow unify pass; push when ready
+- [x] Commit storage-glow unify + plan/handoff; push branch
 - [ ] Deploy `artifacts/pack-it-up` to Vercel; smoke-test on phone (audio prime + save + desk phone)
 
 ### Systems still open from plan

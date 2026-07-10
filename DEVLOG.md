@@ -9,12 +9,22 @@ Covers **July 5–10, 2026**. Combines:
 
 ## July 10, 2026 — Shirley landline + storage glow handoff
 
+### Shipped
 - Desk **landline ceremony** (pickup → dial → ring → call UI) + OpenRouter improv with bank fallback
 - `receptionist.js` / `receptionistCall.js`; appointments persisted in `save.js`; Body Board attend gated on booked+due
-- Character still in flux: stop pasting example convos literally; next = ChatGPT style/ruleset prompt as source of truth
-- Audio notes: replace room-switch + cabinet SFX; more clips incoming
-- Storage glow: all containers on `.drawerGlow` / `glowRegions`; edge-only halo; **still open** — shrink fridge/pantry/closet regions so they match bar-cabinet door look
-- **Plan of record:** `FINISH_PLAN.md` (short + long). **Session handoff:** `HANDOFF.md`
+- Storage glow unify: all containers on `.drawerGlow` / `glowRegions`; edge-only halo (no green fill); closet/fridge/pantry off `faceGlowRegions`; storage no longer falls back to silhouette `.portal` (mirror keeps portal)
+- Plan consolidated: **`FINISH_PLAN.md`** = short + long SoT; **`HANDOFF.md`** = latest session report; agent docs only point there
+
+### Outstanding (carry forward)
+- **Glow still looks wrong:** same code path, but fridge/pantry/closet `glowRegions` cover most of the sprite → full-object aura vs bar/vanity door halo. Next fix = shrink those rects; compare dining bar vs kitchen fridge vs bath vanity
+- **Shirley voice:** ChatGPT style/ruleset prompt as source of truth — do **not** paste example convos into line banks; then rebuild `SHIRLEY_SYSTEM_PROMPT` / thin bank; stall→hang-up + objective cadence
+- **SFX:** replace room-switch (`sfx/ui/room_switch_01.mp3`) + cabinet open/close; more clips incoming; prefer `public/assets/audio/` only (leave `src/assets/audio/` untracked duplicate)
+- **Ship:** Vercel deploy + phone smoke (audio prime, save, desk phone)
+- **Systems still open:** Stretchy morning check-in; job-tracker read-only → Desk; soft Rejected stamp / labeled boxes / thin storage contents
+- **Dev note:** game on `http://localhost:8091/` from Projects repo — ignore Downloads copy on 8090 if still running
+
+### Branch
+`cursor/storage-glow-7a01` — glow unify + plan/handoff commits; see `HANDOFF.md` for next-session order
 
 ---
 

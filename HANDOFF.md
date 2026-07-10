@@ -23,7 +23,7 @@
 2. Shirley ChatGPT **style/ruleset prompt** not landed yet (don’t paste example convos into banks).
 3. Replace room-switch + cabinet SFX (user dislikes current).
 4. Vercel deploy + phone smoke test.
-5. Push branch when ready (`git push` — local may be ahead of origin).
+5. ~~Push branch when ready~~ — pushed with this handoff
 
 ### Do not
 - Split `BedroomSlice.jsx`
@@ -54,4 +54,4 @@ Check dining bar cabinet, kitchen fridge/pantry, bath vanity, bedroom dresser/cl
 1. Tune `glowRegions` on fridge / pantry / closet (and any other full-coverage faces)
 2. Shirley prompt → rebuild system prompt / thin bank
 3. SFX swaps (room switch, cabinet)
-4. Push + Vercel + phone test
+4. Vercel + phone test
