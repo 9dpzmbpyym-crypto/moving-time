@@ -89,6 +89,8 @@ only re-renders on sprite-frame changes.
 
 ## Next planned work
 
-Wire real systems into the placeholder overlay screens in `Screens.jsx`
-(Menu/Desk/Health/Inventory/Log/Stretchy/Settings are visual shells), and fill
-in storage contents for rooms beyond the pantry pilot in `contents.js`.
+**Canonical plan (short + long):** `FINISH_PLAN.md`  
+**Latest session handoff:** `HANDOFF.md`  
+**History:** `DEVLOG.md`
+
+Do not maintain a second todo list here.

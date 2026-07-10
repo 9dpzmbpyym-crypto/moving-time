@@ -1,7 +1,17 @@
-# Pack It Up — Finish Plan (weekend cut)
+# Pack It Up — Plan (canonical)
+
+**This file is the single source of truth** for short-term and longer-term work.  
+Other docs (`AGENTS.md`, `CLAUDE.md`, `DEVLOG.md`, `replit.md`) should only *point here* — don’t maintain parallel todo lists.
+
+| Section | Horizon |
+|---------|---------|
+| **Open next** (top) | Immediate handoff / next session |
+| **P0 → P2c** | Weekend + near-term product goals |
+| **Explicitly defer** | Long-term traps — do not start |
+| **Definition of done** | Weekend ship bar |
 
 **Hard date:** usable by end of weekend (before/around Jul 12 Fable renew).  
-**Move:** end of month — this is a productivity tool, not an endless art project.  
+**Move:** end of month — productivity tool, not an endless art project.  
 **Product bar:** fun to open every day + helps you pack / apply / stay covered.  
 **North star mockups:** `artifacts/pack-it-up/docs/mockups/`
 

@@ -7,13 +7,14 @@ Covers **July 5–10, 2026**. Combines:
 
 ---
 
-## July 10, 2026 — Shirley landline + open todos
+## July 10, 2026 — Shirley landline + storage glow handoff
 
 - Desk **landline ceremony** (pickup → dial → ring → call UI) + OpenRouter improv with bank fallback
 - `receptionist.js` / `receptionistCall.js`; appointments persisted in `save.js`; Body Board attend gated on booked+due
 - Character still in flux: stop pasting example convos literally; next = ChatGPT style/ruleset prompt as source of truth
 - Audio notes: replace room-switch + cabinet SFX; more clips incoming
-- Open checklist: top of `FINISH_PLAN.md` (“Open next”)
+- Storage glow: all containers on `.drawerGlow` / `glowRegions`; edge-only halo; **still open** — shrink fridge/pantry/closet regions so they match bar-cabinet door look
+- **Plan of record:** `FINISH_PLAN.md` (short + long). **Session handoff:** `HANDOFF.md`
 
 ---
 
