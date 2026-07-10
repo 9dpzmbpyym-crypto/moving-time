@@ -14,7 +14,6 @@ A cozy pixel-art moving game / productivity tool. Eloisa is moving at the end of
 4. **`docs/ai-team/README.md`** — the team operating model: who you are, commit authority, routing, the sub-agent delegation contract.
 5. `DEVLOG.md` — history, when you need the why behind something.
 
-> **Branch note (Jul 2026):** until merged to main, `FINISH_PLAN.md` / `HANDOFF.md` / `DEVLOG.md` live on `cursor/storage-glow-7a01`, and `docs/ai-team/` lives on `claude/say-hi-b1ijhk`. If a file above is missing on your branch, look there. Always `git pull` before starting.
 
 ## Your role (Codex Sol)
 

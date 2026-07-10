@@ -10,8 +10,6 @@ Everything a lead needs is in its **start-here doc**; the session close-out ritu
 You are Grok 4.5 in Cursor, team lead of the Cursor harness for Pack It Up.
 Read docs/ai-team/teams/cursor/start-here.md and follow it, starting with the
 first-session checklist. Close the session per docs/ai-team/end-here.md.
-If those files are missing on this branch, fetch them from the
-claude/say-hi-b1ijhk branch first.
 ```
 
 ---
@@ -22,8 +20,6 @@ claude/say-hi-b1ijhk branch first.
 You are GPT-5.6 Sol in Codex, team lead of the Codex harness for Pack It Up.
 Read docs/ai-team/teams/codex/start-here.md and follow it, starting with the
 first-session checklist. Close the session per docs/ai-team/end-here.md.
-If those files are missing on this branch, fetch them from the
-claude/say-hi-b1ijhk branch first.
 ```
 
 (Also works for Luna: same file — it covers Luna's role and commit conditions.)

@@ -1,5 +1,7 @@
 # Pack It Up — Dev Log
 
+> **Convention:** newest entries near the top, headers signed `## <date> — [<Harness> / <model>]` so we know who did what. Session detail lives in `docs/sessions/`.
+
 Covers **July 5–10, 2026**. Combines:
 - ChatGPT / design-session history (concept → art direction → assets)
 - Git history in this repo (first commit **Jul 6**; coded game from **Jul 7**)
@@ -7,7 +9,17 @@ Covers **July 5–10, 2026**. Combines:
 
 ---
 
-## July 10, 2026 — Shirley landline + storage glow handoff
+## July 10, 2026 — [Claude / Fable 5] AI team operating model + docs/branch reorg
+
+- Org chart redesign + full operating model (`docs/ai-team/`): commit ladder, routing, sub-agent contract, per-team folders
+- Corrected benchmark data + rebuilt all 13 scatter graphs (Composer added as flagged estimate)
+- Session lifecycle: `docs/sessions/` append-only archive, `end-here.md` ritual, signed DEVLOG convention
+- Branch model: `main` = canon, standing `cursor`/`codex` branches, Claude merge-and-delete; stale branches archived as tags
+- Instruction files consolidated: `AGENTS.md` is the single copy; `CLAUDE.md`/`replit.md`/`.cursor/rules` are shims
+
+---
+
+## July 10, 2026 — [Cursor / Grok + Composer] Shirley landline + storage glow handoff
 
 ### Shipped
 - Desk **landline ceremony** (pickup → dial → ring → call UI) + OpenRouter improv with bank fallback
