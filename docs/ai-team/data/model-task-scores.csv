@@ -1,0 +1,170 @@
+task_key,task,model,short,harness,credit_class,on_roster,estimated,task_fit_score,cost_per_task_usd,coding_agent_index,notes
+app_game_architecture,App/game architecture,Claude Fable 5 max,Fable 5 max,Claude,Claude Pro,yes,no,97,11.75,77.0,Highest taste/creative/knowledge-work ceiling; expensive.
+app_game_architecture,App/game architecture,GPT-5.6 Sol max,Sol max,Codex,Codex Pro,yes,no,96,7.08,80.0,Best pure coding-agent performer in this set.
+app_game_architecture,App/game architecture,Claude Opus 4.8 max,Opus 4.8 max,Claude,Claude Pro,yes,no,91,7.7,73.0,"Strong taste, writing, design translation; expensive for code."
+app_game_architecture,App/game architecture,GPT-5.6 Terra max,Terra max,Codex (if available),Codex Pro,yes,no,91,2.76,77.0,Strong balanced coding value.
+app_game_architecture,App/game architecture,Grok 4.5 high,Grok 4.5,Cursor,Cursor native,yes,no,92,2.59,76.0,Strong Cursor-adjacent agentic/debugging value.
+app_game_architecture,App/game architecture,GPT-5.6 Luna max,Luna max,Codex,Codex Pro,yes,no,86,1.57,75.0,Best daily-driver value.
+app_game_architecture,App/game architecture,GLM-5.2,GLM-5.2,OpenRouter / Cursor API,Paid API,yes,no,82,6.47,58.0,Good long-context utility; weak in this specific coding-agent setup.
+app_game_architecture,App/game architecture,GPT-5.6 Luna medium,Luna med,Codex,Codex Pro,yes,no,75,0.47,59.0,Cheap for routine edits and cleanup.
+app_game_architecture,App/game architecture,GPT-5.6 Luna low,Luna low,Codex,Codex Pro,yes,no,60,0.21,42.0,Very cheap; use only for low-risk work.
+app_game_architecture,App/game architecture,DeepSeek V4 Pro high,DeepSeek V4 Pro,benchmark reference,Reference,no,no,68,0.27,47.0,Cheap benchmarked open-model agent option.
+app_game_architecture,App/game architecture,Kimi K2.6,Kimi K2.6,benchmark reference,Reference,no,no,70,1.18,47.0,Open-model option; slow/uneven in this setup.
+app_game_architecture,App/game architecture,Qwen3-Coder-Next local/free,Qwen local,benchmark reference,Reference,no,no,62,0.0,,Modeled as zero direct API cost only if run locally/free; compute and setup excluded.
+game_ui_design,Game UI design,Claude Fable 5 max,Fable 5 max,Claude,Claude Pro,yes,no,94,11.75,77.0,Highest taste/creative/knowledge-work ceiling; expensive.
+game_ui_design,Game UI design,GPT-5.6 Sol max,Sol max,Codex,Codex Pro,yes,no,88,7.08,80.0,Best pure coding-agent performer in this set.
+game_ui_design,Game UI design,Claude Opus 4.8 max,Opus 4.8 max,Claude,Claude Pro,yes,no,93,7.7,73.0,"Strong taste, writing, design translation; expensive for code."
+game_ui_design,Game UI design,GPT-5.6 Terra max,Terra max,Codex (if available),Codex Pro,yes,no,85,2.76,77.0,Strong balanced coding value.
+game_ui_design,Game UI design,Grok 4.5 high,Grok 4.5,Cursor,Cursor native,yes,no,84,2.59,76.0,Strong Cursor-adjacent agentic/debugging value.
+game_ui_design,Game UI design,GPT-5.6 Luna max,Luna max,Codex,Codex Pro,yes,no,82,1.57,75.0,Best daily-driver value.
+game_ui_design,Game UI design,GLM-5.2,GLM-5.2,OpenRouter / Cursor API,Paid API,yes,no,76,6.47,58.0,Good long-context utility; weak in this specific coding-agent setup.
+game_ui_design,Game UI design,GPT-5.6 Luna medium,Luna med,Codex,Codex Pro,yes,no,74,0.47,59.0,Cheap for routine edits and cleanup.
+game_ui_design,Game UI design,GPT-5.6 Luna low,Luna low,Codex,Codex Pro,yes,no,60,0.21,42.0,Very cheap; use only for low-risk work.
+game_ui_design,Game UI design,DeepSeek V4 Pro high,DeepSeek V4 Pro,benchmark reference,Reference,no,no,58,0.27,47.0,Cheap benchmarked open-model agent option.
+game_ui_design,Game UI design,Kimi K2.6,Kimi K2.6,benchmark reference,Reference,no,no,62,1.18,47.0,Open-model option; slow/uneven in this setup.
+game_ui_design,Game UI design,Qwen3-Coder-Next local/free,Qwen local,benchmark reference,Reference,no,no,54,0.0,,Modeled as zero direct API cost only if run locally/free; compute and setup excluded.
+game_creative_direction,Game creative direction,Claude Fable 5 max,Fable 5 max,Claude,Claude Pro,yes,no,98,11.75,77.0,Highest taste/creative/knowledge-work ceiling; expensive.
+game_creative_direction,Game creative direction,GPT-5.6 Sol max,Sol max,Codex,Codex Pro,yes,no,90,7.08,80.0,Best pure coding-agent performer in this set.
+game_creative_direction,Game creative direction,Claude Opus 4.8 max,Opus 4.8 max,Claude,Claude Pro,yes,no,95,7.7,73.0,"Strong taste, writing, design translation; expensive for code."
+game_creative_direction,Game creative direction,GPT-5.6 Terra max,Terra max,Codex (if available),Codex Pro,yes,no,84,2.76,77.0,Strong balanced coding value.
+game_creative_direction,Game creative direction,Grok 4.5 high,Grok 4.5,Cursor,Cursor native,yes,no,84,2.59,76.0,Strong Cursor-adjacent agentic/debugging value.
+game_creative_direction,Game creative direction,GPT-5.6 Luna max,Luna max,Codex,Codex Pro,yes,no,80,1.57,75.0,Best daily-driver value.
+game_creative_direction,Game creative direction,GLM-5.2,GLM-5.2,OpenRouter / Cursor API,Paid API,yes,no,74,6.47,58.0,Good long-context utility; weak in this specific coding-agent setup.
+game_creative_direction,Game creative direction,GPT-5.6 Luna medium,Luna med,Codex,Codex Pro,yes,no,72,0.47,59.0,Cheap for routine edits and cleanup.
+game_creative_direction,Game creative direction,GPT-5.6 Luna low,Luna low,Codex,Codex Pro,yes,no,56,0.21,42.0,Very cheap; use only for low-risk work.
+game_creative_direction,Game creative direction,DeepSeek V4 Pro high,DeepSeek V4 Pro,benchmark reference,Reference,no,no,52,0.27,47.0,Cheap benchmarked open-model agent option.
+game_creative_direction,Game creative direction,Kimi K2.6,Kimi K2.6,benchmark reference,Reference,no,no,60,1.18,47.0,Open-model option; slow/uneven in this setup.
+game_creative_direction,Game creative direction,Qwen3-Coder-Next local/free,Qwen local,benchmark reference,Reference,no,no,50,0.0,,Modeled as zero direct API cost only if run locally/free; compute and setup excluded.
+planning,Planning,Claude Fable 5 max,Fable 5 max,Claude,Claude Pro,yes,no,96,11.75,77.0,Highest taste/creative/knowledge-work ceiling; expensive.
+planning,Planning,GPT-5.6 Sol max,Sol max,Codex,Codex Pro,yes,no,95,7.08,80.0,Best pure coding-agent performer in this set.
+planning,Planning,Claude Opus 4.8 max,Opus 4.8 max,Claude,Claude Pro,yes,no,92,7.7,73.0,"Strong taste, writing, design translation; expensive for code."
+planning,Planning,GPT-5.6 Terra max,Terra max,Codex (if available),Codex Pro,yes,no,90,2.76,77.0,Strong balanced coding value.
+planning,Planning,Grok 4.5 high,Grok 4.5,Cursor,Cursor native,yes,no,89,2.59,76.0,Strong Cursor-adjacent agentic/debugging value.
+planning,Planning,GPT-5.6 Luna max,Luna max,Codex,Codex Pro,yes,no,88,1.57,75.0,Best daily-driver value.
+planning,Planning,GLM-5.2,GLM-5.2,OpenRouter / Cursor API,Paid API,yes,no,86,6.47,58.0,Good long-context utility; weak in this specific coding-agent setup.
+planning,Planning,GPT-5.6 Luna medium,Luna med,Codex,Codex Pro,yes,no,82,0.47,59.0,Cheap for routine edits and cleanup.
+planning,Planning,GPT-5.6 Luna low,Luna low,Codex,Codex Pro,yes,no,72,0.21,42.0,Very cheap; use only for low-risk work.
+planning,Planning,DeepSeek V4 Pro high,DeepSeek V4 Pro,benchmark reference,Reference,no,no,72,0.27,47.0,Cheap benchmarked open-model agent option.
+planning,Planning,Kimi K2.6,Kimi K2.6,benchmark reference,Reference,no,no,74,1.18,47.0,Open-model option; slow/uneven in this setup.
+planning,Planning,Qwen3-Coder-Next local/free,Qwen local,benchmark reference,Reference,no,no,65,0.0,,Modeled as zero direct API cost only if run locally/free; compute and setup excluded.
+orchestrating_sub_agents,Orchestrating sub-agents,Claude Fable 5 max,Fable 5 max,Claude,Claude Pro,yes,no,96,11.75,77.0,Highest taste/creative/knowledge-work ceiling; expensive.
+orchestrating_sub_agents,Orchestrating sub-agents,GPT-5.6 Sol max,Sol max,Codex,Codex Pro,yes,no,97,7.08,80.0,Best pure coding-agent performer in this set.
+orchestrating_sub_agents,Orchestrating sub-agents,Claude Opus 4.8 max,Opus 4.8 max,Claude,Claude Pro,yes,no,90,7.7,73.0,"Strong taste, writing, design translation; expensive for code."
+orchestrating_sub_agents,Orchestrating sub-agents,GPT-5.6 Terra max,Terra max,Codex (if available),Codex Pro,yes,no,91,2.76,77.0,Strong balanced coding value.
+orchestrating_sub_agents,Orchestrating sub-agents,Grok 4.5 high,Grok 4.5,Cursor,Cursor native,yes,no,93,2.59,76.0,Strong Cursor-adjacent agentic/debugging value.
+orchestrating_sub_agents,Orchestrating sub-agents,GPT-5.6 Luna max,Luna max,Codex,Codex Pro,yes,no,84,1.57,75.0,Best daily-driver value.
+orchestrating_sub_agents,Orchestrating sub-agents,GLM-5.2,GLM-5.2,OpenRouter / Cursor API,Paid API,yes,no,78,6.47,58.0,Good long-context utility; weak in this specific coding-agent setup.
+orchestrating_sub_agents,Orchestrating sub-agents,GPT-5.6 Luna medium,Luna med,Codex,Codex Pro,yes,no,76,0.47,59.0,Cheap for routine edits and cleanup.
+orchestrating_sub_agents,Orchestrating sub-agents,GPT-5.6 Luna low,Luna low,Codex,Codex Pro,yes,no,60,0.21,42.0,Very cheap; use only for low-risk work.
+orchestrating_sub_agents,Orchestrating sub-agents,DeepSeek V4 Pro high,DeepSeek V4 Pro,benchmark reference,Reference,no,no,64,0.27,47.0,Cheap benchmarked open-model agent option.
+orchestrating_sub_agents,Orchestrating sub-agents,Kimi K2.6,Kimi K2.6,benchmark reference,Reference,no,no,68,1.18,47.0,Open-model option; slow/uneven in this setup.
+orchestrating_sub_agents,Orchestrating sub-agents,Qwen3-Coder-Next local/free,Qwen local,benchmark reference,Reference,no,no,65,0.0,,Modeled as zero direct API cost only if run locally/free; compute and setup excluded.
+sub_agent_use,Sub-agent use,Claude Fable 5 max,Fable 5 max,Claude,Claude Pro,yes,no,90,11.75,77.0,Highest taste/creative/knowledge-work ceiling; expensive.
+sub_agent_use,Sub-agent use,GPT-5.6 Sol max,Sol max,Codex,Codex Pro,yes,no,89,7.08,80.0,Best pure coding-agent performer in this set.
+sub_agent_use,Sub-agent use,Claude Opus 4.8 max,Opus 4.8 max,Claude,Claude Pro,yes,no,84,7.7,73.0,"Strong taste, writing, design translation; expensive for code."
+sub_agent_use,Sub-agent use,GPT-5.6 Terra max,Terra max,Codex (if available),Codex Pro,yes,no,86,2.76,77.0,Strong balanced coding value.
+sub_agent_use,Sub-agent use,Grok 4.5 high,Grok 4.5,Cursor,Cursor native,yes,no,89,2.59,76.0,Strong Cursor-adjacent agentic/debugging value.
+sub_agent_use,Sub-agent use,GPT-5.6 Luna max,Luna max,Codex,Codex Pro,yes,no,82,1.57,75.0,Best daily-driver value.
+sub_agent_use,Sub-agent use,GLM-5.2,GLM-5.2,OpenRouter / Cursor API,Paid API,yes,no,84,6.47,58.0,Good long-context utility; weak in this specific coding-agent setup.
+sub_agent_use,Sub-agent use,GPT-5.6 Luna medium,Luna med,Codex,Codex Pro,yes,no,80,0.47,59.0,Cheap for routine edits and cleanup.
+sub_agent_use,Sub-agent use,GPT-5.6 Luna low,Luna low,Codex,Codex Pro,yes,no,73,0.21,42.0,Very cheap; use only for low-risk work.
+sub_agent_use,Sub-agent use,DeepSeek V4 Pro high,DeepSeek V4 Pro,benchmark reference,Reference,no,no,78,0.27,47.0,Cheap benchmarked open-model agent option.
+sub_agent_use,Sub-agent use,Kimi K2.6,Kimi K2.6,benchmark reference,Reference,no,no,76,1.18,47.0,Open-model option; slow/uneven in this setup.
+sub_agent_use,Sub-agent use,Qwen3-Coder-Next local/free,Qwen local,benchmark reference,Reference,no,no,77,0.0,,Modeled as zero direct API cost only if run locally/free; compute and setup excluded.
+debugging,Debugging,Claude Fable 5 max,Fable 5 max,Claude,Claude Pro,yes,no,95,11.75,77.0,Highest taste/creative/knowledge-work ceiling; expensive.
+debugging,Debugging,GPT-5.6 Sol max,Sol max,Codex,Codex Pro,yes,no,98,7.08,80.0,Best pure coding-agent performer in this set.
+debugging,Debugging,Claude Opus 4.8 max,Opus 4.8 max,Claude,Claude Pro,yes,no,88,7.7,73.0,"Strong taste, writing, design translation; expensive for code."
+debugging,Debugging,GPT-5.6 Terra max,Terra max,Codex (if available),Codex Pro,yes,no,92,2.76,77.0,Strong balanced coding value.
+debugging,Debugging,Grok 4.5 high,Grok 4.5,Cursor,Cursor native,yes,no,93,2.59,76.0,Strong Cursor-adjacent agentic/debugging value.
+debugging,Debugging,GPT-5.6 Luna max,Luna max,Codex,Codex Pro,yes,no,86,1.57,75.0,Best daily-driver value.
+debugging,Debugging,GLM-5.2,GLM-5.2,OpenRouter / Cursor API,Paid API,yes,no,76,6.47,58.0,Good long-context utility; weak in this specific coding-agent setup.
+debugging,Debugging,GPT-5.6 Luna medium,Luna med,Codex,Codex Pro,yes,no,76,0.47,59.0,Cheap for routine edits and cleanup.
+debugging,Debugging,GPT-5.6 Luna low,Luna low,Codex,Codex Pro,yes,no,55,0.21,42.0,Very cheap; use only for low-risk work.
+debugging,Debugging,DeepSeek V4 Pro high,DeepSeek V4 Pro,benchmark reference,Reference,no,no,58,0.27,47.0,Cheap benchmarked open-model agent option.
+debugging,Debugging,Kimi K2.6,Kimi K2.6,benchmark reference,Reference,no,no,61,1.18,47.0,Open-model option; slow/uneven in this setup.
+debugging,Debugging,Qwen3-Coder-Next local/free,Qwen local,benchmark reference,Reference,no,no,55,0.0,,Modeled as zero direct API cost only if run locally/free; compute and setup excluded.
+small_code_edits_nudges,Small code edits/nudges,Claude Fable 5 max,Fable 5 max,Claude,Claude Pro,yes,no,72,11.75,77.0,Highest taste/creative/knowledge-work ceiling; expensive.
+small_code_edits_nudges,Small code edits/nudges,GPT-5.6 Sol max,Sol max,Codex,Codex Pro,yes,no,78,7.08,80.0,Best pure coding-agent performer in this set.
+small_code_edits_nudges,Small code edits/nudges,Claude Opus 4.8 max,Opus 4.8 max,Claude,Claude Pro,yes,no,75,7.7,73.0,"Strong taste, writing, design translation; expensive for code."
+small_code_edits_nudges,Small code edits/nudges,GPT-5.6 Terra max,Terra max,Codex (if available),Codex Pro,yes,no,85,2.76,77.0,Strong balanced coding value.
+small_code_edits_nudges,Small code edits/nudges,Grok 4.5 high,Grok 4.5,Cursor,Cursor native,yes,no,85,2.59,76.0,Strong Cursor-adjacent agentic/debugging value.
+small_code_edits_nudges,Small code edits/nudges,GPT-5.6 Luna max,Luna max,Codex,Codex Pro,yes,no,95,1.57,75.0,Best daily-driver value.
+small_code_edits_nudges,Small code edits/nudges,GLM-5.2,GLM-5.2,OpenRouter / Cursor API,Paid API,yes,no,88,6.47,58.0,Good long-context utility; weak in this specific coding-agent setup.
+small_code_edits_nudges,Small code edits/nudges,GPT-5.6 Luna medium,Luna med,Codex,Codex Pro,yes,no,94,0.47,59.0,Cheap for routine edits and cleanup.
+small_code_edits_nudges,Small code edits/nudges,GPT-5.6 Luna low,Luna low,Codex,Codex Pro,yes,no,87,0.21,42.0,Very cheap; use only for low-risk work.
+small_code_edits_nudges,Small code edits/nudges,DeepSeek V4 Pro high,DeepSeek V4 Pro,benchmark reference,Reference,no,no,82,0.27,47.0,Cheap benchmarked open-model agent option.
+small_code_edits_nudges,Small code edits/nudges,Kimi K2.6,Kimi K2.6,benchmark reference,Reference,no,no,84,1.18,47.0,Open-model option; slow/uneven in this setup.
+small_code_edits_nudges,Small code edits/nudges,Qwen3-Coder-Next local/free,Qwen local,benchmark reference,Reference,no,no,85,0.0,,Modeled as zero direct API cost only if run locally/free; compute and setup excluded.
+cleanup,Cleanup,Claude Fable 5 max,Fable 5 max,Claude,Claude Pro,yes,no,78,11.75,77.0,Highest taste/creative/knowledge-work ceiling; expensive.
+cleanup,Cleanup,GPT-5.6 Sol max,Sol max,Codex,Codex Pro,yes,no,82,7.08,80.0,Best pure coding-agent performer in this set.
+cleanup,Cleanup,Claude Opus 4.8 max,Opus 4.8 max,Claude,Claude Pro,yes,no,80,7.7,73.0,"Strong taste, writing, design translation; expensive for code."
+cleanup,Cleanup,GPT-5.6 Terra max,Terra max,Codex (if available),Codex Pro,yes,no,87,2.76,77.0,Strong balanced coding value.
+cleanup,Cleanup,Grok 4.5 high,Grok 4.5,Cursor,Cursor native,yes,no,86,2.59,76.0,Strong Cursor-adjacent agentic/debugging value.
+cleanup,Cleanup,GPT-5.6 Luna max,Luna max,Codex,Codex Pro,yes,no,94,1.57,75.0,Best daily-driver value.
+cleanup,Cleanup,GLM-5.2,GLM-5.2,OpenRouter / Cursor API,Paid API,yes,no,92,6.47,58.0,Good long-context utility; weak in this specific coding-agent setup.
+cleanup,Cleanup,GPT-5.6 Luna medium,Luna med,Codex,Codex Pro,yes,no,93,0.47,59.0,Cheap for routine edits and cleanup.
+cleanup,Cleanup,GPT-5.6 Luna low,Luna low,Codex,Codex Pro,yes,no,90,0.21,42.0,Very cheap; use only for low-risk work.
+cleanup,Cleanup,DeepSeek V4 Pro high,DeepSeek V4 Pro,benchmark reference,Reference,no,no,88,0.27,47.0,Cheap benchmarked open-model agent option.
+cleanup,Cleanup,Kimi K2.6,Kimi K2.6,benchmark reference,Reference,no,no,86,1.18,47.0,Open-model option; slow/uneven in this setup.
+cleanup,Cleanup,Qwen3-Coder-Next local/free,Qwen local,benchmark reference,Reference,no,no,84,0.0,,Modeled as zero direct API cost only if run locally/free; compute and setup excluded.
+notes_to_tickets,Notes → tickets for plans,Claude Fable 5 max,Fable 5 max,Claude,Claude Pro,yes,no,92,11.75,77.0,Highest taste/creative/knowledge-work ceiling; expensive.
+notes_to_tickets,Notes → tickets for plans,GPT-5.6 Sol max,Sol max,Codex,Codex Pro,yes,no,90,7.08,80.0,Best pure coding-agent performer in this set.
+notes_to_tickets,Notes → tickets for plans,Claude Opus 4.8 max,Opus 4.8 max,Claude,Claude Pro,yes,no,91,7.7,73.0,"Strong taste, writing, design translation; expensive for code."
+notes_to_tickets,Notes → tickets for plans,GPT-5.6 Terra max,Terra max,Codex (if available),Codex Pro,yes,no,89,2.76,77.0,Strong balanced coding value.
+notes_to_tickets,Notes → tickets for plans,Grok 4.5 high,Grok 4.5,Cursor,Cursor native,yes,no,87,2.59,76.0,Strong Cursor-adjacent agentic/debugging value.
+notes_to_tickets,Notes → tickets for plans,GPT-5.6 Luna max,Luna max,Codex,Codex Pro,yes,no,94,1.57,75.0,Best daily-driver value.
+notes_to_tickets,Notes → tickets for plans,GLM-5.2,GLM-5.2,OpenRouter / Cursor API,Paid API,yes,no,91,6.47,58.0,Good long-context utility; weak in this specific coding-agent setup.
+notes_to_tickets,Notes → tickets for plans,GPT-5.6 Luna medium,Luna med,Codex,Codex Pro,yes,no,91,0.47,59.0,Cheap for routine edits and cleanup.
+notes_to_tickets,Notes → tickets for plans,GPT-5.6 Luna low,Luna low,Codex,Codex Pro,yes,no,86,0.21,42.0,Very cheap; use only for low-risk work.
+notes_to_tickets,Notes → tickets for plans,DeepSeek V4 Pro high,DeepSeek V4 Pro,benchmark reference,Reference,no,no,83,0.27,47.0,Cheap benchmarked open-model agent option.
+notes_to_tickets,Notes → tickets for plans,Kimi K2.6,Kimi K2.6,benchmark reference,Reference,no,no,84,1.18,47.0,Open-model option; slow/uneven in this setup.
+notes_to_tickets,Notes → tickets for plans,Qwen3-Coder-Next local/free,Qwen local,benchmark reference,Reference,no,no,78,0.0,,Modeled as zero direct API cost only if run locally/free; compute and setup excluded.
+pixel_art,Pixel art,Claude Fable 5 max,Fable 5 max,Claude,Claude Pro,yes,no,94,11.75,77.0,Highest taste/creative/knowledge-work ceiling; expensive.
+pixel_art,Pixel art,GPT-5.6 Sol max,Sol max,Codex,Codex Pro,yes,no,85,7.08,80.0,Best pure coding-agent performer in this set.
+pixel_art,Pixel art,Claude Opus 4.8 max,Opus 4.8 max,Claude,Claude Pro,yes,no,92,7.7,73.0,"Strong taste, writing, design translation; expensive for code."
+pixel_art,Pixel art,GPT-5.6 Terra max,Terra max,Codex (if available),Codex Pro,yes,no,82,2.76,77.0,Strong balanced coding value.
+pixel_art,Pixel art,Grok 4.5 high,Grok 4.5,Cursor,Cursor native,yes,no,81,2.59,76.0,Strong Cursor-adjacent agentic/debugging value.
+pixel_art,Pixel art,GPT-5.6 Luna max,Luna max,Codex,Codex Pro,yes,no,78,1.57,75.0,Best daily-driver value.
+pixel_art,Pixel art,GLM-5.2,GLM-5.2,OpenRouter / Cursor API,Paid API,yes,no,75,6.47,58.0,Good long-context utility; weak in this specific coding-agent setup.
+pixel_art,Pixel art,GPT-5.6 Luna medium,Luna med,Codex,Codex Pro,yes,no,72,0.47,59.0,Cheap for routine edits and cleanup.
+pixel_art,Pixel art,GPT-5.6 Luna low,Luna low,Codex,Codex Pro,yes,no,58,0.21,42.0,Very cheap; use only for low-risk work.
+pixel_art,Pixel art,DeepSeek V4 Pro high,DeepSeek V4 Pro,benchmark reference,Reference,no,no,52,0.27,47.0,Cheap benchmarked open-model agent option.
+pixel_art,Pixel art,Kimi K2.6,Kimi K2.6,benchmark reference,Reference,no,no,58,1.18,47.0,Open-model option; slow/uneven in this setup.
+pixel_art,Pixel art,Qwen3-Coder-Next local/free,Qwen local,benchmark reference,Reference,no,no,50,0.0,,Modeled as zero direct API cost only if run locally/free; compute and setup excluded.
+game_mechanic_design,Game mechanic design,Claude Fable 5 max,Fable 5 max,Claude,Claude Pro,yes,no,97,11.75,77.0,Highest taste/creative/knowledge-work ceiling; expensive.
+game_mechanic_design,Game mechanic design,GPT-5.6 Sol max,Sol max,Codex,Codex Pro,yes,no,95,7.08,80.0,Best pure coding-agent performer in this set.
+game_mechanic_design,Game mechanic design,Claude Opus 4.8 max,Opus 4.8 max,Claude,Claude Pro,yes,no,92,7.7,73.0,"Strong taste, writing, design translation; expensive for code."
+game_mechanic_design,Game mechanic design,GPT-5.6 Terra max,Terra max,Codex (if available),Codex Pro,yes,no,90,2.76,77.0,Strong balanced coding value.
+game_mechanic_design,Game mechanic design,Grok 4.5 high,Grok 4.5,Cursor,Cursor native,yes,no,88,2.59,76.0,Strong Cursor-adjacent agentic/debugging value.
+game_mechanic_design,Game mechanic design,GPT-5.6 Luna max,Luna max,Codex,Codex Pro,yes,no,84,1.57,75.0,Best daily-driver value.
+game_mechanic_design,Game mechanic design,GLM-5.2,GLM-5.2,OpenRouter / Cursor API,Paid API,yes,no,80,6.47,58.0,Good long-context utility; weak in this specific coding-agent setup.
+game_mechanic_design,Game mechanic design,GPT-5.6 Luna medium,Luna med,Codex,Codex Pro,yes,no,74,0.47,59.0,Cheap for routine edits and cleanup.
+game_mechanic_design,Game mechanic design,GPT-5.6 Luna low,Luna low,Codex,Codex Pro,yes,no,58,0.21,42.0,Very cheap; use only for low-risk work.
+game_mechanic_design,Game mechanic design,DeepSeek V4 Pro high,DeepSeek V4 Pro,benchmark reference,Reference,no,no,62,0.27,47.0,Cheap benchmarked open-model agent option.
+game_mechanic_design,Game mechanic design,Kimi K2.6,Kimi K2.6,benchmark reference,Reference,no,no,66,1.18,47.0,Open-model option; slow/uneven in this setup.
+game_mechanic_design,Game mechanic design,Qwen3-Coder-Next local/free,Qwen local,benchmark reference,Reference,no,no,55,0.0,,Modeled as zero direct API cost only if run locally/free; compute and setup excluded.
+marcy_npc_dialogue,Marcy/NPC dialogue,Claude Fable 5 max,Fable 5 max,Claude,Claude Pro,yes,no,99,11.75,77.0,Highest taste/creative/knowledge-work ceiling; expensive.
+marcy_npc_dialogue,Marcy/NPC dialogue,GPT-5.6 Sol max,Sol max,Codex,Codex Pro,yes,no,87,7.08,80.0,Best pure coding-agent performer in this set.
+marcy_npc_dialogue,Marcy/NPC dialogue,Claude Opus 4.8 max,Opus 4.8 max,Claude,Claude Pro,yes,no,96,7.7,73.0,"Strong taste, writing, design translation; expensive for code."
+marcy_npc_dialogue,Marcy/NPC dialogue,GPT-5.6 Terra max,Terra max,Codex (if available),Codex Pro,yes,no,82,2.76,77.0,Strong balanced coding value.
+marcy_npc_dialogue,Marcy/NPC dialogue,Grok 4.5 high,Grok 4.5,Cursor,Cursor native,yes,no,83,2.59,76.0,Strong Cursor-adjacent agentic/debugging value.
+marcy_npc_dialogue,Marcy/NPC dialogue,GPT-5.6 Luna max,Luna max,Codex,Codex Pro,yes,no,84,1.57,75.0,Best daily-driver value.
+marcy_npc_dialogue,Marcy/NPC dialogue,GLM-5.2,GLM-5.2,OpenRouter / Cursor API,Paid API,yes,no,72,6.47,58.0,Good long-context utility; weak in this specific coding-agent setup.
+marcy_npc_dialogue,Marcy/NPC dialogue,GPT-5.6 Luna medium,Luna med,Codex,Codex Pro,yes,no,78,0.47,59.0,Cheap for routine edits and cleanup.
+marcy_npc_dialogue,Marcy/NPC dialogue,GPT-5.6 Luna low,Luna low,Codex,Codex Pro,yes,no,70,0.21,42.0,Very cheap; use only for low-risk work.
+marcy_npc_dialogue,Marcy/NPC dialogue,DeepSeek V4 Pro high,DeepSeek V4 Pro,benchmark reference,Reference,no,no,55,0.27,47.0,Cheap benchmarked open-model agent option.
+marcy_npc_dialogue,Marcy/NPC dialogue,Kimi K2.6,Kimi K2.6,benchmark reference,Reference,no,no,60,1.18,47.0,Open-model option; slow/uneven in this setup.
+marcy_npc_dialogue,Marcy/NPC dialogue,Qwen3-Coder-Next local/free,Qwen local,benchmark reference,Reference,no,no,50,0.0,,Modeled as zero direct API cost only if run locally/free; compute and setup excluded.
+app_game_architecture,App/game architecture,Composer 2.5,Composer,Cursor,Cursor native,yes,yes,30,0.0,,"Fable estimate, not benchmarked. Cursor native credits; tiny scoped edits only."
+game_ui_design,Game UI design,Composer 2.5,Composer,Cursor,Cursor native,yes,yes,45,0.0,,"Fable estimate, not benchmarked. Cursor native credits; tiny scoped edits only."
+game_creative_direction,Game creative direction,Composer 2.5,Composer,Cursor,Cursor native,yes,yes,25,0.0,,"Fable estimate, not benchmarked. Cursor native credits; tiny scoped edits only."
+planning,Planning,Composer 2.5,Composer,Cursor,Cursor native,yes,yes,40,0.0,,"Fable estimate, not benchmarked. Cursor native credits; tiny scoped edits only."
+orchestrating_sub_agents,Orchestrating sub-agents,Composer 2.5,Composer,Cursor,Cursor native,yes,yes,25,0.0,,"Fable estimate, not benchmarked. Cursor native credits; tiny scoped edits only."
+sub_agent_use,Sub-agent use,Composer 2.5,Composer,Cursor,Cursor native,yes,yes,68,0.0,,"Fable estimate, not benchmarked. Cursor native credits; tiny scoped edits only."
+debugging,Debugging,Composer 2.5,Composer,Cursor,Cursor native,yes,yes,35,0.0,,"Fable estimate, not benchmarked. Cursor native credits; tiny scoped edits only."
+small_code_edits_nudges,Small code edits/nudges,Composer 2.5,Composer,Cursor,Cursor native,yes,yes,88,0.0,,"Fable estimate, not benchmarked. Cursor native credits; tiny scoped edits only."
+cleanup,Cleanup,Composer 2.5,Composer,Cursor,Cursor native,yes,yes,80,0.0,,"Fable estimate, not benchmarked. Cursor native credits; tiny scoped edits only."
+notes_to_tickets,Notes → tickets for plans,Composer 2.5,Composer,Cursor,Cursor native,yes,yes,55,0.0,,"Fable estimate, not benchmarked. Cursor native credits; tiny scoped edits only."
+pixel_art,Pixel art,Composer 2.5,Composer,Cursor,Cursor native,yes,yes,55,0.0,,"Fable estimate, not benchmarked. Cursor native credits; tiny scoped edits only."
+game_mechanic_design,Game mechanic design,Composer 2.5,Composer,Cursor,Cursor native,yes,yes,28,0.0,,"Fable estimate, not benchmarked. Cursor native credits; tiny scoped edits only."
+marcy_npc_dialogue,Marcy/NPC dialogue,Composer 2.5,Composer,Cursor,Cursor native,yes,yes,25,0.0,,"Fable estimate, not benchmarked. Cursor native credits; tiny scoped edits only."
