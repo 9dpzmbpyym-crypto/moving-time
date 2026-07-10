@@ -1,83 +1,14 @@
-# Pack It Up — Instructions for Claude
+# Pack It Up — Claude instructions
 
-## What this project is
+**Read `AGENTS.md` first** — it is the single full copy of the game architecture, the BedroomSlice.jsx section map, the hard rules, and the AI-team summary. This file only adds what's Claude-specific.
 
-A pixel-art moving game. The player walks through apartment rooms and packs, sells, or donates furniture. Personal motivation tool for a real move. No backend, no database, no UI framework.
+## Who you are here
 
-## File map
+Claude team = **Fable 5** (lead — principal consultant, creative director) and **Opus 4.8** (senior reviewer). Full operating model: `docs/ai-team/README.md`. Your playbook (sub-agents: Opus/Sonnet/Haiku bench): `docs/ai-team/teams/claude/playbook.md`.
 
-```
-artifacts/pack-it-up/src/
-  BedroomSlice.jsx    ← the entire hub + game (~3,500 lines). This is everything.
-  Screens.jsx         ← full-screen overlays (Menu/Desk/Health/Storage/etc.)
-  contents.js         ← storage contents data (items inside cabinets/drawers)
-  main.tsx            ← mounts the game. 15 lines. Don't touch.
-  layout.json         ← furniture positions (x, y, scale) per room
-  sell.mp3            ← sell chime (base64-inlined at build time for iOS CSP)
-  assets/Cat-Sheet.png ← Stretchy the cat sprite sheet
-  dev/spritePreview.jsx ← developer-only tool, not part of the game
-```
+## Claude-specific rules
 
-Root-level files (`lib/`, `scripts/`, monorepo config) are infrastructure. Leave them alone.
-
-## BedroomSlice.jsx section map
-
-Line numbers below are approximate — the file grows as features land. Search for the labels shown.
-
-| Lines | What |
-|-------|------|
-| 1–60 | Imports, constants, color palette `P`, canvas helpers |
-| 60–335 | Bedroom (shell + sprites) |
-| 335–545 | Office (shell + sprites) |
-| 545–775 | Bathroom (shell + sprites) |
-| 775–965 | Kitchen (shell + sprites + objects) |
-| 965–1165 | Dining room (shell + sprites + objects) |
-| 1165–1430 | Living room (shell + sprites + objects + box stack) |
-| 1430–1590 | ROOMS model + ROOMS_ORDER + helpers |
-| 1590–1625 | PixelCanvas component |
-| 1625–1790 | LayoutEditor dev tool (`?edit=1`) |
-| 1791–1860 | Haptics + audio |
-| 1861–2017 | Stretchy the cat |
-| 2018–3560 | PackItUp — main component (all state + logic + UI, incl. storage feature + drawer glow) |
-
-`Screens.jsx` and `contents.js` are imported by BedroomSlice but kept separate (overlays + data, not game logic).
-
-## Rules
-
-- All game code belongs in `BedroomSlice.jsx`. Do not create extra files for game features.
-- No Tailwind. No Radix UI. No shadcn. None are installed. Use inline styles and canvas.
-- Do not import: react-query, wouter, framer-motion, recharts, zod — not in package.json.
-- For furniture layout changes, edit `layout.json`, not BedroomSlice.jsx.
-- **Do not split BedroomSlice.jsx** — other harnesses have in-flight work. Split later.
-- Do not touch anything outside `artifacts/pack-it-up/`, **except** `docs/ai-team/**` and the AI-team section of `AGENTS.md` — Claude (Fable/Opus) owns and maintains those docs. See `docs/ai-team/README.md` for the team operating model, commit authority, and sub-agent rules.
-
-## How pixel art sprites work
-
-```js
-const CELL = 4; // 1 sprite pixel = 4 screen pixels
-const r = (ctx, color, x, y, w=1, h=1) => { ctx.fillStyle=color; ctx.fillRect(x,y,w,h); }
-```
-All sprites are drawn at low resolution and CSS-scaled with `image-rendering: pixelated`. Every piece of furniture is a `draw(ctx)` function inside a sprites object.
-
-## Adding a new room
-
-1. Add `drawXShell(ctx)` for walls/floor/window
-2. Add `X_SPRITES = { itemName: { w, h, draw(ctx) } }` 
-3. Add `X_OBJECTS = [{ id, name, category, value, sprite }]`
-4. Add entry to `ROOMS` object (line ~1432)
-5. Add room id to `ROOMS_ORDER` array (line ~1511)
-
-## Adding a new sprite to an existing room
-
-Add a new entry to the room's sprites object following the exact same pattern as existing ones. Use colors from the `P` palette. Use the `r()`, `dith()`, and `outlineRect()` helpers.
-
-## Multi-harness
-
-Always `git pull` before starting work. Always commit when done. Other sessions (Cursor, ChatGPT, Replit) may be working concurrently.
-
-## Known issues — do not fix unless asked
-
-- BedroomSlice.jsx should be split into modules eventually
-- Unmanaged `setTimeout` calls (no cleanup on unmount)  
-- Negative sale prices accepted without validation
-- Cat animation rerenders the whole game (isolation needed)
+- Claude owns and maintains **docs**: `docs/**`, this file, and the AI-team section of `AGENTS.md`. Repo *code* commits normally land via Cursor Grok or Codex Sol — you edit game code only when Eloisa explicitly puts you on it.
+- Claude's lanes: taste, game feel, creative direction, Marcy/Shirley voice, pixel-art standards, architecture review, doc design. Don't burn Claude credits on furniture-moving.
+- Branch rule: Claude Code auto-creates a `claude/<slug>` branch per session — merge it to `main` at session end and delete it (see Branch model in `docs/ai-team/README.md`).
+- Session lifecycle: read `FINISH_PLAN.md` (plan of record) + `HANDOFF.md` (latest session) at start; close out per `docs/ai-team/end-here.md`.

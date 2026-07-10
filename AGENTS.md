@@ -18,13 +18,15 @@ Full operating model: `docs/ai-team/README.md`. Hierarchy runs by harness, not m
    long-context grind → GLM (paid API, ask first).
 4. **Sub-agents**: delegation never raises authority — a sub-agent's work is
    its lead's commit. See the delegation contract in `docs/ai-team/README.md`
-   and your harness playbook in `docs/ai-team/playbooks/`.
-5. **Session lifecycle**: start at `docs/ai-team/start-here-<harness>.md`;
-   close per `docs/ai-team/end-here.md` (update FINISH_PLAN, replace
-   HANDOFF, append DEVLOG, push). One branch per session, named
-   `harness/topic`; a session ends merged to main or with a HANDOFF line
-   saying why not.
-6. **Eloisa is final taste authority.** Warn about risk or cost; never
+   and your harness playbook in `docs/ai-team/teams/`.
+5. **Session lifecycle**: start at `docs/ai-team/teams/<harness>/start-here.md`;
+   close per `docs/ai-team/end-here.md` (update FINISH_PLAN, new session
+   file in docs/sessions/, signed DEVLOG entry, merge to main).
+6. **Branches**: `main` is canon — never work on it directly. Cursor and
+   Codex work on their standing `cursor` / `codex` branches (pull main
+   first, every session). Claude merges its auto-created session branch
+   to main and deletes it. Merge = approval, done by the harness lead.
+7. **Eloisa is final taste authority.** Warn about risk or cost; never
    overrule her taste.
 
 Do not spend expensive intelligence on moving furniture. Do not let cheap
@@ -82,7 +84,7 @@ Line numbers below are approximate — the file grows as features land. Find you
 4. **Do not import** react-query, wouter, framer-motion, recharts, zod — not installed
 5. **layout.json** = furniture positions. Edit it for layout, not BedroomSlice.jsx
 6. **Do not split BedroomSlice.jsx** — other work is in flight. Leave it as one file for now.
-7. **Do not touch** anything outside `artifacts/pack-it-up/` unless explicitly asked
+7. **Scope rule (stated once, here):** game code stays inside `artifacts/pack-it-up/`. The only files any agent may edit outside it: `FINISH_PLAN.md`, `HANDOFF.md`, `DEVLOG.md`, `docs/sessions/` (new files only), and your own team's folder `docs/ai-team/teams/<harness>/`. Claude additionally maintains `docs/**`, `CLAUDE.md`, and this file's AI-team section. Everything else at root is monorepo infrastructure — leave it alone.
 
 ## How sprites work
 

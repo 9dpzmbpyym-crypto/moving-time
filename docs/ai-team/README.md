@@ -202,6 +202,18 @@ Per-harness phrasing:
 
 ---
 
+## Branch model
+
+- **`main` is canon.** Only approved, merged work. Nobody works on main directly.
+- **`cursor`** and **`codex`** are standing team branches. Sessions are commits on the team branch, not new branches. **First act of every session: pull main into your team branch** — skip this and the branch drifts until merges hurt.
+- **Claude** has no standing branch: Claude Code auto-creates `claude/<slug>` per session; merge it to main at session end and delete it. Never more than one Claude branch alive at a time.
+- **ChatGPT** is non-agentic — no branch. **Replit** — no branch unless it's revived as a real team member.
+- **Merge = approval.** Harness leads merge their own branch into main per the commit ladder; every merge carries a signed DEVLOG entry (`## <date> — [<Harness> / <model>]`). Eloisa reviews after the fact and remains final authority.
+- Retired branches are archived as `archive/<branch-name>` git tags before deletion — recoverable anytime.
+- Two teams editing `BedroomSlice.jsx` at once will conflict under any branch scheme (it's one 3,500-line file). Mitigation: one team per FINISH_PLAN lane at a time, small frequent merges.
+
+---
+
 ## Sub-agents inside a harness
 
 Each agentic harness (Cursor, Codex, Claude) can spawn sub-agents. The *mechanics* differ per harness, so instructions are split in two:
@@ -216,9 +228,9 @@ Each agentic harness (Cursor, Codex, Claude) can spawn sub-agents. The *mechanic
 
 **2. Harness playbooks (lead-owned, living).** Each team lead writes and maintains their own playbook describing how sub-agents actually work in *their* harness — what agent types exist, when to use them, known failure modes:
 
-- `docs/ai-team/playbooks/cursor.md` — owned by Grok 4.5
-- `docs/ai-team/playbooks/codex.md` — owned by Codex GPT-5.6 Sol
-- `docs/ai-team/playbooks/claude.md` — owned by Fable 5
+- `docs/ai-team/teams/cursor/playbook.md` — owned by Grok 4.5
+- `docs/ai-team/teams/codex/playbook.md` — owned by Codex GPT-5.6 Sol
+- `docs/ai-team/teams/claude/playbook.md` — owned by Fable 5
 
 Leads write their playbook the first time they work in the repo, following the contract above; Eloisa approves playbook changes like any other commit. ChatGPT Sol gets no playbook — it is non-agentic; its "sub-agents" are the other harnesses, reached by prompts.
 

@@ -46,9 +46,9 @@ Eloisa's local copy runs at `http://localhost:8091/` (the Projects repo — igno
 ## First session checklist
 
 1. Identify yourself (harness, model, permissions, task risk, budget state — ask Eloisa where Cursor usage stands).
-2. Write your harness playbook: replace the stub at `docs/ai-team/playbooks/cursor.md`. Cover: what delegation mechanisms actually exist in Cursor today (don't invent features); when you delegate to Composer vs doing it yourself, with 2–3 concrete examples from `FINISH_PLAN.md`; how paid API enters Cursor and the confirm-spend rule; your known delegation failure modes; how you check usage state. Match the structure of `playbooks/claude.md`. Under a page. Commit as "Add Cursor harness playbook".
+2. Write your harness playbook: replace the stub at `docs/ai-team/teams/cursor/playbook.md`. Cover: what delegation mechanisms actually exist in Cursor today (don't invent features); when you delegate to Composer vs doing it yourself, with 2–3 concrete examples from `FINISH_PLAN.md`; how paid API enters Cursor and the confirm-spend rule; your known delegation failure modes; how you check usage state. Match the structure of `teams/claude/playbook.md`. Under a page. Commit as "Add Cursor harness playbook".
 3. Then take the top item from **Open next** in `FINISH_PLAN.md`.
-4. Work on one branch per session, named `harness/topic` (e.g. `cursor/glow-rects`).
-5. Close the session per **`docs/ai-team/end-here.md`** — update FINISH_PLAN, replace HANDOFF, append DEVLOG, push, report.
+4. Work on the standing **`cursor`** branch — first act of every session: pull `main` into it. No new branches per session.
+5. Close the session per **`docs/ai-team/end-here.md`** — update FINISH_PLAN, new session file in `docs/sessions/`, signed DEVLOG entry, merge `cursor` → `main`, report.
 
 Do not spend expensive intelligence on moving furniture. Do not let cheap labor redesign the house.

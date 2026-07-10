@@ -50,9 +50,9 @@ Eloisa's local copy runs at `http://localhost:8091/` (the Projects repo — igno
 ## First session checklist
 
 1. Identify yourself (harness, model, permissions, task risk, budget state — ask Eloisa where the Codex weekly reset stands).
-2. **Sol only:** write your harness playbook: replace the stub at `docs/ai-team/playbooks/codex.md`. Cover: what sub-agent/parallel mechanisms actually exist in Codex today (don't invent features); when a ticket goes to Luna (and at which thinking level) vs stays with you, with 2–3 concrete examples from `FINISH_PLAN.md`; Luna's commit conditions restated in your own words; your known delegation failure modes; how you check usage state. Match the structure of `playbooks/claude.md`. Under a page. Commit as "Add Codex harness playbook".
+2. **Sol only:** write your harness playbook: replace the stub at `docs/ai-team/teams/codex/playbook.md`. Cover: what sub-agent/parallel mechanisms actually exist in Codex today (don't invent features); when a ticket goes to Luna (and at which thinking level) vs stays with you, with 2–3 concrete examples from `FINISH_PLAN.md`; Luna's commit conditions restated in your own words; your known delegation failure modes; how you check usage state. Match the structure of `teams/claude/playbook.md`. Under a page. Commit as "Add Codex harness playbook".
 3. Then take the top item from **Open next** in `FINISH_PLAN.md` that fits Codex (debugging, multi-file, test/fix) — coordinate with Eloisa if Cursor already has it in flight.
-4. Work on one branch per session, named `harness/topic` (e.g. `codex/sfx-swap`).
-5. Close the session per **`docs/ai-team/end-here.md`** — update FINISH_PLAN, replace HANDOFF, append DEVLOG, push, report.
+4. Work on the standing **`codex`** branch — first act of every session: pull `main` into it. No new branches per session.
+5. Close the session per **`docs/ai-team/end-here.md`** — update FINISH_PLAN, new session file in `docs/sessions/`, signed DEVLOG entry, merge `codex` → `main`, report.
 
 Do not spend expensive intelligence on moving furniture. Do not let cheap labor redesign the house.
