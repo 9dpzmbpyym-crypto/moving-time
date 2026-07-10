@@ -100,6 +100,11 @@ re-renders on sprite-frame changes.
 
 ## Next planned work
 
-Wire real systems into the placeholder overlay screens in `Screens.jsx`
-(Menu/Desk/Health/Inventory/Log/Stretchy/Settings are visual shells), and fill
-in storage contents for rooms beyond the pantry pilot in `contents.js`.
+See `FINISH_PLAN.md` (weekend cut) and `DEVLOG.md` (Jul 5–9 history).
+
+**P0:** host on Vercel, persist progress (`localStorage`), one daily ritual.  
+**P1:** desk finished pile; read-only job tracker sync (`job-tracker-sandy-two.vercel.app`).  
+**P2:** Operation-style health board; more contents polish only if P0–P1 feel good.
+
+`CODEX_TASKS.md` dining/kitchen/living pixel list = **done** (Jul 9).  
+Overlay screens in `Screens.jsx` (Desk/Health/Inventory/Log/Stretchy) are still mostly shells — Settings has volume sliders. Storage contents exist beyond the pantry pilot for most rooms.

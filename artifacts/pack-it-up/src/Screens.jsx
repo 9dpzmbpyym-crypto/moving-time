@@ -5,6 +5,12 @@ import {
   PRESSURE_LABELS, PRESSURE_COLORS,
 } from "./tasks.js";
 import { PixelCanvas } from "./BedroomSlice.jsx";
+import {
+  getAudioSettings,
+  setMusicVolume,
+  setSfxVolume,
+  playContainerSfx,
+} from "./gameAudio.js";
 
 /* ============================================================
    SCREENS — the "next layer" on top of the apartment hub.
@@ -216,7 +222,7 @@ function DeskCard({ task, small, onClick, resolving }) {
   );
 }
 
-function DeskScreen({ go, tasks, setTasks }) {
+function DeskScreen({ go, tasks, setTasks, playSfx }) {
   const deskTasks = tasks.filter((t) => isOpen(t) && ["job", "admin", "move"].includes(t.category));
   const doneCount = tasks.filter((t) => t.status === "done" && ["job", "admin", "move"].includes(t.category)).length;
   const active = deskTasks.slice(0, 3);
@@ -230,6 +236,7 @@ function DeskScreen({ go, tasks, setTasks }) {
     if (!inspected || resolving) return;
     const id = inspected.id;
     setResolving({ id, mode });
+    if (mode === "stamp" && playSfx) playSfx("stamp");
     setTimeout(() => {
       setTasks((ts) => ts.map((t) => (t.id === id ? { ...t, status: "done" } : t)));
       setResolving(null);
@@ -372,8 +379,13 @@ function HealthScreen({ go }) {
   const [calm, setCalm] = useState({}); // id -> true, visual-only stabilization
   const sel = HEALTH_ZONES.find((z) => z.id === zone) || null;
   const part = (st) => <div style={{ position: "absolute", background: "#EFE7D2", border: "3px solid #221306", ...st }} />;
+  const leave = () => {
+    // medicine cabinet close — Health is entered by opening the mirrored cabinet
+    playContainerSfx("mirror_cabinet", "close");
+    go("apartment");
+  };
   return (
-    <Screen title="Health" icon="🩺" onBack={() => go("apartment")}>
+    <Screen title="Health" icon="🩺" onBack={leave}>
       <div style={{ padding: "8px 12px", marginBottom: 10, color: "#C9B896", fontSize: 11, ...FR, ...LB }}>
         Your coverage is active right now — a good window to book things. No rush, just doors that are open.
       </div>
@@ -547,22 +559,59 @@ function StretchyScreen({ go, tasks }) {
 }
 
 /* ================= SETTINGS ================= */
+function VolSlider({ label, value, onChange }) {
+  const pct = Math.round(value * 100);
+  return (
+    <div style={{ marginTop: 8, padding: "12px", background: "#1A0F06", border: "2px solid #4A2E17" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <span style={{ color: "#F2E4C0", fontSize: 13, ...LB }}>{label}</span>
+        <span style={{ color: "#C9B896", fontSize: 12, ...LB }}>{pct === 0 ? "off" : `${pct}%`}</span>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={100}
+        step={1}
+        value={pct}
+        onChange={(e) => onChange(Number(e.target.value) / 100)}
+        aria-label={label}
+        style={{
+          width: "100%", height: 18, cursor: "pointer",
+          accentColor: "#5D7C3B",
+        }}
+      />
+    </div>
+  );
+}
+
 function SettingsScreen({ go }) {
-  const [t, setT] = useState({ sound: true, music: false, haptics: true, motion: false, bigText: false });
+  const audio = getAudioSettings();
+  const [musicVol, setMusicVol] = useState(audio.musicVol);
+  const [sfxVol, setSfxVolUi] = useState(audio.sfxVol);
+  const [t, setT] = useState({ haptics: true, motion: false, bigText: false });
   const flip = (k) => setT((s) => ({ ...s, [k]: !s[k] }));
-  const rows = [
-    ["sound", "Sound effects"], ["music", "Music / ambience"], ["haptics", "Haptics"],
-    ["motion", "Reduce motion"], ["bigText", "Larger text"],
+  const soonRows = [
+    ["haptics", "Haptics"],
+    ["motion", "Reduce motion"],
+    ["bigText", "Larger text"],
   ];
   return (
     <Screen title="Settings" icon="⚙️" onBack={() => go("apartment")}>
-      {rows.map(([k, label]) => (
+      <VolSlider
+        label="Music / ambience"
+        value={musicVol}
+        onChange={(v) => { setMusicVol(v); setMusicVolume(v); }}
+      />
+      <VolSlider
+        label="Sound effects"
+        value={sfxVol}
+        onChange={(v) => { setSfxVolUi(v); setSfxVolume(v); }}
+      />
+      {soonRows.map(([k, label]) => (
         <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, padding: "12px", background: "#1A0F06", border: "2px solid #4A2E17" }}>
-          <span style={{ color: "#F2E4C0", fontSize: 13, ...LB }}>{label} {soonTag}</span>
-          {/* a real native checkbox on top of the styled track is what makes
-             iOS produce a tiny toggle haptic — purely cosmetic haptics on a
-             web button don't fire. The checkbox is visually hidden but drives
-             the same `flip` state. */}
+          <span style={{ color: "#F2E4C0", fontSize: 13, ...LB }}>
+            {label} {soonTag}
+          </span>
           <div style={{ position: "relative", width: 52, height: 26 }}>
             <div style={{
               width: 52, height: 26, padding: 2, border: "3px solid #120A04",
@@ -591,17 +640,17 @@ function SettingsScreen({ go }) {
         }}>{label} — (soon)</button>
       ))}
       <div style={{ marginTop: 14, color: "#6B563B", fontSize: 10, textAlign: "center", ...LB }}>
-        Toggles are visual placeholders — not wired up yet.
+        Drag a slider to 0 to mute that channel — music and SFX are independent.
       </div>
     </Screen>
   );
 }
 
 /* ================= ROUTER ================= */
-export default function ScreenLayer({ screen, go, tasks, setTasks, handled, openHandledSheet, busy }) {
+export default function ScreenLayer({ screen, go, tasks, setTasks, handled, openHandledSheet, busy, playSfx }) {
   if (screen === "apartment") return null;
   if (screen === "menu")      return <MenuScreen go={go} tasks={tasks} />;
-  if (screen === "desk")      return <DeskScreen go={go} tasks={tasks} setTasks={setTasks} />;
+  if (screen === "desk")      return <DeskScreen go={go} tasks={tasks} setTasks={setTasks} playSfx={playSfx} />;
   if (screen === "health")    return <HealthScreen go={go} />;
   if (screen === "inventory") return <InventoryScreen go={go} handled={handled} openHandledSheet={openHandledSheet} />;
   if (screen === "log")       return <LogScreen go={go} handled={handled} />;

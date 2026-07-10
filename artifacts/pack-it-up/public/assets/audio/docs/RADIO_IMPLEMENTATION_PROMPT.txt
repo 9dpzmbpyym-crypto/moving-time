@@ -1,0 +1,135 @@
+Implement the music/radio system for Pack It Up.
+
+Do not make the radio the default soundtrack. The game should have one clear base song, and the radio should be an optional diegetic apartment object.
+
+Core music logic:
+
+The default apartment/packing music should be:
+
+Cherry Blossom - Resonant Circuits
+
+This is the main game loop. It should autoplay or begin when the apartment scene loads, depending on existing browser/audio rules. It should loop softly in the background at low-to-medium volume.
+
+Add a small clickable radio object to the apartment, preferably in the living room, sitting on or near the entertainment center. If the living room is not implemented yet, add the system now and place the radio in the first available apartment room as a temporary object. The radio should be procedurally drawn in the existing pixel-art room/object style, not image-generated. It should look like a simple small tabletop radio: rectangular body, tiny antenna, speaker grille, tuner knob, and a small station display.
+
+Radio behavior:
+
+When the player clicks/taps the radio, open a small radio panel. The panel should let the player turn the radio on/off and choose a station. When radio is on, pause or duck the main Cherry Blossom background track and play the chosen radio station instead. When radio is off, return to Cherry Blossom.
+
+Use the following stations:
+
+const MUSIC = {
+  main: {
+    id: "main_cherry_blossom",
+    label: "Main Theme",
+    track: "music/main_cherry_blossom.mp3",
+    mood: "soft apartment loop"
+  },
+
+  stations: [
+    {
+      id: "pop",
+      label: "Pop Station",
+      track: "music/radio_pop_some_kind_of_beautiful.mp3",
+      display: "POP 101",
+      description: "romantic, dreamy pop",
+      available: true
+    },
+    {
+      id: "oldies",
+      label: "Oldies",
+      track: "music/radio_oldies_a_wink_behind_the_curtain.mp3",
+      display: "OLD 96",
+      description: "funny vaudeville oldies",
+      available: true
+    },
+    {
+      id: "jazz",
+      label: "Jazz",
+      track: "music/radio_jazz_the_nightingale_is_singing_our_song.mp3",
+      display: "JAZZ 78",
+      description: "laid-back big band jazz",
+      available: true
+    },
+    {
+      id: "synthwave",
+      label: "Synthwave",
+      track: "music/radio_synthwave_a_heart_made_of_pixels.mp3",
+      display: "SYN 100",
+      description: "dreamy synthwave",
+      available: true
+    },
+    {
+      id: "eight_bit",
+      label: "8-Bit",
+      track: "music/radio_eight_bit_guru_meditation.mp3",
+      display: "BIT 90",
+      description: "relaxing bit music",
+      available: true
+    },
+    {
+      id: "rnb",
+      label: "R&B",
+      track: "music/radio_rnb_no_hero_of_mine.mp3",
+      display: "RNB 77",
+      description: "happy relaxing R&B",
+      available: true
+    }
+  ]
+};
+
+All six stations now have audio files in public/assets/audio/music/. Mark a station unavailable in the UI only if its file is missing at runtime.
+
+Implementation requirements:
+
+Use a reusable audio manager rather than hardcoding audio directly into the room component. The audio manager should support:
+
+playMainTheme()
+stopMainTheme()
+setMainThemeVolume(volume)
+playStation(stationId)
+stopRadio()
+toggleRadio()
+setRadioVolume(volume)
+crossfade(fromTrack, toTrack, durationMs)
+
+Use short crossfades, around 800-1500ms, when switching between main music and radio stations. Radio music should feel like it is coming from the apartment, so apply slightly lower volume than the main score. If there is already an SFX system, keep music and SFX volume separate.
+
+UI requirements:
+
+The radio panel should be small and game-like, not a modern streaming app. It should feel like an in-world object.
+
+Panel text can be simple:
+
+RADIO
+[ ON / OFF ]
+
+POP 101      Pop Station
+OLD 96       Oldies
+JAZZ 78      Jazz
+SYN 100      Synthwave
+BIT 90       8-Bit
+RNB 77       R&B
+
+Highlight the currently playing station. Add a small animated equalizer or blinking tuner light only if it is simple and cheap to implement.
+
+Procedural radio art:
+
+Draw the radio as a pixel/canvas/CSS object in the same simplified style as the apartment assets. Keep it small and readable. Suggested construction:
+
+- dark muted rectangular body
+- rounded-ish pixel corners if supported
+- left speaker grille made of 3-5 vertical dark lines
+- right circular knob
+- small pale display rectangle
+- tiny antenna angled upward
+- one-pixel/two-pixel highlight along the top edge
+
+Place it in the living room near the entertainment center. It should be clickable/tappable with a visible hover/focus state. On mobile, the hit area should be larger than the visible radio.
+
+Do not create a complex multi-station simulation yet. No ads, no DJ chatter, no procedural music generation, no playlist shuffling. Just implement a clean, charming radio object that lets the player choose one track per station.
+
+The design goal is:
+
+Cherry Blossom = the emotional spine of the game.
+The radio = optional personality, flavor, and player agency.

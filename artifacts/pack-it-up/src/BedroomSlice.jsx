@@ -1,12 +1,27 @@
-import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
+﻿import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import SAVED_LAYOUT from "./layout.json";
-// Sell sound: a real file in the repo (src/sell.mp3). Vite inlines it into the
-// bundle as a base64 data: URI at build time (forced via build.assetsInlineLimit
-// in vite.config.js). It must be inlined rather than a fetched URL because the
-// hosted artifact's CSP blocks fetch of the audio; the play path decodes these
-// bytes via atob → decodeAudioData (see below).
-import SELL_CHIME_SRC from "./sell.mp3";
+// Game audio lives in gameAudio.js (module singleton) so React StrictMode / HMR
+// remounts don't kill the AudioContext or stop the music. Assets load from
+// /assets/audio/ (public/) as real audio/mpeg — never Vite .mp3 imports in
+// dev (those become JS modules and break decodeAudioData).
+import {
+  primeAudio,
+  playSellSound,
+  playPackSfx,
+  playDonateSfx,
+  playStampSfx,
+  playRoomSwitchSfx,
+  playContainerSfx,
+  playCatSfx,
+  kitchenTapZone,
+  RADIO_STATIONS,
+  getRadioState,
+  playStation,
+  toggleRadio,
+  preloadRadioStations,
+  ensureMusicPlaying,
+} from "./gameAudio.js";
 // Stretchy the cat: a real PNG sprite sheet (the only image asset in the game —
 // everything else is procedural). 256x1632 px = 8 columns x 51 rows of 32x32
 // frames. Vite serves it as a hashed, same-origin asset (no CSP issue for img).
@@ -1202,11 +1217,68 @@ function drawLivingShell(ctx) {
   dith(ctx, wallShade, 240 - 22, 0, 22, 112, 2, 1);
 }
 
+/* Diegetic radio — LCD blink when idle, EQ + tuner LED when playing.
+   `t` is a rising tick (ms or frame); `on` mirrors getRadioState().on */
+function drawRadio(ctx, { on = false, t = 0 } = {}) {
+  const phase = (t / 1000) % 1; // 0..1 over ~1s
+  // antenna — tip leans a hair when playing
+  const tipX = on ? (Math.sin(t / 280) > 0 ? 23 : 21) : 22;
+  r(ctx, P.out, 22, 1, 1, 4);
+  r(ctx, P.goldHi, 22, 1, 1, 3);
+  r(ctx, P.out, tipX, 0, 1, 2);
+  r(ctx, P.goldHi, tipX, 0, 1, 1);
+  // body
+  r(ctx, P.out, 1, 5, 26, 12);
+  r(ctx, "#3A342C", 2, 6, 24, 10);
+  r(ctx, "#4A4338", 2, 6, 24, 2);
+  r(ctx, "#2A2620", 2, 14, 24, 2);
+  // speaker grille
+  r(ctx, "#1C1916", 3, 8, 8, 6);
+  for (let i = 0; i < 5; i++) r(ctx, "#0E0C0A", 4 + i, 8, 1, 6);
+  // EQ bars on the grille — only while a station is playing
+  if (on) {
+    const bars = [
+      2 + Math.floor((Math.sin(t / 90) + 1) * 2),
+      2 + Math.floor((Math.sin(t / 70 + 1.2) + 1) * 2),
+      2 + Math.floor((Math.sin(t / 110 + 2.4) + 1) * 2),
+    ];
+    bars.forEach((h, i) => {
+      const bx = 5 + i * 2;
+      const by = 13 - h;
+      r(ctx, "#8FD14F", bx, by, 1, h);
+      r(ctx, "#C8E8A0", bx, by, 1, 1);
+    });
+  }
+  // station display — blinks when idle (invites a tap), steady when on
+  r(ctx, P.out, 12, 8, 9, 5);
+  const blinkOn = on || (Math.floor(t / 700) % 2 === 0);
+  if (blinkOn) {
+    r(ctx, on ? "#C8E8A0" : "#7A9A58", 13, 9, 7, 3);
+    r(ctx, on ? "#8FD14F" : "#5D7C3B", 14, 10, on ? 4 : 2, 1);
+  } else {
+    r(ctx, "#2A3A1C", 13, 9, 7, 3); // dim "asleep" LCD
+  }
+  // tuner knob + power LED (LED lit only when playing)
+  r(ctx, P.out, 22, 8, 4, 4);
+  r(ctx, P.gold, 23, 9, 2, 2);
+  r(ctx, P.goldHi, 23, 9, 1, 1);
+  if (on) {
+    const ledBright = phase < 0.5;
+    r(ctx, ledBright ? "#8FD14F" : "#5D7C3B", 25, 7, 1, 1);
+  } else {
+    r(ctx, "#3A2A18", 25, 7, 1, 1);
+  }
+  // feet
+  r(ctx, P.out, 3, 16, 3, 1);
+  r(ctx, P.out, 22, 16, 3, 1);
+}
+
 const LIVING_SPRITES = {
   tv_hutch: { w: 56, h: 96, glowRegions: [[3, 61, 24, 31], [29, 61, 24, 31]], draw(ctx) {
-    r(ctx, P.woodDark, 24, 6, 8, 4);
-    r(ctx, P.green, 22, 0, 3, 7); r(ctx, P.greenHi, 25, 0, 2, 6);
-    r(ctx, P.green, 28, 1, 3, 6); r(ctx, P.greenLo, 26, 3, 2, 4);
+    // plant — left side of the top so the radio has room on the right
+    r(ctx, P.woodDark, 4, 6, 8, 4);
+    r(ctx, P.green, 2, 0, 3, 7); r(ctx, P.greenHi, 5, 0, 2, 6);
+    r(ctx, P.green, 8, 1, 3, 6); r(ctx, P.greenLo, 6, 3, 2, 4);
     r(ctx, P.out, 0, 10, 56, 4);
     r(ctx, P.woodHi, 1, 11, 54, 2);
     r(ctx, P.woodDark, 1, 13, 54, 1);
@@ -1354,11 +1426,16 @@ const LIVING_SPRITES = {
     r(ctx, P.out, 3, 65, 12, 1); r(ctx, P.out, 1, 66, 16, 4);
     r(ctx, P.out, 3, 70, 12, 2); r(ctx, "#1C1916", 2, 67, 14, 2);
   }},
+  // small tabletop radio — sits on the TV hutch
+  // draw(ctx) is the static/editor fallback; roomArt uses drawRadio(ctx, live)
+  radio: { w: 28, h: 18, draw(ctx) { drawRadio(ctx, { on: false, t: 0 }); } },
 };
 
 const LIVING_OBJECTS = [
   { id: "tv_hutch", name: "TV Hutch", category: "furniture", value: 120, x: 72, y: 78, z: 3, removable: true,
     check: "Every remote from the last decade is lost somewhere inside this thing." },
+  { id: "radio", name: "Apartment Radio", category: "decor", value: 18, x: 195, y: 12, z: 5, removable: false,
+    check: "Cherry Blossom is the apartment's heartbeat. This little box is optional personality." },
   { id: "wall_art_pair", name: "Wall Art", category: "decor", value: 12, x: 376, y: 104, z: 2, removable: true,
     check: "The night scene came first; the little black-and-white one followed you home from a yard sale." },
   { id: "sofa", name: "Leather Loveseat", category: "furniture", value: 150, x: 328, y: 257, z: 3, removable: true,
@@ -1632,6 +1709,28 @@ export function PixelCanvas({ w, h, draw, redrawKey, style }) {
   );
 }
 
+/** Living-room radio — owns its own animation tick so PackItUp doesn't re-render. */
+function RadioSprite() {
+  const [tick, setTick] = useState(0);
+  const [on, setOn] = useState(() => getRadioState().on);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setTick((t) => t + 120);
+      setOn(getRadioState().on);
+      ensureMusicPlaying();
+    }, 120);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <PixelCanvas
+      w={28}
+      h={18}
+      draw={(ctx) => drawRadio(ctx, { on, t: tick })}
+      redrawKey={`${on ? 1 : 0}-${tick}`}
+    />
+  );
+}
+
 /* ============================================================
    STRETCHY — the cat companion
    The one image asset in the game. Sheet is 256x1632, 8 cols x
@@ -1676,7 +1775,7 @@ const CAT_SPOTS = {
   living:   [{ x: 210, y: 745 }, { x: 385, y: 771 }, { x: 560, y: 759 }, { x: 705, y: 747 }, { x: 760, y: 737 }],
 };
 
-function Stretchy({ spots, enterSide, pressure = 0, onOpen }) {
+function Stretchy({ spots, enterSide, pressure = 0, onOpen, playCatSfx }) {
   const list = spots && spots.length ? spots : [{ x: STAGE_W / 2, y: 520 }];
   const startY = list[0].y;
   const fw = CAT_CELL * CAT_PX;          // display frame size (stage px)
@@ -1758,6 +1857,8 @@ function Stretchy({ spots, enterSide, pressure = 0, onOpen }) {
         case "pause":
           s.anim = s.pauseAnim;
           s.wait -= dt;
+          // Soft ambient meow only — rare, happy clips, never stress/desperate.
+          if (playCatSfx && Math.random() < 0.0015) playCatSfx("happy");
           if (s.wait <= 0) { s.mode = "walk"; s.target = pick(s.target); }
           break;
         case "lookturn": {
@@ -1774,6 +1875,7 @@ function Stretchy({ spots, enterSide, pressure = 0, onOpen }) {
           s.anim = "look";
           s.frame = LOOK_FACE_FRAME;
           s.wait -= dt;
+          if (playCatSfx && Math.random() < 0.004) playCatSfx("happy");
           if (s.wait <= 0) { s.mode = "lookreturn"; s.frameT = 0; }
           break;
         case "lookreturn": {
@@ -2166,6 +2268,16 @@ export default function PackItUp({ glowMode = "split" }) {
   // which storage object's contents are open in the StorageScreen overlay.
   // Set when a storage object (cabinet/drawer/closet) is tapped.
   const [storageId, setStorageId] = useState(null);
+  // for kitchen counter: which half was opened (upper drawer vs lower cabinet)
+  // so the matching close sound plays when the panel shuts.
+  const [storageZone, setStorageZone] = useState(null);
+  // screen-space rect of the tapped furniture (from getBoundingClientRect) so the
+  // mobile panel can sit above it without inheriting the room's zoom transform.
+  const [storageAnchor, setStorageAnchor] = useState(null); // { left, top, right, bottom, width, height }
+  // living-room radio panel (diegetic station picker — not packable storage)
+  const [radioOpen, setRadioOpen] = useState(null); // null | { left, top, right, bottom, width, height }
+  const [radioUi, setRadioUi] = useState(() => getRadioState());
+  const refreshRadioUi = useCallback(() => setRadioUi(getRadioState()), []);
   /* task/urgency scaffold — sample data only, drives the paper fan + badges */
   const [tasks, setTasks] = useState(INITIAL_TASKS);
   const [minutes, setMinutes] = useState(0); // game time advances as you pack/sell
@@ -2176,10 +2288,6 @@ export default function PackItUp({ glowMode = "split" }) {
   const [undoStack, setUndoStack] = useState([]); // undo history, most recent last
   const [sellFx, setSellFx] = useState(null); // { x, y, amount } coin-burst overlay
   const wrapRef = useRef(null);
-  const audioCtxRef = useRef(null);
-  const sellBufferRef = useRef(null);
-  const keepAliveBufferRef = useRef(null);
-  const audioPrimedRef = useRef(false);
 
   /* mobile pan-strip state: live drag offset + measured viewport box */
   const viewRef = useRef(null);
@@ -2200,7 +2308,15 @@ export default function PackItUp({ glowMode = "split" }) {
   useEffect(() => {
     setSelectedId(null);
     setInvOpen(false);
+    setRadioOpen(null);
   }, [roomIndex]);
+
+  /* keep radio panel ON/OFF in sync (cheap — only while panel open) */
+  useEffect(() => {
+    if (!radioOpen) return;
+    const id = setInterval(() => setRadioUi(getRadioState()), 250);
+    return () => clearInterval(id);
+  }, [radioOpen]);
 
   /* measure the mobile room-viewport so the stage can width/height-fit it */
   useEffect(() => {
@@ -2221,111 +2337,17 @@ export default function PackItUp({ glowMode = "split" }) {
     };
   }, [isMobile]);
 
-  /* decode the sell sound once via the Web Audio API — AudioBufferSourceNode
-     schedules playback with near-zero, sample-accurate latency, unlike
-     <audio>.play() which has real (and on mobile, sometimes large) startup
-     lag. Decode goes through atob, NOT fetch(dataURI): the hosted preview
-     page's CSP blocks fetch of data: URIs (connect-src), which silently
-     killed the sound there. The context starts suspended on iOS until
-     resumed by a user gesture, which primeSellAudio does on the first tap. */
-  useEffect(() => {
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    if (!Ctx) return;
-    const ctx = new Ctx();
-    audioCtxRef.current = ctx;
-    // iOS silences Web Audio when the physical mute switch is on, because it
-    // defaults the page's audio session to "ambient". Declaring "playback"
-    // (Safari 16.4+) makes the sell sound behave like a music app and play
-    // through the mute switch. No-op / harmless where the API is absent.
-    try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}
-    try {
-      const bin = atob(SELL_CHIME_SRC.split(",")[1]);
-      const bytes = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-      ctx.decodeAudioData(bytes.buffer)
-        .then((decoded) => { sellBufferRef.current = decoded; })
-        .catch(() => {});
-    } catch {
-      // sound stays off; the game itself is unaffected
-    }
-    /* keep-alive: build a ~1s near-silent buffer that, once primed, loops
-       forever at inaudible gain. iOS will suspend an idle AudioContext and
-       then sometimes refuses to resume it through the mute switch; a
-       continuously-running silent source keeps the session "active" so the
-       real sell chime can fire even when the phone is muted. */
-    try {
-      const sr = ctx.sampleRate;
-      const keep = ctx.createBuffer(1, Math.floor(sr * 1.0), sr);
-      const data = keep.getChannelData(0);
-      for (let i = 0; i < data.length; i++) data[i] = 0; // true digital silence
-      keepAliveBufferRef.current = { buffer: keep, started: false };
-    } catch {}
-    return () => { ctx.close().catch(() => {}); };
-  }, []);
-
-  const primeSellAudio = () => {
-    if (audioPrimedRef.current) return;
-    audioPrimedRef.current = true;
-    // re-assert the playback session on the actual user gesture (some iOS
-    // versions only honor it once a gesture has engaged audio), then resume.
-    try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}
-    const ctx = audioCtxRef.current;
-    ctx?.resume().catch(() => {});
-    // start the silent keep-alive loop now that we're inside a user gesture.
-    // iOS only allows starting sources from a gesture; doing it here means the
-    // context stays "active" and later sounds (incl. through the mute switch)
-    // can fire without another gesture.
-    const ka = keepAliveBufferRef.current;
-    if (ctx && ka && !ka.started) {
-      try {
-        const src = ctx.createBufferSource();
-        src.buffer = ka.buffer;
-        src.loop = true;
-        const gain = ctx.createGain();
-        gain.gain.value = 0; // truly silent
-        src.connect(gain).connect(ctx.destination);
-        src.start(0);
-        ka.started = true;
-      } catch {}
-    }
+  /* Audio is owned by gameAudio.js (singleton). First tap primes the
+     AudioContext + starts Cherry Blossom; SFX fire only from action handlers. */
+  const primeSellAudio = () => { primeAudio(); ensureMusicPlaying(); };
+  const closeStorage = (id = storageId) => {
+    if (id) playContainerSfx(id, "close", storageZone);
+    setStorageId(null);
+    setStorageZone(null);
+    setStorageAnchor(null);
+    setSelectedContentId(null);
   };
-
-  const playSellSound = () => {
-    const ctx = audioCtxRef.current;
-    const buf = sellBufferRef.current;
-    if (!ctx || !buf) return;
-    // Re-assert playback session + resume RIGHT before playing: iOS doesn't
-    // reliably keep the "playback" category (which is what lets the sound play
-    // through the mute switch) between taps, and can leave the context suspended.
-    // Sell fires from a tap, so we're in a user gesture here.
-    try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}
-    if (ctx.state === "suspended") ctx.resume().catch(() => {});
-    const src = ctx.createBufferSource();
-    src.buffer = buf;
-    src.connect(ctx.destination);
-    src.start(0);
-  };
-
-  /* Generic SFX player — the same mute-proof path as the sell chime.
-     When pack/donate/room-clear/stamp sound files arrive, decode each into
-     its own ref (mirroring sellBufferRef) and call playSfx(thatRef).
-     Safe to call before any buffer is decoded (no-op). */
-  const playSfx = (bufRef) => {
-    const ctx = audioCtxRef.current;
-    const buf = bufRef?.current;
-    if (!ctx || !buf) return;
-    try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}
-    if (ctx.state === "suspended") ctx.resume().catch(() => {});
-    const src = ctx.createBufferSource();
-    src.buffer = buf;
-    src.connect(ctx.destination);
-    src.start(0);
-  };
-  // placeholder refs for future SFX — populated when their files are wired in
-  const packSfxRef = useRef(null);
-  const donateSfxRef = useRef(null);
-  const clearSfxRef = useRef(null);
-  const stampSfxRef = useRef(null);
+  const closeRadio = () => setRadioOpen(null);
 
   /* Timeout registry — every animation/toast timer goes through schedule() so
      they can all be cancelled if the component unmounts mid-flight (otherwise
@@ -2381,6 +2403,7 @@ export default function PackItUp({ glowMode = "split" }) {
     if (!obj || !obj.removable || objState[k].packed || objState[k].sold || objState[k].donated || busy) return;
     const prev = objState[k];
     haptic(HAPTIC.pack);
+    playPackSfx();
     setPackingId(id);
     schedule(() => {
       setObjState((s) => ({ ...s, [k]: { ...s[k], packed: true } }));
@@ -2422,6 +2445,7 @@ export default function PackItUp({ glowMode = "split" }) {
     if (!obj || !obj.removable || objState[k].packed || objState[k].sold || objState[k].donated || busy) return;
     const prev = objState[k];
     haptic(HAPTIC.donate);
+    playDonateSfx();
     setDonatingId(id);
     schedule(() => {
       setObjState((s) => ({ ...s, [k]: { ...s[k], donated: true } }));
@@ -2449,6 +2473,7 @@ export default function PackItUp({ glowMode = "split" }) {
     const prev = contentsState[k];
     if (!prev || prev.packed || prev.sold || prev.donated || busy) return;
     haptic(HAPTIC.pack);
+    playPackSfx();
     // Close back to the apartment so the box stack is visible, then fly the
     // item sprite from the storage object to the box pile's mouth — same
     // packToBox keyframe the furniture uses. The content state flips to
@@ -2494,8 +2519,13 @@ export default function PackItUp({ glowMode = "split" }) {
         pscale,
       });
     }
-    setScreen("apartment");
+    // Close the panel immediately so the apartment + pack-to-box fly are visible
+    // (mobile portal was covering the whole screen and swallowing the animation).
+    setStorageId(null);
+    setStorageZone(null);
+    setStorageAnchor(null);
     setSelectedContentId(null);
+    setScreen("apartment");
     setPackingContentKey(k);
     setContentAnim({ key: k, kind: "pack" });
     schedule(() => {
@@ -2504,7 +2534,6 @@ export default function PackItUp({ glowMode = "split" }) {
       setPackingContentKey(null);
       setContentAnim(null);
       setContentFlyFx(null);
-      setStorageId(null);
       setMinutes((m) => m + 10);
     }, 520);
   }, [room, objState, contentsState, busy, schedule]);
@@ -2539,6 +2568,7 @@ export default function PackItUp({ glowMode = "split" }) {
     const items = CONTENTS[`${room.id}:${storageId}`] || [];
     const it = items.find((x) => x.id === itemId);
     haptic(HAPTIC.donate);
+    playDonateSfx();
     // Stay in the storage overlay; the shrink animation plays locally.
     setContentAnim({ key: k, kind: "donate" });
     schedule(() => {
@@ -2598,7 +2628,7 @@ export default function PackItUp({ glowMode = "split" }) {
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Tab") { e.preventDefault(); setInvOpen((v) => !v); }
-      else if (e.key === "Escape") { setSelectedId(null); setInvOpen(false); }
+      else if (e.key === "Escape") { setSelectedId(null); setInvOpen(false); closeRadio(); }
       else if ((e.key === "x" || e.key === "X") && selectedId) packObject(selectedId);
       else if ((e.key === "z" || e.key === "Z") && hoverId) setSelectedId(hoverId);
     };
@@ -2822,7 +2852,7 @@ export default function PackItUp({ glowMode = "split" }) {
     return (
       <>
         {/* LAYER 0 — room shell */}
-        <div style={{ position: "absolute", inset: 0 }} onClick={() => { setSelectedId(null); setStorageId(null); }}>
+        <div style={{ position: "absolute", inset: 0 }} onClick={() => { setSelectedId(null); closeStorage(); closeRadio(); }}>
           <PixelCanvas w={240} h={extCells} draw={getShellDraw(rm, extCells)} redrawKey={extCells} />
         </div>
 
@@ -2886,22 +2916,67 @@ export default function PackItUp({ glowMode = "split" }) {
               data-object-id={o.id}
               data-room-id={rm.id}
               className={`obj ${isSel ? "sel" : ""} ${isPacking ? "packing" : ""} ${isRemoving ? "removing" : ""} ${o.removable ? "" : "static"} ${rm.id === "bathroom" && o.id === "mirror_cabinet" ? "portal" : ""} ${useOutlineGlow ? "portal" : ""}`}
-              style={{ position: "absolute", left: placed.x, top: placed.y, zIndex: o.z * 10, transform: `scale(${placed.scale || 1})`, transformOrigin: "top left", ...packVars }}
+              style={{
+                position: "absolute", left: placed.x, top: placed.y, zIndex: o.z * 10,
+                transform: `scale(${placed.scale || 1})`, transformOrigin: "top left",
+                // radio is tiny — pad the hit box so mobile taps land reliably
+                ...(o.id === "radio" ? { padding: 10, margin: -10 } : null),
+                ...packVars,
+              }}
               onClick={(e) => {
                 e.stopPropagation();
                 // the medicine cabinet is a doorway to the Health screen
-                if (rm.id === "bathroom" && o.id === "mirror_cabinet") { setScreen("health"); return; }
+                if (rm.id === "bathroom" && o.id === "mirror_cabinet") {
+                  playContainerSfx("mirror_cabinet", "open");
+                  setScreen("health");
+                  return;
+                }
+                // living-room radio — open the station panel (not packable)
+                if (o.id === "radio") {
+                  primeSellAudio();
+                  const box = e.currentTarget.getBoundingClientRect();
+                  setSelectedId(null);
+                  closeStorage();
+                  setRadioOpen({
+                    left: box.left, top: box.top, right: box.right, bottom: box.bottom,
+                    width: box.width, height: box.height,
+                  });
+                  preloadRadioStations().then(refreshRadioUi);
+                  refreshRadioUi();
+                  return;
+                }
                 // other storage objects (cabinets/drawers/closets) open an
                 // inline contents panel above the sprite — the apartment stays
                 // visible so the pack-to-box fly animation plays in context.
-                if (hasContents(rm.id, o.id)) { setStorageId(o.id); return; }
+                if (hasContents(rm.id, o.id)) {
+                  // kitchen counter only: tap upper half → drawer SFX,
+                  // lower half → cabinet SFX (same contents panel either way).
+                  const box = e.currentTarget.getBoundingClientRect();
+                  let zone = null;
+                  if (o.id === "counter_sink") {
+                    const localY = ((e.clientY - box.top) / Math.max(1, box.height)) * (spr?.h || 1);
+                    zone = kitchenTapZone(o.id, localY);
+                  }
+                  playContainerSfx(o.id, "open", zone);
+                  setStorageZone(zone);
+                  setStorageAnchor({
+                    left: box.left, top: box.top, right: box.right, bottom: box.bottom,
+                    width: box.width, height: box.height,
+                  });
+                  setStorageId(o.id);
+                  closeRadio();
+                  return;
+                }
                 setSelectedId(o.id);
+                closeRadio();
               }}
               onMouseEnter={() => setHoverId(o.id)}
               onMouseLeave={() => setHoverId((h) => (h === o.id ? null : h))}
               title=""
             >
-              <PixelCanvas w={spr.w} h={spr.h} draw={spr.draw} />
+              {o.id === "radio"
+                ? <RadioSprite />
+                : <PixelCanvas w={spr.w} h={spr.h} draw={spr.draw} />}
               {/* drawer-level glow: one transparent div per drawer rect, using
                   box-shadow (outward-only) so the drawer face stays clean and
                   only the surrounding furniture body glows. Same outward-only
@@ -2967,28 +3042,65 @@ export default function PackItUp({ glowMode = "split" }) {
           const sel = items.find((it) => it.id === selectedContentId) || null;
           const selSt = sel ? (contentsState[`${sKey}:${sel.id}`] || { packed: false, sold: false, soldFor: 0, donated: false }) : null;
           const selDone = selSt && (selSt.packed || selSt.sold || selSt.donated);
-          const panelW = 464;
-          // Keep the panel fully on-stage and clear of the room-arrow buttons
-          // (54×48 at top:12, left:14 / right:14). Reserve ~70px at the top.
-          const padTop = 70;
-          const padX = 4;
-          const pLeft = Math.max(padX, Math.min(placed.x, STAGE_W - panelW - padX));
-          const pTop = Math.max(padTop, Math.min(placed.y - 410, STAGE_H - 420));
+          // Compact card above the furniture. Mobile portals it in screen px
+          // (room zoom must not scale the UI). Desktop stays stage-absolute.
+          const panelW = Math.min(260, typeof window !== "undefined" ? window.innerWidth - 36 : 260);
+          const panelHIdeal = 230;
+          const objSpr = rm.sprites[o.id];
+          const sScale = placed.scale || 1;
+          const objW = (objSpr?.w || 32) * CELL * sScale;
+          let panelPos;
+          let panelH = panelHIdeal;
+          if (isMobile) {
+            const a = storageAnchor;
+            const gap = 8;
+            // Clear of the top HUD (clock / coins / room chip / undo)
+            const safeTop = 78;
+            const safeBottom = 92;
+            const vw = typeof window !== "undefined" ? window.innerWidth : 390;
+            const vh = typeof window !== "undefined" ? window.innerHeight : 700;
+            const maxH = Math.max(160, vh - safeTop - safeBottom);
+            panelH = Math.min(panelHIdeal, maxH);
+            let left = a
+              ? a.left + a.width / 2 - panelW / 2
+              : (vw - panelW) / 2;
+            left = Math.max(12, Math.min(left, vw - panelW - 12));
+            // Prefer fully above the furniture so it doesn't cover the item.
+            let top;
+            if (a && a.top - panelH - gap >= safeTop) {
+              top = a.top - panelH - gap;
+            } else if (a && a.bottom + gap + panelH <= vh - safeBottom) {
+              top = a.bottom + gap;
+            } else {
+              // Not enough room above or below — park in the free band above chrome
+              // without covering the furniture center if we can help it.
+              top = safeTop;
+              if (a && top + panelH > a.top - 4) {
+                top = Math.max(safeTop, Math.min(a.top - panelH - gap, vh - panelH - safeBottom));
+              }
+            }
+            top = Math.max(safeTop, Math.min(top, vh - panelH - safeBottom));
+            panelPos = { position: "fixed", left, top, width: panelW, height: panelH };
+          } else {
+            const padTop = 70;
+            const padX = 8;
+            let pLeft = placed.x + (objW - panelW) / 2;
+            pLeft = Math.max(padX, Math.min(pLeft, STAGE_W - panelW - padX));
+            let pTop = placed.y - panelH - 10;
+            if (pTop < padTop) pTop = Math.min(placed.y + (objSpr?.h || 32) * CELL * sScale + 8, STAGE_H - panelH - 8);
+            pTop = Math.max(padTop, Math.min(pTop, STAGE_H - panelH - 8));
+            panelPos = { position: "absolute", left: pLeft, top: pTop, width: panelW, height: panelH };
+          }
           const panel = (
             <div
               data-testid="storage-panel"
               style={{
-                ...(isMobile
-                  ? {
-                      position: "fixed", left: "50%", top: "calc(env(safe-area-inset-top, 0px) + 74px)",
-                      bottom: "calc(env(safe-area-inset-bottom, 0px) + 82px)",
-                      width: "min(560px, calc(100vw - 24px))", transform: "translateX(-50%)",
-                    }
-                  : { position: "absolute", left: pLeft, top: pTop, width: panelW }),
+                ...panelPos,
+                maxHeight: panelH,
                 zIndex: 9999, pointerEvents: "auto", boxSizing: "border-box",
                 background: "#1D1006", border: "3px solid #120A04",
                 boxShadow: "inset 0 0 0 2px #4A2E17, 0 8px 24px rgba(0,0,0,0.8)",
-                padding: 12, ...ui.frame,
+                padding: 8, ...ui.frame,
                 scrollbarColor: "#4A2E17 #1A0F06",
                 scrollbarWidth: "thin",
                 display: "flex", flexDirection: "column", overflow: "hidden",
@@ -2996,37 +3108,37 @@ export default function PackItUp({ glowMode = "split" }) {
               onClick={(e) => e.stopPropagation()}
             >
               <style>{`
-                .storageScroll::-webkit-scrollbar { width: 10px; }
+                .storageScroll::-webkit-scrollbar { width: 8px; }
                 .storageScroll::-webkit-scrollbar-track { background: #1A0F06; border-left: 2px solid #120A04; }
                 .storageScroll::-webkit-scrollbar-thumb { background: #4A2E17; border: 2px solid #120A04; }
                 .storageScroll::-webkit-scrollbar-thumb:hover { background: #6B4A28; }
               `}</style>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <div style={{ color: "#FFD97A", fontSize: isMobile ? 20 : 18, ...ui.label }}>{o.name}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4, flex: "0 0 auto" }}>
+                <div style={{ color: "#FFD97A", fontSize: 13, ...ui.label }}>{o.name}</div>
                 <button
-                  onClick={(e) => { e.stopPropagation(); setStorageId(null); setSelectedContentId(null); }}
-                  style={{ background: "none", border: "none", color: "#C9B896", fontSize: 24, cursor: "pointer", lineHeight: 1, minWidth: 44, minHeight: 44, ...ui.label }}
+                  onClick={(e) => { e.stopPropagation(); closeStorage(o.id); }}
+                  style={{ background: "none", border: "none", color: "#C9B896", fontSize: 18, cursor: "pointer", lineHeight: 1, minWidth: 32, minHeight: 32, ...ui.label }}
                   title="close"
                 >×</button>
               </div>
-              <div style={{ color: rem > 0 ? "#C9B896" : "#5D7C3B", fontSize: isMobile ? 16 : 14, marginBottom: 10, ...ui.label }}>
+              <div style={{ color: rem > 0 ? "#C9B896" : "#5D7C3B", fontSize: 11, marginBottom: 6, flex: "0 0 auto", ...ui.label }}>
                 {rem > 0 ? `${rem} inside` : "empty — safe to pack whole"}
               </div>
-              <div className="storageScroll" style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, minmax(0, 1fr))" : "repeat(auto-fill, minmax(120px, 1fr))", gap: 10, maxHeight: isMobile ? "none" : 270, minHeight: 0, flex: isMobile ? "1 1 auto" : "0 1 auto", overflowY: "auto", paddingRight: 4 }}>
+              <div className="storageScroll" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 4, minHeight: 0, flex: "1 1 auto", overflowY: "auto", paddingRight: 2 }}>
                 {items.map((it) => {
                   const k = `${sKey}:${it.id}`;
                   const st = contentsState[k] || { packed: false, sold: false, soldFor: 0, donated: false };
                   const done = st.packed || st.sold || st.donated;
                   const isSel = selectedContentId === it.id && !done;
-                  const maxDim = 64;
+                  const maxDim = 32;
                   const fit = it.spr ? Math.min(maxDim / (it.spr.w * CELL), maxDim / (it.spr.h * CELL)) : 0;
                   return (
                     <div key={it.id} data-content-id={it.id} style={{
-                      position: "relative", padding: 8,
+                      position: "relative", padding: 4,
                       background: done ? "#0F0904" : (isSel ? "#3A2410" : "#1A0F06"),
                       border: isSel ? "2px solid #FFD97A" : "2px solid #4A2E17",
                       opacity: done ? 0.5 : 1, cursor: done ? "default" : "pointer",
-                      display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                      display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
                     }}
                       onClick={(e) => { e.stopPropagation(); if (!done) setSelectedContentId(isSel ? null : it.id); }}
                     >
@@ -3034,15 +3146,15 @@ export default function PackItUp({ glowMode = "split" }) {
                         <div style={{ position: "absolute", left: "50%", top: "50%", zIndex: 500, pointerEvents: "none" }}>
                           {COIN_BURSTS.map(({ tx, ty, d }, i) => (
                             <span key={i} className="coin" style={{
-                              position: "absolute", left: 0, top: 0, width: 16, height: 16,
-                              background: "#EFC463", border: "3px solid #8A5E14", borderRadius: "50%",
-                              boxShadow: "inset 2px 2px 0 #FFE9A8",
+                              position: "absolute", left: 0, top: 0, width: 12, height: 12,
+                              background: "#EFC463", border: "2px solid #8A5E14", borderRadius: "50%",
+                              boxShadow: "inset 1px 1px 0 #FFE9A8",
                               animationDelay: `${d}ms`, "--tx": `${tx}px`, "--ty": `${ty}px`,
                             }} />
                           ))}
                           <div className="sellAmt" style={{
-                            position: "absolute", left: 0, top: -34, whiteSpace: "nowrap",
-                            color: "#FFD97A", fontSize: 22,
+                            position: "absolute", left: 0, top: -24, whiteSpace: "nowrap",
+                            color: "#FFD97A", fontSize: 14,
                             textShadow: "2px 2px 0 #120A04, -2px 2px 0 #120A04, 2px -2px 0 #120A04, -2px -2px 0 #120A04",
                             ...ui.label,
                           }}>+${storageSellFx.amount}</div>
@@ -3055,36 +3167,33 @@ export default function PackItUp({ glowMode = "split" }) {
                           </div>
                         </div>
                       )}
-                      <div style={{ color: "#F2E4C0", fontSize: isMobile ? 16 : 14, textAlign: "center", lineHeight: 1.2, ...ui.label }}>{it.name}</div>
-                      {st.packed && <div style={{ color: "#C9B896", fontSize: 12, ...ui.label }}>packed</div>}
-                      {st.sold && <div style={{ color: "#D9A33C", fontSize: 12, ...ui.label }}>sold ${st.soldFor}</div>}
-                      {st.donated && <div style={{ color: "#77974C", fontSize: 12, ...ui.label }}>donated</div>}
+                      <div style={{ color: "#F2E4C0", fontSize: 10, textAlign: "center", lineHeight: 1.15, ...ui.label }}>{it.name}</div>
+                      {st.packed && <div style={{ color: "#C9B896", fontSize: 9, ...ui.label }}>packed</div>}
+                      {st.sold && <div style={{ color: "#D9A33C", fontSize: 9, ...ui.label }}>sold ${st.soldFor}</div>}
+                      {st.donated && <div style={{ color: "#77974C", fontSize: 9, ...ui.label }}>donated</div>}
                     </div>
                   );
                 })}
               </div>
-              {/* action bar: mirrors the furniture action bar — select an item,
-                  then Pack/Sell/Donate from here. Replaces the per-card emoji
-                  buttons the user found too tiny to tap reliably. */}
-              <div style={{ display: "flex", gap: 8, marginTop: 12, padding: "10px 10px 0", borderTop: "2px solid #4A2E17" }}>
+              <div style={{ display: "flex", gap: 5, marginTop: 6, paddingTop: 6, borderTop: "2px solid #4A2E17", flex: "0 0 auto" }}>
                 <button
                   data-storage-action="pack"
                   onClick={() => { if (sel) { packContent(o.id, sel.id); } }}
                   disabled={!sel || !!selDone || !!busy}
-                  style={{ flex: 1, padding: "12px 6px", fontSize: isMobile ? 14 : 16, cursor: (!sel || selDone || busy) ? "not-allowed" : "pointer", color: "#F2E4C0", background: sel ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (!sel || selDone) ? 0.4 : 1, ...ui.label }}
+                  style={{ flex: 1, padding: "8px 2px", fontSize: 11, cursor: (!sel || selDone || busy) ? "not-allowed" : "pointer", color: "#F2E4C0", background: sel ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (!sel || selDone) ? 0.4 : 1, ...ui.label }}
                 >📦 Pack</button>
                 <button
                   data-storage-action="sell"
                   onClick={() => { if (sel) { sellContent(o.id, sel.id); } }}
                   disabled={!sel || !!selDone || !!busy || !sel?.value}
                   title={sel?.value ? `sell ~$${sel.value}` : "can't sell"}
-                  style={{ flex: 1, padding: "12px 6px", fontSize: isMobile ? 14 : 16, cursor: (!sel || selDone || busy || !sel?.value) ? "not-allowed" : "pointer", color: "#FFD97A", background: sel ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (!sel || selDone || !sel?.value) ? 0.4 : 1, ...ui.label }}
-                >💰 Sell{sel?.value ? ` $${sel.value}` : ""}</button>
+                  style={{ flex: 1, padding: "8px 2px", fontSize: 11, cursor: (!sel || selDone || busy || !sel?.value) ? "not-allowed" : "pointer", color: "#FFD97A", background: sel ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (!sel || selDone || !sel?.value) ? 0.4 : 1, ...ui.label }}
+                >💰 Sell</button>
                 <button
                   data-storage-action="donate"
                   onClick={() => { if (sel) { donateContent(o.id, sel.id); } }}
                   disabled={!sel || !!selDone || !!busy}
-                  style={{ flex: 1, padding: "12px 6px", fontSize: isMobile ? 14 : 16, cursor: (!sel || selDone || busy) ? "not-allowed" : "pointer", color: "#9CC76F", background: sel ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (!sel || selDone) ? 0.4 : 1, ...ui.label }}
+                  style={{ flex: 1, padding: "8px 2px", fontSize: 11, cursor: (!sel || selDone || busy) ? "not-allowed" : "pointer", color: "#9CC76F", background: sel ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (!sel || selDone) ? 0.4 : 1, ...ui.label }}
                 >🎁 Donate</button>
               </div>
             </div>
@@ -3093,8 +3202,161 @@ export default function PackItUp({ glowMode = "split" }) {
             ? createPortal(
                 <>
                   <div
-                    onClick={() => { setStorageId(null); setSelectedContentId(null); }}
-                    style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(10, 5, 2, 0.22)" }}
+                    onClick={() => { closeStorage(o.id); }}
+                    style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(10, 5, 2, 0.18)" }}
+                  />
+                  {panel}
+                </>,
+                document.body
+              )
+            : panel;
+        })()}
+
+        {/* living-room radio panel — ON/OFF + station list */}
+        {radioOpen && rm.id === room.id && rm.id === "living" && (() => {
+          const stations = radioUi.stations?.length ? radioUi.stations : RADIO_STATIONS.map((s) => ({ ...s, available: true }));
+          const cur = stations.find((s) => s.id === radioUi.stationId) || stations[0];
+          const panelW = Math.min(220, typeof window !== "undefined" ? window.innerWidth - 40 : 220);
+          const a = radioOpen;
+          const safeTop = 78;
+          const safeBottom = 92;
+          const vw = typeof window !== "undefined" ? window.innerWidth : 390;
+          const vh = typeof window !== "undefined" ? window.innerHeight : 700;
+          let left = a ? a.left + a.width / 2 - panelW / 2 : (vw - panelW) / 2;
+          left = Math.max(12, Math.min(left, vw - panelW - 12));
+          const above = a ? a.top - 8 : vh / 2;
+          const below = a ? a.bottom + 8 : vh / 2;
+          let top = above - 268;
+          if (top < safeTop) top = Math.min(below, vh - safeBottom - 268);
+          top = Math.max(safeTop, Math.min(top, vh - safeBottom - 200));
+
+          const panel = (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: isMobile ? "fixed" : "absolute",
+                left: isMobile ? left : (a ? undefined : 200),
+                top: isMobile ? top : 20,
+                ...(isMobile ? null : (() => {
+                  const o = room.objects.find((ob) => ob.id === "radio");
+                  const saved = SAVED_LAYOUT.living?.radio || {};
+                  const px = (saved.x ?? o?.x ?? 198);
+                  const py = (saved.y ?? o?.y ?? 36);
+                  return { left: Math.max(8, px - 40), top: Math.max(8, py - 210) };
+                })()),
+                width: panelW,
+                zIndex: isMobile ? 9999 : 400,
+                background: "#1A0F06",
+                border: "3px solid #120A04",
+                boxShadow: "inset 0 0 0 2px #4A2E17, 0 8px 0 #0A0502",
+                padding: 10,
+                scrollbarColor: "#4A2E17 #1A0F06",
+                scrollbarWidth: "thin",
+                ...ui.label,
+              }}
+            >
+              <style>{`
+                .storageScroll::-webkit-scrollbar { width: 8px; }
+                .storageScroll::-webkit-scrollbar-track { background: #1A0F06; border-left: 2px solid #120A04; }
+                .storageScroll::-webkit-scrollbar-thumb { background: #4A2E17; border: 2px solid #120A04; }
+                .storageScroll::-webkit-scrollbar-thumb:hover { background: #6B4A28; }
+              `}</style>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <div style={{ color: "#FFD97A", fontSize: 14 }}>RADIO</div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); closeRadio(); }}
+                  style={{ background: "none", border: "none", color: "#C9B896", fontSize: 16, cursor: "pointer", lineHeight: 1, ...ui.label }}
+                >✕</button>
+              </div>
+              <div style={{
+                display: "flex", gap: 6, marginBottom: 8, padding: 6,
+                background: "#120A04", border: "2px solid #4A2E17",
+              }}>
+                <div style={{
+                  flex: 1, color: radioUi.on ? "#8FD14F" : "#6B563B", fontSize: 11,
+                  display: "flex", alignItems: "center", gap: 6,
+                }}>
+                  <span style={{
+                    width: 8, height: 8, borderRadius: "50%",
+                    background: radioUi.on ? "#8FD14F" : "#3A2A18",
+                    boxShadow: radioUi.on ? "0 0 6px #8FD14F" : "none",
+                    display: "inline-block",
+                  }} />
+                  {radioUi.on ? (cur?.display || "ON") : "OFF"}
+                </div>
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    primeSellAudio();
+                    const turningOn = !radioUi.on;
+                    if (turningOn) {
+                      // random station on power-on — don't pass last stationId
+                      setRadioUi((u) => ({ ...u, on: true }));
+                      await toggleRadio();
+                    } else {
+                      setRadioUi((u) => ({ ...u, on: false }));
+                      await toggleRadio();
+                    }
+                    refreshRadioUi();
+                  }}
+                  style={{
+                    padding: "6px 10px", fontSize: 11, cursor: "pointer",
+                    color: "#F2E4C0", background: radioUi.on ? "#3A2410" : "#2A4A20",
+                    border: "2px solid #120A04", ...ui.label,
+                  }}
+                >{radioUi.on ? "OFF" : "ON"}</button>
+              </div>
+              <div
+                className="storageScroll"
+                style={{
+                  display: "flex", flexDirection: "column", gap: 4, maxHeight: 200,
+                  overflowY: "auto", paddingRight: 2,
+                  scrollbarColor: "#4A2E17 #1A0F06", scrollbarWidth: "thin",
+                }}
+              >
+                {stations.map((s) => {
+                  const active = radioUi.on && radioUi.stationId === s.id;
+                  const avail = s.available !== false;
+                  return (
+                    <button
+                      key={s.id}
+                      disabled={!avail}
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (!avail) return;
+                        primeSellAudio();
+                        setRadioUi((u) => ({ ...u, on: true, stationId: s.id }));
+                        const ok = await playStation(s.id);
+                        if (!ok) refreshRadioUi();
+                        else refreshRadioUi();
+                      }}
+                      style={{
+                        display: "flex", justifyContent: "space-between", alignItems: "center",
+                        gap: 8, padding: "7px 8px", textAlign: "left", cursor: avail ? "pointer" : "not-allowed",
+                        color: !avail ? "#5A4A38" : active ? "#120A04" : "#F2E4C0",
+                        background: active ? "#FFD97A" : "#241509",
+                        border: active ? "2px solid #FFD97A" : "2px solid #4A2E17",
+                        opacity: avail ? 1 : 0.45,
+                        ...ui.label,
+                      }}
+                    >
+                      <span style={{ fontSize: 11, letterSpacing: "0.5px" }}>{s.display}</span>
+                      <span style={{ fontSize: 10, color: active ? "#3A2410" : "#C9B896" }}>{s.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div style={{ color: "#6B563B", fontSize: 9, marginTop: 8, lineHeight: 1.3 }}>
+                Off returns to Cherry Blossom
+              </div>
+            </div>
+          );
+          return isMobile
+            ? createPortal(
+                <>
+                  <div
+                    onClick={() => closeRadio()}
+                    style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(10, 5, 2, 0.18)" }}
                   />
                   {panel}
                 </>,
@@ -3106,7 +3368,7 @@ export default function PackItUp({ glowMode = "split" }) {
         {/* STRETCHY — the cat, only in the current room, above the floor/furniture
             but non-interactive. Keyed by room so he re-mounts and trots back in. */}
         {rm.id === room.id && (
-          <Stretchy key={rm.id} spots={CAT_SPOTS[rm.id]} enterSide={catEnterSide} pressure={pressure} onOpen={() => setScreen("stretchy")} />
+          <Stretchy key={rm.id} spots={CAT_SPOTS[rm.id]} enterSide={catEnterSide} pressure={pressure} playCatSfx={playCatSfx} onOpen={() => setScreen("stretchy")} />
         )}
 
         {/* coin burst + floating amount — own overlay on its own timer so the
@@ -3167,6 +3429,9 @@ export default function PackItUp({ glowMode = "split" }) {
               "--pdy": `${contentFlyFx.pdy}px`,
               "--pscale": contentFlyFx.pscale,
               transformOrigin: "top left",
+              // Match furniture .obj: base scale before packToBox runs, or the
+              // first frame flashes at full PNG size and the fly looks broken.
+              transform: `scale(${contentFlyFx.pscale})`,
             }}
           >
             <PixelCanvas w={contentFlyFx.spr.w} h={contentFlyFx.spr.h} draw={contentFlyFx.spr.draw} />
@@ -3215,8 +3480,10 @@ export default function PackItUp({ glowMode = "split" }) {
     const roomCells = extCells - ceilCells;
     const extPx = extCells * CELL;
     const stageH = Math.round(extPx * stageScale);
-    const prevRoom = roomIndex > 0 ? ROOMS[ROOMS_ORDER[roomIndex - 1]] : null;
-    const nextRoom = roomIndex < N - 1 ? ROOMS[ROOMS_ORDER[roomIndex + 1]] : null;
+    const prevIdx = (roomIndex - 1 + N) % N;
+    const nextIdx = (roomIndex + 1) % N;
+    const prevRoom = ROOMS[ROOMS_ORDER[prevIdx]];
+    const nextRoom = ROOMS[ROOMS_ORDER[nextIdx]];
 
     // Pan animation is driven by requestAnimationFrame on the MAIN thread, not a
     // CSS `transition: transform`. A CSS transition hands the whole 600%-wide
@@ -3235,7 +3502,11 @@ export default function PackItUp({ glowMode = "split" }) {
       cancelAnim(true);
       const t0 = performance.now(), dur = 300;
       const ease = (t) => 1 - Math.pow(1 - t, 3);
-      const self = { raf: 0, commit: () => { if (delta) setRoomIndex((i) => i + delta); setDragX(0); } };
+      // rooms loop: bedroom ↔ living closes the apartment circuit
+      const self = { raf: 0, commit: () => {
+        if (delta) setRoomIndex((i) => (i + delta + N) % N);
+        setDragX(0);
+      } };
       const step = (now) => {
         if (animRef.current !== self) return;              // superseded or cancelled
         const t = Math.min(1, (now - t0) / dur);
@@ -3257,10 +3528,6 @@ export default function PackItUp({ glowMode = "split" }) {
       let dx = e.clientX - d.startX;
       if (!d.intent && Math.abs(dx) > 10) { d.intent = true; setDragging(true); }
       if (!d.intent) return;
-      // ends of the apartment: no room beyond, so the strip only gives a little
-      if ((roomIndex === 0 && dx > 0) || (roomIndex === N - 1 && dx < 0)) {
-        dx = Math.max(-48, Math.min(48, dx / 4));
-      }
       setDragX(dx);
     };
     const endDrag = (e) => {
@@ -3272,9 +3539,10 @@ export default function PackItUp({ glowMode = "split" }) {
         suppressClickRef.current = true;
         schedule(() => { suppressClickRef.current = false; }, 80);
         const threshold = Math.max(60, viewSize.w * 0.18);
-        if (dragX <= -threshold) delta = roomIndex < N - 1 ? 1 : 0;
-        else if (dragX >= threshold) delta = roomIndex > 0 ? -1 : 0;
-        if (delta) haptic(HAPTIC.room);
+        // loop: swipe past either end wraps bedroom ↔ living
+        if (dragX <= -threshold) delta = 1;
+        else if (dragX >= threshold) delta = -1;
+        if (delta) { haptic(HAPTIC.room); playRoomSwitchSfx(); }
       }
       setDragging(false);
       animateTo(dragX, -delta * viewSize.w, delta);
@@ -3282,7 +3550,7 @@ export default function PackItUp({ glowMode = "split" }) {
 
     const arrowBtn = (dir, target) => target && (
       <button
-        onClick={() => { haptic(HAPTIC.room); animateTo(0, -dir * viewSize.w, dir); }}
+        onClick={() => { haptic(HAPTIC.room); playRoomSwitchSfx(); animateTo(0, -dir * viewSize.w, dir); }}
         style={{
           position: "absolute", top: 12, [dir < 0 ? "left" : "right"]: 14, zIndex: 60,
           width: 54, minHeight: 48, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -3481,7 +3749,7 @@ export default function PackItUp({ glowMode = "split" }) {
                 ★ {room.name} cleared! ★
               </div>
               <div style={{ color: "#C9B896", fontSize: 12, marginTop: 6, ...ui.label }}>
-                {nextRoom ? `Next up: ${nextRoom.name} →` : "That's the whole place."}
+                Next up: {nextRoom.name} →
               </div>
             </div>
           )}
@@ -3745,6 +4013,7 @@ export default function PackItUp({ glowMode = "split" }) {
           handled={handled}
           openHandledSheet={() => { setScreen("apartment"); setInvOpen(true); }}
           busy={!!busy}
+          playSfx={(name) => { if (name === "stamp") playStampSfx(); }}
         />
       </div>
     );
