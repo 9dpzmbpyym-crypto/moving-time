@@ -49,7 +49,7 @@ Line numbers below are approximate — the file grows as features land. Search f
 - Do not import: react-query, wouter, framer-motion, recharts, zod — not in package.json.
 - For furniture layout changes, edit `layout.json`, not BedroomSlice.jsx.
 - **Do not split BedroomSlice.jsx** — other harnesses have in-flight work. Split later.
-- Do not touch anything outside `artifacts/pack-it-up/`.
+- Do not touch anything outside `artifacts/pack-it-up/`, **except** `docs/ai-team/**` and the AI-team section of `AGENTS.md` — Claude (Fable/Opus) owns and maintains those docs. See `docs/ai-team/README.md` for the team operating model, commit authority, and sub-agent rules.
 
 ## How pixel art sprites work
 

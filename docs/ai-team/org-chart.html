@@ -1,0 +1,589 @@
+<title>Pack It Up — AI Dev Team</title>
+<style>
+  :root {
+    --ground: #FAF6EE;
+    --card: #FFFDF8;
+    --ink: #2B241D;
+    --ink-soft: #6B5F4F;
+    --line: #DCD2C0;
+    --line-strong: #B8A98E;
+    --tape: #C08A2D;
+    --tape-soft: #F0E2C4;
+    --hue-chatgpt: #54718C;
+    --hue-cursor: #B06E2E;
+    --hue-codex: #567A54;
+    --hue-claude: #8A5F80;
+    --chip-commit-bg: #2B241D;
+    --chip-commit-fg: #FAF6EE;
+    --code-bg: #F2ECDF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #1E1A14;
+      --card: #27221A;
+      --ink: #EAE2D2;
+      --ink-soft: #A89982;
+      --line: #3D3628;
+      --line-strong: #5A5040;
+      --tape: #D8A548;
+      --tape-soft: #3A3221;
+      --hue-chatgpt: #7E9CB8;
+      --hue-cursor: #D0904E;
+      --hue-codex: #7EA37B;
+      --hue-claude: #B189A6;
+      --chip-commit-bg: #EAE2D2;
+      --chip-commit-fg: #1E1A14;
+      --code-bg: #171310;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #1E1A14;
+    --card: #27221A;
+    --ink: #EAE2D2;
+    --ink-soft: #A89982;
+    --line: #3D3628;
+    --line-strong: #5A5040;
+    --tape: #D8A548;
+    --tape-soft: #3A3221;
+    --hue-chatgpt: #7E9CB8;
+    --hue-cursor: #D0904E;
+    --hue-codex: #7EA37B;
+    --hue-claude: #B189A6;
+    --chip-commit-bg: #EAE2D2;
+    --chip-commit-fg: #1E1A14;
+    --code-bg: #171310;
+  }
+  :root[data-theme="light"] {
+    --ground: #FAF6EE;
+    --card: #FFFDF8;
+    --ink: #2B241D;
+    --ink-soft: #6B5F4F;
+    --line: #DCD2C0;
+    --line-strong: #B8A98E;
+    --tape: #C08A2D;
+    --tape-soft: #F0E2C4;
+    --hue-chatgpt: #54718C;
+    --hue-cursor: #B06E2E;
+    --hue-codex: #567A54;
+    --hue-claude: #8A5F80;
+    --chip-commit-bg: #2B241D;
+    --chip-commit-fg: #FAF6EE;
+    --code-bg: #F2ECDF;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.5;
+    margin: 0;
+    padding: 40px 20px 72px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  .mono {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  /* ---------- header ---------- */
+  header { text-align: center; margin-bottom: 8px; }
+  .kicker {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  h1 {
+    font-size: clamp(30px, 5vw, 44px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 6px 0 0;
+    text-wrap: balance;
+  }
+  .pixel-rule {
+    width: 168px;
+    height: 8px;
+    margin: 16px auto 14px;
+    background:
+      repeating-linear-gradient(90deg,
+        var(--tape) 0 8px, transparent 8px 12px,
+        var(--tape) 12px 16px, transparent 16px 24px);
+  }
+  .subtitle {
+    color: var(--ink-soft);
+    max-width: 58ch;
+    margin: 0 auto;
+    font-size: 15px;
+    text-wrap: balance;
+  }
+
+  /* ---------- eloisa banner ---------- */
+  .owner {
+    margin: 32px auto 0;
+    max-width: 460px;
+    border: 2px solid var(--ink);
+    background: var(--card);
+    text-align: center;
+    padding: 18px 24px 16px;
+    position: relative;
+  }
+  .owner::before {
+    content: "";
+    position: absolute;
+    top: -7px; left: 50%;
+    width: 92px; height: 14px;
+    transform: translateX(-50%) rotate(-1.6deg);
+    background: var(--tape);
+    opacity: 0.85;
+  }
+  .owner .name { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+  .owner .role {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+  }
+  .owner .word { margin-top: 8px; font-size: 14px; }
+
+  /* ---------- connectors ---------- */
+  .drop { width: 2px; height: 26px; background: var(--line-strong); margin: 0 auto; }
+  .spread {
+    height: 2px; background: var(--line-strong);
+    margin: 0 11.5%;
+  }
+  .stubs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin-bottom: 0;
+  }
+  .stubs span { width: 2px; height: 22px; background: var(--line-strong); margin: 0 auto; }
+  @media (max-width: 860px) {
+    .spread, .stubs { display: none; }
+    .drop { height: 30px; }
+  }
+
+  /* ---------- team grid ---------- */
+  .teams {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    align-items: start;
+  }
+  @media (max-width: 860px) { .teams { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 540px) { .teams { grid-template-columns: 1fr; } }
+
+  .team {
+    border: 1.5px solid var(--line-strong);
+    border-top: 5px solid var(--hue, var(--line-strong));
+    background: var(--card);
+  }
+  .team.chatgpt { --hue: var(--hue-chatgpt); }
+  .team.cursor  { --hue: var(--hue-cursor); }
+  .team.codex   { --hue: var(--hue-codex); }
+  .team.claude  { --hue: var(--hue-claude); }
+
+  .team-head { padding: 12px 14px 10px; border-bottom: 1px solid var(--line); }
+  .team-name {
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--hue);
+  }
+  .team-tag {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    margin-top: 1px;
+  }
+
+  .member { padding: 11px 14px 12px; border-bottom: 1px solid var(--line); }
+  .member:last-child { border-bottom: none; }
+  .member .who {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+    flex-wrap: wrap;
+  }
+  .member .model { font-weight: 700; font-size: 14px; }
+  .member .lead-star { color: var(--tape); font-size: 12px; }
+  .member .title { font-size: 12.5px; color: var(--ink-soft); margin-top: 1px; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 5px;
+    margin-top: 7px;
+  }
+  .chip {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    padding: 2px 6px;
+    border: 1px solid var(--line-strong);
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .chip.commit { background: var(--chip-commit-bg); color: var(--chip-commit-fg); border-color: var(--chip-commit-bg); }
+  .chip.cond   { border: 1px dashed var(--ink); color: var(--ink); }
+  .chip.docs   { border-color: var(--tape); color: var(--tape); }
+  .chip.paid   { background: var(--tape-soft); border-color: var(--tape); color: var(--ink); }
+  .member.optional { opacity: 0.62; }
+
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center;
+    margin: 20px auto 0;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .legend .chip { font-size: 10px; }
+
+  /* ---------- sections ---------- */
+  section { margin-top: 56px; }
+  h2 {
+    font-size: 13px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    border-bottom: 2px solid var(--line);
+    padding-bottom: 8px;
+    margin: 0 0 18px;
+  }
+  h2 b { color: var(--tape); font-weight: 700; }
+
+  /* routing labels */
+  .labels {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+  }
+  .label {
+    border: 1.5px dashed var(--line-strong);
+    background: var(--card);
+    padding: 10px 13px;
+  }
+  .label .if {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .label .then { font-weight: 700; font-size: 14.5px; margin-top: 2px; }
+  .label .note { font-size: 12px; color: var(--ink-soft); margin-top: 1px; }
+
+  /* ladder */
+  .ladder { display: grid; gap: 0; border: 1.5px solid var(--line-strong); background: var(--card); }
+  .rung {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    border-bottom: 1px solid var(--line);
+  }
+  .rung:last-child { border-bottom: none; }
+  .rung .n {
+    display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+    font-weight: 700;
+    border-right: 1px solid var(--line);
+    color: var(--tape);
+  }
+  .rung .body { padding: 10px 14px; }
+  .rung .who-l { font-weight: 700; font-size: 14px; }
+  .rung .what { font-size: 12.5px; color: var(--ink-soft); }
+  .policy {
+    margin-top: 14px;
+    border-left: 3px solid var(--tape);
+    padding: 8px 14px;
+    background: var(--card);
+    font-size: 14px;
+  }
+
+  /* tables */
+  .table-scroll { overflow-x: auto; border: 1.5px solid var(--line-strong); background: var(--card); }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 13px; }
+  th {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-align: left;
+    color: var(--ink-soft);
+    padding: 9px 12px;
+    border-bottom: 2px solid var(--line-strong);
+  }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td.lane { font-weight: 700; white-space: nowrap; }
+  td .avoid { color: var(--ink-soft); font-size: 12px; }
+
+  /* protocol + handoff */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+  @media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } }
+  pre {
+    background: var(--code-bg);
+    border: 1.5px solid var(--line);
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.55;
+    margin: 0;
+  }
+  ol.proto { margin: 0; padding-left: 22px; font-size: 14px; }
+  ol.proto li { margin-bottom: 8px; }
+  ol.proto .q { color: var(--ink-soft); font-size: 13px; }
+
+  .budget {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .budget .chip { font-size: 11px; padding: 5px 10px; }
+
+  /* footer mottos */
+  footer {
+    margin-top: 64px;
+    text-align: center;
+  }
+  .motto {
+    font-size: clamp(16px, 2.6vw, 21px);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    max-width: 34ch;
+    margin: 0 auto;
+    text-wrap: balance;
+  }
+  .motto + .motto { margin-top: 18px; }
+  .motto em { color: var(--tape); font-style: normal; }
+  footer .pixel-rule { margin: 28px auto 24px; }
+  .fine {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    margin-top: 26px;
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="kicker">Pack It Up · Operating Model</div>
+    <h1>The AI Dev Team</h1>
+    <div class="pixel-rule" aria-hidden="true"></div>
+    <p class="subtitle">Four harnesses, one product owner. Hierarchy runs by harness, not by raw model IQ — the question is never "who is smartest," it's "who is standing in the right room."</p>
+  </header>
+
+  <div class="owner">
+    <div class="name">Eloisa</div>
+    <div class="role">PRODUCT OWNER · CREATIVE DIRECTOR · FINAL TASTE AUTHORITY</div>
+    <div class="word">Decides what the game is. Nothing ships past her taste.</div>
+  </div>
+
+  <div class="drop" aria-hidden="true"></div>
+  <div class="spread" aria-hidden="true"></div>
+  <div class="stubs" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+
+  <div class="teams">
+
+    <div class="team chatgpt">
+      <div class="team-head">
+        <div class="team-name">ChatGPT</div>
+        <div class="team-tag">front office · non-agentic</div>
+      </div>
+      <div class="member">
+        <div class="who"><span class="model">GPT-5.6 Sol <span class="lead-star">★ lead</span></span></div>
+        <div class="title">Executive assistant to Eloisa · staff architect · prompt foreman</div>
+        <div class="meta">
+          <span class="chip">think: high</span>
+          <span class="chip">advisory</span>
+          <span class="chip">no repo access</span>
+        </div>
+      </div>
+      <div class="member">
+        <div class="title" style="margin-top:0">Reasons, diagnoses from pasted code, writes tickets and exact prompts for everyone else. Never pretends to edit the repo.</div>
+      </div>
+    </div>
+
+    <div class="team cursor">
+      <div class="team-head">
+        <div class="team-name">Cursor</div>
+        <div class="team-tag">main floor · native credits</div>
+      </div>
+      <div class="member">
+        <div class="who"><span class="model">Grok 4.5 <span class="lead-star">★ lead</span></span></div>
+        <div class="title">Team lead · repair tech · structural Cursor work</div>
+        <div class="meta">
+          <span class="chip">think: high fast</span>
+          <span class="chip commit">COMMIT</span>
+        </div>
+      </div>
+      <div class="member">
+        <div class="who"><span class="model">Composer 2.5</span></div>
+        <div class="title">Intern · tiny edits and grunt work only</div>
+        <div class="meta">
+          <span class="chip">think: fast</span>
+          <span class="chip">patch only</span>
+        </div>
+      </div>
+      <div class="member optional">
+        <div class="who"><span class="model">GLM-5.2 / Luna</span></div>
+        <div class="title">Overflow via OpenRouter — long context, scoped builds</div>
+        <div class="meta">
+          <span class="chip paid">paid API</span>
+          <span class="chip">advisory</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="team codex">
+      <div class="team-head">
+        <div class="team-name">Codex</div>
+        <div class="team-tag">heavy machinery · agentic</div>
+      </div>
+      <div class="member">
+        <div class="who"><span class="model">GPT-5.6 Sol <span class="lead-star">★ lead</span></span></div>
+        <div class="title">Senior agentic engineer · multi-file debugging · tests</div>
+        <div class="meta">
+          <span class="chip">think: high</span>
+          <span class="chip commit">COMMIT</span>
+        </div>
+      </div>
+      <div class="member">
+        <div class="who"><span class="model">GPT-5.6 Luna</span></div>
+        <div class="title">Implementation engineer · builds from clear tickets</div>
+        <div class="meta">
+          <span class="chip">think: high/max</span>
+          <span class="chip cond">COND. COMMIT</span>
+        </div>
+      </div>
+      <div class="member optional">
+        <div class="who"><span class="model">GPT-5.6 Terra</span></div>
+        <div class="title">Mid-tier specialist, if available</div>
+        <div class="meta"><span class="chip">think: high</span></div>
+      </div>
+    </div>
+
+    <div class="team claude">
+      <div class="team-head">
+        <div class="team-name">Claude</div>
+        <div class="team-tag">design studio · taste</div>
+      </div>
+      <div class="member">
+        <div class="who"><span class="model">Fable 5 <span class="lead-star">★ lead</span></span></div>
+        <div class="title">Principal consultant · creative director · edits docs &amp; design in Claude</div>
+        <div class="meta">
+          <span class="chip">think: med/high</span>
+          <span class="chip docs">DOCS COMMIT</span>
+          <span class="chip">repo code: advisory</span>
+        </div>
+      </div>
+      <div class="member">
+        <div class="who"><span class="model">Opus 4.8</span></div>
+        <div class="title">Senior reviewer · taste + reasoning specialist</div>
+        <div class="meta">
+          <span class="chip">think: high</span>
+          <span class="chip">advisory</span>
+        </div>
+      </div>
+      <div class="member optional">
+        <div class="who"><span class="model">Sonnet 5 / Haiku 4.5</span></div>
+        <div class="title">Sub-agent interns — spawnable when Claude runs in Claude Code</div>
+        <div class="meta"><span class="chip">think: fast/low</span><span class="chip">via Agent tool</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="legend">
+    <span><span class="chip commit">COMMIT</span> default commit authority</span>
+    <span><span class="chip cond">COND. COMMIT</span> scoped &amp; pre-approved only</span>
+    <span><span class="chip docs">DOCS COMMIT</span> docs/design, not repo code</span>
+    <span><span class="chip paid">paid API</span> out-of-pocket, ask first</span>
+  </div>
+
+  <section>
+    <h2>Routing · <b>read the box label before lifting</b></h2>
+    <div class="labels">
+      <div class="label"><div class="if">if unknown who you are</div><div class="then">Stop and ask</div><div class="note">"Which harness/model am I right now?"</div></div>
+      <div class="label"><div class="if">if tiny &amp; isolated</div><div class="then">Composer 2.5</div><div class="note">Grok or Eloisa approves the commit</div></div>
+      <div class="label"><div class="if">if structural or risky</div><div class="then">Grok or Codex Sol</div><div class="note">the only default commit leads</div></div>
+      <div class="label"><div class="if">if thinking only</div><div class="then">ChatGPT Sol</div><div class="note">diagnosis, plans, prompts — no edits</div></div>
+      <div class="label"><div class="if">if taste, voice, pixels</div><div class="then">Fable / Opus</div><div class="note">game feel, Marcy voice, art standards</div></div>
+      <div class="label"><div class="if">if long-context grind</div><div class="then">GLM-5.2</div><div class="note">paid API — only with approved spend</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Commit authority · <b>the ladder</b></h2>
+    <div class="ladder">
+      <div class="rung"><div class="n">1</div><div class="body"><div class="who-l">Eloisa</div><div class="what">Final human authority, always.</div></div></div>
+      <div class="rung"><div class="n">2</div><div class="body"><div class="who-l">Grok 4.5 (Cursor) · GPT-5.6 Sol (Codex)</div><div class="what">Default agentic commit leads, each in their own harness.</div></div></div>
+      <div class="rung"><div class="n">3</div><div class="body"><div class="who-l">GPT-5.6 Luna (Codex)</div><div class="what">Conditional: scoped ticket, narrow files, architecture already decided, plan approved by a lead. No "fix whatever is wrong."</div></div></div>
+      <div class="rung"><div class="n">4</div><div class="body"><div class="who-l">Composer 2.5</div><div class="what">Prepares patches and tiny edits. Never leads a commit.</div></div></div>
+      <div class="rung"><div class="n">5</div><div class="body"><div class="who-l">GLM · ChatGPT Sol · Opus · Fable (for repo code)</div><div class="what">Advisory. Fable commits docs/design when working in an editing harness — repo code still lands via Grok or Codex Sol.</div></div></div>
+    </div>
+    <div class="policy"><strong>The whole policy in one sentence:</strong> only harness team leads have default commit authority; Luna has conditional commit authority for approved, scoped implementation work; Composer never leads commits.</div>
+  </section>
+
+  <section>
+    <h2>Self-identification · <b>before touching anything</b></h2>
+    <div class="two-col">
+      <ol class="proto">
+        <li><strong>Harness</strong> — <span class="q">Cursor / Codex / ChatGPT / Claude / OpenRouter / unknown?</span></li>
+        <li><strong>Model</strong> — <span class="q">Grok / Composer / Sol / Luna / Fable / Opus / GLM / unknown?</span></li>
+        <li><strong>Permissions</strong> — <span class="q">inspect repo? edit repo? run tests? paid API?</span></li>
+        <li><strong>Task risk</strong> — <span class="q">tiny / routine / structural / taste / debugging / unknown?</span></li>
+      </ol>
+      <pre>If any answer is unknown, ask:
+
+  "Before I act, which harness/model
+   am I right now?"
+
+If the task is outside your role,
+return a handoff instead of forcing it:
+
+  Recommended handoff: [model/harness]
+  Reason:              [why]
+  Risk level:          [tiny…taste]
+  Code edits allowed:  [yes/no/inspect]
+  Prompt:              [paste-ready]</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>Task lanes · <b>who does what</b></h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Lane</th><th>Leads</th><th>Implementation</th><th>Keep away</th></tr></thead>
+        <tbody>
+          <tr><td class="lane">Architecture</td><td>ChatGPT Sol · Fable</td><td>Codex Sol · Grok</td><td class="avoid">Composer alone</td></tr>
+          <tr><td class="lane">Game UI design</td><td>Fable · Opus</td><td>Luna · Grok · Composer for nudges</td><td class="avoid">GLM as final taste</td></tr>
+          <tr><td class="lane">Creative direction</td><td>Fable, Opus support</td><td>—</td><td class="avoid">anyone else as final judge</td></tr>
+          <tr><td class="lane">Planning</td><td>ChatGPT Sol</td><td>GLM · Luna</td><td class="avoid">Composer as strategist</td></tr>
+          <tr><td class="lane">Orchestration</td><td>ChatGPT Sol · Codex Sol · Grok</td><td>Luna · GLM prompts</td><td class="avoid">Composer as lead</td></tr>
+          <tr><td class="lane">Debugging</td><td>Codex Sol · Grok · ChatGPT Sol</td><td>Luna high/max</td><td class="avoid">Composer beyond inspect-only</td></tr>
+          <tr><td class="lane">Small edits</td><td>Composer</td><td>Luna if trickier</td><td class="avoid">Fable/Sol on furniture-moving</td></tr>
+          <tr><td class="lane">Cleanup</td><td>Composer · Luna</td><td>GLM for bulk planning</td><td class="avoid">premium models</td></tr>
+          <tr><td class="lane">Notes → tickets</td><td>GLM · Luna · ChatGPT Sol</td><td>—</td><td class="avoid">Composer if ambiguous</td></tr>
+          <tr><td class="lane">Pixel art</td><td>Fable · Opus set standards</td><td>Luna · Grok build; Composer places</td><td class="avoid">GLM as visual judge</td></tr>
+          <tr><td class="lane">Mechanic design</td><td>Fable · ChatGPT Sol</td><td>Grok · Codex Sol · Luna</td><td class="avoid">Composer</td></tr>
+          <tr><td class="lane">Marcy dialogue</td><td>Fable · Opus (voice bible, final judge)</td><td>Luna variants · GLM joke mining · Composer inserts approved lines</td><td class="avoid">Composer as writer</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Budget · <b>one line to remember</b></h2>
+    <div class="budget">
+      <span class="chip">1 · Cursor native first</span>
+      <span class="chip">2 · ChatGPT Sol for thinking</span>
+      <span class="chip">3 · Codex when the repo needs a real agent</span>
+      <span class="chip">4 · Claude for taste &amp; review</span>
+      <span class="chip paid">5 · OpenRouter only as approved overflow</span>
+    </div>
+  </section>
+
+  <footer>
+    <p class="motto">"Do not spend expensive intelligence <em>moving furniture</em>. Do not let cheap labor <em>redesign the house</em>."</p>
+    <div class="pixel-rule" aria-hidden="true"></div>
+    <p class="motto" style="font-weight:500; font-size:15px; max-width:44ch;">If you do not know who you are, ask. If the task is outside your role, hand it off. If the task can break the house, do not pretend it is moving the radio.</p>
+    <div class="fine">PACK IT UP · AI DEV TEAM v4 · JULY 2026 · HIERARCHY BY HARNESS, NOT BY IQ</div>
+  </footer>
+
+</div>

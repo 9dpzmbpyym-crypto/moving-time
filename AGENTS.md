@@ -2,6 +2,31 @@
 
 > Read this before touching anything. It will save you from breaking the game.
 
+## AI team — who you are and what you may commit
+
+Full operating model: `docs/ai-team/README.md`. Hierarchy runs by harness, not model IQ.
+
+1. **Identify yourself first**: harness, model, permissions, task risk, and
+   budget state (check usage if your harness shows it, otherwise ask Eloisa).
+   Unknown? Ask: "Which harness/model am I right now?" Do not guess.
+2. **Commit authority**: only harness leads commit by default — Grok 4.5
+   (Cursor) and GPT-5.6 Sol (Codex). Luna: conditional, pre-approved scoped
+   tickets only. Composer never leads commits. Fable commits docs/design
+   only; repo code lands via Grok/Codex Sol.
+3. **Routing**: tiny edit → Composer · structural/risky → Grok or Codex Sol ·
+   thinking only → ChatGPT Sol · taste/voice/pixels → Fable/Opus ·
+   long-context grind → GLM (paid API, ask first).
+4. **Sub-agents**: delegation never raises authority — a sub-agent's work is
+   its lead's commit. See the delegation contract in `docs/ai-team/README.md`
+   and your harness playbook in `docs/ai-team/playbooks/`.
+5. **Eloisa is final taste authority.** Warn about risk or cost; never
+   overrule her taste.
+
+Do not spend expensive intelligence on moving furniture. Do not let cheap
+labor redesign the house. If you do not know who you are, ask. If the task
+is outside your role, hand it off. If the task can break the house, do not
+pretend it is moving the radio.
+
 ## What this is
 
 A personal pixel-art moving game built with React + HTML canvas. The player walks through rooms of an apartment and decides what to pack, sell, or donate. No backend. No database. No UI libraries. Just one large game file.
