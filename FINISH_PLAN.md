@@ -21,33 +21,39 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 
 ## Open next (Jul 10 — after Shirley landline night)
 
-### Storage glow (IN PROGRESS — handoff)
-- [ ] **Outstanding:** container glows still read as two looks — soft outer halo on some faces vs heavy/full-face aura on others (fridge/pantry/closet regions cover most of the sprite). Mirror correctly keeps silhouette `.portal`; storage should stay bar-cabinet `.drawerGlow` only.
-- [ ] Tune `glowRegions` rects (shrink fridge/pantry/closet toward vanity/bar door proportions) until every container matches the bar-cabinet door halo
-- [ ] Optional: delete `?glow=outline` path if unused; default is face-only for storage
-- [x] Partial: route all storage through `glowRegions` + edge-only `.drawerGlow` (no green fill); closet/fridge/pantry renamed off `faceGlowRegions`
+### Storage glow — assigned **[claude]** (Fable taste)
+Visual “does this match the bar cabinet?” call — not a Codex grind.
+- [ ] **[claude]** Decide target look vs bar/vanity; shrink `glowRegions` on fridge/pantry/closet (and any other full-face auras) until they match
+- [ ] **[claude]** Optional: drop unused `?glow=outline` path once face-only is locked
+- [x] Partial (Cursor): all storage on `glowRegions` + edge-only `.drawerGlow`; no storage portal fallback
 
-### Shirley / receptionist
-- [ ] Bring ChatGPT **style + ruleset prompt** as source of truth (do **not** paste example convos literally into line banks)
-- [ ] Rebuild `SHIRLEY_SYSTEM_PROMPT` / thin bank from that prompt; keep FSM bookings + OpenRouter improv
-- [ ] Tune stall → hang-up + “mention objective ≤1 message gap” once prompt lands
-- [ ] Optional: landline pixel art per `docs/art-briefs/landline-shirley.md`
+### Shirley / receptionist — **[claude]** voice, then **[cursor]** wire
+- [ ] **[claude]** Bring ChatGPT **style + ruleset prompt** as source of truth (do **not** paste example convos literally into line banks)
+- [ ] **[cursor]** Rebuild `SHIRLEY_SYSTEM_PROMPT` / thin bank from that prompt; keep FSM bookings + OpenRouter improv
+- [ ] **[cursor]** Tune stall → hang-up + “mention objective ≤1 message gap” once prompt lands
+- [ ] **[claude]** Optional: landline pixel art per `docs/art-briefs/landline-shirley.md`
 
 ### Audio
-- [ ] Replace **room switch** SFX (`sfx/ui/room_switch_01.mp3`) — current one feels wrong
-- [ ] Replace **cabinet** open/close SFX — current ones feel wrong
+- [ ] **[cursor]** Replace **room switch** SFX when Eloisa drops the new file (`sfx/ui/room_switch_01.mp3`)
+- [ ] **[cursor]** Replace **cabinet** open/close SFX when new files land
 - [ ] Grab / drop in the **other SFX** Eloisa flagged (tomorrow grab list)
-- [ ] Wire stressed / desperate Stretchy meows if still unused
-- [ ] Prefer `public/assets/audio/` only (avoid duplicating under `src/assets/audio/`)
+- [ ] **[cursor]** Wire stressed / desperate Stretchy meows (buffers already load in `gameAudio.js`; ambient path is happy-only today)
+- [ ] **[cursor]** Prefer `public/assets/audio/` only — do not commit `src/assets/audio/` duplicate
+
+### Cursor grunt / Composer-sized (safe while Claude does docs + glow)
+- [ ] **[cursor]** Delete unused `?glow=outline` plumbing *only if* Claude confirms face-only forever (else leave)
+- [ ] **[cursor]** Fill any thin `contents.js` containers (data entries, not art taste)
+- [ ] **[cursor]** Soft: labeled box pile by room when packed (BOOKS / BATHROOM / …) if cheap
+- [ ] **[cursor]** Vercel deploy + phone smoke (audio prime + save + desk phone)
 
 ### Ship / host
 - [x] Commit Shirley + save/session/desk/health on `cursor/storage-glow-7a01` (Jul 10)
 - [x] Commit storage-glow unify + plan/handoff; push branch
-- [ ] Deploy `artifacts/pack-it-up` to Vercel; smoke-test on phone (audio prime + save + desk phone)
+- [ ] **[cursor]** Deploy `artifacts/pack-it-up` to Vercel; smoke-test on phone
 
 ### Systems still open from plan
-- [ ] Stretchy morning check-in
-- [ ] Job tracker read-only sync → Desk piles
+- [ ] **[cursor]** Stretchy morning check-in (after meow wiring or with it)
+- [ ] **[codex]** Job tracker read-only sync → Desk piles (multi-file / API-shaped)
 - [ ] Soft: Rejected stamp; labeled box pile by room; fill thin storage contents
 
 **Shipped in this pass (code on branch):** landline ceremony + Shirley call UI, `receptionist.js` / `receptionistCall.js`, appointments in `save.js`, Body Board attend gate, session ritual, desk outbox/trays, HUD days-left / packed counts, Settings OpenRouter key.
