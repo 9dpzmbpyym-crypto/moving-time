@@ -182,7 +182,7 @@ function drawShell(ctx) {
    SPRITES — one draw fn per object (low-res cells)
    ============================================================ */
 const SPRITES = {
-  closet_door: { w: 28, h: 89, faceGlowRegions: [[5, 8, 18, 34], [5, 48, 18, 34]], draw(ctx) {
+  closet_door: { w: 28, h: 89, glowRegions: [[5, 8, 18, 34], [5, 48, 18, 34]], draw(ctx) {
     r(ctx, P.out, 0, 0, 28, 89);
     r(ctx, P.white, 2, 2, 24, 86);
     outlineRect(ctx, P.whiteLo, 5, 8, 18, 34);
@@ -936,7 +936,7 @@ const KITCHEN_SPRITES = {
     r(ctx, P.whiteLo, 4, 39, 72, 4);
     r(ctx, P.out, 4, 43, 72, 1);
   }},
-  fridge: { w: 32, h: 60, faceGlowRegions: [[4, 3, 21, 18], [4, 23, 21, 32]], draw(ctx) {
+  fridge: { w: 32, h: 60, glowRegions: [[4, 3, 21, 18], [4, 23, 21, 32]], draw(ctx) {
     r(ctx, P.out, 0, 0, 32, 60);
     r(ctx, P.white, 1, 1, 30, 58);
     r(ctx, "#FBF6E6", 1, 1, 30, 2);
@@ -946,7 +946,7 @@ const KITCHEN_SPRITES = {
     r(ctx, "#B8AE96", 25, 28, 2, 26);
     r(ctx, P.whiteLo, 1, 56, 30, 3);
   }},
-  pantry: { w: 26, h: 72, faceGlowRegions: [[4, 5, 18, 30], [4, 39, 18, 28]], draw(ctx) {
+  pantry: { w: 26, h: 72, glowRegions: [[4, 5, 18, 30], [4, 39, 18, 28]], draw(ctx) {
     r(ctx, P.out, 0, 0, 26, 72);
     r(ctx, P.cream, 1, 1, 24, 70); r(ctx, "#FBF6E6", 1, 1, 24, 2);
     outlineRect(ctx, P.creamLo, 4, 5, 18, 30);
@@ -2927,16 +2927,17 @@ export default function PackItUp({ glowMode = "split" }) {
         50%      { filter: drop-shadow(0 0 12px rgba(143,209,79,0.8)) drop-shadow(0 0 6px rgba(218,200,90,0.7)); }
       }
       .portal { animation: portalGlow 2.6s ease-in-out infinite; }
-      /* All drawer faces breathe together. A slower, continuous curve reads as
-         one storage cue instead of several unrelated blinking rectangles. */
+      /* Door/drawer face glow — outward halo only (no green fill wash).
+         Fill made white fridges/closets look neon while green wood cabinets
+         (bar, desk, dresser) barely showed; edge shadow reads the same on both. */
       @keyframes drawerGlowPulse {
-        0%, 100% { box-shadow: 0 0 5px 1px rgba(143,209,79,0.42), 0 0 2px rgba(218,200,90,0.30); background: rgba(143,209,79,0.09); }
-        50%      { box-shadow: 0 0 9px 2px rgba(143,209,79,0.68), 0 0 4px 1px rgba(218,200,90,0.50); background: rgba(143,209,79,0.19); }
+        0%, 100% { box-shadow: 0 0 6px 2px rgba(143,209,79,0.50), 0 0 3px 1px rgba(218,200,90,0.38); }
+        50%      { box-shadow: 0 0 11px 3px rgba(143,209,79,0.78), 0 0 5px 2px rgba(218,200,90,0.55); }
       }
       .drawerGlow {
         animation: drawerGlowPulse 3.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
         pointer-events: none;
-        background: rgba(143,209,79,0.09);
+        background: transparent;
         border-radius: 1px;
       }
       /* red dot pulse for the Tasks chip when pressure is high */
@@ -3017,18 +3018,17 @@ export default function PackItUp({ glowMode = "split" }) {
           const storageHasRemaining =
             hasContents(rm.id, o.id) &&
             remainingCount(rm.id, o.id, contentsState) > 0;
-          const activeGlowRegions =
-            glowMode === "face"
-              ? (spr?.glowRegions || spr?.faceGlowRegions)
-              : spr?.glowRegions;
-          const useOutlineGlow =
-            storageHasRemaining &&
-            (glowMode === "outline" ||
-              (glowMode === "split" && !spr?.glowRegions));
+          // ONE storage cue only: bar-cabinet door/drawer face halos (.drawerGlow).
+          // Never use silhouette .portal on containers — that filter:drop-shadow
+          // reads as a different effect (glow around the whole sprite). Portal
+          // stays on the bathroom mirror only (health doorway).
+          const activeGlowRegions = spr?.glowRegions || null;
           const useFaceGlow =
             storageHasRemaining &&
             glowMode !== "outline" &&
             !!activeGlowRegions;
+          const useOutlineGlow =
+            storageHasRemaining && glowMode === "outline";
           if (rm.id === "dining" && o.id === "dining_chairs" && placed.parts) {
             const p = placed.parts;
             const common = { position: "absolute", left: placed.x, top: placed.y, transform: `scale(${placed.scale || 1})`, transformOrigin: "top left" };
@@ -3126,12 +3126,10 @@ export default function PackItUp({ glowMode = "split" }) {
               {o.id === "radio"
                 ? <RadioSprite />
                 : <PixelCanvas w={spr.w} h={spr.h} draw={spr.draw} />}
-              {/* drawer-level glow: one transparent div per drawer rect, using
-                  box-shadow (outward-only) so the drawer face stays clean and
-                  only the surrounding furniture body glows. Same outward-only
-                  behavior as the closet door's .portal, but rect-shaped since
-                  drawers are rectangles. Pulses via .drawerGlow keyframe.
-                  Only shows while the storage still has unpacked items. */}
+              {/* Door/drawer face glow (universal): one .drawerGlow rect per
+                  face region — same pulse as the bar cabinet doors. Outward
+                  box-shadow keeps the face readable. Only while storage still
+                  has unpacked items. */}
               {useFaceGlow && (() => {
                 return activeGlowRegions.map(([gx, gy, gw, gh], i) => (
                   <div

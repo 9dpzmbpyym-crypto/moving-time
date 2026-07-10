@@ -11,6 +11,12 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 
 ## Open next (Jul 10 — after Shirley landline night)
 
+### Storage glow (IN PROGRESS — handoff)
+- [ ] **Outstanding:** container glows still read as two looks — soft outer halo on some faces vs heavy/full-face aura on others (fridge/pantry/closet regions cover most of the sprite). Mirror correctly keeps silhouette `.portal`; storage should stay bar-cabinet `.drawerGlow` only.
+- [ ] Tune `glowRegions` rects (shrink fridge/pantry/closet toward vanity/bar door proportions) until every container matches the bar-cabinet door halo
+- [ ] Optional: delete `?glow=outline` path if unused; default is face-only for storage
+- [x] Partial: route all storage through `glowRegions` + edge-only `.drawerGlow` (no green fill); closet/fridge/pantry renamed off `faceGlowRegions`
+
 ### Shirley / receptionist
 - [ ] Bring ChatGPT **style + ruleset prompt** as source of truth (do **not** paste example convos literally into line banks)
 - [ ] Rebuild `SHIRLEY_SYSTEM_PROMPT` / thin bank from that prompt; keep FSM bookings + OpenRouter improv
@@ -25,7 +31,8 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 - [ ] Prefer `public/assets/audio/` only (avoid duplicating under `src/assets/audio/`)
 
 ### Ship / host
-- [ ] Commit + push this branch (Shirley + save/session/desk/health) — in progress Jul 10
+- [x] Commit Shirley + save/session/desk/health on `cursor/storage-glow-7a01` (Jul 10)
+- [ ] Commit storage-glow unify pass; push when ready
 - [ ] Deploy `artifacts/pack-it-up` to Vercel; smoke-test on phone (audio prime + save + desk phone)
 
 ### Systems still open from plan
