@@ -9,7 +9,9 @@ const MUSIC_VOL_MAX = 0.0875; // was 0.175 — another −50% (Jul 9)
 const RADIO_VOL_MAX = 0.07;   // was 0.14 — stay slightly quieter than main
 const SFX_VOL_MAX = 0.25;     // SFX master (another −50%)
 /** While on the landline, keep BGM/radio at this fraction (duck, don't stop). */
-const PHONE_MUSIC_DUCK = 0.2;
+const PHONE_MUSIC_DUCK = 0.4;
+/** Soft ramp when ducking / restoring music during a call. */
+const PHONE_DUCK_FADE = 0.28;
 /** Hard rule: never overlap songs. Stop previous → silence → start next. */
 const SONG_GAP_MS = 1000;
 
@@ -126,6 +128,9 @@ const state = {
   phoneReceiverSrc: null,
   phoneReceiverGain: null,
   phoneMusicDuck: false,
+  phoneIncomingRingtone: null,
+  phoneIncomingSrc: null,
+  phoneIncomingGain: null,
 };
 
 function ensureCtx() {
@@ -300,7 +305,7 @@ export function ensureAudioLoaded() {
       cabOpen, cabClose, closetOpen, closetClose,
       kitOpenRaw, kitClose, medOpen, medClose1, medClose2,
       offOpenRaw, offClose,
-      phoneReceiverRaw, phoneRotaryRaw, phoneRingRaw,
+      phoneReceiverRaw, phoneRotaryRaw, phoneRingRaw, phoneIncomingRaw,
     ] = await Promise.all([
       loadBuf("sfx/ui/sell_chime.mp3"),
       loadBuf("sfx/ui/packing_noise_01.mp3"),
@@ -343,6 +348,7 @@ export function ensureAudioLoaded() {
       loadBuf("sfx/ui/phone_receiver_tone.mp3"),
       loadBuf("sfx/ui/phone_rotary_dial.mp3"),
       loadBuf("sfx/ui/phone_ring_and_pickup.mp3"),
+      loadBuf("sfx/ui/phone_incoming_ringtone.mp3"),
     ]);
     // kitchen drawer open: cut the first quarter (felt late / empty lead-in),
     // then peak-match open + close halfway between original close (~0.11)
@@ -404,6 +410,10 @@ export function ensureAudioLoaded() {
     state.phoneAnswer = phoneRingRaw
       ? normalizePeak(sliceBuffer(phoneRingRaw, 8.85, 9.5), 0.55)
       : null;
+    // Shirley calling you — old bell ringtone; leveled like other UI one-shots (no music duck).
+    state.phoneIncomingRingtone = phoneIncomingRaw
+      ? normalizePeak(trimLeadingSilence(phoneIncomingRaw, 0.01), 0.5)
+      : null;
     state.ready = true;
     if (state.primed) startMainTheme();
   })();
@@ -464,7 +474,7 @@ export function setPhoneMusicDuck(on) {
   try {
     if (state.mainGain && ctx) {
       state.mainGain.gain.cancelScheduledValues(now);
-      state.mainGain.gain.setTargetAtTime(mainTargetVol(), now, 0.07);
+      state.mainGain.gain.setTargetAtTime(mainTargetVol(), now, PHONE_DUCK_FADE);
     } else {
       applyMusicGain();
     }
@@ -474,7 +484,7 @@ export function setPhoneMusicDuck(on) {
   try {
     if (state.radioGain && ctx) {
       state.radioGain.gain.cancelScheduledValues(now);
-      state.radioGain.gain.setTargetAtTime(radioTargetVol(), now, 0.07);
+      state.radioGain.gain.setTargetAtTime(radioTargetVol(), now, PHONE_DUCK_FADE);
     }
   } catch {}
 }
@@ -862,8 +872,39 @@ export function stopPhoneReceiverLoop() {
   state.phoneReceiverGain = null;
 }
 
+/** Shirley calling — loop bell ringtone as normal UI SFX (does not duck music). */
+export function startPhoneIncomingRingtone() {
+  stopPhoneIncomingRingtone();
+  const start = () => {
+    const ctx = resumeCtx();
+    const buf = state.phoneIncomingRingtone;
+    if (!ctx || !buf || state.sfxVol <= 0.001) return;
+    try {
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+      const gain = ctx.createGain();
+      gain.gain.value = 0.65 * state.sfxVol * SFX_VOL_MAX;
+      src.connect(gain).connect(ctx.destination);
+      src.start(0);
+      state.phoneIncomingSrc = src;
+      state.phoneIncomingGain = gain;
+    } catch {}
+  };
+  const p = ensureAudioLoaded();
+  if (p && typeof p.then === "function") p.then(start);
+  else start();
+}
+
+export function stopPhoneIncomingRingtone() {
+  try { state.phoneIncomingSrc?.stop(); } catch {}
+  state.phoneIncomingSrc = null;
+  state.phoneIncomingGain = null;
+}
+
 /** Soft click fallback (used only if receiver MP3 missing). */
 export function playPhonePickupSfx() {
+  stopPhoneIncomingRingtone();
   if (state.phoneReceiver) {
     startPhoneReceiverLoop();
     return;
@@ -906,6 +947,7 @@ export function playPhoneRingBurst() {
 export function playPhoneAnswerSfx() {
   stopPhoneReceiverLoop();
   stopPhoneRingSfx();
+  stopPhoneIncomingRingtone();
   ensureAudioLoaded();
   if (state.phoneAnswer) {
     playBuffer(state.phoneAnswer, 0.7);
@@ -919,6 +961,7 @@ export function playPhoneAnswerSfx() {
 export function playPhoneHangupSfx() {
   stopPhoneReceiverLoop();
   stopPhoneRingSfx();
+  stopPhoneIncomingRingtone();
   setPhoneMusicDuck(false);
   playPhoneAnswerSfx();
 }

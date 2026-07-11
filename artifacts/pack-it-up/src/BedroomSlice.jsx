@@ -21,6 +21,8 @@ import {
   toggleRadio,
   preloadRadioStations,
   ensureMusicPlaying,
+  startPhoneIncomingRingtone,
+  stopPhoneIncomingRingtone,
 } from "./gameAudio.js";
 // Stretchy the cat: a real PNG sprite sheet (the only image asset in the game —
 // everything else is procedural). 256x1632 px = 8 columns x 51 rows of 32x32
@@ -28,7 +30,7 @@ import {
 import CAT_SHEET from "./assets/Cat-Sheet.png";
 // Next-layer screens (Menu/Desk/Health/etc.) + the task/urgency scaffold.
 // The apartment stays the hub; these render as full-screen overlays above it.
-import ScreenLayer, { RewardToast } from "./Screens.jsx";
+import ScreenLayer, { RewardToast, IncomingPhoneCue } from "./Screens.jsx";
 import { INITIAL_TASKS, isOpen as isTaskOpen, taskPressure, SAMPLE_JOBS, TASK_CATEGORIES } from "./tasks.js";
 import { CONTENTS, hasContents, remainingCount, itemArtReady } from "./contents.js";
 import {
@@ -2364,6 +2366,17 @@ export default function PackItUp({ glowMode = "split" }) {
       setPhoneNudge(n);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps — boot once
+
+  // Shirley calling: bell ringtone as normal UI SFX (no music duck) while nudge is live.
+  useEffect(() => {
+    if (!phoneNudge) {
+      stopPhoneIncomingRingtone();
+      return;
+    }
+    if (phoneNudge.kind !== "remind" && phoneNudge.kind !== "overdue") return;
+    startPhoneIncomingRingtone();
+    return () => stopPhoneIncomingRingtone();
+  }, [phoneNudge]);
   const [rewardToast, setRewardToast] = useState(null);
   const [scale, setScale] = useState(1);
   const [sellFormOpen, setSellFormOpen] = useState(false);
@@ -4192,6 +4205,9 @@ export default function PackItUp({ glowMode = "split" }) {
           phoneNudge={phoneNudge}
           clearPhoneNudge={() => setPhoneNudge(null)}
         />
+        {screen === "apartment" && phoneNudge && (phoneNudge.kind === "remind" || phoneNudge.kind === "overdue") && (
+          <IncomingPhoneCue onAnswer={() => setScreen("desk")} />
+        )}
         <RewardToast text={screen === "apartment" ? rewardToast : null} />
       </div>
     );
@@ -4500,6 +4516,9 @@ export default function PackItUp({ glowMode = "split" }) {
 
       {donateToastEl}
       <RewardToast text={screen === "apartment" ? rewardToast : null} />
+      {screen === "apartment" && phoneNudge && (phoneNudge.kind === "remind" || phoneNudge.kind === "overdue") && (
+        <IncomingPhoneCue onAnswer={() => setScreen("desk")} />
+      )}
       <ScreenLayer
         screen={screen}
         go={setScreen}

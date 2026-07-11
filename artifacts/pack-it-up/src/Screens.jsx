@@ -22,6 +22,8 @@ import {
   PHONE_RING_ON_MS,
   PHONE_RING_GAP_MS,
   setPhoneMusicDuck,
+  startPhoneIncomingRingtone,
+  stopPhoneIncomingRingtone,
 } from "./gameAudio.js";
 import { clearSave } from "./save.js";
 import {
@@ -134,6 +136,11 @@ const screenCss = (
       72% { transform: translate(-2px, 0) rotate(1deg); }
       84% { transform: translate(1px, -1px) rotate(-1deg); }
     }
+    @keyframes ringArcs {
+      0%, 100% { opacity: 0.35; transform: scale(0.92); }
+      40% { opacity: 1; transform: scale(1.06); }
+      70% { opacity: 0.7; transform: scale(1.02); }
+    }
     @keyframes receiverRise {
       from { transform: translateY(24px) scale(0.92); opacity: 0; }
       to   { transform: translateY(0) scale(1); opacity: 1; }
@@ -141,6 +148,7 @@ const screenCss = (
     .handsetUp { animation: handsetUp 320ms ease-out both; }
     .handsetDown { animation: handsetDown 280ms ease-in both; }
     .phoneRattle { animation: phoneRattle 0.28s linear infinite; transform-origin: 50% 70%; }
+    .ringArcs { animation: ringArcs 0.9s ease-in-out infinite; transform-origin: left center; pointer-events: none; }
     .receiverRise { animation: receiverRise 380ms cubic-bezier(0.2, 1.1, 0.4, 1) both; }
   `}</style>
 );
@@ -428,7 +436,34 @@ function DeskCard({ task, small, onClick, resolving }) {
 
 /* ================= SHIRLEY / LANDLINE ================= */
 
-function LandlineHotspot({ onPickUp, ringing, rattling }) {
+/** Cartoon ringing arcs — comic “)))” sound waves off a phone. */
+export function RingArcs({ side = "right", size = 36, color = "#FFD97A" }) {
+  const flip = side === "left";
+  return (
+    <svg
+      className="ringArcs"
+      width={size}
+      height={size}
+      viewBox="0 0 36 36"
+      style={{
+        position: "absolute",
+        top: "8%",
+        [flip ? "right" : "left"]: "100%",
+        marginLeft: flip ? undefined : 2,
+        marginRight: flip ? 2 : undefined,
+        transform: flip ? "scaleX(-1)" : undefined,
+        overflow: "visible",
+      }}
+      aria-hidden
+    >
+      <path d="M8 10 Q18 18 8 26" fill="none" stroke={color} strokeWidth="3" strokeLinecap="square" />
+      <path d="M16 6 Q30 18 16 30" fill="none" stroke={color} strokeWidth="3" strokeLinecap="square" opacity="0.85" />
+      <path d="M24 2 Q40 18 24 34" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="square" opacity="0.65" />
+    </svg>
+  );
+}
+
+function LandlineHotspot({ onPickUp, ringing, rattling, showArcs }) {
   return (
     <button
       type="button"
@@ -440,22 +475,68 @@ function LandlineHotspot({ onPickUp, ringing, rattling }) {
         background: "transparent", border: "none", ...LB,
       }}
     >
-      <img
-        src={LANDLINE_PHONE}
-        alt=""
-        draggable={false}
-        className={rattling ? "phoneRattle" : undefined}
-        style={{
-          display: "block", width: "100%", height: "100%",
-          objectFit: "contain", imageRendering: "pixelated",
-          pointerEvents: "none", userSelect: "none",
-        }}
-      />
+      <div style={{ position: "relative", width: "100%", height: "100%" }}>
+        <img
+          src={LANDLINE_PHONE}
+          alt=""
+          draggable={false}
+          className={rattling || ringing ? "phoneRattle" : undefined}
+          style={{
+            display: "block", width: "100%", height: "100%",
+            objectFit: "contain", imageRendering: "pixelated",
+            pointerEvents: "none", userSelect: "none",
+          }}
+        />
+        {showArcs && <RingArcs side="right" size={28} />}
+      </div>
       <div style={{
         position: "absolute", left: 0, right: 0, bottom: -12,
         textAlign: "center", color: ringing ? "#FFD97A" : "#C9B896", fontSize: 8, ...LB,
       }}>
         {ringing ? "RING" : "phone"}
+      </div>
+    </button>
+  );
+}
+
+/** Apartment HUD: floating ringing phone with arcs — tap to open Desk. */
+export function IncomingPhoneCue({ onAnswer }) {
+  return (
+    <button
+      type="button"
+      onClick={onAnswer}
+      title={`${RECEPTIONIST_NAME} is calling`}
+      style={{
+        position: "fixed",
+        right: 12,
+        bottom: "calc(env(safe-area-inset-bottom, 0px) + 88px)",
+        zIndex: 220,
+        width: 88,
+        height: 88,
+        padding: 6,
+        cursor: "pointer",
+        background: "rgba(26,16,8,0.88)",
+        border: "3px solid #120A04",
+        boxShadow: "inset 0 0 0 2px #C9942E, 0 3px 0 #000",
+        ...LB,
+      }}
+    >
+      <div style={{ position: "relative", width: "100%", height: "70%" }}>
+        <img
+          src={LANDLINE_PHONE}
+          alt=""
+          draggable={false}
+          className="phoneRattle"
+          style={{
+            display: "block", width: "100%", height: "100%",
+            objectFit: "contain", imageRendering: "pixelated",
+            pointerEvents: "none", userSelect: "none",
+          }}
+        />
+        <RingArcs side="right" size={32} />
+      </div>
+      <div style={{ color: "#FFD97A", fontSize: 9, textAlign: "center", marginTop: 2 }}>
+        {RECEPTIONIST_NAME}…
       </div>
     </button>
   );
@@ -685,7 +766,8 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
     setPhoneRattling(false);
   };
 
-  const beginRingPattern = ({ bursts = 2, loop = false, onDone } = {}) => {
+  /** Outbound dial-tone cadence only (ducks music). Incoming uses bell ringtone elsewhere. */
+  const beginRingPattern = ({ bursts = 2, onDone } = {}) => {
     clearPhoneRing();
     setPhoneMusicDuck(true);
     const startBurst = () => {
@@ -693,45 +775,36 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
       if (rattleOffRef.current) clearTimeout(rattleOffRef.current);
       rattleOffRef.current = setTimeout(() => setPhoneRattling(false), PHONE_RING_ON_MS);
     };
-    const run = () => {
-      ringCancelRef.current = playPhoneRingPattern({
-        bursts,
-        onMs: PHONE_RING_ON_MS,
-        gapMs: PHONE_RING_GAP_MS,
-        onBurst: startBurst,
-        onDone: () => {
-          ringCancelRef.current = null;
-          if (loop) {
-            run();
-            return;
-          }
-          onDone?.();
-        },
-      });
-    };
-    run();
+    ringCancelRef.current = playPhoneRingPattern({
+      bursts,
+      onMs: PHONE_RING_ON_MS,
+      gapMs: PHONE_RING_GAP_MS,
+      onBurst: startBurst,
+      onDone: () => {
+        ringCancelRef.current = null;
+        onDone?.();
+      },
+    });
   };
 
   useEffect(() => {
-    if (phoneNudge) setIncomingRing(true);
+    if (phoneNudge && (phoneNudge.kind === "remind" || phoneNudge.kind === "overdue")) {
+      setIncomingRing(true);
+    }
   }, [phoneNudge]);
-
-  useEffect(() => {
-    if (!phoneNudge) return;
-    if (phoneNudge.kind !== "remind" && phoneNudge.kind !== "overdue") return;
-    setIncomingRing(true);
-    beginRingPattern({ bursts: 2, loop: true });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps — ring once when desk opens with nudge
 
   useEffect(() => () => {
     clearPhoneRing();
     stopPhoneReceiverLoop();
+    stopPhoneIncomingRingtone();
     setPhoneMusicDuck(false);
   }, []);
 
   const startTalking = (nudgeOverride) => {
     clearPhoneRing();
     stopPhoneReceiverLoop();
+    stopPhoneIncomingRingtone();
+    setIncomingRing(false);
     setPhoneMusicDuck(true);
     playPhoneAnswerSfx();
     const nudge = nudgeOverride || phoneNudge || getNudge(apptsRef.current, tasks);
@@ -747,7 +820,6 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
     });
     setPhoneMsgs([{ role: "shirley", text: opener }]);
     setPhonePhase("talking");
-    setIncomingRing(false);
     if (nudge?.kind === "remind" && nudge.appt) {
       setAppointments((a) => markReminded(a, nudge.appt.id));
     }
@@ -756,10 +828,17 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
 
   const pickUpPhone = () => {
     clearPhoneRing();
+    stopPhoneIncomingRingtone();
+    const wasIncoming = incomingRing;
+    setIncomingRing(false);
+    // Shirley calling you → answer straight into the chat (no dial ceremony).
+    if (wasIncoming) {
+      startTalking(phoneNudge || getNudge(apptsRef.current, tasks));
+      return;
+    }
     setPhoneMusicDuck(true);
     playPhonePickupSfx(); // starts looping receiver tone
     setPhonePhase("pickup");
-    setIncomingRing(false);
   };
 
   const dialShirley = () => {
@@ -1067,7 +1146,12 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
           display: "flex", alignItems: "center", justifyContent: "center", position: "relative",
         }}>
           {!phonePhase && (
-            <LandlineHotspot onPickUp={pickUpPhone} ringing={incomingRing} rattling={phoneRattling} />
+            <LandlineHotspot
+              onPickUp={pickUpPhone}
+              ringing={incomingRing}
+              rattling={phoneRattling || incomingRing}
+              showArcs={incomingRing}
+            />
           )}
           {phonePhase && (
             <ShirleyCallOverlay
