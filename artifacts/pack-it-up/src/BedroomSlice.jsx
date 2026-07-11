@@ -24,10 +24,8 @@ import {
   startPhoneIncomingRingtone,
   stopPhoneIncomingRingtone,
 } from "./gameAudio.js";
-// Stretchy the cat: PNG sprite sheet. Acoustic guitar: one-off room prop PNG
-// (procedural case wasn't reading). Everything else is canvas-drawn.
+// Stretchy the cat: PNG sprite sheet. Guitar hard case is canvas-drawn.
 import CAT_SHEET from "./assets/Cat-Sheet.png";
-import GUITAR_PNG from "./assets/acoustic-guitar.png";
 // Next-layer screens (Menu/Desk/Health/etc.) + the task/urgency scaffold.
 // The apartment stays the hub; these render as full-screen overlays above it.
 import ScreenLayer, { RewardToast, IncomingPhoneCue } from "./Screens.jsx";
@@ -184,7 +182,7 @@ function drawShell(ctx) {
    SPRITES — one draw fn per object (low-res cells)
    ============================================================ */
 const SPRITES = {
-  closet_door: { w: 28, h: 89, glowRegions: [[5, 8, 18, 34], [5, 48, 18, 34]], draw(ctx) {
+  closet_door: { w: 28, h: 89, glowRegions: [[7, 12, 14, 28], [7, 52, 14, 28]], draw(ctx) {
     r(ctx, P.out, 0, 0, 28, 89);
     r(ctx, P.white, 2, 2, 24, 86);
     outlineRect(ctx, P.whiteLo, 5, 8, 18, 34);
@@ -558,7 +556,7 @@ const OFFICE_SPRITES = {
     r(ctx, P.out, 17, 9, 1, 4);                                            // needle
   }},
 
-  storage_bin: { w: 26, h: 18, draw(ctx) {
+  storage_bin: { w: 26, h: 18, glowRegions: [[2, 4, 22, 12]], draw(ctx) {
     r(ctx, P.out, 0, 0, 26, 6);                                            // lid
     r(ctx, P.teal, 1, 1, 24, 4); r(ctx, P.tealHi, 1, 1, 24, 1);
     r(ctx, P.out, 2, 6, 22, 12);                                           // tub
@@ -848,7 +846,7 @@ const BATH_SPRITES = {
     r(ctx, "#C9A96A", 1, 9, 24, 2);
   }},
 
-  toiletries: { w: 30, h: 14, draw(ctx) {
+  toiletries: { w: 30, h: 14, glowRegions: [[2, 2, 26, 10]], draw(ctx) {
     r(ctx, P.out, 0, 11, 30, 3); r(ctx, "#C9A96A", 1, 12, 28, 1);          // tray
     r(ctx, P.out, 2, 3, 4, 9); r(ctx, "#B87A2E", 3, 4, 2, 7);              // amber bottle
     r(ctx, P.out, 8, 0, 4, 12); r(ctx, P.redHi, 9, 1, 2, 10); r(ctx, P.red, 9, 7, 2, 4); // shampoo
@@ -974,7 +972,7 @@ const KITCHEN_SPRITES = {
     r(ctx, P.whiteLo, 4, 39, 72, 4);
     r(ctx, P.out, 4, 43, 72, 1);
   }},
-  fridge: { w: 32, h: 60, glowRegions: [[4, 3, 21, 18], [4, 23, 21, 32]], draw(ctx) {
+  fridge: { w: 32, h: 60, glowRegions: [[6, 5, 16, 14], [6, 26, 16, 24]], draw(ctx) {
     r(ctx, P.out, 0, 0, 32, 60);
     r(ctx, P.white, 1, 1, 30, 58);
     r(ctx, "#FBF6E6", 1, 1, 30, 2);
@@ -984,7 +982,7 @@ const KITCHEN_SPRITES = {
     r(ctx, "#B8AE96", 25, 28, 2, 26);
     r(ctx, P.whiteLo, 1, 56, 30, 3);
   }},
-  pantry: { w: 26, h: 72, glowRegions: [[4, 5, 18, 30], [4, 39, 18, 28]], draw(ctx) {
+  pantry: { w: 26, h: 72, glowRegions: [[6, 8, 14, 24], [6, 42, 14, 22]], draw(ctx) {
     r(ctx, P.out, 0, 0, 26, 72);
     r(ctx, P.cream, 1, 1, 24, 70); r(ctx, "#FBF6E6", 1, 1, 24, 2);
     outlineRect(ctx, P.creamLo, 4, 5, 18, 30);
@@ -1535,19 +1533,22 @@ const LIVING_SPRITES = {
   // small tabletop radio — sits on the TV hutch
   // draw(ctx) is the static/editor fallback; roomArt uses drawRadio(ctx, live)
   radio: { w: 28, h: 18, draw(ctx) { drawRadio(ctx, { on: false, t: 0 }); } },
-  // acoustic guitar — Eloisa's pixel-art PNG (transparent), standing
-  guitar_case: (() => {
-    const img = typeof Image !== "undefined" ? new Image() : null;
-    if (img) { img.decoding = "async"; img.src = GUITAR_PNG; }
-    return {
-      w: 28, h: 59,
-      draw(ctx) {
-        if (!img?.complete || !img.naturalWidth) return;
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(img, 0, 0, 28, 59);
-      },
-    };
-  })(),
+  // hard case leaning by the amp — moving-story prop (tight procedural case)
+  guitar_case: { w: 22, h: 48, draw(ctx) {
+    // case body (slight lean via stepped silhouette)
+    r(ctx, P.out, 4, 2, 14, 44);
+    r(ctx, "#2A1A0C", 5, 3, 12, 42);
+    r(ctx, "#3A2410", 5, 3, 12, 6);
+    r(ctx, P.out, 3, 8, 16, 28);
+    r(ctx, "#2A1A0C", 4, 9, 14, 26);
+    // latch + handle
+    r(ctx, P.gold, 9, 6, 4, 2);
+    r(ctx, P.out, 8, 0, 6, 3); r(ctx, "#4A2E17", 9, 1, 4, 1);
+    r(ctx, P.goldHi, 10, 20, 2, 2);
+    r(ctx, P.goldHi, 10, 30, 2, 2);
+    // floor contact shadow
+    r(ctx, P.out, 2, 46, 18, 2);
+  }},
   // small practice amp
   amplifier: { w: 22, h: 20, draw(ctx) {
     r(ctx, P.out, 0, 2, 22, 18);
@@ -1588,8 +1589,8 @@ const LIVING_OBJECTS = [
     check: "Leans just enough to make you check your posture on the way out the door." },
   { id: "floor_lamp", name: "Torchiere Lamp", category: "lighting", value: 25, x: 836, y: 174, z: 3, removable: true,
     check: "Casts exactly one warm circle of light and no more. Very committed to its one job." },
-  { id: "guitar_case", name: "Acoustic Guitar", category: "decor", value: 45, x: 700, y: 480, z: 3, removable: true,
-    check: "Still in tune somehow. The case is somewhere in a closet — this one rides out in the open." },
+  { id: "guitar_case", name: "Guitar Hard Case", category: "decor", value: 45, x: 700, y: 480, z: 3, removable: true,
+    check: "Cased and ready. The amp already knows where this leans." },
   { id: "amplifier", name: "Amplifier", category: "decor", value: 80, x: 770, y: 500, z: 3, removable: true,
     check: "Heavier than it looks. The neighbors already know its name." },
 ];
@@ -3240,7 +3241,8 @@ export default function PackItUp({ glowMode = "split" }) {
                   let zone = null;
                   if (o.id === "counter_sink") {
                     const localY = ((e.clientY - box.top) / Math.max(1, box.height)) * (spr?.h || 1);
-                    zone = kitchenTapZone(o.id, localY);
+                    const localX = ((e.clientX - box.left) / Math.max(1, box.width)) * (spr?.w || 1);
+                    zone = kitchenTapZone(o.id, localY, localX);
                     if (remainingCount(rm.id, o.id, contentsState, zone) <= 0) return;
                   }
                   playContainerSfx(o.id, "open", zone);
@@ -3327,11 +3329,14 @@ export default function PackItUp({ glowMode = "split" }) {
           const sel = items.find((it) => it.id === selectedContentId) || null;
           const selSt = sel ? (contentsState[`${sKey}:${sel.id}`] || { packed: false, sold: false, soldFor: 0, donated: false }) : null;
           const selDone = selSt && (selSt.packed || selSt.sold || selSt.donated);
-          const storageTitle = storageZone === "upper"
-            ? "Upper drawers"
-            : storageZone === "lower"
-              ? "Lower cabinets"
-              : o.name;
+          const storageTitle = ({
+            utensils: "Utensil drawer",
+            junk: "Junk drawer",
+            cookware: "Cookware",
+            under_sink: "Under-sink",
+            upper: "Upper drawers",
+            lower: "Lower cabinets",
+          })[storageZone] || o.name;
           // Compact card above the furniture. Mobile portals it in screen px
           // (room zoom must not scale the UI). Desktop stays stage-absolute.
           const panelW = Math.min(260, typeof window !== "undefined" ? window.innerWidth - 36 : 260);

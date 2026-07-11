@@ -544,13 +544,17 @@ function pickOne(list) {
 }
 
 function mainTargetVol() {
-  const duck = state.phoneMusicDuck ? PHONE_MUSIC_DUCK : 1;
-  return state.radioOn ? 0 : MUSIC_VOL_MAX * state.musicVol * duck;
+  return state.radioOn ? 0 : MUSIC_VOL_MAX * state.musicVol * musicDuckFactor();
+}
+
+function musicDuckFactor() {
+  if (!state.phoneMusicDuck) return 1;
+  const level = state.phoneMusicDuckLevel;
+  return typeof level === "number" ? level : PHONE_MUSIC_DUCK;
 }
 
 function radioTargetVol() {
-  const duck = state.phoneMusicDuck ? PHONE_MUSIC_DUCK : 1;
-  return state.radioOn ? RADIO_VOL_MAX * state.musicVol * duck : 0;
+  return state.radioOn ? RADIO_VOL_MAX * state.musicVol * musicDuckFactor() : 0;
 }
 
 function applyMusicGain() {
@@ -562,9 +566,10 @@ function applyMusicGain() {
   } catch {}
 }
 
-/** Soft-duck (or restore) BGM/radio during the landline ceremony. */
-export function setPhoneMusicDuck(on) {
+/** Soft-duck (or restore) BGM/radio during the landline ceremony / ringtone. */
+export function setPhoneMusicDuck(on, level = PHONE_MUSIC_DUCK) {
   state.phoneMusicDuck = !!on;
+  state.phoneMusicDuckLevel = on ? level : 1;
   const ctx = state.ctx;
   const now = ctx?.currentTime ?? 0;
   try {
@@ -968,9 +973,13 @@ export function stopPhoneReceiverLoop() {
   state.phoneReceiverGain = null;
 }
 
-/** Shirley calling — loop bell ringtone as normal UI SFX (does not duck music). */
+/** Soft duck level while Shirley is ringing in (~0.6 leaves radio audible). */
+const INCOMING_RING_DUCK = 0.6;
+
+/** Shirley calling — loop bell ringtone; soft-duck radio so they don't fight. */
 export function startPhoneIncomingRingtone() {
   stopPhoneIncomingRingtone();
+  setPhoneMusicDuck(true, INCOMING_RING_DUCK);
   const start = () => {
     const ctx = resumeCtx();
     const buf = state.phoneIncomingRingtone;
@@ -1000,6 +1009,7 @@ export function stopPhoneIncomingRingtone() {
   try { state.phoneIncomingSrc?.stop(); } catch {}
   state.phoneIncomingSrc = null;
   state.phoneIncomingGain = null;
+  if (state.phoneMusicDuck) setPhoneMusicDuck(false);
 }
 
 /** Soft click fallback (used only if receiver MP3 missing). */
@@ -1127,13 +1137,18 @@ export function stopPhoneRingSfx() {
 
 function containerKind(objectId, zone) {
   if (!objectId) return "cabinet";
-  // Kitchen counter only: upper drawers vs lower cabinets
+  // Kitchen counter: utensil/junk drawers vs cookware / under-sink cabinets
+  if (objectId === "counter_sink" && (zone === "utensils" || zone === "junk")) return "kitchen_drawer";
+  if (objectId === "counter_sink" && (zone === "cookware" || zone === "under_sink")) return "cabinet";
+  // legacy 2-zone saves
   if (objectId === "counter_sink" && zone === "upper") return "kitchen_drawer";
   if (objectId === "counter_sink" && zone === "lower") return "cabinet";
   if (objectId === "pantry") return "pantry";
   if (objectId.includes("closet")) return "closet";
   if (objectId.includes("medicine") || objectId === "mirror_cabinet") return "medicine";
   if (objectId === "fridge" || objectId.includes("fridge")) return "fridge";
+  if (objectId === "toiletries") return "medicine";
+  if (objectId === "storage_bin") return "cabinet";
   // bedroom wood drawers — dedicated open-scrape / close-slam combo
   if (
     objectId === "nightstand" ||
@@ -1152,13 +1167,16 @@ function containerKind(objectId, zone) {
   return "cabinet";
 }
 
-/** Which half of the counter was tapped (sprite-local Y). */
-export function kitchenTapZone(objectId, localY) {
-  if (objectId === "counter_sink") {
-    // upper drawer row (y≈18–26) vs lower cabinet doors (y≈27+)
-    return localY < 26.5 ? "upper" : "lower";
-  }
-  return null;
+/** Which kitchen-counter quadrant was tapped (sprite-local X/Y). */
+export function kitchenTapZone(objectId, localY, localX = 40) {
+  if (objectId !== "counter_sink") return null;
+  // upper drawer row (y≈18–26) vs lower cabinet doors (y≈27+); L/R split at mid run
+  const upper = localY < 26.5;
+  const left = localX < 40;
+  if (upper && left) return "utensils";
+  if (upper && !left) return "junk";
+  if (!upper && left) return "cookware";
+  return "under_sink";
 }
 
 export function playContainerSfx(objectId, which = "open", zone = null) {
