@@ -26,13 +26,23 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 - [ ] **[eloisa]** Delete `cursor/storage-glow-7a01` in GitHub UI (agents get 403), then create standing `cursor` from main
 
 ### Audio file cleanup — [cursor] Composer-sized (now that Grok session is merging)
-- [ ] Delete the 7 raw Epidemic Sound files from the repo once each has a sliced, convention-named replacement wired in code (branch already has `fridge_open_close_es.mp3`, `phone_receiver_tone.mp3`, `phone_rotary_dial.mp3`):
+- [ ] Delete the 7 **original-named** Epidemic drops only — code slices `cabinet/fridge/drawer_open_close_es.mp3` at runtime and uses all four `phone_*.mp3`, so those STAY:
   - repo root: `ES_Doors, Appliance, Fridge…`.mp3 + `ES_Doors, Cabinet, Cupboard…`.mp3 (uploaded to the wrong folder)
   - `sfx/ui/`: `Dial Tone and pickup…`, `Receiver Tone…`, `Rotary dial…`, `ES_Communications, Telephone…`
   - `sfx/containers/`: `ES_Drawers, Wood, Writing Bureau…`
 - [ ] Slice/wire the cupboard creak if still wanted (no replacement on the branch yet)
 - [ ] Update `audio_index.csv` / `audio_manifest.json` if they reference removed files
 - Naming rule now lives at the top of `README_AUDIO_INDEX.txt`
+
+### Fable design review tickets (Jul 12 — see docs/design/2026-07-12-fable-game-review.md)
+- [ ] **[cursor]** Kitchen counter → 4 zones: **Utensil drawer / Junk drawer** (upper L/R) · **Cookware / Under-sink** (lower L/R). Data supports it; touch `kitchenTapZone` (quadrants), `containerKind` (SFX), `storageTitle` (panel names); re-tag items' `zone` in contents.js
+- [ ] **[cursor]** Guitar: replace with **hard case leaning by the amp** (tight-cropped PNG — pipeline blits whole image; current PNG doesn't render in live build)
+- [ ] **[cursor]** Pin kitchen cat bowls against counter/fridge base (currently float mid-tile, no anchor)
+- [ ] **[cursor]** Crop guard: clamp/bounds-check thumbnail crop rect in contents.js (pipeline blind-trusts manifest center values)
+- [ ] **[cursor]** Make `toiletries` + `storage_bin` real containers (CONTENTS keys + glow + SFX kind); move vanity `perfume` item → toiletries; move sewing items from `office:side_cabinet` → tote
+- [ ] **[chatgpt/eloisa]** Asset pulls from source stack: more dresser items (only 3 now), unique "Leftovers" sprite (currently reuses canned-food), regenerate off-center normalized item PNGs
+- [ ] **[cursor]** Listen-check on phone: incoming ringtone vs radio; duck radio ~0.6 during ring if they fight
+- Medicine cabinet ruling: **portal only, meds stay in vanity** — already true in code; do not add storage to the mirror
 
 ### Branch deletions — [eloisa] (GitHub UI: repo → Branches → trash icon; agents get 403 on ref deletion)
 - [ ] Delete: `chatgpt-version` · `claude/game-dev-setup-bhs0lt` · `claude/pack-it-up-polish-yln7jy` · `cursor/combine-local-with-replit-main` · `cursor/fix-vite-dev-server-7a01` · `cursor/local-updates-backup` · `cursor/tech-debt-housekeeping-7a01` (all merged or parked in `archive/*` — zero loss)
@@ -166,6 +176,8 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 ---
 
 ## P2b — Packing flavor (from diorama mockup)
+
+- [ ] **Hallway room (death closet + coat closet)** — 7th room, parked by Fable review Jul 12: additive (rooms are data entries) but room-scale art + contents work. Holds: Stretchy travel/toys, extras/task piles. Do not start before weekend ship bar.
 
 - [ ] **SOFT** Label box pile by room when packed (BOOKS / BATHROOM / …)
 - [ ] **YES** Room quest chip (listed under P0 — don’t duplicate work)
