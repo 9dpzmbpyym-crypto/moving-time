@@ -182,6 +182,12 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 
 ---
 
+## P1b2 — Real move data drop + calendar spine (BEFORE or WITH the board — a dispatch with fictional data teaches distrust on day one)
+
+- [ ] **[cursor/codex]** Seed `tasks.js` + `save.js` defaults from the manifest in **`docs/design/master-list-incorporation.md`** (mechanical transcription): ~12 packing/U-Box process tasks · new `housing` category (4 tasks; daily 10+5 quota is a session meter, NOT tasks) · **replace all 3 fictional SAMPLE_JOBS with the real shortlist** (Hunter Jul 14, HOPWA ×2 Jul 18, MOCS Jul 26, MOPT Jul 28, Labor Relations Aug 30) · ~10 admin cutoff cards · health additions (OB/GYN IUD by ~Jul 25 → nearest existing zone for v1, PCP 90-day bridge) · fix `t_vet` due to the real **Jul 22–25** window · Stretchy chain tasks
+- [ ] **[cursor/codex]** Calendar spine: one pure-data module (`movePhase.js`-shaped) — `PHASES` table (pack-first → mid-month → U-Box week → load days → lock night → flight day) + date triggers, helpers `currentPhase(date)` / `dueTriggers(date)`. No screen, no state. Board emphasis, Sal's ladder, flight-day mode, and the HUD "next: U-Box Jul 27" line all consume it. **The only new structure the master list requires.**
+- NPC casting ruled (see doc): Shirley = health+Stretchy (data only, no new code) · Sal = packing/U-Box/DO-NOT-PACK/sell cutoff · Vivian = jobs · sublet + admin = Desk-owned, **no voice, deliberately**
+
 ## P1c — Command Board / Daily Dispatch (after Shirley Pass 1 — not before)
 
 One visible daily dashboard answering: what matters today, what's due/overdue, who will call, where to tap. Full spec: `docs/move-spine/` Command Board pass. **Design ruling: `docs/design/move-spine-integration.md`** — clipboard sibling, cards are doors not forms.
