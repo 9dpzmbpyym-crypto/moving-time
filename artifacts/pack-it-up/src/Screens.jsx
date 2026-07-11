@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import STRETCHY_ICON from "./assets/Stretchy Icon.png";
 import HEALTH_CLIPBOARD from "./assets/health-clipboard.png";
+import LANDLINE_PHONE from "./assets/landline-phone.png";
 import {
   TASK_CATEGORIES, SAMPLE_JOBS, isOpen, taskPressure,
   PRESSURE_LABELS, PRESSURE_COLORS,
@@ -423,22 +424,24 @@ function LandlineHotspot({ onPickUp, ringing }) {
       title={`Call ${RECEPTIONIST_NAME}`}
       className={ringing ? "ringPulse" : undefined}
       style={{
-        position: "absolute", left: 8, bottom: 8, zIndex: 4,
-        width: 56, height: 44, padding: 0, cursor: "pointer",
-        background: "#2A1709", border: "3px solid #120A04",
-        boxShadow: "2px 2px 0 rgba(0,0,0,0.4)", ...LB,
+        position: "absolute", left: 6, bottom: 6, zIndex: 4,
+        width: 72, height: 72, padding: 4, cursor: "pointer",
+        background: "transparent", border: "none", ...LB,
       }}
     >
+      <img
+        src={LANDLINE_PHONE}
+        alt=""
+        draggable={false}
+        style={{
+          display: "block", width: "100%", height: "100%",
+          objectFit: "contain", imageRendering: "pixelated",
+          pointerEvents: "none", userSelect: "none",
+          filter: ringing ? "brightness(1.15)" : "none",
+        }}
+      />
       <div style={{
-        position: "absolute", left: 8, top: 6, width: 40, height: 14,
-        background: "#3A2410", border: "2px solid #C9942E", borderRadius: 2,
-      }} />
-      <div style={{
-        position: "absolute", left: 14, top: 22, width: 28, height: 12,
-        background: "#5A381F", border: "2px solid #120A04",
-      }} />
-      <div style={{
-        position: "absolute", left: 0, right: 0, bottom: -14,
+        position: "absolute", left: 0, right: 0, bottom: -12,
         textAlign: "center", color: ringing ? "#FFD97A" : "#C9B896", fontSize: 8, ...LB,
       }}>
         {ringing ? "RING" : "phone"}
@@ -480,15 +483,18 @@ function ShirleyCallOverlay({
       {(phase === "pickup" || phase === "dial" || phase === "ringing") && (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
           <div className={phase === "pickup" ? "handsetUp" : phase === "hanging" ? "handsetDown" : "ringPulse"} style={{
-            width: 88, height: 70, background: "#3A2410", border: "3px solid #120A04",
-            boxShadow: "inset 0 0 0 2px #C9942E", position: "relative",
+            width: 160, height: 160, position: "relative",
           }}>
-            <div style={{
-              position: "absolute", left: 12, top: phase === "ringing" ? 4 : 18, width: 64, height: 18,
-              background: "#5A381F", border: "2px solid #120A04",
-              transition: "top 280ms ease-out",
-            }} />
-            <div style={{ position: "absolute", left: 20, bottom: 10, width: 48, height: 22, background: "#2A1709", border: "2px solid #120A04" }} />
+            <img
+              src={LANDLINE_PHONE}
+              alt=""
+              draggable={false}
+              style={{
+                display: "block", width: "100%", height: "100%",
+                objectFit: "contain", imageRendering: "pixelated",
+                pointerEvents: "none", userSelect: "none",
+              }}
+            />
           </div>
           {phase === "pickup" && (
             <>
@@ -519,9 +525,16 @@ function ShirleyCallOverlay({
             display: "flex", alignItems: "center", gap: 10, marginBottom: 8,
             padding: "8px 10px", background: "#2A1709", border: "3px solid #120A04",
           }}>
-            <div style={{
-              width: 36, height: 28, background: "#5A381F", border: "2px solid #C9942E", flex: "0 0 auto",
-            }} />
+            <img
+              src={LANDLINE_PHONE}
+              alt=""
+              draggable={false}
+              style={{
+                width: 44, height: 44, objectFit: "contain",
+                imageRendering: "pixelated", flex: "0 0 auto",
+                pointerEvents: "none", userSelect: "none",
+              }}
+            />
             <div style={{ flex: 1 }}>
               <div style={{ color: "#FFD97A", fontSize: 13 }}>{RECEPTIONIST_NAME}</div>
               <div style={{ color: "#8A7350", fontSize: 10 }}>
