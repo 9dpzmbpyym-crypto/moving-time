@@ -192,7 +192,7 @@ export function RewardToast({ text }) {
   );
 }
 
-function Screen({ title, icon, onBack, children, bg = "#1A1008", subtitle, progress, progressLabel, checklist, compact = false }) {
+function Screen({ title, icon, onBack, children, bg = "#1A1008", subtitle, progress, progressLabel, checklist, compact = false, flush = false }) {
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 250, background: bg, display: "flex", flexDirection: "column",
@@ -256,12 +256,14 @@ function Screen({ title, icon, onBack, children, bg = "#1A1008", subtitle, progr
       </div>
       <div style={{
         flex: 1, minHeight: 0,
-        overflowY: compact ? "hidden" : "auto",
-        padding: compact
-          ? "4px 8px calc(env(safe-area-inset-bottom, 0px) + 8px)"
-          : "8px 12px calc(env(safe-area-inset-bottom, 0px) + 16px)",
-        display: compact ? "flex" : undefined,
-        flexDirection: compact ? "column" : undefined,
+        overflowY: compact || flush ? "hidden" : "auto",
+        padding: flush
+          ? "0 0 calc(env(safe-area-inset-bottom, 0px) + 6px)"
+          : compact
+            ? "4px 8px calc(env(safe-area-inset-bottom, 0px) + 8px)"
+            : "8px 12px calc(env(safe-area-inset-bottom, 0px) + 16px)",
+        display: compact || flush ? "flex" : undefined,
+        flexDirection: compact || flush ? "column" : undefined,
       }}>
         {children}
       </div>
@@ -1121,6 +1123,7 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
   return (
     <Screen
       compact
+      flush
       title="Body Board"
       icon="🩺"
       onBack={leave}
@@ -1130,7 +1133,12 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
     >
       <RewardToast text={rewardToast} />
 
-      <div style={{ display: "flex", gap: 6, marginBottom: 4, overflowX: "auto", flex: "0 0 auto" }}>
+      {/* Top band — bookings sit in the space above the full-bleed board */}
+      <div style={{
+        flex: "0 0 auto",
+        padding: "4px 8px 6px",
+        display: "flex", gap: 6, overflowX: "auto",
+      }}>
         {booked.length === 0 && (
           <div style={{
             flex: "0 0 auto", minWidth: 120, padding: "4px 8px", background: "#2A1709",
@@ -1168,94 +1176,120 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
         })}
       </div>
 
+      {/* Full-width clipboard — flush L/R; short screens clip top/bottom evenly */}
       <div style={{
         position: "relative",
         flex: 1,
         minHeight: 0,
+        width: "100%",
         overflow: "hidden",
-        backgroundColor: "transparent",
-        backgroundImage: `url(${HEALTH_CLIPBOARD})`,
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "center center",
-        backgroundSize: "contain",
-        imageRendering: "pixelated",
       }}>
         <div style={{
-          position: "absolute", left: "50%", top: "14%", transform: "translateX(-50%)",
-          width: "58%", height: "72%",
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: "50%",
+          transform: "translateY(-50%)",
+          width: "100%",
+          aspectRatio: "682 / 1024",
         }}>
-          {part({ left: "35%", top: "0%", width: "30%", height: "18%", borderRadius: 14 })}
-          {part({ left: "42%", top: "17%", width: "16%", height: "5%" })}
-          {part({ left: "25%", top: "21%", width: "50%", height: "36%", borderRadius: 10 })}
-          {part({ left: "10%", top: "23%", width: "12%", height: "30%", borderRadius: 9 })}
-          {part({ left: "78%", top: "23%", width: "12%", height: "30%", borderRadius: 9 })}
-          {part({ left: "28%", top: "58%", width: "16%", height: "34%", borderRadius: 9 })}
-          {part({ left: "56%", top: "58%", width: "16%", height: "34%", borderRadius: 9 })}
-          {HEALTH_ZONES.map((z) => {
-            const ok = zoneDone(z.id);
-            return (
-              <button key={z.id} onClick={() => setZone(z.id)} style={{
-                position: "absolute", left: z.x, top: z.y, transform: "translate(-50%, -50%)",
-                width: 32, height: 32, borderRadius: "50%", cursor: "pointer",
-                background: "#221306", border: `3px solid ${ok ? "#8FD14F" : zone === z.id ? "#FFD97A" : "#C74B4F"}`,
-                animation: ok ? "zoneCalm 900ms ease-out" : "zonePulse 1.8s ease-in-out infinite",
-                color: ok ? "#8FD14F" : "#C74B4F", fontSize: 12, padding: 0, ...LB,
-              }}>{ok ? "✓" : "!"}</button>
-            );
-          })}
+          <img
+            src={HEALTH_CLIPBOARD}
+            alt=""
+            draggable={false}
+            style={{
+              display: "block",
+              width: "100%",
+              height: "100%",
+              objectFit: "fill",
+              imageRendering: "pixelated",
+              pointerEvents: "none",
+              userSelect: "none",
+            }}
+          />
+          <div style={{
+            position: "absolute",
+            left: "14%",
+            top: "12%",
+            width: "72%",
+            height: "78%",
+          }}>
+            {part({ left: "35%", top: "0%", width: "30%", height: "18%", borderRadius: 14 })}
+            {part({ left: "42%", top: "17%", width: "16%", height: "5%" })}
+            {part({ left: "25%", top: "21%", width: "50%", height: "36%", borderRadius: 10 })}
+            {part({ left: "10%", top: "23%", width: "12%", height: "30%", borderRadius: 9 })}
+            {part({ left: "78%", top: "23%", width: "12%", height: "30%", borderRadius: 9 })}
+            {part({ left: "28%", top: "58%", width: "16%", height: "34%", borderRadius: 9 })}
+            {part({ left: "56%", top: "58%", width: "16%", height: "34%", borderRadius: 9 })}
+            {HEALTH_ZONES.map((z) => {
+              const ok = zoneDone(z.id);
+              return (
+                <button key={z.id} onClick={() => setZone(z.id)} style={{
+                  position: "absolute", left: z.x, top: z.y, transform: "translate(-50%, -50%)",
+                  width: 32, height: 32, borderRadius: "50%", cursor: "pointer",
+                  background: "#221306", border: `3px solid ${ok ? "#8FD14F" : zone === z.id ? "#FFD97A" : "#C74B4F"}`,
+                  animation: ok ? "zoneCalm 900ms ease-out" : "zonePulse 1.8s ease-in-out infinite",
+                  color: ok ? "#8FD14F" : "#C74B4F", fontSize: 12, padding: 0, ...LB,
+                }}>{ok ? "✓" : "!"}</button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      <div style={{ flex: "0 0 auto", marginTop: 4, padding: "6px 10px", ...FR }}>
-        {sel ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <span style={{ color: "#F2E4C0", fontSize: 13, ...LB }}>{sel.label}</span>
-            <span style={{ color: zoneDone(sel.id) ? "#8FD14F" : "#C74B4F", fontSize: 10, ...LB }}>
-              {zoneDone(sel.id) ? "stable" : "needs attention"}
+      {/* Bottom band — zone detail, care, notes */}
+      <div style={{ flex: "0 0 auto", padding: "6px 8px 0" }}>
+        <div style={{ padding: "6px 10px", ...FR }}>
+          {sel ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <span style={{ color: "#F2E4C0", fontSize: 13, ...LB }}>{sel.label}</span>
+              <span style={{ color: zoneDone(sel.id) ? "#8FD14F" : "#C74B4F", fontSize: 10, ...LB }}>
+                {zoneDone(sel.id) ? "stable" : "needs attention"}
+              </span>
+              <span style={{ color: "#C9B896", fontSize: 10, flex: 1, minWidth: 80, ...LB }}>{sel.note}</span>
+              {!zoneDone(sel.id) && (
+                <button
+                  onClick={() => stabilizeZone(sel.id)}
+                  style={{ padding: "6px 10px", background: "#3A2410", color: "#F2E4C0", border: "2px solid #120A04", boxShadow: "inset 0 -2px 0 #1A0F06", fontSize: 11, cursor: "pointer", ...LB }}
+                >
+                  Stabilize ✨
+                </button>
+              )}
+            </div>
+          ) : (
+            <div style={{ color: "#8A7350", fontSize: 11, ...LB }}>Tap a spot on the board. Nothing here bites.</div>
+          )}
+        </div>
+
+        <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
+          {CARE_ITEMS.map((c) => (
+            <button key={c.id} onClick={() => useCare(c.id)} style={{
+              flex: 1, padding: "6px 4px", background: "#3A2410", color: "#F2E4C0",
+              border: "2px solid #120A04", fontSize: 9, cursor: "pointer", ...LB,
+            }}>
+              <div style={{ fontSize: 14 }}>{c.icon}</div>
+              {c.label}
+            </button>
+          ))}
+        </div>
+
+        <div style={{
+          marginTop: 4, padding: "4px 8px", display: "flex",
+          gap: 10, alignItems: "center", flexWrap: "wrap", ...FR,
+        }}>
+          <span style={{ color: "#C9B896", fontSize: 9, ...LB }}>NOTES</span>
+          {diag.map((d, i) => (
+            <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 4, ...LB }}>
+              <span style={{ width: 7, height: 7, background: d.c, border: "1px solid #120A04" }} />
+              <span style={{ color: "#F2E4C0", fontSize: 10 }}>{d.t}</span>
             </span>
-            <span style={{ color: "#C9B896", fontSize: 10, flex: 1, minWidth: 80, ...LB }}>{sel.note}</span>
-            {!zoneDone(sel.id) && (
-              <button
-                onClick={() => stabilizeZone(sel.id)}
-                style={{ padding: "6px 10px", background: "#3A2410", color: "#F2E4C0", border: "2px solid #120A04", boxShadow: "inset 0 -2px 0 #1A0F06", fontSize: 11, cursor: "pointer", ...LB }}
-              >
-                Stabilize ✨
-              </button>
-            )}
-          </div>
-        ) : (
-          <div style={{ color: "#8A7350", fontSize: 11, ...LB }}>Tap a spot on the board. Nothing here bites.</div>
-        )}
-      </div>
-
-      <div style={{ display: "flex", gap: 4, marginTop: 4, flex: "0 0 auto" }}>
-        {CARE_ITEMS.map((c) => (
-          <button key={c.id} onClick={() => useCare(c.id)} style={{
-            flex: 1, padding: "6px 4px", background: "#3A2410", color: "#F2E4C0",
-            border: "2px solid #120A04", fontSize: 9, cursor: "pointer", ...LB,
-          }}>
-            <div style={{ fontSize: 14 }}>{c.icon}</div>
-            {c.label}
-          </button>
-        ))}
-      </div>
-
-      <div style={{
-        flex: "0 0 auto", marginTop: 4, padding: "4px 8px", display: "flex",
-        gap: 10, alignItems: "center", flexWrap: "wrap", ...FR,
-      }}>
-        <span style={{ color: "#C9B896", fontSize: 9, ...LB }}>NOTES</span>
-        {diag.map((d, i) => (
-          <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 4, ...LB }}>
-            <span style={{ width: 7, height: 7, background: d.c, border: "1px solid #120A04" }} />
-            <span style={{ color: "#F2E4C0", fontSize: 10 }}>{d.t}</span>
-          </span>
-        ))}
-        {prog.items?.length > 0 && (
-          <span style={{ marginLeft: "auto", color: "#8A7350", fontSize: 9, ...LB }}>
-            Care {prog.items.filter((it) => it.done).length}/{prog.items.length}
-          </span>
-        )}
+          ))}
+          {prog.items?.length > 0 && (
+            <span style={{ marginLeft: "auto", color: "#8A7350", fontSize: 9, ...LB }}>
+              Care {prog.items.filter((it) => it.done).length}/{prog.items.length}
+            </span>
+          )}
+        </div>
       </div>
     </Screen>
   );
