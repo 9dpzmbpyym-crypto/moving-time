@@ -1,0 +1,222 @@
+{
+  "last_updated": "2026-07-11T03:58:28.469Z",
+  "rules": {
+    "read_before_work": true,
+    "write_before_editing": true,
+    "composer_may_not_claim_structural_tasks": true,
+    "team_leads_authorize_commits": true,
+    "halt_on_overlapping_files_or_systems": true,
+    "paid_api_requires_user_approval": true
+  },
+  "agents": {
+    "cursor_grok_4_5": {
+      "harness": "Cursor",
+      "model": "Grok 4.5",
+      "role": "Cursor Team Lead / Repair Tech",
+      "thinking": "high fast",
+      "status": "IDLE",
+      "branch": "cursor",
+      "working_on": null,
+      "files_locked": [],
+      "systems_locked": [],
+      "risk_level": null,
+      "commit_authority": true,
+      "rate_limited": false,
+      "cooldown_until": null,
+      "handoff_needed": null,
+      "last_seen": null,
+      "expires_at": null,
+      "notes": "Default Cursor lead. Owns structural Cursor work and reviews Composer output."
+    },
+    "cursor_composer_2_5": {
+      "harness": "Cursor",
+      "model": "Composer 2.5",
+      "role": "Cursor Intern / Grunt-Work Implementer",
+      "thinking": "fast",
+      "status": "IDLE",
+      "branch": "cursor",
+      "working_on": null,
+      "files_locked": [],
+      "systems_locked": [],
+      "risk_level": "tiny-only",
+      "commit_authority": false,
+      "rate_limited": false,
+      "cooldown_until": null,
+      "handoff_needed": null,
+      "last_seen": null,
+      "expires_at": null,
+      "notes": "Tiny isolated edits only. Must not diagnose or fix structural bugs."
+    },
+    "codex_sol": {
+      "harness": "Codex",
+      "model": "GPT-5.6 Sol",
+      "role": "Codex Team Lead / Senior Agentic Engineer",
+      "thinking": "high",
+      "status": "IDLE",
+      "branch": "codex",
+      "working_on": null,
+      "files_locked": [],
+      "systems_locked": [],
+      "risk_level": null,
+      "commit_authority": true,
+      "rate_limited": false,
+      "cooldown_until": null,
+      "handoff_needed": null,
+      "last_seen": "2026-07-11T03:58:28.469Z",
+      "expires_at": null,
+      "notes": "Installing machine-readable coordination layer without changing game code."
+    },
+    "codex_luna": {
+      "harness": "Codex",
+      "model": "GPT-5.6 Luna",
+      "role": "Codex Builder / Implementation Engineer",
+      "thinking": "high/max",
+      "status": "IDLE",
+      "branch": "codex",
+      "working_on": null,
+      "files_locked": [],
+      "systems_locked": [],
+      "risk_level": null,
+      "commit_authority": "conditional",
+      "rate_limited": false,
+      "cooldown_until": null,
+      "handoff_needed": null,
+      "last_seen": null,
+      "expires_at": null,
+      "notes": "May work only from approved scoped implementation tickets. Never commits/merges unless explicitly allowed by the policy."
+    },
+    "chatgpt_sol": {
+      "harness": "ChatGPT",
+      "model": "GPT-5.6 Sol",
+      "role": "Executive Assistant / Diagnostician / Prompt Foreman",
+      "thinking": "high",
+      "status": "IDLE",
+      "branch": null,
+      "working_on": null,
+      "files_locked": [],
+      "systems_locked": [],
+      "risk_level": "advisory",
+      "commit_authority": false,
+      "rate_limited": false,
+      "cooldown_until": null,
+      "handoff_needed": null,
+      "last_seen": null,
+      "expires_at": null,
+      "notes": "Non-agentic. Produces diagnosis, plans, prompts, patches, and reviews from pasted context."
+    },
+    "claude_fable": {
+      "harness": "Claude",
+      "model": "Fable 5",
+      "role": "Claude Team Lead / Principal Consultant / Creative Director",
+      "thinking": "medium/high",
+      "status": "PAUSED_USAGE_LIMIT",
+      "branch": null,
+      "working_on": "AI-team docs/org-chart reorganization and design pass",
+      "files_locked": [
+        "docs/ai-team/**",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "HANDOFF.md"
+      ],
+      "systems_locked": [
+        "ai-team-docs",
+        "org-chart",
+        "agent-operating-model"
+      ],
+      "risk_level": "taste/docs-architecture",
+      "commit_authority": "docs/design only unless explicitly authorized for repo code",
+      "rate_limited": true,
+      "cooldown_until": "next Claude usage reset",
+      "handoff_needed": "Read docs/ai-team/fable-resume-note.md before resuming.",
+      "last_seen": null,
+      "expires_at": null,
+      "notes": "Fable was interrupted by Claude usage limits while reorganizing the AI-team docs/org-chart. Codex may add the ledger system but should preserve Fable's design authority."
+    },
+    "claude_opus": {
+      "harness": "Claude",
+      "model": "Opus 4.8",
+      "role": "Senior Reviewer / Taste + Reasoning Specialist",
+      "thinking": "high",
+      "status": "IDLE",
+      "branch": null,
+      "working_on": null,
+      "files_locked": [],
+      "systems_locked": [],
+      "risk_level": "taste/review",
+      "commit_authority": false,
+      "rate_limited": true,
+      "cooldown_until": "next Claude usage reset",
+      "handoff_needed": null,
+      "last_seen": null,
+      "expires_at": null,
+      "notes": "Premium Claude reviewer. Supports Fable on taste, docs, prose, Marcy voice, pixel-art standards."
+    },
+    "glm_5_2": {
+      "harness": "OpenRouter/API",
+      "model": "GLM-5.2",
+      "role": "Long-Context Contractor / Machine Shop",
+      "thinking": "high",
+      "status": "IDLE",
+      "branch": null,
+      "working_on": null,
+      "files_locked": [],
+      "systems_locked": [],
+      "risk_level": "long-context/processing",
+      "commit_authority": false,
+      "rate_limited": false,
+      "cooldown_until": null,
+      "handoff_needed": null,
+      "last_seen": null,
+      "expires_at": null,
+      "notes": "Paid API. Use only with explicit Eloisa approval. Processes huge specs, summaries, manifests, and structured tickets."
+    }
+  },
+  "usage": {
+    "cursor_core": {
+      "status": "AVAILABLE",
+      "spent": "37%",
+      "reset": "2026-08-08",
+      "default_models": [
+        "Composer 2.5",
+        "Grok 4.5"
+      ],
+      "note": "Use Cursor native first."
+    },
+    "cursor_api_openrouter": {
+      "status": "AVOID",
+      "spent": "100%",
+      "models": [
+        "GLM-5.2",
+        "GPT-5.6 Luna"
+      ],
+      "note": "Out-of-pocket unless Eloisa explicitly approves."
+    },
+    "claude": {
+      "status": "PAUSED_USAGE_LIMIT",
+      "spent": "unknown; usage limit reached during Fable docs/org-chart pass",
+      "reset": "next Claude usage reset",
+      "models": [
+        "Fable 5",
+        "Opus 4.8"
+      ],
+      "note": "Fable was paused mid AI-team docs/org-chart pass. Resume via docs/ai-team/fable-resume-note.md."
+    },
+    "codex": {
+      "status": "AVAILABLE",
+      "remaining": "98% weekly limit left; 87% five-hour window left at last visible check",
+      "reset": "2026-07-17",
+      "models": [
+        "GPT-5.6 Sol",
+        "GPT-5.6 Luna"
+      ],
+      "note": "Use for serious repo operations and scoped implementation. Usage is manual and may be stale."
+    },
+    "chatgpt": {
+      "status": "AVAILABLE",
+      "models": [
+        "GPT-5.6 Sol"
+      ],
+      "note": "Non-agentic consulting, diagnosis, prompt-writing, review."
+    }
+  }
+}

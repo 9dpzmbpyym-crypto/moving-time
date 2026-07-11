@@ -1,5 +1,8 @@
 # Latest handoff
 
+→ **`docs/sessions/2026-07-10-codex-agent-ledger.md`** (Codex — live agent-ledger coordination; no game behavior)
+→ **`docs/ai-team/fable-resume-note.md`** (Fable resume + Body Board review direction)
+
 → **`docs/sessions/2026-07-11-cursor-storage-env-props.md`** (Cursor — storage fills, env props, audio/phone, close-out)
 → **`docs/sessions/2026-07-11-claude-review-cleanup.md`** (Claude — playbook reviews + cleanup)
 → **`docs/sessions/2026-07-10-codex-team-configuration.md`** (Codex playbook + pinned agents)

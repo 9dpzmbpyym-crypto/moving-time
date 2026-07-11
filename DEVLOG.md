@@ -9,6 +9,10 @@ Covers **July 5–10, 2026**. Combines:
 
 ---
 
+## 2026-07-11 — [Codex / GPT-5.6 Sol] Agent ledger coordination
+- Added the machine-readable agent ledger, ESM updater, coordination cross-links, and Fable resume trail; no game behavior changed
+- Added the sparse/modular Body Board background v2 as an uninstalled Fable review asset; tactile-prop UI direction remains taste-review pending
+
 ## 2026-07-11 — [Cursor / Grok 4.5]
 - Storage fills + env props: `contents.js` homes, procedural router/cat bed/bowls/amp, packable hutch + coffee-table books, Eloisa layout in `layout.json`
 - Temporary acoustic guitar PNG in living (replace with electric or case); Wi‑Fi z above desk so selectable

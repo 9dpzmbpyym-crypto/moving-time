@@ -9,6 +9,10 @@ This is not a leaderboard. Hierarchy runs **by harness, not by raw model IQ** â€
 
 ---
 
+**Live coordination:** before editing, read `artifacts/agent_ledger.json` and
+follow `docs/ai-team/agent-ledger.md`. The ledger records active work, locks,
+expiry, and usage state; it does not replace the plan or session history.
+
 ## The map
 
 ```

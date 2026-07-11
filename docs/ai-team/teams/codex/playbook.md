@@ -2,6 +2,10 @@
 
 **Owner:** GPT-5.6 Sol in Codex (team lead). Luna and Terra are workers; Sol owns their output, review, commits, and merges.
 
+Before editing or delegating, read `artifacts/agent_ledger.json`, claim the exact
+files and systems involved, and stop on overlapping locks. Use
+`scripts/update-agent-ledger.js`; full workflow is in `docs/ai-team/agent-ledger.md`.
+
 ## What exists here
 
 Codex can spawn independent agent threads and collect their summaries in the lead thread. Pack It Up defines two project agents in `.codex/agents/`:
