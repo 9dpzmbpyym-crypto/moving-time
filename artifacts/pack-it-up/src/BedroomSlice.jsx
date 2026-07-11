@@ -1536,14 +1536,18 @@ const LIVING_SPRITES = {
   // guitar-shaped hard case leaning by the amp — narrow neck, pinched waist,
   // and a broad lower bout so it reads as an instrument case, not a coffin.
   guitar_case: { w: 22, h: 48, draw(ctx) {
-    r(ctx, P.out, 9, 0, 6, 4); r(ctx, "#4A2E17", 10, 1, 4, 2); // handle
-    r(ctx, P.out, 8, 3, 8, 17); r(ctx, "#2A1A0C", 9, 4, 6, 15); // neck
-    r(ctx, "#3A2410", 10, 4, 2, 14);
-    r(ctx, P.out, 5, 18, 14, 9); r(ctx, "#2A1A0C", 6, 19, 12, 7); // upper bout
-    r(ctx, P.out, 7, 25, 10, 7); r(ctx, "#2A1A0C", 8, 25, 8, 7); // waist
-    r(ctx, P.out, 3, 30, 18, 14); r(ctx, "#2A1A0C", 4, 31, 16, 12); // lower bout
-    r(ctx, P.out, 5, 43, 14, 4); r(ctx, "#2A1A0C", 6, 43, 12, 3);
-    r(ctx, "#4A2E17", 6, 19, 2, 6); r(ctx, "#4A2E17", 4, 32, 2, 10);
+    // cool charcoal family matching the amp (#2A2622 / #3A362F / #1C1916 / #4A463F)
+    r(ctx, P.out, 9, 0, 6, 4); r(ctx, "#4A463F", 10, 1, 4, 2); // handle
+    r(ctx, P.out, 8, 3, 8, 17); r(ctx, "#2A2622", 9, 4, 6, 15); // neck
+    r(ctx, "#3A362F", 9, 4, 2, 14); // amp-like face lift
+    r(ctx, P.out, 5, 18, 14, 9); r(ctx, "#2A2622", 6, 19, 12, 7); // upper bout
+    r(ctx, "#3A362F", 6, 19, 2, 7);
+    r(ctx, P.out, 7, 25, 10, 7); r(ctx, "#2A2622", 8, 25, 8, 7); // waist
+    r(ctx, "#3A362F", 8, 25, 2, 7);
+    r(ctx, P.out, 3, 30, 18, 14); r(ctx, "#2A2622", 4, 31, 16, 12); // lower bout
+    r(ctx, "#3A362F", 4, 31, 3, 12);
+    r(ctx, P.out, 5, 43, 14, 4); r(ctx, "#1C1916", 6, 43, 12, 3);
+    r(ctx, "#4A463F", 6, 19, 2, 6); r(ctx, "#4A463F", 4, 32, 2, 10);
     r(ctx, P.goldHi, 17, 22, 2, 2); r(ctx, P.goldHi, 18, 35, 2, 2);
     r(ctx, P.out, 2, 47, 20, 1); // floor contact
   }},
@@ -2148,9 +2152,22 @@ export function LayoutEditor() {
       } } : {}), ...(saved?.parts ? { parts: saved.parts } : {}),
     }]; }))
   ]));
-  const [roomId, setRoomId] = useState("kitchen");
+  // Merge draft over defaults so newly added props (e.g. guitar_case) still appear
+  // even if localStorage still has an older room layout without them.
+  const mergeLayout = (draft) => {
+    const base = makeLayout();
+    if (!draft) return base;
+    for (const rid of ROOMS_ORDER) {
+      if (!draft[rid]) continue;
+      for (const id of Object.keys(base[rid])) {
+        if (draft[rid][id]) base[rid][id] = { ...base[rid][id], ...draft[rid][id] };
+      }
+    }
+    return base;
+  };
+  const [roomId, setRoomId] = useState("living");
   const [layout, setLayout] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("pack-it-up-layout")) || makeLayout(); }
+    try { return mergeLayout(JSON.parse(localStorage.getItem("pack-it-up-layout"))); }
     catch { return makeLayout(); }
   });
   const [selectedId, setSelectedId] = useState(null);
@@ -2216,8 +2233,8 @@ export function LayoutEditor() {
   };
 
   const ordered = [...room.objects].sort((a, b) => a.z - b.z ||
-    (layout[roomId][a.id].y + room.sprites[a.id].h * CELL * layout[roomId][a.id].scale) -
-    (layout[roomId][b.id].y + room.sprites[b.id].h * CELL * layout[roomId][b.id].scale));
+    ((layout[roomId][a.id]?.y ?? a.y) + room.sprites[a.id].h * CELL * (layout[roomId][a.id]?.scale ?? 1)) -
+    ((layout[roomId][b.id]?.y ?? b.y) + room.sprites[b.id].h * CELL * (layout[roomId][b.id]?.scale ?? 1)));
   const panel = { background: "#241509", color: "#F2E4C0", border: "3px solid #120A04", boxShadow: "inset 0 0 0 2px #4A2E17" };
   const button = { ...panel, padding: "8px 10px", cursor: "pointer", fontFamily: "'Courier New', monospace", fontWeight: 700 };
 
@@ -2235,7 +2252,7 @@ export function LayoutEditor() {
           onPointerDown={() => setSelectedId(null)} style={{ position: "relative", width: STAGE_W, height: STAGE_H, transform: `scale(${fit})`, transformOrigin: "top left", touchAction: "none", boxShadow: "0 0 0 8px #3E2413, 0 0 0 12px #000" }}>
           <div style={{ position: "absolute", inset: 0 }}><PixelCanvas w={240} h={180} draw={room.drawShell} /></div>
           {ordered.map((o) => {
-            const spr = room.sprites[o.id], v = layout[roomId][o.id], active = selectedId === o.id;
+            const spr = room.sprites[o.id], v = layout[roomId][o.id] || { x: o.x, y: o.y, scale: 1 }, active = selectedId === o.id;
             return <div key={o.id} onPointerDown={(e) => beginDrag(e, o.id)} style={{
               position: "absolute", left: v.x, top: v.y, zIndex: o.z * 10, transform: `scale(${v.scale})`, transformOrigin: "top left",
               cursor: "grab", outline: active ? "5px solid #FFD97A" : "none", outlineOffset: 3,
@@ -2266,6 +2283,12 @@ export function LayoutEditor() {
       </div>
       <aside style={{ ...panel, width: "auto", height: 260, padding: 14, overflow: "auto", flex: "0 0 260px", columnWidth: 270, columnGap: 24 }}>
         <h2 style={{ color: "#FFD97A", fontSize: 17, margin: "0 0 10px" }}>{selectedId ? room.objects.find((o) => o.id === selectedId)?.name : "Select an item"}</h2>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 12 }}>
+          {room.objects.map((o) => <button key={o.id} onClick={() => setSelectedId(o.id)} style={{
+            ...button, padding: "5px 8px", fontSize: 12,
+            color: selectedId === o.id ? "#FFD97A" : "#C9B896",
+          }}>{o.name}</button>)}
+        </div>
         {selected && <>
           <div style={{ color: "#C9B896", marginBottom: 12 }}>Drag the highlighted item to move it.</div>
           <label style={{ display: "block", marginBottom: 6 }}>Size: {Math.round(selected.scale * 100)}%</label>

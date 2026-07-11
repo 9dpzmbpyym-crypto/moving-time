@@ -89,7 +89,7 @@
     "destijl_poster": { "x": 630, "y": 309, "scale": 1.1 },
     "standing_mirror": { "x": 747, "y": 238, "scale": 1 },
     "floor_lamp": { "x": 825, "y": 170, "scale": 1.05 },
-    "guitar_case": { "x": 620, "y": 470, "scale": 1 },
-    "amplifier": { "x": 689, "y": 562, "scale": 1.25 }
+    "guitar_case": { "x": 808, "y": 516, "scale": 1 },
+    "amplifier": { "x": 728, "y": 571, "scale": 1.25 }
   }
 }
