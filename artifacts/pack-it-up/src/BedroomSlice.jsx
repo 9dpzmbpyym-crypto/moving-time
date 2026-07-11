@@ -29,7 +29,7 @@ import CAT_SHEET from "./assets/Cat-Sheet.png";
 // Next-layer screens (Menu/Desk/Health/etc.) + the task/urgency scaffold.
 // The apartment stays the hub; these render as full-screen overlays above it.
 import ScreenLayer, { RewardToast, IncomingPhoneCue } from "./Screens.jsx";
-import { INITIAL_TASKS, isOpen as isTaskOpen, taskPressure, SAMPLE_JOBS, TASK_CATEGORIES } from "./tasks.js";
+import { INITIAL_TASKS, isOpen as isTaskOpen, taskPressure, SAMPLE_JOBS, TASK_CATEGORIES, refreshDailyHousingTasks } from "./tasks.js";
 import { CONTENTS, hasContents, remainingCount, contentsFor, itemArtReady } from "./contents.js";
 import {
   loadSave,
@@ -2474,9 +2474,11 @@ export default function PackItUp({ glowMode = "split" }) {
   const [radioOpen, setRadioOpen] = useState(null); // null | { left, top, right, bottom, width, height }
   const [radioUi, setRadioUi] = useState(() => getRadioState());
   const refreshRadioUi = useCallback(() => setRadioUi(getRadioState()), []);
-  /* task/urgency scaffold — sample data only, drives the paper fan + badges */
+  /* task/urgency scaffold — real move data; daily housing card refreshes until sublet locks */
   const [tasks, setTasks] = useState(() =>
-    scrambleBookableHealthUrgencies(mergeTasks(INITIAL_TASKS, bootSave?.tasks))
+    refreshDailyHousingTasks(
+      scrambleBookableHealthUrgencies(mergeTasks(INITIAL_TASKS, bootSave?.tasks))
+    )
   );
   const [minutes, setMinutes] = useState(() => clampMinutes(bootSave?.minutes ?? 0)); // game time advances as you pack/sell
   const [coins, setCoins] = useState(() =>
@@ -2488,6 +2490,22 @@ export default function PackItUp({ glowMode = "split" }) {
   );
   const [phoneNudge, setPhoneNudge] = useState(null);
   const phoneNudgeShownRef = useRef(false);
+
+  // Re-open "Send 5–10 sublet inquiries" each local day until h_lock is done.
+  useEffect(() => {
+    const roll = () => setTasks((ts) => refreshDailyHousingTasks(ts));
+    roll();
+    const id = setInterval(roll, 60_000);
+    const onVis = () => {
+      if (document.visibilityState === "visible") roll();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, []);
+
   useEffect(() => {
     const n = getNudge(appointments, tasks);
     // Soft desk nudge for remind/overdue; cold open is available anytime via landline

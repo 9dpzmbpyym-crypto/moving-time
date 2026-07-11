@@ -5,7 +5,7 @@ import LANDLINE_PHONE from "./assets/landline-phone.png";
 import {
   TASK_CATEGORIES, SAMPLE_JOBS, isOpen, taskPressure,
   PRESSURE_LABELS, PRESSURE_COLORS,
-  pickBoardTasks, doorForTask, makeQuickTask,
+  pickBoardTasks, doorForTask, makeQuickTask, refreshDailyHousingTasks,
 } from "./tasks.js";
 import { PixelCanvas } from "./BedroomSlice.jsx";
 import {
@@ -391,7 +391,9 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
   const energy = session?.energy || null;
   const picks = energy ? pickBoardTasks(tasks, energy) : [];
   const markDone = (id) => {
-    setTasks((ts) => ts.map((t) => (t.id === id ? { ...t, status: "done" } : t)));
+    setTasks((ts) => refreshDailyHousingTasks(
+      ts.map((t) => (t.id === id ? { ...t, status: "done" } : t))
+    ));
     onSessionBump?.("cleared", 1, "Cleared +1");
   };
   return (
@@ -501,7 +503,9 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
       return (b.urgency || 1) - (a.urgency || 1);
     });
   const markDone = (id) => {
-    setTasks((ts) => ts.map((t) => (t.id === id ? { ...t, status: "done" } : t)));
+    setTasks((ts) => refreshDailyHousingTasks(
+      ts.map((t) => (t.id === id ? { ...t, status: "done" } : t))
+    ));
     onSessionBump?.("cleared", 1, "Cleared +1");
   };
   const addSticky = () => {
@@ -1291,7 +1295,9 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
         setTimeout(() => setRelief(null), 1600);
         return;
       }
-      setTasks((ts) => ts.map((t) => (t.id === id ? { ...t, status: "done", needsInfo: false } : t)));
+      setTasks((ts) => refreshDailyHousingTasks(
+        ts.map((t) => (t.id === id ? { ...t, status: "done", needsInfo: false } : t))
+      ));
       setResolving(null);
       setInspectId(null);
       setOutboxBump((n) => n + 1);

@@ -1,7 +1,9 @@
 /* Real move task data. `due` is display copy; `dueDate` / `dueEnd` drive
    calendar and pressure behavior. Effort: 1 tiny, 2 medium, 3 heavy. */
-import { currentPhase, isDueSoon, isOverdue } from "./movePhase.js";
+import { currentPhase, isDueSoon, isOverdue, dateKey } from "./movePhase.js";
 import { ENERGY_BUDGET } from "./session.js";
+
+export const SUBLET_OUTREACH_ID = "h_outreach_daily";
 
 export const TASK_CATEGORIES = {
   move:    { label: "Move",       icon: "📦", color: "#C9942E" },
@@ -37,6 +39,12 @@ export const INITIAL_TASKS = [
   base({ id: "m_stage", title: "Stage heavy boxes near loading path", category: "move", effort: 2, urgency: 2, due: "Jul 26", dueDate: "2026-07-26" }),
   base({ id: "m_fragile", title: "Wrap framed art + fragiles", category: "move", effort: 2, urgency: 2, due: "Jul 26", dueDate: "2026-07-26" }),
   base({ id: "m_furn_decide", title: "Decide which furniture rides the U-Box", category: "move", effort: 2, urgency: 2, due: "Jul 26", dueDate: "2026-07-26" }),
+  // Mid-month room packing (apartment Pack verb is still the real work — these are planning cards)
+  base({ id: "m_pack_overflow", title: "Pack bedroom + closet overflow", category: "move", effort: 2, urgency: 2, due: "Jul 16–24", dueDate: "2026-07-16", dueEnd: "2026-07-24" }),
+  base({ id: "m_pack_bath", title: "Pack bathroom backup + vanity extras", category: "move", effort: 2, due: "Jul 16–24", dueDate: "2026-07-16", dueEnd: "2026-07-24" }),
+  base({ id: "m_pack_office", title: "Pack office supplies and papers", category: "move", effort: 2, due: "Jul 16–24", dueDate: "2026-07-16", dueEnd: "2026-07-24" }),
+  base({ id: "m_pack_kitchen", title: "Pack nonessential kitchen", category: "move", effort: 2, due: "Jul 16–24", dueDate: "2026-07-16", dueEnd: "2026-07-24" }),
+  base({ id: "m_pack_living", title: "Pack living decor/electronics + dining/bar", category: "move", effort: 2, due: "Jul 16–24", dueDate: "2026-07-16", dueEnd: "2026-07-24" }),
   base({ id: "m_load1", title: "U-Box day: load heavy / boring / low-theft first", category: "move", effort: 3, urgency: 3, due: "Jul 27", dueDate: "2026-07-27", criticalPath: true }),
   base({ id: "m_load_main", title: "Main loading days", category: "move", effort: 3, urgency: 3, due: "Jul 28–29", dueDate: "2026-07-28", dueEnd: "2026-07-29", criticalPath: true }),
   base({ id: "m_sell_final", title: "Final sell / free / donate calls", category: "move", effort: 2, urgency: 2, due: "Jul 29", dueDate: "2026-07-29" }),
@@ -44,8 +52,19 @@ export const INITIAL_TASKS = [
   base({ id: "m_lock_final", title: "Lock the U-Box — packed by tonight", category: "move", effort: 1, urgency: 3, due: "Jul 30", dueDate: "2026-07-30", criticalPath: true }),
   base({ id: "m_sweep", title: "Final sweep — flight day, no packing", category: "move", effort: 2, urgency: 3, due: "Jul 31", dueDate: "2026-07-31", criticalPath: true }),
 
-  // Housing. Daily 10+5 outreach remains a session meter, not task cards.
+  // Housing. Session meter = Messages 10 / Backups 5 ticks; daily card = today's outreach batch.
   base({ id: "h_lock", title: "Lock the Aug 1 sublet", category: "housing", effort: 3, urgency: 3, due: "Jul 15", dueDate: "2026-07-15", criticalPath: true }),
+  base({
+    id: SUBLET_OUTREACH_ID,
+    title: "Send 5–10 sublet inquiries",
+    category: "housing",
+    effort: 2,
+    urgency: 3,
+    due: "Today",
+    dueDate: null,
+    criticalPath: true,
+    kind: "daily",
+  }),
   base({ id: "h_followups", title: "Follow up warm replies (24–48h)", category: "housing", effort: 1, urgency: 2, due: "Daily" }),
   base({ id: "h_widen", title: "If not locked: widen to furnished room / month-to-month / friends", category: "housing", effort: 2, urgency: 2, due: "Jul 15+", dueDate: "2026-07-15" }),
   base({ id: "h_comfort_box", title: "Sublet comfort box — ship once address is confirmed", category: "housing", effort: 1, due: "After address", status: "dismissed" }),
@@ -70,17 +89,17 @@ export const INITIAL_TASKS = [
   base({ id: "a_payout", title: "Final paycheck: PTO payout + insurance end / COBRA", category: "admin", effort: 1, due: "Move day", dueDate: "2026-07-31", relief: "file" }),
   base({ id: "a_voter", title: "Voter registration (NYC)", category: "admin", effort: 1, urgency: 1, due: "Post-move", dueDate: "2026-08-01", status: "dismissed", relief: "file" }),
 
-  // Existing Body Board tasks plus real additions
-  base({ id: "t_brain", title: "Psychiatry / med renewals", category: "health", effort: 2, urgency: 2, due: "Before move", dueDate: "2026-07-30", zone: "brain" }),
-  base({ id: "t_teeth", title: "Dentist visit", category: "health", effort: 2, urgency: 1, due: "Opportunistic", status: "dismissed", zone: "teeth" }),
-  base({ id: "t_heart", title: "Cardiology appointment", category: "health", effort: 2, urgency: 1, due: "After move", status: "dismissed", zone: "heart" }),
-  base({ id: "t_lymph", title: "Rheumatology appointment + deferred labs", category: "health", effort: 3, urgency: 2, due: "Before move", dueDate: "2026-07-30", zone: "lymph" }),
+  // Existing Body Board tasks plus real additions — "Book" cards; Attend spawns when Shirley confirms
+  base({ id: "t_brain", title: "Book: Psychiatry / med renewals", category: "health", effort: 2, urgency: 2, due: "Book by Jul 28", dueDate: "2026-07-28", zone: "brain", kind: "book" }),
+  base({ id: "t_teeth", title: "Book: Dentist visit", category: "health", effort: 2, urgency: 1, due: "Opportunistic", status: "dismissed", zone: "teeth", kind: "book" }),
+  base({ id: "t_heart", title: "Book: Cardiology appointment", category: "health", effort: 2, urgency: 1, due: "After move", status: "dismissed", zone: "heart", kind: "book" }),
+  base({ id: "t_lymph", title: "Book: Rheumatology + deferred labs", category: "health", effort: 3, urgency: 2, due: "Book by Jul 28", dueDate: "2026-07-28", zone: "lymph", kind: "book" }),
   base({ id: "t_stomach", title: "Diet — gentle, steady", category: "health", effort: 1, urgency: 1, due: "Ongoing", zone: "stomach" }),
-  base({ id: "t_skin", title: "Dermatology appointment", category: "health", effort: 2, urgency: 1, due: "After move", status: "dismissed", zone: "skin" }),
+  base({ id: "t_skin", title: "Book: Dermatology appointment", category: "health", effort: 2, urgency: 1, due: "After move", status: "dismissed", zone: "skin", kind: "book" }),
   base({ id: "t_nerves", title: "Self-care + healthy habits", category: "health", effort: 1, urgency: 1, due: "Ongoing", zone: "nerves" }),
-  base({ id: "t_obgyn", title: "OB/GYN — IUD replacement", category: "health", effort: 3, urgency: 3, due: "Try by Jul 25", dueDate: "2026-07-25", zone: "stomach" }),
-  base({ id: "t_pcp", title: "PCP — 90-day medication bridge", category: "health", effort: 2, urgency: 2, due: "Before move", dueDate: "2026-07-30", zone: "brain" }),
-  base({ id: "t_vet", title: "Stretchy: vet visit (meds + certificate)", category: "cat", effort: 2, urgency: 3, due: "Jul 22–25", dueDate: "2026-07-22", dueEnd: "2026-07-25", criticalPath: true }),
+  base({ id: "t_obgyn", title: "Book: OB/GYN — IUD replacement", category: "health", effort: 3, urgency: 3, due: "Book by Jul 20", dueDate: "2026-07-20", zone: "stomach", kind: "book" }),
+  base({ id: "t_pcp", title: "Book: PCP — 90-day medication bridge", category: "health", effort: 2, urgency: 2, due: "Book by Jul 28", dueDate: "2026-07-28", zone: "brain", kind: "book" }),
+  base({ id: "t_vet", title: "Book: Stretchy vet visit (meds + certificate)", category: "cat", effort: 2, urgency: 3, due: "Book by Jul 21", dueDate: "2026-07-21", dueEnd: "2026-07-25", criticalPath: true, kind: "book" }),
 
   // Stretchy travel-prep chain
   base({ id: "c_vet_book", title: "Book Stretchy's travel vet visit", category: "cat", effort: 1, urgency: 2, due: "Before Jul 22", dueDate: "2026-07-21", criticalPath: true }),
@@ -102,6 +121,54 @@ export const SAMPLE_JOBS = {
 };
 
 export const isOpen = (task) => task.status === "pending" || task.status === "active";
+
+/**
+ * Daily sublet outreach card: regenerates each local day until h_lock is done.
+ * Completing it today keeps it done until midnight; next open reopens a fresh card.
+ */
+export function refreshDailyHousingTasks(tasks, date = new Date()) {
+  const list = Array.isArray(tasks) ? tasks : [];
+  const locked = list.some((t) => t.id === "h_lock" && t.status === "done");
+  const today = dateKey(date);
+  if (!today) return list;
+
+  if (locked) {
+    return list.map((t) => (
+      t.id === SUBLET_OUTREACH_ID && t.status !== "dismissed"
+        ? { ...t, status: "dismissed", due: "Locked", dueDate: today }
+        : t
+    ));
+  }
+
+  const prev = list.find((t) => t.id === SUBLET_OUTREACH_ID);
+  // Finished today's batch — leave the checkmark until the day rolls.
+  if (prev && prev.status === "done" && prev.dueDate === today) return list;
+
+  const fresh = {
+    id: SUBLET_OUTREACH_ID,
+    title: "Send 5–10 sublet inquiries",
+    category: "housing",
+    effort: 2,
+    urgency: 3,
+    due: "Today",
+    dueDate: today,
+    dueEnd: null,
+    criticalPath: true,
+    status: "pending",
+    room: null,
+    objectId: null,
+    relief: "stamp",
+    jobId: null,
+    zone: null,
+    needsInfo: false,
+    kind: "daily",
+  };
+
+  if (prev) {
+    return list.map((t) => (t.id === SUBLET_OUTREACH_ID ? { ...fresh } : t));
+  }
+  return [...list, fresh];
+}
 
 /** Pressure is deadline loudness, never backlog volume. */
 export function taskPressure(tasks, date = new Date()) {
