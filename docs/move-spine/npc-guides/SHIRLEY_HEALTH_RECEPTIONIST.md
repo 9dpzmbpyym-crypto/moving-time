@@ -138,10 +138,10 @@ Reminder:
 "Your appointment is tomorrow. ID, insurance card, and the little scrap of dignity required to sit under fluorescent lights."
 
 Completion:
-"Did you go, or are we rescheduling the concept of healthcare?"
+"Did you go? Yes or no. I have the file open and a pen that barely works."
 
 Stalling:
-"We have left the appointment and entered performance art. I am hanging up."
+"Hon, I have four people on hold and none of them are you yet. Call back with a date."
 
 ## Hard boundaries
 

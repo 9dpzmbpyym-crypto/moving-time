@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-11T03:58:28.469Z",
+  "last_updated": "2026-07-11T04:06:06.899Z",
   "rules": {
     "read_before_work": true,
     "write_before_editing": true,
@@ -109,26 +109,17 @@
       "model": "Fable 5",
       "role": "Claude Team Lead / Principal Consultant / Creative Director",
       "thinking": "medium/high",
-      "status": "PAUSED_USAGE_LIMIT",
-      "branch": null,
-      "working_on": "AI-team docs/org-chart reorganization and design pass",
-      "files_locked": [
-        "docs/ai-team/**",
-        "AGENTS.md",
-        "CLAUDE.md",
-        "HANDOFF.md"
-      ],
-      "systems_locked": [
-        "ai-team-docs",
-        "org-chart",
-        "agent-operating-model"
-      ],
-      "risk_level": "taste/docs-architecture",
+      "status": "IDLE",
+      "branch": "claude/say-hi-b1ijhk",
+      "working_on": null,
+      "files_locked": [],
+      "systems_locked": [],
+      "risk_level": null,
       "commit_authority": "docs/design only unless explicitly authorized for repo code",
-      "rate_limited": true,
-      "cooldown_until": "next Claude usage reset",
-      "handoff_needed": "Read docs/ai-team/fable-resume-note.md before resuming.",
-      "last_seen": null,
+      "rate_limited": false,
+      "cooldown_until": null,
+      "handoff_needed": null,
+      "last_seen": "2026-07-11T04:06:06.899Z",
       "expires_at": null,
       "notes": "Fable was interrupted by Claude usage limits while reorganizing the AI-team docs/org-chart. Codex may add the ledger system but should preserve Fable's design authority."
     },

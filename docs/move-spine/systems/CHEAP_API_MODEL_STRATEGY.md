@@ -113,6 +113,7 @@ Pass criteria:
 * correct task focus
 * valid JSON
 * no repetition of exact example lines unless fallback mode
+* no "not X but Y" reframes or metaphor-swap zingers
 
 ## Recommendation for implementation
 

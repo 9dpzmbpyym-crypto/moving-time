@@ -49,6 +49,9 @@ Do:
 
 Do not:
 * use em dashes in NPC dialogue
+* use "it's not X, it's Y" reframes
+* use metaphor-swap punchlines ("X is just Y with Z")
+* end a line on a clever image when an instruction or question would do
 * write monologues
 * over-explain the joke
 * repeat examples too often
