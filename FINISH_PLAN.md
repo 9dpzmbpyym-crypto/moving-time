@@ -10,7 +10,8 @@ Other docs (`AGENTS.md`, `CLAUDE.md`, `DEVLOG.md`, `replit.md`) should only *poi
 | **Explicitly defer** | Long-term traps — do not start |
 | **Definition of done** | Weekend ship bar |
 
-**Hard date:** usable by end of weekend (before/around Jul 12 Fable renew).  
+**Weekend ship bar (Jul 12): met — historical.** ("Definition of done" below is frozen as the record; phone smoke still on Eloisa.)  
+**Current next bar:** tiny perf/usage safety patch + safe Shirley Pass 1 + phone smoke test. **No scope expansion until those land.**  
 **Move:** end of month — productivity tool, not an endless art project.  
 **Product bar:** fun to open every day + helps you pack / apply / stay covered.  
 **North star mockups:** `artifacts/pack-it-up/docs/mockups/`
@@ -24,6 +25,13 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 ### Branch swap at Grok session close — [cursor] (this close-out)
 - [x] Merge `cursor/storage-glow-7a01` → `main` (session file + signed DEVLOG)
 - [ ] **[eloisa]** Delete `cursor/storage-glow-7a01` in GitHub UI (agents get 403), then create standing `cursor` from main
+
+### Tiny perf / usage safety patch — [cursor] (from ChatGPT Jul 11 review, Opus-verified against code — do FIRST)
+- [ ] **Grok-sized — Shirley API tightening** (`receptionistCall.js`, the only real usage/$ risk): cap fallback chain to configured model + **one** backup (today: 4 free fallbacks × 25s timeout ≈ up to ~125s of hanging attempts per send) · `max_tokens` 320→~120 · `temperature` 0.95→~0.6 · fail loudly on unknown model slug · surface reply source + last error **in the phone UI** — the Settings "live" badge is only `improvEnabled()` (config check), so silent failures read as live improv. This explains Eloisa's "OpenRouter on, dashboard shows nothing, replies match bank verbatim" report: likely invalid slug (`deepseek/deepseek-v4-flash`) → all attempts 404 → bank answers behind a "live" badge. Per-message source IS tracked (`setLineSource` `live`/`script`) — expose it.
+- [ ] **Composer-sized — clock churn:** `now` ticks every 1s at the top of BedroomSlice (~line 2919) → full-tree re-render of the 3,800-line monolith every second, and **neither clock displays seconds** (both `h:mm`) → tick per minute. Leave `DeskScreen`'s `deskNow` alone (only runs while Desk is open).
+- [ ] **Composer-sized — dead code:** delete the July-10 test-call block (BedroomSlice ~2475–2490). Date-gated to 2026-07-10 so it's already inert — hygiene, not active churn.
+- Acceptance: bank works with no key · live improv opt-in · one failed call falls back fast · phone UI shows source/error · a real test call appears on the OpenRouter dashboard **or** the UI shows why not · no broad refactor.
+- Watchlist only, do NOT touch this pass: audio front-load, radio preload, 40ms phone pulse (self-clears), infinite CSS animations.
 
 ### Audio file cleanup — [cursor] Composer-sized (now that Grok session is merging)
 - [ ] Delete the 7 **original-named** Epidemic drops only — code slices `cabinet/fridge/drawer_open_close_es.mp3` at runtime and uses all four `phone_*.mp3`, so those STAY:
@@ -148,6 +156,18 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 
 **Files:** `Screens.jsx` Desk, `tasks.js`, maybe `jobTracker.js`.
 
+### 8. Task lifecycle / proof-of-done — [codex/grok]
+**Extend, don't rebuild** (audited Jul 11): tasks already have `pending/active/done/dismissed` (`tasks.js:16`); appointments already have a real FSM — `booked/reminded/attended/missed/cancelled` (`receptionist.js`). Grow from these.
+- [ ] Jobs: replace SAMPLE_JOBS free-text `status` with a real enum — `applied / waiting / followup_due / interview / rejected / ghosted`
+- [ ] Appointments: keep the FSM; surface scheduled-vs-attended in UI; add `records_needed` where labs/records gate completion
+- [ ] Proof-of-done fields per lane: appt date/time + attended · labs/refills/records · job status update · follow-up sent · admin receipt/confirmation · vet certificate/records
+
+### 9. Admin / sublet lane — [desk]
+`admin` category exists (`tasks.js:29`) but holds exactly one task — populate it; Desk-owned in v1, **no admin NPC**.
+- [ ] Sublet sprint cards: messages sent (10 serious + 5 backup / day), warm replies, follow-ups, backup plan if no sublet by **Jul 15**
+- [ ] Wi-Fi return card: equipment located · **DO NOT PACK** · return method confirmed · receipt/tracking saved
+- [ ] Utilities/account cutoffs: renter's insurance, USPS forwarding (once address exists), pharmacy/records, CUNY docs, final pay/insurance/PTO emails
+
 ---
 
 ## P1b — Hub / apartment HUD (from hub mockup)
@@ -159,6 +179,16 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 - [x] **SOFT** Stretchy hearts (3) on Stretchy screen (from pressure)
 
 **Defer:** five body meters always on apartment HUD; multi-room strip visible at once.
+
+---
+
+## P1c — Command Board / Daily Dispatch (after Shirley Pass 1 — not before)
+
+One visible daily dashboard answering: what matters today, what's due/overdue, who will call, where to tap. Full spec: `docs/move-spine/` Command Board pass.
+- [ ] **Grow the existing `MenuScreen` 6-tile grid** (`Screens.jsx:300` — already has per-tile due badges) into the board; don't start from zero
+- [ ] Four lanes: Packing · Health · Jobs · Admin
+- [ ] Small daily load only: one packing/move task + one job/admin task + one health/Stretchy task (+ urgent override only if needed)
+- [ ] Critical Path panel, **static from master list first**: sublet Jul 15 · vet records/cert · U-Box Jul 27 · packed Jul 30 night · flight Jul 31 3:20 PM · DO-NOT-PACK reminders
 
 ---
 
@@ -182,6 +212,17 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 - [ ] **SOFT** Label box pile by room when packed (BOOKS / BATHROOM / …)
 - [ ] **YES** Room quest chip (listed under P0 — don’t duplicate work)
 
+### Stretchy travel prep — [cat/health lane]
+Today: one bundled `t_vet` task (`tasks.js:48`) + 3 static flavor rows on StretchyScreen (`Screens.jsx:1599`) — make them real states, not decoration.
+- [ ] Task cards/states: vet **scheduled → attended** · certificate/records obtained · meds discussed · meds test run · carrier acclimation · travel kit packed
+- [ ] Stretchy stays screen-state/meows/notes in v1 — **not** a phone NPC
+- [ ] Vet window from master list: **Jul 22–25** unless vet/airline says otherwise
+
+### U-Box / do-not-pack / final sweep — [apartment/packing]
+- [ ] U-Box readiness cards: lock bought · boxes labeled · heavy boxes staged · delivery **Jul 27** · fully packed **Jul 30 night** · no normal packing Jul 31
+- [ ] **DO NOT PACK** list in app: ID, meds, insurance card, health/vet paperwork, laptop, phone, chargers, power bank, travel outfit, Stretchy kit, Wi-Fi equipment, CUNY/sublet docs, keys
+- [ ] Final sweep checklist (Jul 31): closets, drawers, cabinets, outlets, fridge, medicine cabinet, under bed, behind doors, router, meds/docs/cat kit
+
 **Defer:** side-view cutaway rebuild, Death Closet as a 7th room, roof/balcony staging.
 
 ---
@@ -191,6 +232,15 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 - [ ] Fill any thin storage containers
 - [ ] SFX / radio polish only if P0–P1 feel good
 - [x] `CODEX_TASKS.md` dining/kitchen/living pixel list — **DONE (Jul 9)**
+
+---
+
+## Deferred but defined — later NPC passes (do NOT start before Shirley Pass 1 + Command Board)
+
+Zero code exists for either today (audited Jul 11). Acceptance criteria live in `docs/move-spine/systems/IMPLEMENTATION_MANIFEST.md` (Sal = Pass 4, Vivian = Pass 5) — preserved here so they don't get lost:
+- [ ] **Sal from Dispatch** — packing/U-Box trigger layer. Calls **only** on: packing neglect, U-Box timing, Wi-Fi risk, furniture/sell deadlines, final sweep
+- [ ] **Vivian Vale** — job-tracker trigger layer. Calls **only** on: no job progress, high-fit deadline, 7-day follow-up, too many saved jobs, class conflict, poor-fit role
+- Global rule: **one NPC call per session** unless critical deadline
 
 ---
 
