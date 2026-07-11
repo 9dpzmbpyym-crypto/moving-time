@@ -18,7 +18,9 @@ export function addDaysISO(iso, n) {
   const key = dateKey(iso);
   if (!key || !ISO.test(key)) return null;
   const [y, m, d] = key.split("-").map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d + n));
+  // Local calendar math — must match dateKey()'s getFullYear/getMonth/getDate
+  // (UTC midnight shifts the local day westward and can infinite-loop day walks).
+  const dt = new Date(y, m - 1, d + Number(n) || 0);
   return dateKey(dt);
 }
 
@@ -176,7 +178,9 @@ export function buildMinimumSchedule(tasks, today = new Date(), horizon = MOVE_D
   const capacity = {}; // day -> remaining effort
   const placed = {}; // taskId -> day
 
-  for (let d = todayK; d && d <= horizonK; d = addDaysISO(d, 1)) {
+  // Build day capacity table (guarded — never spin forever)
+  let guard = 0;
+  for (let d = todayK; d && d <= horizonK && guard < 400; d = addDaysISO(d, 1), guard += 1) {
     capacity[d] = ENERGY_BUDGET.fumes; // 3/day baseline
   }
 
@@ -199,11 +203,13 @@ export function buildMinimumSchedule(tasks, today = new Date(), horizon = MOVE_D
 
   for (const task of required) {
     const earliest = [todayK, task.availableFrom].filter(Boolean).sort().pop();
-    const latest = task.latestDate || task.targetDate || horizonK;
+    let latest = task.latestDate || task.targetDate || horizonK;
+    if (latest < earliest) latest = earliest;
     const e = effortOf(task);
     let placedDay = null;
-    // Walk latest → earliest; pick last day with room (and deps — simplified: ignore dep days for now)
-    for (let d = latest; d && d >= earliest; d = addDaysISO(d, -1)) {
+    // Walk latest → earliest; pick last day with room
+    guard = 0;
+    for (let d = latest; d && d >= earliest && guard < 400; d = addDaysISO(d, -1), guard += 1) {
       if (d > horizonK || d < todayK) continue;
       if ((capacity[d] ?? 0) >= e) {
         placedDay = d;
