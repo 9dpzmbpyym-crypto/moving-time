@@ -359,45 +359,43 @@ export function ensureAudioLoaded() {
       loadBuf("sfx/ui/phone_ring_and_pickup.mp3"),
       loadBuf("sfx/ui/phone_incoming_ringtone.mp3"),
     ]);
-    // kitchen drawer open: cut the first quarter (felt late / empty lead-in),
-    // then peak-match open + close halfway between original close (~0.11)
-    // and the louder leveled target (~0.72).
-    const KIT_DRAWER_PEAK = (0.107 + 0.72) / 2; // ~0.41
+    // kitchen drawer: open a touch under close (closes read louder in real life)
     const kitOpen = kitOpenRaw
-      ? normalizePeak(trimStartFraction(kitOpenRaw, 0.25), KIT_DRAWER_PEAK)
+      ? normalizePeak(trimStartFraction(kitOpenRaw, 0.25), 0.36)
       : null;
-    const kitCloseNorm = kitClose ? normalizePeak(kitClose, KIT_DRAWER_PEAK) : null;
-    // office_drawer_open_01.mp3 is a quiet master (~0.23 peak) with ~600ms lead-in —
-    // trim + normalize in memory; we do NOT rewrite the file on disk.
+    const kitCloseNorm = kitClose ? normalizePeak(kitClose, 0.48) : null;
+    // office drawers — close sits above open
     const offOpen = offOpenRaw
-      ? normalizePeak(trimLeadingSilence(offOpenRaw, 0.015), 0.75)
+      ? normalizePeak(trimLeadingSilence(offOpenRaw, 0.015), 0.62)
       : null;
-    const offCloseNorm = offClose ? normalizePeak(offClose, 0.75) : null;
-    // Cabinet combo: peak 4 (~3.28s) open, peak 6 (~5.72s) close — same peak target.
-    const CONTAINER_PEAK = 0.72;
+    const offCloseNorm = offClose ? normalizePeak(offClose, 0.78) : null;
+    // Opens sit under closes — equal peaks made opens read louder (brighter attack).
+    const OPEN_PEAK = 0.58;
+    const CLOSE_PEAK = 0.78;
+    // Cabinet combo: peak 4 open, peak 6 close (close bumped a tad more — was quiet).
     const cabOpen = cabComboRaw
-      ? normalizePeak(trimLeadingSilence(sliceBuffer(cabComboRaw, 3.12, 3.9), 0.01), CONTAINER_PEAK)
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(cabComboRaw, 3.12, 3.9), 0.01), OPEN_PEAK)
       : null;
     const cabClose = cabComboRaw
-      ? normalizePeak(trimLeadingSilence(sliceBuffer(cabComboRaw, 5.52, 6.5), 0.01), CONTAINER_PEAK)
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(cabComboRaw, 5.52, 6.5), 0.01), 0.84)
       : null;
-    // Fridge open+close combo → fridge only.
+    // Fridge open+close combo → fridge only (close raised a little).
     const fridgeOpen = fridgeComboRaw
-      ? normalizePeak(trimLeadingSilence(sliceBuffer(fridgeComboRaw, 0.15, 0.85), 0.01), CONTAINER_PEAK)
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(fridgeComboRaw, 0.15, 0.85), 0.01), OPEN_PEAK)
       : null;
     const fridgeClose = fridgeComboRaw
-      ? normalizePeak(trimLeadingSilence(sliceBuffer(fridgeComboRaw, 2.4, 3.05), 0.01), CONTAINER_PEAK)
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(fridgeComboRaw, 2.4, 3.05), 0.01), 0.82)
       : null;
-    // Wooden drawer open (quiet scrape) + close (slam) → bedroom dresser/nightstand/vanity.
+    // Wooden drawer open (scrape) + close (slam) → bedroom dresser/nightstand/vanity.
     const woodDrawerOpen = drawerComboRaw
-      ? normalizePeak(trimLeadingSilence(sliceBuffer(drawerComboRaw, 0.18, 1.05), 0.008), CONTAINER_PEAK)
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(drawerComboRaw, 0.18, 1.05), 0.008), OPEN_PEAK)
       : null;
     const woodDrawerClose = drawerComboRaw
-      ? normalizePeak(trimLeadingSilence(sliceBuffer(drawerComboRaw, 1.55, 2.55), 0.01), CONTAINER_PEAK)
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(drawerComboRaw, 1.55, 2.55), 0.01), CLOSE_PEAK)
       : null;
-    // Closet doors — peak-match open/close to the same container target.
-    const closetOpenNorm = closetOpen ? normalizePeak(closetOpen, CONTAINER_PEAK) : null;
-    const closetCloseNorm = closetClose ? normalizePeak(closetClose, CONTAINER_PEAK) : null;
+    // Closet doors — same open-under-close bias.
+    const closetOpenNorm = closetOpen ? normalizePeak(closetOpen, OPEN_PEAK) : null;
+    const closetCloseNorm = closetClose ? normalizePeak(closetClose, CLOSE_PEAK) : null;
     state.sell = sell;
     state.pack = pack;
     state.stamp = stamp;
@@ -406,9 +404,9 @@ export function ensureAudioLoaded() {
     state.catHappy = happy;
     state.catStressed = stressed;
     state.catDesperate = desperate;
-    // medicine: original open/close mapping, peak-normalized so loudness matches
-    const medOpenClips = medOpen ? [normalizePeak(medOpen, CONTAINER_PEAK)] : [];
-    const medCloseClips = [medClose1, medClose2].filter(Boolean).map((b) => normalizePeak(b, CONTAINER_PEAK));
+    // medicine: open under close
+    const medOpenClips = medOpen ? [normalizePeak(medOpen, OPEN_PEAK)] : [];
+    const medCloseClips = [medClose1, medClose2].filter(Boolean).map((b) => normalizePeak(b, CLOSE_PEAK));
     state.containerOpen = {
       cabinet: cabOpen ? [cabOpen] : [],
       closet: closetOpenNorm ? [closetOpenNorm] : [],
@@ -452,7 +450,7 @@ export function ensureAudioLoaded() {
     // Shirley calling you — old bell ringtone; sit under short UI one-shots
     // (looped bells read louder than the same peak on a one-shot).
     state.phoneIncomingRingtone = phoneIncomingRaw
-      ? normalizePeak(trimLeadingSilence(phoneIncomingRaw, 0.01), 0.38)
+      ? normalizePeak(trimLeadingSilence(phoneIncomingRaw, 0.01), 0.34)
       : null;
     state.ready = true;
     if (state.primed) startMainTheme();
@@ -924,7 +922,7 @@ export function startPhoneIncomingRingtone() {
       src.buffer = buf;
       src.loop = true;
       const gain = ctx.createGain();
-      gain.gain.value = 0.48 * state.sfxVol * SFX_VOL_MAX;
+      gain.gain.value = 0.42 * state.sfxVol * SFX_VOL_MAX;
       src.connect(gain).connect(ctx.destination);
       src.start(0);
       state.phoneIncomingSrc = src;
