@@ -24,10 +24,10 @@ import {
   startPhoneIncomingRingtone,
   stopPhoneIncomingRingtone,
 } from "./gameAudio.js";
-// Stretchy the cat: a real PNG sprite sheet (the only image asset in the game —
-// everything else is procedural). 256x1632 px = 8 columns x 51 rows of 32x32
-// frames. Vite serves it as a hashed, same-origin asset (no CSP issue for img).
+// Stretchy the cat: PNG sprite sheet. Acoustic guitar: one-off room prop PNG
+// (procedural case wasn't reading). Everything else is canvas-drawn.
 import CAT_SHEET from "./assets/Cat-Sheet.png";
+import GUITAR_PNG from "./assets/acoustic-guitar.png";
 // Next-layer screens (Menu/Desk/Health/etc.) + the task/urgency scaffold.
 // The apartment stays the hub; these render as full-screen overlays above it.
 import ScreenLayer, { RewardToast, IncomingPhoneCue } from "./Screens.jsx";
@@ -467,23 +467,17 @@ const OFFICE_SPRITES = {
   }},
 
   desk_hutch: { w: 150, h: 96, glowRegions: [[37, 54, 22, 10], [37, 66, 22, 10], [37, 78, 22, 10]], draw(ctx) {
-    // hutch shelves
+    // hutch shelves (books live as separate packable objects on top)
     r(ctx, P.out, 2, 0, 60, 46);
     r(ctx, P.woodMid, 3, 1, 58, 44); r(ctx, P.woodHi, 3, 1, 58, 2);
     r(ctx, "#1E1206", 6, 5, 24, 16); r(ctx, "#1E1206", 34, 5, 24, 16);   // upper cavities
     r(ctx, "#1E1206", 6, 25, 52, 17);                                     // lower cavity
-    // books, upper left
-    r(ctx, P.green, 8, 9, 3, 12); r(ctx, "#6B4A8A", 12, 8, 3, 13); r(ctx, P.red, 16, 10, 3, 11);
-    r(ctx, "#28304A", 20, 9, 3, 12); r(ctx, "#B08A4A", 24, 11, 4, 10);
     // jars + bear, upper right
     r(ctx, P.glass, 37, 12, 5, 9); r(ctx, P.glassHi, 38, 13, 1, 7); r(ctx, P.woodDark, 37, 11, 5, 2);
     r(ctx, P.glass, 44, 14, 4, 7); r(ctx, P.glassHi, 45, 15, 1, 5);
     r(ctx, P.creamLo, 51, 12, 5, 6); r(ctx, P.cream, 52, 11, 3, 3);       // little bear
-    // lower shelf: binders shifted right (left half stays dark so the red
-    // lamp in front reads cleanly)
-    r(ctx, P.burgundy, 26, 29, 4, 13); r(ctx, P.teal, 31, 30, 4, 12); r(ctx, P.mustard, 36, 29, 4, 13);
-    r(ctx, "#28304A", 41, 31, 4, 11); r(ctx, P.green, 46, 30, 4, 12);
-    r(ctx, P.cardLo, 52, 33, 5, 9);                                       // box
+    // lower shelf: empty left (binders are a separate object); box stays
+    r(ctx, P.cardLo, 52, 33, 5, 9);
     // one long desk top, running from the hutch to under the window
     r(ctx, P.out, 0, 46, 150, 5);
     r(ctx, P.woodLight, 1, 47, 148, 3); r(ctx, P.woodHi, 1, 47, 148, 1);
@@ -503,6 +497,20 @@ const OFFICE_SPRITES = {
     // open knee span under the window: thin shadow + far leg
     r(ctx, "#1E1206", 64, 51, 80, 2);
     r(ctx, P.out, 144, 51, 4, 42); r(ctx, P.woodDark, 145, 51, 2, 41);
+  }},
+
+  // upright books that used to be painted into the upper-left hutch shelf
+  hutch_books_upper: { w: 22, h: 14, draw(ctx) {
+    r(ctx, P.green, 0, 2, 3, 12); r(ctx, "#6B4A8A", 4, 1, 3, 13); r(ctx, P.red, 8, 3, 3, 11);
+    r(ctx, "#28304A", 12, 2, 3, 12); r(ctx, "#B08A4A", 16, 4, 4, 10);
+    r(ctx, P.creamLo, 1, 2, 1, 3); r(ctx, P.creamLo, 5, 1, 1, 3);
+  }},
+
+  // binders on the lower hutch shelf
+  hutch_books_lower: { w: 26, h: 14, draw(ctx) {
+    r(ctx, P.burgundy, 0, 0, 4, 13); r(ctx, P.teal, 5, 1, 4, 12); r(ctx, P.mustard, 10, 0, 4, 13);
+    r(ctx, "#28304A", 15, 2, 4, 11); r(ctx, P.green, 20, 1, 4, 12);
+    r(ctx, P.creamLo, 1, 1, 1, 4); r(ctx, P.creamLo, 11, 1, 1, 4);
   }},
 
   computer: { w: 28, h: 24, draw(ctx) {
@@ -581,6 +589,34 @@ const OFFICE_SPRITES = {
     r(ctx, "#2A2622", 2, 1, 10, 14); r(ctx, "#3A362F", 2, 1, 10, 2);
     dith(ctx, "#1C1916", 3, 6, 8, 9, 2, 0);
     r(ctx, P.cream, 4, 2, 3, 2);                                           // crumpled draft
+  }},
+
+  // Wi-Fi modem under the desk — small box + twin antennas
+  wifi_router: { w: 18, h: 14, draw(ctx) {
+    r(ctx, P.out, 1, 6, 16, 8);
+    r(ctx, "#3A362F", 2, 7, 14, 6); r(ctx, "#4A463F", 2, 7, 14, 2);
+    r(ctx, P.tealHi, 4, 9, 2, 2); r(ctx, P.mustard, 8, 9, 2, 2); r(ctx, P.greenHi, 12, 9, 2, 2);
+    r(ctx, P.out, 4, 0, 2, 7); r(ctx, "#8A8272", 4, 1, 1, 5);
+    r(ctx, P.out, 12, 1, 2, 6); r(ctx, "#8A8272", 12, 2, 1, 4);
+    r(ctx, P.out, 3, 0, 4, 2); r(ctx, P.out, 11, 1, 4, 2);
+  }},
+
+  // Stretchy's round plush bed — flatter side view for the desk top
+  cat_bed: { w: 30, h: 11, draw(ctx) {
+    // soft contact shadow
+    r(ctx, "#1E1206", 3, 9, 24, 2);
+    // outer rim
+    r(ctx, P.out, 1, 3, 28, 7);
+    r(ctx, "#C4A882", 2, 4, 26, 5);
+    r(ctx, "#A88862", 2, 7, 26, 2);
+    // short back lip — just a peek above the rim
+    r(ctx, P.out, 5, 1, 20, 3);
+    r(ctx, "#D4B892", 6, 1, 18, 2);
+    // inner pad
+    r(ctx, P.out, 6, 5, 18, 3);
+    r(ctx, "#E8D4B0", 7, 5, 16, 2);
+    dith(ctx, "#D4C09A", 7, 6, 16, 1, 2, 0);
+    r(ctx, P.creamLo, 8, 5, 4, 1);
   }},
 
   desk_clutter: { w: 30, h: 14, draw(ctx) {
@@ -999,6 +1035,25 @@ const KITCHEN_SPRITES = {
     [3, 6, 9, 12].forEach((y, i) => r(ctx, i % 2 ? "#A3252C" : "#C97B2E", 2, y, 9, 2));
     dith(ctx, P.creamLo, 2, 13, 9, 2, 2, 0);
   }},
+  // Stretchy food station — bowls on the floor (procedural, slight 3/4)
+  cat_food_bowl: { w: 14, h: 8, draw(ctx) {
+    r(ctx, P.out, 1, 3, 12, 5);
+    r(ctx, "#3A6EA5", 2, 4, 10, 3);
+    r(ctx, "#2A547C", 2, 6, 10, 1);
+    r(ctx, P.out, 2, 1, 10, 4);
+    r(ctx, "#4A82B8", 3, 2, 8, 2);
+    r(ctx, "#5C94C4", 4, 2, 3, 1);
+    r(ctx, P.mustardLo, 5, 3, 4, 1); // kibble hint
+  }},
+  cat_water_bowl: { w: 14, h: 8, draw(ctx) {
+    r(ctx, P.out, 1, 3, 12, 5);
+    r(ctx, P.tealLo, 2, 4, 10, 3);
+    r(ctx, "#35584C", 2, 6, 10, 1);
+    r(ctx, P.out, 2, 1, 10, 4);
+    r(ctx, P.teal, 3, 2, 8, 2);
+    r(ctx, P.tealHi, 4, 2, 3, 1);
+    r(ctx, P.glassHi, 6, 3, 3, 1); // water glint
+  }},
 };
 
 const KITCHEN_OBJECTS = [
@@ -1024,6 +1079,10 @@ const KITCHEN_OBJECTS = [
     check: "The service door to the back stairs. Comes with the building." },
   { id: "door_towel", name: "Striped Towel", category: "textiles", value: 3, x: 128, y: 140, z: 2, removable: true,
     check: "Threadbare, stained, irreplaceable. It stays folded over that bar out of pure habit." },
+  { id: "cat_food_bowl", name: "Cat Food Bowl", category: "decor", value: 4, x: 150, y: 500, z: 2, removable: true,
+    check: "Blue bowl, floor rights. Stretchy's breakfast station starts here." },
+  { id: "cat_water_bowl", name: "Water Bowl", category: "decor", value: 3, x: 210, y: 505, z: 2, removable: true,
+    check: "Teal twin to the food bowl. Always somehow emptier than you left it." },
 ];
 
 /* ============================================================
@@ -1412,7 +1471,8 @@ const LIVING_SPRITES = {
     r(ctx, P.out, 10, 32, 84, 6); r(ctx, "#B98F5C", 11, 33, 82, 4);
     dith(ctx, "#8F6538", 11, 33, 82, 4, 3, 0);
   }},
-  table_decor: { w: 34, h: 14, draw(ctx) {
+  table_decor: { w: 20, h: 14, draw(ctx) {
+    // candle + pencil cup only — books are a separate packable object
     r(ctx, P.out, 1, 10, 10, 3);
     r(ctx, P.woodDark, 2, 11, 8, 2);
     r(ctx, P.out, 2, 2, 7, 9);
@@ -1424,10 +1484,14 @@ const LIVING_SPRITES = {
     r(ctx, "#8A4526", 13, 5, 1, 3);
     r(ctx, "#A85A32", 15, 4, 1, 4);
     r(ctx, "#8A4526", 16, 5, 1, 3);
-    r(ctx, P.out, 19, 9, 15, 4);
-    r(ctx, P.green, 20, 10, 13, 2);
-    r(ctx, P.out, 19, 5, 15, 4);
-    r(ctx, "#3C5C86", 20, 6, 13, 2);
+  }},
+  // coffee-table book stack (was baked into table_decor)
+  coffee_table_books: { w: 18, h: 8, draw(ctx) {
+    r(ctx, P.out, 0, 4, 17, 4);
+    r(ctx, P.green, 1, 5, 15, 2);
+    r(ctx, P.out, 0, 0, 17, 4);
+    r(ctx, "#3C5C86", 1, 1, 15, 2);
+    r(ctx, P.creamLo, 3, 1, 4, 1); r(ctx, P.creamLo, 3, 5, 5, 1);
   }},
   destijl_poster: { w: 26, h: 36, draw(ctx) {
     r(ctx, P.out, 0, 0, 26, 36);
@@ -1471,6 +1535,34 @@ const LIVING_SPRITES = {
   // small tabletop radio — sits on the TV hutch
   // draw(ctx) is the static/editor fallback; roomArt uses drawRadio(ctx, live)
   radio: { w: 28, h: 18, draw(ctx) { drawRadio(ctx, { on: false, t: 0 }); } },
+  // acoustic guitar — Eloisa's pixel-art PNG (transparent), standing
+  guitar_case: (() => {
+    const img = typeof Image !== "undefined" ? new Image() : null;
+    if (img) { img.decoding = "async"; img.src = GUITAR_PNG; }
+    return {
+      w: 28, h: 59,
+      draw(ctx) {
+        if (!img?.complete || !img.naturalWidth) return;
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(img, 0, 0, 28, 59);
+      },
+    };
+  })(),
+  // small practice amp
+  amplifier: { w: 22, h: 20, draw(ctx) {
+    r(ctx, P.out, 0, 2, 22, 18);
+    r(ctx, "#2A2622", 1, 3, 20, 16);
+    r(ctx, "#3A362F", 1, 3, 20, 3);
+    // speaker grille
+    r(ctx, P.out, 4, 7, 14, 10);
+    r(ctx, "#1C1916", 5, 8, 12, 8);
+    dith(ctx, "#4A463F", 5, 8, 12, 8, 2, 0);
+    dith(ctx, "#6A6660", 5, 8, 12, 8, 3, 1);
+    // handle + knobs
+    r(ctx, P.out, 7, 0, 8, 3); r(ctx, "#4A463F", 8, 1, 6, 1);
+    r(ctx, P.gold, 3, 4, 2, 2); r(ctx, P.gold, 17, 4, 2, 2);
+    r(ctx, P.creamLo, 10, 4, 2, 1);
+  }},
 };
 
 const LIVING_OBJECTS = [
@@ -1487,13 +1579,19 @@ const LIVING_OBJECTS = [
   { id: "coffee_table", name: "Coffee Table", category: "furniture", value: 40, x: 272, y: 468, z: 4, removable: true,
     check: "Ring stains from a decade of mugs you swore you'd use a coaster for." },
   { id: "table_decor", name: "Table Clutter", category: "decor", value: 8, x: 412, y: 424, z: 5, removable: true,
-    check: "A candle you're saving for a special occasion that never comes, plus two books you'll definitely finish." },
+    check: "A candle you're saving for a special occasion that never comes, and a cup of pencils that have seen things." },
+  { id: "coffee_table_books", name: "Coffee Table Books", category: "decor", value: 14, x: 360, y: 430, z: 5, removable: true,
+    check: "Architecture and forests. You'll finish them after the move. You will." },
   { id: "destijl_poster", name: "De Stijl Poster", category: "decor", value: 15, x: 640, y: 314, z: 3, removable: true,
     check: "Picked it up on that museum trip you half remember — mostly you remember the gift shop." },
   { id: "standing_mirror", name: "Standing Mirror", category: "furniture", value: 35, x: 752, y: 230, z: 2, removable: true,
     check: "Leans just enough to make you check your posture on the way out the door." },
   { id: "floor_lamp", name: "Torchiere Lamp", category: "lighting", value: 25, x: 836, y: 174, z: 3, removable: true,
     check: "Casts exactly one warm circle of light and no more. Very committed to its one job." },
+  { id: "guitar_case", name: "Acoustic Guitar", category: "decor", value: 45, x: 700, y: 480, z: 3, removable: true,
+    check: "Still in tune somehow. The case is somewhere in a closet — this one rides out in the open." },
+  { id: "amplifier", name: "Amplifier", category: "decor", value: 80, x: 770, y: 500, z: 3, removable: true,
+    check: "Heavier than it looks. The neighbors already know its name." },
 ];
 
 /* box stack sprite (grows near the door as you pack).
@@ -1699,13 +1797,17 @@ ROOMS.office = {
       check: "Certificates of things you're pretty sure you can still do." },
     { id: "desk_hutch",      name: "Desk & Hutch",     category: "furniture", x: 80,  y: 176, z: 3, removable: true, value: 85,
       check: "The command center. Every drawer is a junk drawer if you believe in yourself." },
+    { id: "hutch_books_upper", name: "Hutch Books",    category: "decor",     x: 98,  y: 170, z: 4, removable: true, value: 12,
+      check: "The colorful upright row. Half of them are still bookmarks for chapters you meant to finish." },
+    { id: "hutch_books_lower", name: "Hutch Binders",  category: "decor",     x: 168, y: 250, z: 4, removable: true, value: 10,
+      check: "Binders of almost-organized life. The mustard one is taxes. You know this." },
     { id: "sewing_machine",  name: "Sewing Machine",   category: "furniture", x: 164, y: 116, z: 4, removable: true, value: 75,
       check: "It hemmed curtains once. Mostly it judges you from the shelf." },
     { id: "desk_lamp",       name: "Red Desk Lamp",    category: "lighting",  x: 92,  y: 262, z: 4, removable: true, value: 22,
       check: "Red, articulated, dramatic. It has supervised every all-nighter." },
     { id: "computer",        name: "Computer",         category: "furniture", x: 346, y: 264, z: 4, removable: true, value: 60,
       check: "Still runs. The fan sounds like it's trying its best." },
-    { id: "desk_clutter",    name: "Desk Clutter",     category: "decor",     x: 470, y: 300, z: 4, removable: true, value: 10,
+    { id: "desk_clutter",    name: "Desk Clutter",     category: "decor",     x: 470, y: 300, z: 5, removable: true, value: 10,
       check: "An open notebook, a dead pen, and a mug that never made it back to the kitchen." },
     { id: "office_chair",    name: "Office Chair",     category: "furniture", x: 430, y: 386, z: 4, removable: true, value: 35,
       check: "Molded to exactly one spine: yours." },
@@ -1715,6 +1817,10 @@ ROOMS.office = {
       check: "Promoted to the desk for the move. Contains at least three drafts of the same letter." },
     { id: "side_cabinet",    name: "Side Cabinet",     category: "furniture", x: 664, y: 288, z: 3, removable: true, value: 30,
       check: "Short cabinet drafted into desk duty: books, one dramatic vase, and room for whatever's next." },
+    { id: "wifi_router",     name: "Wi-Fi Router",     category: "decor",     x: 280, y: 378, z: 6, removable: true, value: 40,
+      check: "Blinks under the desk like it knows the password and refuses to share." },
+    { id: "cat_bed",         name: "Stretchy's Bed",   category: "decor",     x: 560, y: 280, z: 5, removable: true, value: 22,
+      check: "Round, plush, and claimed — parked by the window where the sun hits. Stretchy will notice." },
   ],
 };
 

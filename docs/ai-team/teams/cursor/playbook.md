@@ -118,15 +118,15 @@ Exact paths Eloisa should keep for this harness. GUI-only items have no reliable
 
 Grok leads commits for Cursor work. Close per `docs/ai-team/end-here.md`: update `FINISH_PLAN.md`, new `docs/sessions/` file, signed `DEVLOG.md` entry, merge team branch → `main`.
 
-## Notes for Fable review (Jul 10)
+## Fable review answers (Jul 11) — folded in
 
-Please sanity-check taste/ops alignment — not game code:
+Claude reviewed this playbook on `claude/say-hi-b1ijhk` and answered the five notes below. Treat these as locked ops:
 
-1. **API maxed on Eloisa’s Pro** — playbook tells Grok to stay on first-party (Grok/Composer/Auto). Confirm that matches how you want overflow routed (Codex vs ask-first on-demand).
-2. **Explore subagent = Composer while chat = Grok** — intentional cheap search; flag if you’d rather Explore inherit Grok.
-3. **Standing branch:** docs say `cursor`; this playbook still lives on `cursor/storage-glow-7a01` until someone creates/merges the standing `cursor` branch. Call out if that’s a process smell.
-4. **Voice/pixels still yours** — Shirley style prompt + glow “does it look right?” stay Claude; Grok only implements.
-5. **Codex playbook still a stub** — Sol owes `teams/codex/playbook.md`; don’t treat Cursor’s playbook as covering Codex mechanics.
+1. **API maxed** — confirmed: stay first-party (Grok / Composer / Auto). Luna-shaped overflow → **Codex credits**, not Cursor on-demand API, unless Eloisa explicitly approves spend.
+2. **Explore = Composer, chat = Grok** — confirmed intentional. Cheap search worker; lead stays Grok.
+3. **Standing branch smell** — real. Close-out sequence (in `FINISH_PLAN.md`): merge `cursor/storage-glow-7a01` → `main`, delete the old branch (Eloisa UI if agents get 403), then create standing `cursor` from `main`.
+4. **Glow / voice / pixels** — Fable judges screenshots and sets proportions; Grok edits `glowRegions` rects only. Shirley voice + pixel taste stay Claude.
+5. **Codex stub note** — stale. Sol delivered `teams/codex/playbook.md`; remove any “Codex still a stub” language.
 
 ## Plain-English roster (who’s who)
 

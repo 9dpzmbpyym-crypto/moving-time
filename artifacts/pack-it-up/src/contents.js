@@ -94,6 +94,36 @@ const pngSprite = (filename) => {
 // instead of showing hand-drawn stand-ins.
 const art = (filename) => pngSprite(filename);
 
+/** Room-prop sprite: PNG pixels ≈ screen pixels (canvas cells = raw/4). */
+export function roomItemSprite(filename) {
+  const asset = ITEM_ASSETS[filename.replace(/\.png$/i, "")];
+  if (!asset?.src || typeof Image === "undefined") {
+    return { w: 8, h: 8, draw() {} };
+  }
+  const base = pngSprite(filename);
+  if (!base) return { w: 8, h: 8, draw() {} };
+  const PX = 4; // matches CELL in BedroomSlice
+  const w = Math.max(1, Math.round(asset.rawWidth / PX));
+  const h = Math.max(1, Math.round(asset.rawHeight / PX));
+  const offsetX = Math.floor((asset.canvasSize - asset.rawWidth) / 2);
+  const offsetY = Math.floor((asset.canvasSize - asset.rawHeight) / 2);
+  let image = loadedImages.get(filename);
+  return {
+    w,
+    h,
+    draw(ctx) {
+      if (!image) image = loadedImages.get(filename);
+      if (!image?.complete || !image.naturalWidth) return;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(
+        image,
+        offsetX, offsetY, asset.rawWidth, asset.rawHeight,
+        0, 0, w, h,
+      );
+    },
+  };
+}
+
 // ---- the map: which storage objects contain what ----
 // Curated 3–6 items per container per the asset-usage plan. Items whose PNG
 // exists get a real sprite; items without art get spr: null and render as
@@ -115,15 +145,13 @@ export const CONTENTS = {
     { id: "pepper_1",  name: "Pepper Grinder",      spr: art("s1_r02_i07_pepper_grinder.png"),              value: 5 },
     { id: "herb_1",    name: "Green Herb Jar",      spr: art("s1_r02_i08_green_herb_jar.png"),              value: 3 },
     { id: "cat_food",  name: "Dry Cat Food",        spr: art("s1_r12_i03_dry_cat_food_bag.png"),            value: 8 },
-    { id: "cat_bowl",  name: "Cat Food Bowl",       spr: art("s1_r12_i01_blue_cat_food_bowl.png"),          value: 4 },
-    { id: "water_bowl", name: "Water Bowl",         spr: art("s1_r12_i02_teal_water_bowl.png"),             value: 3 },
+    { id: "wet_food",  name: "Wet Cat Food",        spr: art("s1_r12_i04_wet_food_can.png"),               value: 2 },
   ],
   "kitchen:fridge": [
     { id: "leftovers", name: "Leftovers",          spr: art("s1_r01_i05_green_canned_food.png"),           value: 0 },
     { id: "tupper_1",  name: "Food Container",     spr: art("s1_r09_i02_rectangular_food_container.png"),  value: 3 },
     { id: "tupper_2",  name: "Storage Stack",      spr: art("s1_r09_i03_stacked_food_storage_containers.png"), value: 5 },
     { id: "bento_1",   name: "Bento Box",          spr: art("s1_r09_i06_white_bento_storage_box.png"),     value: 4 },
-    { id: "wet_food",  name: "Wet Cat Food",       spr: art("s1_r12_i04_wet_food_can.png"),               value: 2 },
   ],
   // Counter & sink: upper drawers = tools/cutlery (+ junk drawer bits);
   // lower cabinets = dishes, cookware, bakeware, under-sink cleaning.
@@ -138,7 +166,10 @@ export const CONTENTS = {
     { id: "wood_spoon", name: "Wooden Spoon",      zone: "upper", spr: art("s1_r03_i09_wooden_spoon.png"), value: 2 },
     { id: "batteries", name: "Batteries",          zone: "upper", spr: art("s1_r04_i01_batteries.png"),    value: 2 },
     { id: "tape_roll", name: "Tape Roll",          zone: "upper", spr: art("s1_r04_i03_tape_roll.png"),    value: 1 },
+    { id: "blue_pen",  name: "Blue Pen",           zone: "upper", spr: art("s1_r04_i04_blue_pen.png"),     value: 1 },
+    { id: "rubber_bands", name: "Rubber Bands",    zone: "upper", spr: art("s1_r04_i07_rubber_bands.png"), value: 1 },
     { id: "flashlight", name: "Flashlight",        zone: "upper", spr: art("s1_r04_i09_flashlight.png"),  value: 4 },
+    { id: "paper_clips", name: "Paper Clips",      zone: "upper", spr: art("s1_r04_i10_paper_clips.png"), value: 1 },
     { id: "screwdriver", name: "Screwdriver",      zone: "upper", spr: art("s1_r04_i12_screwdriver.png"), value: 3 },
     // ---- lower ----
     { id: "plate_1",   name: "Dinner Plate",       zone: "lower", spr: art("s1_r08_i01_dinner_plate.png"), value: 4 },
@@ -156,6 +187,7 @@ export const CONTENTS = {
     { id: "casserole", name: "Casserole Dish",     zone: "lower", spr: art("s1_r07_i04_casserole_dish.png"), value: 8 },
     { id: "cleaner",   name: "Spray Cleaner",      zone: "lower", spr: art("s1_r05_i01_spray_cleaner.png"), value: 3 },
     { id: "sponge",    name: "Sponge",             zone: "lower", spr: art("s1_r05_i02_sponge.png"),       value: 1 },
+    { id: "cleaner_g", name: "Green Cleaner",      zone: "lower", spr: art("s1_r05_i04_green_cleaning_bottle.png"), value: 3 },
     { id: "gloves",    name: "Rubber Gloves",      zone: "lower", spr: art("s1_r05_i07_rubber_gloves.png"), value: 2 },
     { id: "trash_bags", name: "Trash Bags",        zone: "lower", spr: art("s1_r05_i08_trash_bags.png"),  value: 2 },
   ],
@@ -179,6 +211,12 @@ export const CONTENTS = {
     { id: "nail_file",  name: "Nail File",          spr: art("s3_r03_i05_pink_nail_file.png"),             value: 1 },
     { id: "cuticle",    name: "Cuticle Nippers",    spr: art("s3_r03_i06_cuticle_nippers.png"),            value: 6 },
     { id: "gel_lamp",   name: "UV Gel Lamp",        spr: art("s5_r07_i05_uv_gel_nail_lamp.png"),           value: 25 },
+    // meds (medicine cabinet lives behind the mirror portal — stash here for now)
+    { id: "rx_bottle",  name: "Prescription Bottle", spr: art("s3_r01_i01_prescription_bottle.png"),       value: 8 },
+    { id: "pill_pack",  name: "Pill Blister Pack",  spr: art("s3_r01_i03_pill_blister_pack.png"),          value: 4 },
+    { id: "pill_org",   name: "Weekly Pill Organizer", spr: art("s3_r01_i08_weekly_pill_organizer.png"),   value: 6 },
+    { id: "cat_med_liq", name: "Liquid Cat Medicine", spr: art("s4_r10_i03_liquid_cat_medicine_bottle.png"), value: 12 },
+    { id: "cat_med",    name: "Cat Medication",     spr: art("s4_r10_i01_cat_medication_bottle.png"),      value: 10 },
   ],
 
   // ===================== BEDROOM =====================
@@ -189,6 +227,7 @@ export const CONTENTS = {
     { id: "keepsake",  name: "Green Keepsake Box", spr: art("s2_r08_i09_green_keepsake_box.png"),          value: 8 },
     { id: "pouch",     name: "Quilted Pouch",      spr: art("s5_r08_i01_quilted_pouch.png"),              value: 4 },
     { id: "zip_case",  name: "Small Zip Case",     spr: art("s5_r08_i03_small_zip_case.png"),             value: 3 },
+    { id: "discreet",  name: "Personal Item",      spr: art("s5_r08_i06_discreet_personal_item.png"),     value: 2 },
   ],
   "bedroom:vanity": [
     { id: "lipstick",  name: "Lipstick",           spr: art("s2_r09_i01_lipstick.png"),                   value: 2 },
@@ -221,15 +260,25 @@ export const CONTENTS = {
     { id: "satchel",   name: "Green Satchel",      spr: art("s2_r05_i05_green_satchel.png"),              value: 16 },
     { id: "sheets",    name: "White Sheet Stack",  spr: art("s2_r07_i02_white_sheet_stack.png"),           value: 7 },
     { id: "quilt",     name: "Patchwork Quilt",    spr: art("s2_r07_i07_patchwork_quilt.png"),             value: 22 },
+    { id: "belt",      name: "Brown Belt",         spr: art("s2_r06_i02_brown_belt.png"),                 value: 8 },
   ],
 
   // ===================== OFFICE =====================
   "office:desk_hutch": [
     { id: "pen_cup",   name: "Pen Cup",            spr: art("s3_r08_i01_pen_cup.png"),                    value: 1 },
     { id: "stapler",   name: "Stapler",            spr: art("s3_r08_i03_stapler.png"),                    value: 4 },
+    { id: "tape_disp", name: "Tape Dispenser",     spr: art("s3_r08_i04_tape_dispenser.png"),             value: 3 },
     { id: "binder_clip", name: "Binder Clip",      spr: art("s3_r08_i05_binder_clip.png"),               value: 1 },
     { id: "sticky",    name: "Sticky Notes",       spr: art("s3_r08_i06_sticky_notes.png"),               value: 1 },
     { id: "notebook",  name: "Blue Notebook",      spr: art("s3_r08_i07_blue_notebook.png"),              value: 2 },
+    { id: "manila_folders", name: "Manila Folders", spr: art("s3_r08_i08_manila_folders.png"),            value: 2 },
+    // drawers: laptop + small electronics
+    { id: "laptop",    name: "Work Laptop",        spr: art("s3_r11_i01_work_laptop.png"),                value: 200 },
+    { id: "laptop_chg", name: "Laptop Charger",    spr: art("s3_r11_i02_laptop_charger.png"),             value: 25 },
+    { id: "tablet",    name: "Tablet",             spr: art("s3_r12_i02_tablet.png"),                     value: 120 },
+    { id: "earbuds",   name: "Earbuds",            spr: art("s3_r12_i03_earbuds.png"),                    value: 20 },
+    { id: "ext_drive", name: "External Drive",     spr: art("s3_r12_i08_external_drive_power_bank.png"),  value: 35 },
+    { id: "charge_cable", name: "Charging Cable",  spr: art("s3_r12_i07_charging_cable.png"),             value: 5 },
   ],
   "office:side_cabinet": [
     { id: "passport",  name: "Passport",           spr: art("s3_r05_i01_passport.png"),                   value: 9 },
@@ -238,9 +287,25 @@ export const CONTENTS = {
     { id: "manila_env", name: "Manila Envelope",   spr: art("s3_r05_i04_manila_envelope.png"),            value: 2 },
     { id: "certificate", name: "Certificate",      spr: art("s3_r05_i05_certificate_official_document.png"), value: 10 },
     { id: "confidential", name: "Confidential Envelope", spr: art("s3_r05_i08_confidential_envelope.png"), value: 8 },
+    { id: "paper_stack", name: "Loose Paper Stack", spr: art("s3_r06_i01_loose_paper_stack.png"),         value: 1 },
     { id: "bill",      name: "Bill",               spr: art("s3_r06_i03_bill.png"),                       value: 0 },
     { id: "lined_paper", name: "Lined Paper",      spr: art("s3_r06_i05_loose_lined_paper.png"),          value: 1 },
     { id: "yellow_note", name: "Yellow Note",      spr: art("s3_r06_i06_yellow_note.png"),               value: 1 },
+    { id: "clipboard", name: "Clipboard Papers",   spr: art("s3_r06_i07_clipboard_papers.png"),           value: 2 },
+    { id: "mail_stack", name: "Stack of Mail",     spr: art("s3_r06_i08_stack_of_mail.png"),              value: 1 },
+    { id: "book_set",  name: "Upright Book Set",   spr: art("s3_r13_i01_upright_book_set.png"),           value: 12 },
+    { id: "print_bot", name: "Botanical Print",    spr: art("s3_r15_i01_small_botanical_print.png"),      value: 8 },
+    { id: "print_roll", name: "Rolled Print",      spr: art("s3_r15_i04_rolled_print.png"),               value: 6 },
+    { id: "print_stack", name: "Stack of Prints",  spr: art("s3_r15_i06_loose_stack_of_prints_artwork.png"), value: 10 },
+    // sewing bin (no dedicated bin object yet — lives in the side cabinet)
+    { id: "thread_b",  name: "Blue Thread",        spr: art("s3_r07_i01_blue_thread_spool.png"),          value: 2 },
+    { id: "thread_r",  name: "Red Thread",         spr: art("s3_r07_i02_red_thread_spool.png"),           value: 2 },
+    { id: "needle_card", name: "Needle Card",      spr: art("s3_r07_i03_needle_card.png"),               value: 2 },
+    { id: "pincushion", name: "Tomato Pincushion", spr: art("s3_r07_i04_tomato_pincushion.png"),         value: 4 },
+    { id: "scissors",  name: "Scissors",           spr: art("s3_r07_i05_scissors.png"),                   value: 5 },
+    { id: "meas_tape", name: "Measuring Tape",     spr: art("s3_r07_i06_measuring_tape.png"),             value: 3 },
+    { id: "buttons",   name: "Buttons",            spr: art("s3_r07_i07_buttons.png"),                    value: 2 },
+    { id: "seam_ripper", name: "Seam Ripper",      spr: art("s3_r07_i08_seam_ripper.png"),               value: 3 },
   ],
 
   // ===================== DINING =====================
@@ -277,12 +342,26 @@ export const CONTENTS = {
   "living:tv_hutch": [
     { id: "console",   name: "Game Console",       spr: art("s4_r05_i01_game_console.png"),                value: 80 },
     { id: "controller", name: "Game Controller",   spr: art("s4_r05_i03_game_controller.png"),             value: 25 },
+    { id: "switch_dock", name: "Switch Dock",      spr: art("s4_r05_i07_switch_joy_con_dock.png"),         value: 40 },
     { id: "cards",      name: "Playing Cards",      spr: art("s4_r06_i02_playing_card_deck.png"),          value: 7 },
     { id: "dice",       name: "Dice",               spr: art("s4_r06_i03_dice.png"),                       value: 2 },
     { id: "chess",      name: "Chess Knight",       spr: art("s4_r06_i04_chess_knight.png"),               value: 10 },
     { id: "puzzle",     name: "Puzzle Box",         spr: art("s4_r06_i07_puzzle_box.png"),                 value: 8 },
     { id: "fabric_floral", name: "Floral Fabric",  spr: art("s4_r07_i01_floral_folded_fabric.png"),        value: 5 },
     { id: "fabric_plaid",  name: "Plaid Fabric",   spr: art("s4_r07_i02_green_plaid_folded_fabric.png"),   value: 5 },
+    { id: "fabric_pink", name: "Pink Fabric Roll", spr: art("s4_r07_i04_pink_fabric_roll.png"),           value: 5 },
+    { id: "fabric_stripe", name: "Striped Fabric", spr: art("s4_r07_i07_blue_striped_folded_fabric.png"), value: 5 },
+    // guitar accessories (case + amp are room props)
+    { id: "picks",      name: "Pack of Picks",      spr: art("s4_r08_i05_pack_of_picks.png"),              value: 3 },
+    { id: "tuner",      name: "Tuner",              spr: art("s4_r08_i07_tuner.png"),                      value: 15 },
+    { id: "cable",      name: "Instrument Cable",   spr: art("s4_r08_i08_instrument_cable.png"),           value: 12 },
+    // coffee-table overflow / knickknacks
+    { id: "cat_pic",    name: "Framed Cat Picture", spr: art("s5_r05_i01_framed_cat_picture.png"),         value: 8 },
+    { id: "shell_dish", name: "Shell Dish",         spr: art("s5_r05_i03_shell_dish.png"),                 value: 4 },
+    { id: "candle_ct",  name: "Candle",             spr: art("s5_r05_i05_candle.png"),                     value: 5 },
+    { id: "jar_vase",   name: "Blue-and-White Jar", spr: art("s5_r05_i07_blue_and_white_jar_vase.png"),    value: 10 },
+    { id: "book_flowers", name: "Art of Flowers",  spr: art("s3_r14_i03_the_art_of_flowers_book.png"),    value: 12 },
+    { id: "book_humans", name: "Humans Photo Book", spr: art("s3_r14_i04_humans_photography_book.png"),   value: 14 },
   ],
 };
 
