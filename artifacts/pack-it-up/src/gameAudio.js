@@ -11,11 +11,11 @@ const SFX_VOL_MAX = 0.25;     // SFX master (another −50%)
 /** While on the landline, keep BGM/radio at this fraction (duck, don't stop). */
 const PHONE_MUSIC_DUCK = 0.4;
 /** Soft ramp when ducking / restoring music during a call. */
-const PHONE_DUCK_FADE = 0.28;
+const PHONE_DUCK_FADE = 0.2;
 /** ~3× time-constant — music duck is effectively settled. */
 export const PHONE_DUCK_SETTLE_MS = Math.ceil(PHONE_DUCK_FADE * 3 * 1000);
 /** Quiet beat after duck settles, before ceremony SFX (pickup / rotary / ring). */
-export const PHONE_DUCK_LEAD_MS = 1000;
+export const PHONE_DUCK_LEAD_MS = 600;
 /** Total delay from duck-on → first outbound phone SFX. */
 export const PHONE_SFX_AFTER_DUCK_MS = PHONE_DUCK_SETTLE_MS + PHONE_DUCK_LEAD_MS;
 /** Hard rule: never overlap songs. Stop previous → silence → start next. */
@@ -137,7 +137,64 @@ const state = {
   phoneIncomingRingtone: null,
   phoneIncomingSrc: null,
   phoneIncomingGain: null,
+  phoneIncomingStartedAt: 0,
+  phoneIncomingLoopDur: 0,
+  phoneIncomingPulseTimer: null,
+  phoneIncomingPulseOn: false,
 };
+
+/** Bell clusters in the trimmed incoming ringtone (seconds into the loop). */
+const INCOMING_RING_WINDOWS = [
+  [0.12, 1.15],
+  [2.95, 4.15],
+  [5.95, 7.15],
+  [8.95, 10.15],
+  [11.75, 13.1],
+];
+const incomingPulseListeners = new Set();
+
+function emitIncomingPulse(on) {
+  if (state.phoneIncomingPulseOn === on) return;
+  state.phoneIncomingPulseOn = on;
+  incomingPulseListeners.forEach((fn) => {
+    try { fn(on); } catch {}
+  });
+}
+
+/** Subscribe to Shirley ringtone on/off pulses (for phone rattle / arcs). */
+export function onIncomingRingPulse(fn) {
+  if (typeof fn !== "function") return () => {};
+  incomingPulseListeners.add(fn);
+  try { fn(state.phoneIncomingPulseOn); } catch {}
+  return () => incomingPulseListeners.delete(fn);
+}
+
+function stopIncomingPulseClock() {
+  if (state.phoneIncomingPulseTimer) {
+    clearInterval(state.phoneIncomingPulseTimer);
+    state.phoneIncomingPulseTimer = null;
+  }
+  emitIncomingPulse(false);
+}
+
+function startIncomingPulseClock() {
+  stopIncomingPulseClock();
+  const ctx = state.ctx;
+  const dur = state.phoneIncomingLoopDur;
+  if (!ctx || !(dur > 0.2)) return;
+  const startedAt = state.phoneIncomingStartedAt;
+  const tick = () => {
+    if (!state.phoneIncomingSrc) {
+      emitIncomingPulse(false);
+      return;
+    }
+    const t = (ctx.currentTime - startedAt) % dur;
+    const on = INCOMING_RING_WINDOWS.some(([a, b]) => t >= a && t < b);
+    emitIncomingPulse(on);
+  };
+  tick();
+  state.phoneIncomingPulseTimer = setInterval(tick, 40);
+}
 
 function ensureCtx() {
   if (state.ctx && state.ctx.state !== "closed") return state.ctx;
@@ -388,10 +445,10 @@ export function ensureAudioLoaded() {
       : null;
     // Wooden drawer open (scrape) + close (slam) → bedroom dresser/nightstand/vanity.
     const woodDrawerOpen = drawerComboRaw
-      ? normalizePeak(trimLeadingSilence(sliceBuffer(drawerComboRaw, 0.18, 1.05), 0.008), OPEN_PEAK)
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(drawerComboRaw, 0.18, 1.05), 0.008), 0.48)
       : null;
     const woodDrawerClose = drawerComboRaw
-      ? normalizePeak(trimLeadingSilence(sliceBuffer(drawerComboRaw, 1.55, 2.55), 0.01), CLOSE_PEAK)
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(drawerComboRaw, 1.55, 2.55), 0.01), 0.88)
       : null;
     // Closet doors — same open-under-close bias.
     const closetOpenNorm = closetOpen ? normalizePeak(closetOpen, OPEN_PEAK) : null;
@@ -447,11 +504,12 @@ export function ensureAudioLoaded() {
     state.phoneAnswer = phoneRingRaw
       ? normalizePeak(sliceBuffer(phoneRingRaw, 8.85, 9.5), 0.55)
       : null;
-    // Shirley calling you — old bell ringtone; sit under short UI one-shots
-    // (looped bells read louder than the same peak on a one-shot).
+    // Shirley calling you — trim long silent tail so the loop restarts after the
+    // last bell cluster; sit under short UI one-shots (looped bells read louder).
     state.phoneIncomingRingtone = phoneIncomingRaw
-      ? normalizePeak(trimLeadingSilence(phoneIncomingRaw, 0.01), 0.34)
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(phoneIncomingRaw, 0, 13.15), 0.01), 0.34)
       : null;
+    state.phoneIncomingLoopDur = state.phoneIncomingRingtone?.duration || 0;
     state.ready = true;
     if (state.primed) startMainTheme();
   })();
@@ -924,9 +982,12 @@ export function startPhoneIncomingRingtone() {
       const gain = ctx.createGain();
       gain.gain.value = 0.42 * state.sfxVol * SFX_VOL_MAX;
       src.connect(gain).connect(ctx.destination);
+      state.phoneIncomingStartedAt = ctx.currentTime;
+      state.phoneIncomingLoopDur = buf.duration;
       src.start(0);
       state.phoneIncomingSrc = src;
       state.phoneIncomingGain = gain;
+      startIncomingPulseClock();
     } catch {}
   };
   const p = ensureAudioLoaded();
@@ -935,6 +996,7 @@ export function startPhoneIncomingRingtone() {
 }
 
 export function stopPhoneIncomingRingtone() {
+  stopIncomingPulseClock();
   try { state.phoneIncomingSrc?.stop(); } catch {}
   state.phoneIncomingSrc = null;
   state.phoneIncomingGain = null;

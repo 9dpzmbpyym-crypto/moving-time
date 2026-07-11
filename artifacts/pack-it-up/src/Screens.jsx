@@ -25,6 +25,7 @@ import {
   startPhoneIncomingRingtone,
   stopPhoneIncomingRingtone,
   PHONE_SFX_AFTER_DUCK_MS,
+  onIncomingRingPulse,
 } from "./gameAudio.js";
 import { clearSave } from "./save.js";
 import {
@@ -481,7 +482,7 @@ function LandlineHotspot({ onPickUp, ringing, rattling, showArcs }) {
           src={LANDLINE_PHONE}
           alt=""
           draggable={false}
-          className={rattling || ringing ? "phoneRattle" : undefined}
+          className={rattling ? "phoneRattle" : undefined}
           style={{
             display: "block", width: "100%", height: "100%",
             objectFit: "contain", imageRendering: "pixelated",
@@ -502,6 +503,8 @@ function LandlineHotspot({ onPickUp, ringing, rattling, showArcs }) {
 
 /** Apartment HUD: floating ringing phone with arcs — tap to open Desk. */
 export function IncomingPhoneCue({ onAnswer }) {
+  const [pulse, setPulse] = useState(false);
+  useEffect(() => onIncomingRingPulse(setPulse), []);
   return (
     <button
       type="button"
@@ -522,19 +525,39 @@ export function IncomingPhoneCue({ onAnswer }) {
         ...LB,
       }}
     >
+      {/* Styles live here too — cue shows on the apartment HUD, outside Screen. */}
+      <style>{`
+        @keyframes phoneRattle {
+          0%, 100% { transform: translate(0, 0) rotate(0deg); }
+          12% { transform: translate(2px, -1px) rotate(-2deg); }
+          24% { transform: translate(-2px, 1px) rotate(2deg); }
+          36% { transform: translate(2px, 1px) rotate(-1.5deg); }
+          48% { transform: translate(-1px, -2px) rotate(2deg); }
+          60% { transform: translate(1px, 1px) rotate(-2deg); }
+          72% { transform: translate(-2px, 0) rotate(1deg); }
+          84% { transform: translate(1px, -1px) rotate(-1deg); }
+        }
+        @keyframes ringArcs {
+          0%, 100% { opacity: 0.35; transform: scale(0.92); }
+          40% { opacity: 1; transform: scale(1.06); }
+          70% { opacity: 0.7; transform: scale(1.02); }
+        }
+        .phoneRattle { animation: phoneRattle 0.28s linear infinite; transform-origin: 50% 70%; }
+        .ringArcs { animation: ringArcs 0.9s ease-in-out infinite; transform-origin: left center; pointer-events: none; }
+      `}</style>
       <div style={{ position: "relative", width: "100%", height: "70%" }}>
         <img
           src={LANDLINE_PHONE}
           alt=""
           draggable={false}
-          className="phoneRattle"
+          className={pulse ? "phoneRattle" : undefined}
           style={{
             display: "block", width: "100%", height: "100%",
             objectFit: "contain", imageRendering: "pixelated",
             pointerEvents: "none", userSelect: "none",
           }}
         />
-        <RingArcs side="right" size={32} />
+        {pulse && <RingArcs side="right" size={32} />}
       </div>
       <div style={{ color: "#FFD97A", fontSize: 9, textAlign: "center", marginTop: 2 }}>
         {RECEPTIONIST_NAME}…
@@ -745,6 +768,7 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
   const [lineSource, setLineSource] = useState(null); // live | script
   const [incomingRing, setIncomingRing] = useState(!!phoneNudge);
   const [phoneRattling, setPhoneRattling] = useState(false);
+  const [incomingPulse, setIncomingPulse] = useState(false);
   const ringCancelRef = useRef(null);
   const rattleOffRef = useRef(null);
   const ceremonyDelayRef = useRef(null);
@@ -754,6 +778,14 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
   callStateRef.current = callState;
   const msgsRef = useRef(phoneMsgs);
   msgsRef.current = phoneMsgs;
+
+  useEffect(() => {
+    if (!incomingRing) {
+      setIncomingPulse(false);
+      return;
+    }
+    return onIncomingRingPulse(setIncomingPulse);
+  }, [incomingRing]);
 
   const clearCeremonyDelay = () => {
     if (ceremonyDelayRef.current) {
@@ -1185,8 +1217,8 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
             <LandlineHotspot
               onPickUp={pickUpPhone}
               ringing={incomingRing}
-              rattling={phoneRattling || incomingRing}
-              showArcs={incomingRing}
+              rattling={phoneRattling || incomingPulse}
+              showArcs={incomingPulse}
             />
           )}
           {phonePhase && (
