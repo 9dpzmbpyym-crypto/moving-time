@@ -7,8 +7,15 @@ export const SUBLET_OUTREACH_ID = "h_outreach_daily";
 
 /** Dropped from the live list — prune on save merge so old localStorage can't revive them. */
 export const REMOVED_TASK_IDS = new Set([
-  "a_pharmacy", "a_records", "c_records", "t_stomach", "t_nerves", "t_vet",
+  "t_stomach", "t_nerves", "t_vet",
 ]);
+
+/** Seeded tasks that moved lanes — force category on merge so old saves don't stick them in admin. */
+export const FORCE_TASK_CATEGORY = {
+  a_pharmacy: "health",
+  a_records: "health",
+  c_records: "cat",
+};
 
 export const TASK_CATEGORIES = {
   move:    { label: "Move",       icon: "📦", color: "#C9942E" },
@@ -149,11 +156,14 @@ export const INITIAL_TASKS = [
   base({ id: "t_skin", title: "Book: Dermatology appointment", category: "health", effort: 2, urgency: 1, due: "After move", status: "dismissed", zone: "skin", kind: "book" }),
   base({ id: "t_obgyn", title: "Book: OB/GYN — IUD replacement", category: "health", effort: 3, urgency: 3, due: "Book by Jul 20", dueDate: "2026-07-20", zone: "obgyn", kind: "book" }),
   base({ id: "t_pcp", title: "Book: PCP — 90-day medication bridge", category: "health", effort: 2, urgency: 2, due: "Book by Jul 28", dueDate: "2026-07-28", zone: "brain", kind: "book" }),
+  base({ id: "a_pharmacy", title: "Pharmacy transfer + refills", category: "health", effort: 1, due: "Before move", dueDate: "2026-07-30", relief: "file" }),
+  base({ id: "a_records", title: "Medical records PDFs", category: "health", effort: 2, due: "Before move", dueDate: "2026-07-30", relief: "file" }),
 
   // Stretchy travel-prep chain (one Book card — Shirley can book it; Attend stays cat-lane)
   base({ id: "c_vet_book", title: "Book: Stretchy's travel vet (meds + certificate)", category: "cat", effort: 2, urgency: 3, due: "Book by Jul 21", dueDate: "2026-07-21", dueEnd: "2026-07-25", criticalPath: true, kind: "book" }),
   base({ id: "c_vet_attend", title: "Attend Stretchy's travel vet visit", category: "cat", effort: 2, urgency: 3, due: "Jul 22–25", dueDate: "2026-07-22", dueEnd: "2026-07-25", criticalPath: true }),
   base({ id: "c_cert", title: "Get Stretchy's travel certificate", category: "cat", effort: 1, urgency: 2, due: "After vet", dueDate: "2026-07-25", criticalPath: true }),
+  base({ id: "c_records", title: "Save Stretchy's vet records PDF", category: "cat", effort: 1, due: "After vet", dueDate: "2026-07-25" }),
   base({ id: "c_meds_run", title: "Pick up Stretchy's travel medications", category: "cat", effort: 1, urgency: 2, due: "By Jul 30", dueDate: "2026-07-30", criticalPath: true }),
   base({ id: "c_carrier", title: "Leave carrier out for daily practice", category: "cat", effort: 1, due: "Daily" }),
   base({ id: "c_kit", title: "Pack Stretchy's plane-day kit", category: "cat", effort: 1, urgency: 3, due: "Jul 30", dueDate: "2026-07-30", criticalPath: true }),

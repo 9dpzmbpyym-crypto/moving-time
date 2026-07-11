@@ -2,7 +2,7 @@
    bumps can wipe or migrate. Audio volumes live in gameAudio.js
    (`pack-it-up-audio`); this file is packing / coins / tasks / room. */
 
-import { REMOVED_TASK_IDS } from "./tasks.js";
+import { REMOVED_TASK_IDS, FORCE_TASK_CATEGORY } from "./tasks.js";
 
 const SAVE_KEY = "pack-it-up-save";
 export const SAVE_VERSION = 2;
@@ -113,7 +113,8 @@ export function mergeTasks(initial, savedTasks) {
     if (!s || !ok.has(s.status)) return t;
     const urgency = typeof s.urgency === "number" ? Math.min(3, Math.max(1, s.urgency)) : t.urgency;
     const effort = typeof s.effort === "number" ? Math.min(3, Math.max(1, s.effort)) : t.effort;
-    const category = typeof s.category === "string" && s.category ? s.category : t.category;
+    const category = FORCE_TASK_CATEGORY[t.id]
+      || (typeof s.category === "string" && s.category ? s.category : t.category);
     return {
       ...t,
       status: s.status,

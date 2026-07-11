@@ -700,7 +700,6 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
                 {(t.score != null || SAMPLE_JOBS[t.jobId]?.priority != null)
                   ? ` · score ${t.score ?? SAMPLE_JOBS[t.jobId].priority}`
                   : ""}
-                {t.selfTarget ? " · self-target" : ""}
                 {isHardOverdue(t) ? " · overdue" : ""}
                 {t.status === "done" ? " · done" : ""}
                 {t.status === "archived" ? " · archived" : ""}
