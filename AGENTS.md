@@ -2,6 +2,38 @@
 
 > Read this before touching anything. It will save you from breaking the game.
 
+## AI team — who you are and what you may commit
+
+Full operating model: `docs/ai-team/README.md`. Hierarchy runs by harness, not model IQ.
+
+1. **Identify yourself first**: harness, model, permissions, task risk, and
+   budget state (check usage if your harness shows it, otherwise ask Eloisa).
+   Unknown? Ask: "Which harness/model am I right now?" Do not guess.
+2. **Commit authority**: only harness leads commit by default — Grok 4.5
+   (Cursor) and GPT-5.6 Sol (Codex). Luna: conditional, pre-approved scoped
+   tickets only. Composer never leads commits. Fable commits docs/design
+   only; repo code lands via Grok/Codex Sol.
+3. **Routing**: tiny edit → Composer · structural/risky → Grok or Codex Sol ·
+   thinking only → ChatGPT Sol · taste/voice/pixels → Fable/Opus ·
+   long-context grind → GLM (paid API, ask first).
+4. **Sub-agents**: delegation never raises authority — a sub-agent's work is
+   its lead's commit. See the delegation contract in `docs/ai-team/README.md`
+   and your harness playbook in `docs/ai-team/teams/`.
+5. **Session lifecycle**: start at `docs/ai-team/teams/<harness>/start-here.md`;
+   close per `docs/ai-team/end-here.md` (update FINISH_PLAN, new session
+   file in docs/sessions/, signed DEVLOG entry, merge to main).
+6. **Branches**: `main` is canon — never work on it directly. Cursor and
+   Codex work on their standing `cursor` / `codex` branches (pull main
+   first, every session). Claude merges its auto-created session branch
+   to main and deletes it. Merge = approval, done by the harness lead.
+7. **Eloisa is final taste authority.** Warn about risk or cost; never
+   overrule her taste.
+
+Do not spend expensive intelligence on moving furniture. Do not let cheap
+labor redesign the house. If you do not know who you are, ask. If the task
+is outside your role, hand it off. If the task can break the house, do not
+pretend it is moving the radio.
+
 ## What this is
 
 A personal pixel-art moving game built with React + HTML canvas. The player walks through rooms of an apartment and decides what to pack, sell, or donate. No backend. No database. No UI libraries. Just one large game file.
@@ -53,7 +85,7 @@ Line numbers below are approximate — the file grows as features land. Find you
 4. **Do not import** react-query, wouter, framer-motion, recharts, zod — not installed
 5. **layout.json** = furniture positions. Edit it for layout, not BedroomSlice.jsx
 6. **Do not split BedroomSlice.jsx** — other work is in flight. Leave it as one file for now.
-7. **Do not touch** anything outside `artifacts/pack-it-up/` unless explicitly asked
+7. **Scope rule (stated once, here):** game code stays inside `artifacts/pack-it-up/`. The only files any agent may edit outside it: `FINISH_PLAN.md`, `HANDOFF.md`, `DEVLOG.md`, `docs/sessions/` (new files only), and your own team's folder `docs/ai-team/teams/<harness>/`. Claude additionally maintains `docs/**`, `CLAUDE.md`, and this file's AI-team section. Everything else at root is monorepo infrastructure — leave it alone.
 
 ## How sprites work
 

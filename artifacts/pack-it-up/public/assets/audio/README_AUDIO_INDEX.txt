@@ -3,6 +3,12 @@ PACK IT UP AUDIO ASSET PACK
 Drop this folder into your project as: assets/audio
 (Live path: artifacts/pack-it-up/public/assets/audio/)
 
+NAMING RULE (all new files): snake_case, purpose-first, numbered variants —
+e.g. sfx/containers/fridge_open_close_01.mp3, sfx/ui/phone_ring_01.mp3.
+Raw library filenames (spaces, "ES_...", "- Epidemic Sound") never get
+committed: slice/rename to convention first, then wire, then delete the raw
+source from the repo.
+
 Included audio files:
 - Music files: 10
 - Cat SFX files: 16

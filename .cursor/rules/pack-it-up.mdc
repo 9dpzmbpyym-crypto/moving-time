@@ -6,58 +6,15 @@ alwaysApply: true
 
 # Pack It Up — Cursor Rules
 
-## What this is
-Pixel-art moving game. Player walks through apartment rooms and packs/sells/donates furniture. Personal motivation tool. No backend, no database, no UI libraries.
+**`AGENTS.md` at repo root is the single full rulebook** (file map, BedroomSlice.jsx section map, sprite patterns, AI-team roles). Read it before structural work. The hard rules, inline because they break the game:
 
-## File map
-```
-artifacts/pack-it-up/src/
-  BedroomSlice.jsx    ← THE ENTIRE hub + game (~3,800 lines)
-  Screens.jsx         ← full-screen overlays (Menu/Desk/Health/Storage/etc.)
-  contents.js         ← storage contents data (items inside cabinets/drawers)
-  tasks.js            ← task/urgency scaffold (sample data for the overlay shells)
-  main.tsx            ← 15-line entry point only
-  layout.json         ← furniture positions (x/y/scale) per room
-  sell.mp3            ← sell chime
-  assets/Cat-Sheet.png ← cat sprite sheet
-  dev/spritePreview.jsx ← dev tool only (?preview=bed)
-```
-
-## BedroomSlice.jsx section map
-Line numbers below are approximate — the file grows as features land. Search for the labels shown.
-| Lines | Content |
-|-------|---------|
-| 1–60 | Imports, constants, color palette (`P`), canvas helpers |
-| 60–335 | Bedroom shell + sprites |
-| 335–545 | Office shell + sprites |
-| 545–775 | Bathroom shell + sprites |
-| 775–965 | Kitchen shell + sprites + objects |
-| 965–1165 | Dining room shell + sprites + objects |
-| 1165–1430 | Living room shell + sprites + objects + box stack |
-| 1430–1590 | ROOMS model + ROOMS_ORDER + helpers |
-| 1590–1650 | PixelCanvas component |
-| 1650–1885 | Stretchy the cat |
-| 1885–2055 | LayoutEditor dev tool |
-| 2055–2090 | Haptics + audio |
-| 2091–3783 | PackItUp main component (incl. storage feature + drawer glow) |
-
-`Screens.jsx` and `contents.js` are imported by BedroomSlice but kept as separate files (overlays + data, not game logic).
-
-## Hard rules
-- Game code goes in `BedroomSlice.jsx` only
-- No Tailwind — not installed, don't use classes
-- No UI libraries — no Radix, no shadcn, nothing. Inline styles + canvas only.
+- Game code goes in `BedroomSlice.jsx` only — no new game-feature files
+- No Tailwind, no Radix/shadcn/UI libraries — inline styles + canvas only
 - Do NOT import: react-query, wouter, framer-motion, recharts, zod
 - Layout tweaks → edit `layout.json`, not BedroomSlice.jsx
-- Do NOT split BedroomSlice.jsx yet (in-flight work from other sessions)
-- Do NOT touch files outside `artifacts/pack-it-up/`
+- Do NOT split BedroomSlice.jsx
+- Game code stays inside `artifacts/pack-it-up/`; communal docs you may update: `FINISH_PLAN.md`, `HANDOFF.md`, `DEVLOG.md`, `docs/sessions/`, `docs/ai-team/teams/cursor/`
 
-## Sprite pattern
-```js
-const CELL = 4; // 1 sprite px = 4 screen px
-const r = (ctx, color, x, y, w=1, h=1) => { ctx.fillStyle=color; ctx.fillRect(x,y,w,h); }
-// Use colors from the P palette at top of file
-```
+## Cursor team
 
-## Git discipline
-Always pull before starting. Always commit when done. Multiple AI sessions run concurrently.
+You are probably **Grok 4.5** (team lead, commit authority in Cursor) or **Composer 2.5** (intern — tiny scoped edits, never leads commits). Onboarding: `docs/ai-team/teams/cursor/start-here.md`. Work on the standing **`cursor`** branch: pull `main` into it first, merge back to `main` at session end with a signed DEVLOG entry (`## <date> — [Cursor / <model>]`). Close out per `docs/ai-team/end-here.md`.

@@ -1,0 +1,11 @@
+[agents]
+max_threads = 3
+max_depth = 1
+
+[agents.luna_worker]
+description = "Pinned GPT-5.6 Luna implementation worker for explicit, approved, narrow tickets only. Never use as a silent fallback."
+config_file = "agents/luna-worker.toml"
+
+[agents.project_explorer]
+description = "Pinned GPT-5.6 Terra read-only explorer for repository mapping, dependency tracing, and test-gap analysis."
+config_file = "agents/project-explorer.toml"

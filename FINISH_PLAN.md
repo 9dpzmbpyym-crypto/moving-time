@@ -19,19 +19,42 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 
 ---
 
-## Open next (Jul 10 — after Shirley landline night)
+## Open next (Jul 11 — after Grok env/storage session)
 
-### Storage glow — assigned **[claude]** (Fable taste)
-Visual “does this match the bar cabinet?” call — not a Codex grind.
-- [ ] **[claude]** Decide target look vs bar/vanity; shrink `glowRegions` on fridge/pantry/closet (and any other full-face auras) until they match
-- [ ] **[claude]** Optional: drop unused `?glow=outline` path once face-only is locked
-- [x] Partial (Cursor): all storage on `glowRegions` + edge-only `.drawerGlow`; no storage portal fallback
+### Branch swap at Grok session close — [cursor] (this close-out)
+- [x] Merge `cursor/storage-glow-7a01` → `main` (session file + signed DEVLOG)
+- [ ] **[eloisa]** Delete `cursor/storage-glow-7a01` in GitHub UI (agents get 403), then create standing `cursor` from main
 
-### Shirley / receptionist — **[claude]** voice, then **[cursor]** wire
-- [ ] **[claude]** Bring ChatGPT **style + ruleset prompt** as source of truth (do **not** paste example convos literally into line banks)
-- [ ] **[cursor]** Rebuild `SHIRLEY_SYSTEM_PROMPT` / thin bank from that prompt; keep FSM bookings + OpenRouter improv
-- [ ] **[cursor]** Tune stall → hang-up + “mention objective ≤1 message gap” once prompt lands
-- [ ] **[claude]** Optional: landline pixel art per `docs/art-briefs/landline-shirley.md`
+### Audio file cleanup — [cursor] Composer-sized (now that Grok session is merging)
+- [ ] Delete the 7 raw Epidemic Sound files from the repo once each has a sliced, convention-named replacement wired in code (branch already has `fridge_open_close_es.mp3`, `phone_receiver_tone.mp3`, `phone_rotary_dial.mp3`):
+  - repo root: `ES_Doors, Appliance, Fridge…`.mp3 + `ES_Doors, Cabinet, Cupboard…`.mp3 (uploaded to the wrong folder)
+  - `sfx/ui/`: `Dial Tone and pickup…`, `Receiver Tone…`, `Rotary dial…`, `ES_Communications, Telephone…`
+  - `sfx/containers/`: `ES_Drawers, Wood, Writing Bureau…`
+- [ ] Slice/wire the cupboard creak if still wanted (no replacement on the branch yet)
+- [ ] Update `audio_index.csv` / `audio_manifest.json` if they reference removed files
+- Naming rule now lives at the top of `README_AUDIO_INDEX.txt`
+
+### Branch deletions — [eloisa] (GitHub UI: repo → Branches → trash icon; agents get 403 on ref deletion)
+- [ ] Delete: `chatgpt-version` · `claude/game-dev-setup-bhs0lt` · `claude/pack-it-up-polish-yln7jy` · `cursor/combine-local-with-replit-main` · `cursor/fix-vite-dev-server-7a01` · `cursor/local-updates-backup` · `cursor/tech-debt-housekeeping-7a01` (all merged or parked in `archive/*` — zero loss)
+
+### Storage glow (IN PROGRESS — handoff)
+- [ ] **Outstanding:** container glows still read as two looks — soft outer halo on some faces vs heavy/full-face aura on others (fridge/pantry/closet regions cover most of the sprite). Mirror correctly keeps silhouette `.portal`; storage should stay bar-cabinet `.drawerGlow` only.
+- [ ] **[claude]** Judge screenshots / set proportions; **[cursor]** tune `glowRegions` rects (shrink fridge/pantry/closet toward vanity/bar door proportions)
+- [ ] Optional: delete `?glow=outline` path if unused; default is face-only for storage
+- [x] Partial: route all storage through `glowRegions` + edge-only `.drawerGlow` (no green fill); closet/fridge/pantry renamed off `faceGlowRegions`
+
+### Shirley / receptionist — source of truth LANDED: `docs/move-spine/` (Fable-reviewed ✓)
+- [x] Style + ruleset prompt landed: `docs/move-spine/npc-guides/SHIRLEY_HEALTH_RECEPTIONIST.md` + `prompts/RUNTIME_SYSTEM_PROMPTS.md`
+- [ ] [cursor] **Pass 1** per `docs/move-spine/systems/IMPLEMENTATION_MANIFEST.md`: rebuild `SHIRLEY_SYSTEM_PROMPT` + thin fallback bank from the guide; keep FSM bookings; calibration lines are style source, not verbatim scripts (except the small curated bank)
+- [ ] [cursor] Tune stall → hang-up + “mention objective ≤1 message gap” once prompt lands
+- [ ] Optional: landline pixel art per `docs/art-briefs/landline-shirley.md`
+- Later passes (Command Board → lifecycle states → Sal → Vivian) sequenced in the implementation manifest; don’t start them in Pass 1
+
+### Apartment contents / env props (Jul 11 Cursor session)
+- [x] Fill remaining `container_item` homes in `contents.js` (pantry cat food, desk electronics, TV hutch guitar accessories, vanity meds, etc.)
+- [x] Kitchen counter upper/lower zones; procedural bowls; office router/cat bed/hutch books; living amp + coffee-table books
+- [ ] **[cursor]** Replace living `guitar_case` art — current acoustic PNG is a stopgap (crop odd; with an amp it should be electric **or** a hard case). Hold Stretchy travel/toys for hallway / coat closet / “death closet”
+- [ ] Soft: extras / task piles still deferred
 
 ### Audio
 - [ ] **[cursor]** Replace **room switch** SFX when Eloisa drops the new file (`sfx/ui/room_switch_01.mp3`)
@@ -40,23 +63,24 @@ Visual “does this match the bar cabinet?” call — not a Codex grind.
 - [ ] **[cursor]** Wire stressed / desperate Stretchy meows (buffers already load in `gameAudio.js`; ambient path is happy-only today)
 - [ ] **[cursor]** Prefer `public/assets/audio/` only — do not commit `src/assets/audio/` duplicate
 
-### Cursor grunt / Composer-sized (safe while Claude does docs + glow)
+### Cursor grunt / Composer-sized
 - [ ] **[cursor]** Delete unused `?glow=outline` plumbing *only if* Claude confirms face-only forever (else leave)
-- [ ] **[cursor]** Fill any thin `contents.js` containers (data entries, not art taste)
+- [x] **[cursor]** Fill thin `contents.js` containers (Jul 11 — remaining homes; Stretchy travel/toys held for closet)
 - [ ] **[cursor]** Soft: labeled box pile by room when packed (BOOKS / BATHROOM / …) if cheap
-- [ ] **[cursor]** Vercel deploy + phone smoke (audio prime + save + desk phone)
+- [x] **[cursor]** Vercel deploy — https://moving-time.vercel.app (phone smoke still on Eloisa)
 
 ### Ship / host
 - [x] Commit Shirley + save/session/desk/health on `cursor/storage-glow-7a01` (Jul 10)
 - [x] Commit storage-glow unify + plan/handoff; push branch
-- [ ] **[cursor]** Deploy `artifacts/pack-it-up` to Vercel; smoke-test on phone
+- [x] **[cursor]** Deploy to Vercel — https://moving-time.vercel.app (Jul 10/11; phone smoke still on you)
+- [ ] Commit `vercel.json` + Vite VERCEL defaults to git when ready
 
 ### Systems still open from plan
 - [ ] **[cursor]** Stretchy morning check-in (after meow wiring or with it)
 - [ ] **[codex]** Job tracker read-only sync → Desk piles (multi-file / API-shaped)
-- [ ] Soft: Rejected stamp; labeled box pile by room; fill thin storage contents
+- [ ] Soft: Rejected stamp; labeled box pile by room
 
-**Shipped in this pass (code on branch):** landline ceremony + Shirley call UI, `receptionist.js` / `receptionistCall.js`, appointments in `save.js`, Body Board attend gate, session ritual, desk outbox/trays, HUD days-left / packed counts, Settings OpenRouter key.
+**Shipped in this pass (code on branch):** landline ceremony + Shirley call UI, container SFX slicing/duck, storage fills + env props, `receptionist.js` / `receptionistCall.js`, appointments in `save.js`, Body Board attend gate, session ritual, desk outbox/trays, HUD days-left / packed counts, Settings OpenRouter key.
 
 ---
 
@@ -64,7 +88,7 @@ Visual “does this match the bar cabinet?” call — not a Codex grind.
 
 ### 1. Commit + host (Vercel)
 - [x] Commit audio/radio/storage + Shirley landline work (Jul 10 — see Open next)
-- [ ] Deploy `artifacts/pack-it-up` to Vercel (static Vite build)
+- [x] Deploy `artifacts/pack-it-up` to Vercel — https://moving-time.vercel.app
 - [ ] Open the URL on your phone once; confirm audio primes on first tap
 
 ### 2. Persist progress (`localStorage`) — DONE Jul 9

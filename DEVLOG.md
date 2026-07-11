@@ -1,5 +1,7 @@
 # Pack It Up — Dev Log
 
+> **Convention:** newest entries near the top, headers signed `## <date> — [<Harness> / <model>]` so we know who did what. Session detail lives in `docs/sessions/`.
+
 Covers **July 5–10, 2026**. Combines:
 - ChatGPT / design-session history (concept → art direction → assets)
 - Git history in this repo (first commit **Jul 6**; coded game from **Jul 7**)
@@ -7,7 +9,40 @@ Covers **July 5–10, 2026**. Combines:
 
 ---
 
-## July 10, 2026 — Shirley landline + storage glow handoff
+## 2026-07-11 — [Cursor / Grok 4.5]
+- Storage fills + env props: `contents.js` homes, procedural router/cat bed/bowls/amp, packable hutch + coffee-table books, Eloisa layout in `layout.json`
+- Temporary acoustic guitar PNG in living (replace with electric or case); Wi‑Fi z above desk so selectable
+- Container SFX / Shirley ringtone / music-duck passes already on branch; Vercel https://moving-time.vercel.app
+- Folded Fable’s 5 playbook review answers; session `docs/sessions/2026-07-11-cursor-storage-env-props.md`; merge close-out
+
+## July 10, 2026 — [Codex / GPT-5.6 Sol] Codex team configuration
+
+- Replaced the Codex playbook stub with the real delegation, authority, review, usage, and failure-handling contract
+- Added pinned project agents: Luna/high for approved narrow implementation and Terra/medium for read-only exploration
+- Capped agent fan-out at three threads and one level; required exact agent selection with no silent fallback
+- Added the append-only Codex session report; no game code or canonical plan items changed
+
+---
+
+## July 11, 2026 — [Claude / Fable 5] Playbook reviews + file audit + branch cleanup
+
+- Reviewed Codex Sol onboarding (exemplary: pinned agents, proper ritual) and Grok's playbook (excellent; ritual backfill due at its close-out); answered Grok's 5 embedded review questions
+- Audio audit: 7 raw Epidemic Sound files flagged (2 at repo root); cleanup ticket in FINISH_PLAN; naming rule added to README_AUDIO_INDEX.txt
+- Deleted 6 fully-merged stale branches; unique work parked as archive/* branches; standing `cursor` branch blocked until storage-glow merges (sequence in FINISH_PLAN)
+
+---
+
+## July 10, 2026 — [Claude / Fable 5] AI team operating model + docs/branch reorg
+
+- Org chart redesign + full operating model (`docs/ai-team/`): commit ladder, routing, sub-agent contract, per-team folders
+- Corrected benchmark data + rebuilt all 13 scatter graphs (Composer added as flagged estimate)
+- Session lifecycle: `docs/sessions/` append-only archive, `end-here.md` ritual, signed DEVLOG convention
+- Branch model: `main` = canon, standing `cursor`/`codex` branches, Claude merge-and-delete; stale branches archived as tags
+- Instruction files consolidated: `AGENTS.md` is the single copy; `CLAUDE.md`/`replit.md`/`.cursor/rules` are shims
+
+---
+
+## July 10, 2026 — [Cursor / Grok + Composer] Shirley landline + storage glow handoff
 
 ### Shipped
 - Desk **landline ceremony** (pickup → dial → ring → call UI) + OpenRouter improv with bank fallback

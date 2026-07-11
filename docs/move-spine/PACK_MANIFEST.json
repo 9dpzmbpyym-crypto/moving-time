@@ -1,0 +1,22 @@
+{
+  "pack_name": "pack_it_up_move_spine_npc_guides_v2",
+  "created": "2026-07-10",
+  "intended_repo_path": "docs/move-spine/",
+  "notes": [
+    "Updated Shirley guide with user-approved calibration dialogue.",
+    "Replaced model recommendation with cheap custom API model strategy.",
+    "Runtime should use fallback banks plus configurable cheap model."
+  ],
+  "files": [
+    "README_FOR_GROK.md",
+    "master/MASTER_REAL_WORLD_GOALS_JULY_2026.md",
+    "npc-guides/SAL_MOVING_DISPATCH.md",
+    "npc-guides/SHIRLEY_HEALTH_RECEPTIONIST.md",
+    "npc-guides/VIVIAN_RECRUITER.md",
+    "prompts/RUNTIME_SYSTEM_PROMPTS.md",
+    "systems/CHEAP_API_MODEL_STRATEGY.md",
+    "systems/COMMAND_BOARD_AND_TASK_SPINE.md",
+    "systems/IMPLEMENTATION_MANIFEST.md",
+    "systems/NPC_TRIGGER_RULES.md"
+  ]
+}
