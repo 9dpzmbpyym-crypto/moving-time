@@ -18,6 +18,14 @@ Covers **July 5–10, 2026**. Combines:
 
 ---
 
+## July 11, 2026 — [Claude / Fable 5] Playbook reviews + file audit + branch cleanup
+
+- Reviewed Codex Sol onboarding (exemplary: pinned agents, proper ritual) and Grok's playbook (excellent; ritual backfill due at its close-out); answered Grok's 5 embedded review questions
+- Audio audit: 7 raw Epidemic Sound files flagged (2 at repo root); cleanup ticket in FINISH_PLAN; naming rule added to README_AUDIO_INDEX.txt
+- Deleted 6 fully-merged stale branches; unique work parked as archive/* branches; standing `cursor` branch blocked until storage-glow merges (sequence in FINISH_PLAN)
+
+---
+
 ## July 10, 2026 — [Claude / Fable 5] AI team operating model + docs/branch reorg
 
 - Org chart redesign + full operating model (`docs/ai-team/`): commit ladder, routing, sub-agent contract, per-team folders

@@ -21,6 +21,19 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 
 ## Open next (Jul 10 — after Shirley landline night)
 
+### Audio file cleanup — [cursor] Composer-sized (AFTER Grok's current session merges)
+- [ ] Delete the 7 raw Epidemic Sound files from the repo once each has a sliced, convention-named replacement wired in code (Grok's branch already has `fridge_open_close_es.mp3`, `phone_receiver_tone.mp3`, `phone_rotary_dial.mp3`):
+  - repo root: `ES_Doors, Appliance, Fridge…`.mp3 + `ES_Doors, Cabinet, Cupboard…`.mp3 (uploaded to the wrong folder)
+  - `sfx/ui/`: `Dial Tone and pickup…`, `Receiver Tone…`, `Rotary dial…`, `ES_Communications, Telephone…`
+  - `sfx/containers/`: `ES_Drawers, Wood, Writing Bureau…`
+- [ ] Slice/wire the cupboard creak if still wanted (no replacement on the branch yet)
+- [ ] Update `audio_index.csv` / `audio_manifest.json` if they reference removed files
+- Naming rule now lives at the top of `README_AUDIO_INDEX.txt`
+
+### Branch swap at Grok session close — [cursor]
+- [ ] Merge `cursor/storage-glow-7a01` → `main` (with session file + signed DEVLOG per `docs/ai-team/end-here.md`)
+- [ ] Delete `cursor/storage-glow-7a01`, then create standing `cursor` branch from main (git blocks the name until the old `cursor/*` branches are gone)
+
 ### Storage glow (IN PROGRESS — handoff)
 - [ ] **Outstanding:** container glows still read as two looks — soft outer halo on some faces vs heavy/full-face aura on others (fridge/pantry/closet regions cover most of the sprite). Mirror correctly keeps silhouette `.portal`; storage should stay bar-cabinet `.drawerGlow` only.
 - [ ] Tune `glowRegions` rects (shrink fridge/pantry/closet toward vanity/bar door proportions) until every container matches the bar-cabinet door halo

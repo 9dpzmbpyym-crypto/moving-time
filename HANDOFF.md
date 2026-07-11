@@ -1,8 +1,9 @@
 # Latest handoff
 
 → **`docs/sessions/2026-07-10-codex-team-configuration.md`** (Codex playbook + pinned project agents)
-→ **`docs/sessions/2026-07-10-claude-ai-team-docs.md`** (docs/branch reorg — Claude)
-→ **`docs/sessions/2026-07-10-cursor-storage-glow.md`** (last game session — Cursor)
+→ **`docs/sessions/2026-07-11-claude-review-cleanup.md`** (playbook reviews + cleanup — Claude)
+→ **`docs/sessions/2026-07-10-codex-team-configuration.md`** (Codex onboarding)
+→ **`docs/sessions/2026-07-10-cursor-storage-glow.md`** (last merged game session — Cursor; a newer Cursor session is in flight on `cursor/storage-glow-7a01`)
 
 **Next up (game):** tune `glowRegions` on fridge/pantry/closet → Shirley style prompt → SFX swaps → Vercel deploy. Full queue: `FINISH_PLAN.md` → Open next.
 
