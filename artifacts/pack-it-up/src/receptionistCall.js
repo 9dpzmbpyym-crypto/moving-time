@@ -59,9 +59,25 @@ export function loadShirleySettings() {
 
 export function saveShirleySettings(partial) {
   const cur = loadShirleySettings();
+  // Never clobber a saved key/model with "" from blur / stale React state / autofill.
+  // Explicit clear: pass clearApiKey: true (Settings "Clear key" button).
+  let apiKey = partial.apiKey != null ? String(partial.apiKey) : cur.apiKey;
+  if (
+    partial.apiKey != null &&
+    !String(partial.apiKey).trim() &&
+    cur.apiKey.trim() &&
+    !partial.clearApiKey
+  ) {
+    apiKey = cur.apiKey;
+  }
+  let model = partial.model != null ? String(partial.model) : cur.model;
+  if (partial.model != null && !String(partial.model).trim() && cur.model.trim()) {
+    model = cur.model;
+  }
+  if (!String(model || "").trim()) model = DEFAULT_MODEL;
   const next = {
-    apiKey: partial.apiKey != null ? String(partial.apiKey) : cur.apiKey,
-    model: partial.model != null ? String(partial.model) || DEFAULT_MODEL : cur.model,
+    apiKey,
+    model,
     improv: partial.improv != null ? !!partial.improv : cur.improv,
     improvOff: false,
   };

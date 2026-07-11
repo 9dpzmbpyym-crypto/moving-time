@@ -11,7 +11,8 @@ Other docs (`AGENTS.md`, `CLAUDE.md`, `DEVLOG.md`, `replit.md`) should only *poi
 | **Definition of done** | Weekend ship bar |
 
 **Weekend ship bar (Jul 12): met — historical.** ("Definition of done" below is frozen as the record; phone smoke still on Eloisa.)  
-**Current next bar:** phone smoke · Codex consumer wiring (Pressure v2 / housing in BedroomSlice+Screens) · Shirley stall tune · Stretchy meow tiers.  
+**Current next bar:** phone smoke · kitchen calendar portal / HUD chips (Codex leftovers) · Shirley stall · Stretchy meows.  
+**Landed Jul 11 (Grok):** Command Board + ledger/quick-add + Desk housing + 10+5 meter (Jul 15 nag).  
 **Move:** end of month — productivity tool, not an endless art project.  
 **Product bar:** fun to open every day + helps you pack / apply / stay covered.  
 **North star mockups:** `artifacts/pack-it-up/docs/mockups/`
@@ -161,7 +162,7 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 
 ### 9. Admin / sublet lane — [desk]
 `admin` category exists (`tasks.js:29`) but holds exactly one task — populate it; Desk-owned in v1, **no admin NPC**.
-- [ ] Sublet sprint as a **session meter**, not cards (design: `move-spine-integration.md`): `Messages 10 · Backups 5` beside File/Stamp/Clear in `session.js`; warm-reply follow-ups + backup plan if no sublet by **Jul 15** stay as ADMIN-tray cards
+- [x] Sublet sprint as a **session meter**, not cards (design: `move-spine-integration.md`): `Messages 10 · Backups 5` beside File/Stamp/Clear in `session.js`; warm-reply follow-ups + backup plan if no sublet by **Jul 15** stay as ADMIN-tray cards / Housing tray
 - [ ] Wi-Fi return card: equipment located · **DO NOT PACK** · return method confirmed · receipt/tracking saved
 - [ ] Utilities/account cutoffs: renter's insurance, USPS forwarding (once address exists), pharmacy/records, CUNY docs, final pay/insurance/PTO emails
 
@@ -184,7 +185,7 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 > **DECIDED (Eloisa, Jul 11): this section + ledger page + quick-add JUMP THE QUEUE — ahead of Shirley Pass 1.** She needs the productivity core live now (sublet locks Jul 15). Order: [codex] data layer (seed drop, calendar spine, pressure v2, save migration) → [codex] ledger page + quick-add → board skeleton later. Shirley Pass 1 waits; she works via bank lines today. [cursor] perf patch runs in parallel (independent files).
 
 - **Binding rules (design: `move-spine-integration.md` → "Functional-companion gaps"):** ≤2 taps to mark any real-world task done, everywhere it appears · phone is the canonical save device · after this drop, schema bumps must MIGRATE status, never wipe (`save.js` `v`-mismatch wipe becomes forbidden)
-- [ ] **[cursor]** Quick-add on the ledger page: text + lane + effort dots → normal task card. A sticky note, not a form (no recurrence, no complex dates). Without this the app is a fixed script.
+- [x] **[cursor]** Quick-add on the ledger page: text + lane + effort dots → normal task card. A sticky note, not a form (no recurrence, no complex dates). Without this the app is a fixed script.
 - [ ] SOFT **[cursor]** Save export/import (clipboard JSON) as a lifeboat
 
 - [x] **[cursor/codex]** Seed `tasks.js` + `save.js` defaults from the manifest in **`docs/design/master-list-incorporation.md`** (mechanical transcription): ~12 packing/U-Box process tasks · new `housing` category (4 tasks; daily 10+5 quota is a session meter, NOT tasks) · **replace all 3 fictional SAMPLE_JOBS with the real shortlist** (Hunter Jul 14, HOPWA ×2 Jul 18, MOCS Jul 26, MOPT Jul 28, Labor Relations Aug 30) · ~10 admin cutoff cards · health additions (OB/GYN IUD by ~Jul 25 → nearest existing zone for v1, PCP 90-day bridge) · fix `t_vet` due to the real **Jul 22–25** window · Stretchy chain tasks

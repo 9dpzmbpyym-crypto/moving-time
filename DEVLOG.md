@@ -9,6 +9,11 @@ Covers **July 5–10, 2026**. Combines:
 
 ---
 
+## 2026-07-11 — [Cursor / Grok 4.5] Command Board + ledger (Jul 15 nag)
+- Menu → Command Board: energy check-in, ≤3 picks, critical-path strip, Go/Done
+- Ledger page-flip + quick-add sticky; Desk Housing tray + Messages 10 / Backups 5
+- Shirley Settings refuse empty key/model wipe; session `docs/sessions/2026-07-11-cursor-command-board.md`; merge to main
+
 ## 2026-07-11 — [Cursor / Grok 4.5] Perf patch + Shirley Pass 1 + Fable queue
 - Standing `cursor` branch from main; tiny OpenRouter/usage safety + per-minute HUD clock + dead test-call removal
 - Audio raw-ES cleanup; kitchen 4 zones; hard-case guitar; bowls pinned; crop guard; toiletries/tote containers; ringtone radio duck; glow shrink

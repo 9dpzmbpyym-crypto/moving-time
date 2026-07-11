@@ -5,6 +5,7 @@ import LANDLINE_PHONE from "./assets/landline-phone.png";
 import {
   TASK_CATEGORIES, SAMPLE_JOBS, isOpen, taskPressure,
   PRESSURE_LABELS, PRESSURE_COLORS,
+  pickBoardTasks, doorForTask, makeQuickTask,
 } from "./tasks.js";
 import { PixelCanvas } from "./BedroomSlice.jsx";
 import {
@@ -31,9 +32,11 @@ import { clearSave } from "./save.js";
 import {
   SESSION_GOALS,
   HEALTH_SESSION_GOALS,
+  HOUSING_SESSION_GOALS,
   sessionProgress,
   bumpSession,
 } from "./session.js";
+import { DATE_TRIGGERS, daysUntil } from "./movePhase.js";
 import {
   RECEPTIONIST_NAME,
   openerForNudge,
@@ -70,7 +73,7 @@ export const FR = {
   boxShadow: "inset 0 0 0 2px #6B4423, 0 3px 0 #000",
 };
 export const LB = { fontFamily: "'Courier New', monospace", fontWeight: 700, letterSpacing: "0.5px" };
-const PAPER = { job: "#E9BFB2", admin: "#B9CEDC", move: "#EBDDBA", health: "#CBDCC2", cat: "#EBD2A8" };
+const PAPER = { job: "#E9BFB2", admin: "#B9CEDC", move: "#EBDDBA", health: "#CBDCC2", cat: "#EBD2A8", housing: "#E8C9A0" };
 const GOLD_PLATE = {
   background: "linear-gradient(#3A2A12, #2A1C0C)",
   border: "3px solid #120A04",
@@ -306,7 +309,8 @@ function MenuScreen({ go, tasks }) {
     return t.slice().sort((a, b) => b.urgency - a.urgency)[0].due;
   };
   const tiles = [
-    { key: "desk",      icon: "🗂️", label: "Desk / Admin",    sub: "papers · call Shirley", badge: count(["job", "admin", "move"]), due: soonest(["job", "admin", "move"]) },
+    { key: "board",     icon: "📋", label: "Command Board",  sub: "what matters today", badge: 0, due: null, wide: true },
+    { key: "desk",      icon: "🗂️", label: "Desk / Admin",    sub: "papers · housing · Shirley", badge: count(["job", "admin", "move", "housing"]), due: soonest(["job", "admin", "move", "housing"]) },
     { key: "health",    icon: "🩺", label: "Health / Body",    sub: "use it while covered", badge: count(["health"]), due: soonest(["health"]) },
     { key: "inventory", icon: "📦", label: "Inventory",        sub: "packed items", badge: 0, due: null },
     { key: "log",       icon: "💰", label: "Sold / Donated",   sub: "the money log", badge: 0, due: null },
@@ -326,11 +330,11 @@ function MenuScreen({ go, tasks }) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         {tiles.map((t) => (
           <button key={t.key} onClick={() => go(t.key)} style={{
-            position: "relative", minHeight: 96, display: "flex", flexDirection: "column",
+            position: "relative", minHeight: t.wide ? 72 : 96, display: "flex", flexDirection: "column",
             alignItems: "flex-start", justifyContent: "flex-end", gap: 2, padding: "10px 12px",
-            cursor: "pointer", textAlign: "left", ...FR, ...LB,
+            cursor: "pointer", textAlign: "left", gridColumn: t.wide ? "1 / -1" : undefined, ...FR, ...LB,
           }}>
-            <span style={{ fontSize: 24, marginBottom: 4 }}>{t.icon}</span>
+            <span style={{ fontSize: t.wide ? 20 : 24, marginBottom: 4 }}>{t.icon}</span>
             <span style={{ color: "#F2E4C0", fontSize: 13 }}>{t.label}</span>
             <span style={{ color: "#8A7350", fontSize: 10 }}>{t.sub}</span>
             {t.due && (
@@ -349,6 +353,227 @@ function MenuScreen({ go, tasks }) {
       <div style={{ marginTop: 14, color: "#6B563B", fontSize: 11, textAlign: "center", ...LB }}>
         The apartment is home base — everything here is a side table.
       </div>
+    </Screen>
+  );
+}
+
+/* ================= COMMAND BOARD + LEDGER ================= */
+const EFFORT_DOT = (n) => "●".repeat(Math.min(3, Math.max(1, n || 1))) + "○".repeat(Math.max(0, 3 - Math.min(3, Math.max(1, n || 1))));
+
+function CriticalStrip() {
+  const today = new Date();
+  const rows = DATE_TRIGGERS.filter((t) => t.critical).slice(0, 5);
+  return (
+    <div style={{
+      marginBottom: 10, padding: "8px 10px", background: "#EFE7D2", border: "2px solid #120A04",
+      boxShadow: "2px 2px 0 rgba(0,0,0,0.35)",
+    }}>
+      <div style={{ color: "#8A4526", fontSize: 9, marginBottom: 4, ...LB }}>Critical path</div>
+      {rows.map((t) => {
+        const d = daysUntil(t.date, today);
+        const hot = d != null && d <= 4 && d >= 0;
+        const past = d != null && d < 0;
+        return (
+          <div key={t.id} style={{
+            display: "flex", justifyContent: "space-between", gap: 8, fontSize: 10, marginTop: 2,
+            color: past ? "#8A7350" : hot ? "#A3252C" : "#3A2018", ...LB,
+          }}>
+            <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.label}</span>
+            <span>{t.date.slice(5).replace("-", "/")}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast }) {
+  const energy = session?.energy || null;
+  const picks = energy ? pickBoardTasks(tasks, energy) : [];
+  const markDone = (id) => {
+    setTasks((ts) => ts.map((t) => (t.id === id ? { ...t, status: "done" } : t)));
+    onSessionBump?.("cleared", 1, "Cleared +1");
+  };
+  return (
+    <Screen
+      title="Command Board"
+      icon="📋"
+      onBack={() => go("menu")}
+      subtitle={energy ? "Today's dispatch" : "Running on — pick one"}
+      bg="#2A1A0C"
+    >
+      <RewardToast text={rewardToast} />
+      <CriticalStrip />
+      {!energy ? (
+        <div style={{ ...FR, padding: 12, marginBottom: 10 }}>
+          <div style={{ color: "#FFD97A", fontSize: 12, marginBottom: 8, ...LB }}>Running on:</div>
+          {[
+            ["fumes", "Fumes", "tiny asks only"],
+            ["steady", "Steady", "normal day"],
+            ["full", "Full tank", "structural work ok"],
+          ].map(([id, label, sub]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => onSessionBump?.("energy", 0, null, { energy: id })}
+              style={{
+                width: "100%", textAlign: "left", marginBottom: 6, padding: "10px 12px",
+                background: "#3A2410", color: "#F2E4C0", border: "3px solid #120A04", cursor: "pointer", ...LB,
+              }}
+            >
+              <div style={{ fontSize: 13 }}>{label}</div>
+              <div style={{ color: "#8A7350", fontSize: 10, marginTop: 2 }}>{sub}</div>
+            </button>
+          ))}
+          <div style={{ color: "#6B563B", fontSize: 10, marginTop: 6, ...LB }}>
+            Low energy is never punished — the board just asks less.
+          </div>
+        </div>
+      ) : (
+        <>
+          <div style={{ color: "#C9B896", fontSize: 10, marginBottom: 8, ...LB }}>
+            Energy: {energy === "fumes" ? "Fumes" : energy === "full" ? "Full tank" : "Steady"}
+            {" · "}
+            <button type="button" onClick={() => onSessionBump?.("energy", 0, null, { energy: null })}
+              style={{ background: "none", border: "none", color: "#8A7350", cursor: "pointer", padding: 0, ...LB }}>
+              change
+            </button>
+          </div>
+          {picks.length === 0 ? (
+            <div style={{ color: "#8A7350", fontSize: 12, padding: 12, ...LB }}>Nothing open in budget — flip to the ledger.</div>
+          ) : picks.map((t) => {
+            const cat = TASK_CATEGORIES[t.category] || {};
+            return (
+              <div key={t.id} style={{
+                background: PAPER[t.category] || "#EBDDBA", border: "2px solid #120A04",
+                boxShadow: "3px 3px 0 rgba(0,0,0,0.4)", padding: "10px 12px", marginBottom: 8, color: "#3A2018",
+              }}>
+                <div style={{ fontSize: 10, marginBottom: 4, ...LB }}>{cat.icon} {cat.label}</div>
+                <div style={{ fontSize: 13, marginBottom: 6, ...LB }}>{t.title}</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 10, ...LB }}>{t.due || "—"} · {EFFORT_DOT(t.effort)}</span>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <button type="button" onClick={() => go(doorForTask(t))} style={{
+                      padding: "6px 8px", background: "#3A2410", color: "#FFD97A", border: "2px solid #120A04",
+                      fontSize: 10, cursor: "pointer", ...LB,
+                    }}>Go</button>
+                    <button type="button" onClick={() => markDone(t.id)} style={{
+                      padding: "6px 8px", background: "#5D7C3B", color: "#F2E4C0", border: "2px solid #120A04",
+                      fontSize: 10, cursor: "pointer", ...LB,
+                    }}>Done</button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </>
+      )}
+      <button type="button" onClick={() => go("ledger")} style={{
+        width: "100%", marginTop: 8, padding: "12px", background: "#241509", color: "#FFD97A",
+        border: "3px solid #120A04", fontSize: 12, cursor: "pointer", ...LB,
+      }}>
+        Flip page — full ledger
+      </button>
+    </Screen>
+  );
+}
+
+const LEDGER_LANES = [
+  { id: "move", label: "Packing" },
+  { id: "housing", label: "Housing" },
+  { id: "job", label: "Jobs" },
+  { id: "admin", label: "Admin" },
+  { id: "health", label: "Health" },
+  { id: "cat", label: "Stretchy" },
+];
+
+function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
+  const [lane, setLane] = useState("housing");
+  const [draft, setDraft] = useState("");
+  const [effort, setEffort] = useState(1);
+  const rows = tasks
+    .filter((t) => t.category === lane && t.status !== "dismissed")
+    .slice()
+    .sort((a, b) => {
+      const ao = isOpen(a) ? 0 : 1;
+      const bo = isOpen(b) ? 0 : 1;
+      if (ao !== bo) return ao - bo;
+      return (b.urgency || 1) - (a.urgency || 1);
+    });
+  const markDone = (id) => {
+    setTasks((ts) => ts.map((t) => (t.id === id ? { ...t, status: "done" } : t)));
+    onSessionBump?.("cleared", 1, "Cleared +1");
+  };
+  const addSticky = () => {
+    const title = draft.trim();
+    if (!title) return;
+    setTasks((ts) => [...ts, makeQuickTask({ title, category: lane, effort })]);
+    setDraft("");
+    setEffort(1);
+  };
+  return (
+    <Screen title="Ledger" icon="📒" onBack={() => go("board")} subtitle="See-all · planning page" bg="#2A1A0C">
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
+        {LEDGER_LANES.map((l) => (
+          <button key={l.id} type="button" onClick={() => setLane(l.id)} style={{
+            padding: "6px 8px", fontSize: 10, cursor: "pointer",
+            background: lane === l.id ? "#C9942E" : "#3A2410",
+            color: lane === l.id ? "#120A04" : "#C9B896",
+            border: "2px solid #120A04", ...LB,
+          }}>{l.label}</button>
+        ))}
+      </div>
+      <div style={{ ...FR, padding: 10, marginBottom: 10 }}>
+        <div style={{ color: "#FFD97A", fontSize: 10, marginBottom: 6, ...LB }}>Quick-add sticky</div>
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="One line…"
+          style={{
+            width: "100%", boxSizing: "border-box", padding: "8px", marginBottom: 6,
+            background: "#1A0F06", color: "#F2E4C0", border: "2px solid #4A2E17", fontSize: 12, ...LB,
+          }}
+        />
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          {[1, 2, 3].map((n) => (
+            <button key={n} type="button" onClick={() => setEffort(n)} style={{
+              flex: 1, padding: "6px", fontSize: 10, cursor: "pointer",
+              background: effort === n ? "#5D7C3B" : "#241509", color: "#F2E4C0",
+              border: "2px solid #120A04", ...LB,
+            }}>{EFFORT_DOT(n)}</button>
+          ))}
+          <button type="button" onClick={addSticky} style={{
+            flex: 1.4, padding: "6px", background: "#3A2410", color: "#FFD97A",
+            border: "2px solid #120A04", fontSize: 11, cursor: "pointer", ...LB,
+          }}>Pin</button>
+        </div>
+      </div>
+      {rows.length === 0 && (
+        <div style={{ color: "#8A7350", fontSize: 12, ...LB }}>No cards in this lane.</div>
+      )}
+      {rows.map((t) => {
+        const open = isOpen(t);
+        return (
+          <div key={t.id} style={{
+            display: "flex", gap: 8, alignItems: "center", marginBottom: 6, padding: "8px 10px",
+            background: open ? (PAPER[t.category] || "#EBDDBA") : "#3A2A1A",
+            border: "2px solid #120A04", color: open ? "#3A2018" : "#8A7350", opacity: open ? 1 : 0.7,
+          }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, ...LB }}>{t.title}</div>
+              <div style={{ fontSize: 9, marginTop: 2, ...LB }}>
+                {t.due || "—"} · {EFFORT_DOT(t.effort)}{t.status === "done" ? " · done" : ""}
+              </div>
+            </div>
+            {open && (
+              <button type="button" onClick={() => markDone(t.id)} style={{
+                padding: "8px 10px", background: "#5D7C3B", color: "#F2E4C0",
+                border: "2px solid #120A04", fontSize: 11, cursor: "pointer", flex: "0 0 auto", ...LB,
+              }}>Done</button>
+            )}
+          </div>
+        );
+      })}
     </Screen>
   );
 }
@@ -748,18 +973,20 @@ function ShirleyCallOverlay({
 
 function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewardToast,
   appointments, setAppointments, phoneNudge, clearPhoneNudge }) {
-  const [tray, setTray] = useState("all"); // all | admin | job
-  const deskTasks = tasks.filter((t) => isOpen(t) && ["job", "admin", "move"].includes(t.category));
+  const [tray, setTray] = useState("all"); // all | admin | job | housing
+  const deskTasks = tasks.filter((t) => isOpen(t) && ["job", "admin", "move", "housing"].includes(t.category));
   const filtered = deskTasks.filter((t) => {
     if (tray === "admin") return t.category === "admin" || t.category === "move";
     if (tray === "job") return t.category === "job";
+    if (tray === "housing") return t.category === "housing";
     return true;
   });
-  const filed = tasks.filter((t) => t.status === "done" && ["job", "admin", "move"].includes(t.category));
+  const filed = tasks.filter((t) => t.status === "done" && ["job", "admin", "move", "housing"].includes(t.category));
   const doneCount = filed.length;
   const outboxVis = filed.slice(-6);
   const adminCount = deskTasks.filter((t) => t.category === "admin" || t.category === "move").length;
   const jobCount = deskTasks.filter((t) => t.category === "job").length;
+  const housingCount = deskTasks.filter((t) => t.category === "housing").length;
   const active = filtered.slice(0, 3);
   const pile = filtered.slice(3);
   const [inspectId, setInspectId] = useState(null);
@@ -1044,6 +1271,7 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
   const day0 = new Date(deskNow.getFullYear(), deskNow.getMonth(), deskNow.getDate());
   const daysLeft = Math.max(0, Math.round((new Date(moveEnd.getFullYear(), moveEnd.getMonth(), moveEnd.getDate()) - day0) / 86400000));
   const prog = sessionProgress(session, SESSION_GOALS);
+  const housingProg = sessionProgress(session, HOUSING_SESSION_GOALS);
 
   const resolve = (mode) => {
     if (!inspected || resolving) return;
@@ -1110,13 +1338,37 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
     >
       <RewardToast text={rewardToast} />
       <div style={{
+        display: "flex", gap: 8, marginBottom: 8, padding: "8px 10px",
+        background: "#EFE7D2", border: "2px solid #120A04", boxShadow: "2px 2px 0 rgba(0,0,0,0.35)",
+      }}>
+        {housingProg.items.map((it) => (
+          <button
+            key={it.id}
+            type="button"
+            disabled={it.done}
+            onClick={() => {
+              if (it.done) return;
+              onSessionBump?.(it.key, 1, it.key === "messages" ? "Msg +1" : "Backup +1");
+            }}
+            style={{
+              flex: 1, padding: "6px 4px", textAlign: "center", cursor: it.done ? "default" : "pointer",
+              background: it.done ? "#CBDCC2" : "#F7F0DC", border: "2px solid #120A04", color: "#3A2018", ...LB,
+            }}
+          >
+            <div style={{ fontSize: 9 }}>{it.label}</div>
+            <div style={{ fontSize: 12, marginTop: 2 }}>{it.cur}/{it.target}{it.done ? " ✓" : " +"}</div>
+          </button>
+        ))}
+      </div>
+      <div style={{
         border: "3px solid #120A04", background: "repeating-linear-gradient(0deg, #5A381F 0 14px, #6E452A 14px 16px)",
         padding: "10px 10px 12px", boxShadow: "inset 0 0 0 2px #3E2413",
       }}>
         {/* trays */}
         <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+          {trayBtn("housing", "HOUSING", "#E8C9A0", housingCount)}
           {trayBtn("admin", "ADMIN", "#B9CEDC", adminCount)}
-          {trayBtn("job", "APPLICATIONS", "#E9BFB2", jobCount)}
+          {trayBtn("job", "APPS", "#E9BFB2", jobCount)}
           {trayBtn("all", "ALL", "#EBDDBA", deskTasks.length)}
         </div>
 
@@ -1713,7 +1965,11 @@ function SettingsScreen({ go }) {
           type="password"
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
-          onBlur={() => persistShirley({ apiKey, model, improv: apiKey.trim() ? true : false })}
+          onBlur={(e) => {
+            const v = e.target.value;
+            // Only touch the key — don't rewrite model from possibly-stale state.
+            persistShirley({ apiKey: v, improv: !!v.trim() });
+          }}
           placeholder="sk-or-…"
           style={{
             width: "100%", boxSizing: "border-box", padding: "10px", marginBottom: 8,
@@ -1725,7 +1981,7 @@ function SettingsScreen({ go }) {
           type="text"
           value={model}
           onChange={(e) => setModel(e.target.value)}
-          onBlur={() => persistShirley({ apiKey, model, improv })}
+          onBlur={(e) => persistShirley({ model: e.target.value })}
           placeholder={DEFAULT_MODEL}
           style={{
             width: "100%", boxSizing: "border-box", padding: "10px", marginBottom: 8,
@@ -1736,11 +1992,24 @@ function SettingsScreen({ go }) {
           type="button"
           onClick={() => persistShirley({ apiKey, model, improv: apiKey.trim() ? (improv || true) : false })}
           style={{
-            width: "100%", marginBottom: 10, padding: "10px", background: "#3A2410", color: "#FFD97A",
+            width: "100%", marginBottom: 8, padding: "10px", background: "#3A2410", color: "#FFD97A",
             border: "3px solid #120A04", fontSize: 12, cursor: "pointer", ...LB,
           }}
         >
           Save Shirley settings
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (!window.confirm("Remove the saved OpenRouter key from this device?")) return;
+            persistShirley({ apiKey: "", clearApiKey: true, improv: false });
+          }}
+          style={{
+            width: "100%", marginBottom: 10, padding: "8px", background: "#241509", color: "#C9B896",
+            border: "2px solid #4A2E17", fontSize: 11, cursor: "pointer", ...LB,
+          }}
+        >
+          Clear API key
         </button>
         <div style={{ color: improv && apiKey.trim() ? "#8FD14F" : "#C9942E", fontSize: 10, marginBottom: 8, ...LB }}>
           {apiKey.trim()
@@ -1765,7 +2034,7 @@ function SettingsScreen({ go }) {
               checked={!!(improv && apiKey.trim())}
               onChange={() => {
                 const next = !(improv && apiKey.trim());
-                persistShirley({ apiKey, model, improv: next && !!apiKey.trim() });
+                persistShirley({ improv: next && !!apiKey.trim() });
               }}
               aria-label="Improv dialogue"
               style={{ position: "absolute", inset: 0, width: "100%", height: "100%", margin: 0, padding: 0, opacity: 0, cursor: "pointer" }}
@@ -1827,6 +2096,13 @@ export default function ScreenLayer({
 }) {
   if (screen === "apartment") return null;
   if (screen === "menu")      return <MenuScreen go={go} tasks={tasks} />;
+  if (screen === "board")     return (
+    <BoardScreen go={go} tasks={tasks} setTasks={setTasks}
+      session={session} onSessionBump={onSessionBump} rewardToast={rewardToast} />
+  );
+  if (screen === "ledger")    return (
+    <LedgerScreen go={go} tasks={tasks} setTasks={setTasks} onSessionBump={onSessionBump} />
+  );
   if (screen === "desk")      return (
     <DeskScreen go={go} tasks={tasks} setTasks={setTasks} playSfx={playSfx}
       session={session} onSessionBump={onSessionBump} rewardToast={rewardToast}

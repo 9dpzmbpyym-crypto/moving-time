@@ -13,6 +13,15 @@ export const HEALTH_SESSION_GOALS = [
   { id: "appt",  label: "Finish appointment", target: 1, key: "appt" },
 ];
 
+/** Sublet sprint — ticks only, never task cards. */
+export const HOUSING_SESSION_GOALS = [
+  { id: "msgs",  label: "Serious msgs", target: 10, key: "messages" },
+  { id: "backs", label: "Backup msgs",  target: 5,  key: "backups" },
+];
+
+/** Effort budget for Command Board picks. */
+export const ENERGY_BUDGET = { fumes: 3, steady: 6, full: 9 };
+
 export function todayKey(d = new Date()) {
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
@@ -26,6 +35,9 @@ export function defaultSession() {
     care: 0,
     zones: 0,
     appt: 0,
+    messages: 0,
+    backups: 0,
+    energy: null, // null | "fumes" | "steady" | "full" — set once per day on the board
     calmedZones: {}, // zoneId -> true (persists within the day)
   };
 }
@@ -35,6 +47,9 @@ export function mergeSession(savedSession) {
   const fresh = defaultSession();
   if (!savedSession || typeof savedSession !== "object") return fresh;
   if (savedSession.day !== fresh.day) return fresh;
+  const energy = ["fumes", "steady", "full"].includes(savedSession.energy)
+    ? savedSession.energy
+    : null;
   return {
     ...fresh,
     filed: Math.max(0, Number(savedSession.filed) || 0),
@@ -43,6 +58,9 @@ export function mergeSession(savedSession) {
     care: Math.max(0, Number(savedSession.care) || 0),
     zones: Math.max(0, Number(savedSession.zones) || 0),
     appt: Math.max(0, Number(savedSession.appt) || 0),
+    messages: Math.max(0, Number(savedSession.messages) || 0),
+    backups: Math.max(0, Number(savedSession.backups) || 0),
+    energy,
     calmedZones: savedSession.calmedZones && typeof savedSession.calmedZones === "object"
       ? { ...savedSession.calmedZones }
       : {},
@@ -62,7 +80,7 @@ export function sessionProgress(session, goals = SESSION_GOALS) {
 /** Increment a counter; returns { session, justCompletedGoal, rewardLabel }. */
 export function bumpSession(session, key, amount = 1, rewardLabel) {
   const next = { ...session, [key]: Math.max(0, (Number(session[key]) || 0) + amount) };
-  const goals = [...SESSION_GOALS, ...HEALTH_SESSION_GOALS];
+  const goals = [...SESSION_GOALS, ...HEALTH_SESSION_GOALS, ...HOUSING_SESSION_GOALS];
   const g = goals.find((x) => x.key === key);
   let justCompletedGoal = false;
   if (g) {

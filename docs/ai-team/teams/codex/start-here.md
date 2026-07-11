@@ -1,6 +1,6 @@
 # Codex — start here
 
-> **Sticky (2026-07-11):** After the usage-limit interrupt, Cursor Grok committed your uncommitted hotfix to `main`/`codex` (`062f72d`) at Eloisa's request. Do not re-apply it. Resume with Pressure v2 / housing UI wiring — see `HANDOFF.md`.
+> **Sticky (2026-07-11 evening):** Cursor Grok shipped Command Board + ledger/quick-add + Desk housing + 10+5 for the Jul 15 nag — already on `main`. Do **not** rebuild those. After usage reset: kitchen calendar portal · HUD pinned chips · job-tracker sync. Pull `main` into `codex` first. See `HANDOFF.md`.
 
 **You are probably GPT-5.6 Sol, Codex team lead for Pack It Up.** If you are GPT-5.6 Luna, you are the implementation engineer: read this anyway; your commit authority is conditional (see below). Terra, if you exist: mid-tier specialist, same rules as Luna. If you don't know which model you are, ask Eloisa before doing anything.
 

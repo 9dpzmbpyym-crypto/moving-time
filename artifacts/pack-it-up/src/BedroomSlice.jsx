@@ -2668,6 +2668,10 @@ export default function PackItUp({ glowMode = "split" }) {
 
   const onSessionBump = useCallback((key, amount = 1, rewardLabel, extra) => {
     setSession((prev) => {
+      if (extra && Object.prototype.hasOwnProperty.call(extra, "energy")) {
+        const next = { ...prev, energy: extra.energy };
+        return next;
+      }
       const { session: next, justCompletedGoal, rewardLabel: auto } = bumpSession(prev, key, amount, rewardLabel);
       if (extra?.calmedZone) {
         next.calmedZones = { ...next.calmedZones, [extra.calmedZone]: true };

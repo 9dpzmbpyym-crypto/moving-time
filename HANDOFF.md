@@ -1,16 +1,19 @@
 # Latest handoff
 
-→ **Codex resume (~6:03 PM reset):** hotfix already on `main` @ `062f72d` (guitar hard case, bowls, bar storage split, Shirley ASCII headers, Stretchy clickable). Do **not** redo it. Next: wire Pressure v2 / housing consumers in BedroomSlice/Screens + ledger/quick-add. Pull `main` into `codex` first. Grok landed the commit after your usage limit — welcome back.
+→ **`docs/sessions/2026-07-11-cursor-command-board.md`** (Cursor Grok — Command Board, ledger + quick-add, Desk housing + 10+5, Shirley key harden)
 
-→ `docs/sessions/2026-07-11-cursor-perf-shirley-queue.md` (Cursor — perf + Shirley Pass 1 + Fable queue)
-→ `docs/sessions/2026-07-11-codex-productivity-core.md` (Codex — task data / Pressure v2 core)
-→ `docs/sessions/2026-07-11-claude-design-sprint.md` (Claude — move-spine design)
+**Nag:** sublet lock **Jul 15** · Hunter **Jul 14**. Use Board/Ledger/Housing tray on phone today.
 
-**Also open:** phone smoke on Vercel · Shirley stall tune · Stretchy meow tiers · Fable glow judgment.
+**Codex resume (~6:03 PM):** board/ledger/housing already on `main` — do **not** rebuild. Next: kitchen calendar portal · HUD pinned chips · job-tracker sync. Pull `main` into `codex` first.
 
-**Branches:** `main` / `cursor` / `codex` @ `062f72d`. Ledgers IDLE.
+→ `docs/sessions/2026-07-11-cursor-perf-shirley-queue.md` (earlier Cursor — perf + Shirley Pass 1)
+→ `docs/sessions/2026-07-11-codex-productivity-core.md` (Codex — data layer / Pressure v2)
 
-**Vercel:** https://moving-time.vercel.app — phone smoke still on Eloisa. Phone saves must migrate, never wipe.
+**Also open:** phone smoke · Shirley stall · Stretchy meows · Fable glow judgment.
+
+**Branches:** `main` / `cursor` / `codex`. Grok shipping this cut then IDLE.
+
+**Vercel:** https://moving-time.vercel.app — phone saves must migrate, never wipe.
 
 ---
 *Session reports live in `docs/sessions/`; see `docs/ai-team/end-here.md`.*

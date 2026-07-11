@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-11T21:04:10.481Z",
+  "last_updated": "2026-07-11T21:26:01.459Z",
   "rules": {
     "read_before_work": true,
     "write_before_editing": true,
@@ -24,7 +24,7 @@
       "rate_limited": false,
       "cooldown_until": null,
       "handoff_needed": null,
-      "last_seen": "2026-07-11T20:36:34.899Z",
+      "last_seen": "2026-07-11T21:26:01.459Z",
       "expires_at": null,
       "notes": "Default Cursor lead. Owns structural Cursor work and reviews Composer output."
     },

@@ -1,6 +1,7 @@
 /* Real move task data. `due` is display copy; `dueDate` / `dueEnd` drive
    calendar and pressure behavior. Effort: 1 tiny, 2 medium, 3 heavy. */
 import { currentPhase, isDueSoon, isOverdue } from "./movePhase.js";
+import { ENERGY_BUDGET } from "./session.js";
 
 export const TASK_CATEGORIES = {
   move:    { label: "Move",       icon: "📦", color: "#C9942E" },
@@ -125,3 +126,72 @@ export function stretchyStress(tasks, date = new Date()) {
 
 export const PRESSURE_LABELS = ["All clear", "Manageable", "Piling up", "Getting loud"];
 export const PRESSURE_COLORS = ["#5D7C3B", "#C9942E", "#C9942E", "#C43B34"];
+
+const LANE_GROUPS = [
+  { id: "pack", cats: ["move"] },
+  { id: "desk", cats: ["housing", "job", "admin"] },
+  { id: "care", cats: ["health", "cat"] },
+];
+
+function boardScore(task, date) {
+  let s = (task.urgency || 1) * 5;
+  if (task.criticalPath) s += 100;
+  if (isOverdue(task, date)) s += 80;
+  else if (isDueSoon(task, date, 2)) s += 40;
+  return s;
+}
+
+/** ≤3 Command Board picks: one per lane cluster, critical/due-soon first, within energy budget. */
+export function pickBoardTasks(tasks, energy = "steady", date = new Date()) {
+  const budget = ENERGY_BUDGET[energy] || ENERGY_BUDGET.steady;
+  const open = tasks.filter(isOpen);
+  const picked = [];
+  let used = 0;
+  for (const lane of LANE_GROUPS) {
+    const candidates = open
+      .filter((t) => lane.cats.includes(t.category) && !picked.some((p) => p.id === t.id))
+      .sort((a, b) => boardScore(b, date) - boardScore(a, date));
+    const fit = candidates.filter((t) => {
+      const e = t.effort || 1;
+      if (energy === "fumes" && e > 1) return false;
+      return used + e <= budget;
+    });
+    const choice = fit[0] || (picked.length === 0 ? candidates[0] : null);
+    if (!choice) continue;
+    picked.push(choice);
+    used += choice.effort || 1;
+    if (picked.length >= 3) break;
+  }
+  return picked;
+}
+
+/** Where a board/ledger card should send the player. */
+export function doorForTask(task) {
+  if (!task) return "apartment";
+  if (task.category === "move") return "apartment";
+  if (task.category === "health") return "health";
+  if (task.category === "cat") return "stretchy";
+  return "desk";
+}
+
+export function makeQuickTask({ title, category, effort = 1 }) {
+  const cat = TASK_CATEGORIES[category] ? category : "admin";
+  return {
+    id: `u_${Date.now().toString(36)}_${Math.floor(Math.random() * 1e4).toString(36)}`,
+    title: String(title || "Untitled").trim().slice(0, 120) || "Untitled",
+    category: cat,
+    effort: Math.min(3, Math.max(1, Number(effort) || 1)),
+    urgency: 1,
+    due: "",
+    dueDate: null,
+    dueEnd: null,
+    criticalPath: false,
+    status: "pending",
+    room: null,
+    objectId: null,
+    relief: cat === "health" || cat === "cat" ? "slide" : "stamp",
+    jobId: null,
+    zone: null,
+    needsInfo: false,
+  };
+}
