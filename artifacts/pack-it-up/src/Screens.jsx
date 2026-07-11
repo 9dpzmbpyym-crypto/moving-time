@@ -13,9 +13,14 @@ import {
   setSfxVolume,
   playContainerSfx,
   playPhonePickupSfx,
+  playPhoneRotaryDial,
+  playPhoneAnswerSfx,
   playPhoneRingPattern,
   stopPhoneRingSfx,
+  stopPhoneReceiverLoop,
   playPhoneHangupSfx,
+  PHONE_RING_ON_MS,
+  PHONE_RING_GAP_MS,
 } from "./gameAudio.js";
 import { clearSave } from "./save.js";
 import {
@@ -684,13 +689,13 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
     const startBurst = () => {
       setPhoneRattling(true);
       if (rattleOffRef.current) clearTimeout(rattleOffRef.current);
-      rattleOffRef.current = setTimeout(() => setPhoneRattling(false), 1000);
+      rattleOffRef.current = setTimeout(() => setPhoneRattling(false), PHONE_RING_ON_MS);
     };
     const run = () => {
       ringCancelRef.current = playPhoneRingPattern({
         bursts,
-        onMs: 1000,
-        gapMs: 2000,
+        onMs: PHONE_RING_ON_MS,
+        gapMs: PHONE_RING_GAP_MS,
         onBurst: startBurst,
         onDone: () => {
           ringCancelRef.current = null;
@@ -716,10 +721,15 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
     beginRingPattern({ bursts: 2, loop: true });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps — ring once when desk opens with nudge
 
-  useEffect(() => () => { clearPhoneRing(); }, []);
+  useEffect(() => () => {
+    clearPhoneRing();
+    stopPhoneReceiverLoop();
+  }, []);
 
   const startTalking = (nudgeOverride) => {
     clearPhoneRing();
+    stopPhoneReceiverLoop();
+    playPhoneAnswerSfx();
     const nudge = nudgeOverride || phoneNudge || getNudge(apptsRef.current, tasks);
     const pri = nudge?.task || priorityHealthTask(tasks, apptsRef.current);
     const days = daysUntilMove();
@@ -742,12 +752,13 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
 
   const pickUpPhone = () => {
     clearPhoneRing();
-    playPhonePickupSfx();
+    playPhonePickupSfx(); // starts looping receiver tone
     setPhonePhase("pickup");
     setIncomingRing(false);
   };
 
   const dialShirley = () => {
+    playPhoneRotaryDial(); // stops receiver loop + short rotary
     setPhonePhase("dial");
     setTimeout(() => {
       setPhonePhase("ringing");
@@ -755,17 +766,19 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
         bursts: 2,
         onDone: () => startTalking(phoneNudge || getNudge(apptsRef.current, tasks)),
       });
-    }, 400);
+    }, 1100);
   };
 
   const cancelCeremony = () => {
     clearPhoneRing();
+    stopPhoneReceiverLoop();
     playPhoneHangupSfx();
     setPhonePhase(null);
   };
 
   const hangUp = () => {
     clearPhoneRing();
+    stopPhoneReceiverLoop();
     playPhoneHangupSfx();
     setPhonePhase("hanging");
     setTimeout(() => {

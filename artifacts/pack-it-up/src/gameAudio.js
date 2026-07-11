@@ -116,6 +116,13 @@ const state = {
   containerOpen: {},
   containerClose: {},
   lastMeowAt: 0,
+  // landline ceremony clips (sliced from public/assets/audio/sfx/ui/phone_*.mp3)
+  phoneReceiver: null,
+  phoneRotary: null,
+  phoneRingBurst: null,
+  phoneAnswer: null,
+  phoneReceiverSrc: null,
+  phoneReceiverGain: null,
 };
 
 function ensureCtx() {
@@ -145,6 +152,26 @@ function trimStartFraction(buf, frac = 0.25) {
     for (let c = 0; c < buf.numberOfChannels; c++) {
       const src = buf.getChannelData(c).subarray(start);
       out.getChannelData(c).set(src);
+    }
+    return out;
+  } catch {
+    return buf;
+  }
+}
+
+/** Slice [startSec, endSec) from a buffer. endSec null = through end. */
+function sliceBuffer(buf, startSec = 0, endSec = null) {
+  const ctx = state.ctx;
+  if (!ctx || !buf) return buf;
+  try {
+    const sr = buf.sampleRate;
+    const start = Math.max(0, Math.floor(startSec * sr));
+    const end = Math.min(buf.length, Math.floor((endSec == null ? buf.duration : endSec) * sr));
+    const len = end - start;
+    if (len < sr * 0.04) return buf;
+    const out = ctx.createBuffer(buf.numberOfChannels, len, sr);
+    for (let c = 0; c < buf.numberOfChannels; c++) {
+      out.getChannelData(c).set(buf.getChannelData(c).subarray(start, end));
     }
     return out;
   } catch {
@@ -270,6 +297,7 @@ export function ensureAudioLoaded() {
       cabOpen, cabClose, closetOpen, closetClose,
       kitOpenRaw, kitClose, medOpen, medClose1, medClose2,
       offOpenRaw, offClose,
+      phoneReceiverRaw, phoneRotaryRaw, phoneRingRaw,
     ] = await Promise.all([
       loadBuf("sfx/ui/sell_chime.mp3"),
       loadBuf("sfx/ui/packing_noise_01.mp3"),
@@ -309,6 +337,9 @@ export function ensureAudioLoaded() {
       loadBuf("sfx/containers/medicine_cabinet_close_02.mp3"),
       loadBuf("sfx/containers/office_drawer_open_01.mp3"),
       loadBuf("sfx/containers/office_drawer_close_01.mp3"),
+      loadBuf("sfx/ui/phone_receiver_tone.mp3"),
+      loadBuf("sfx/ui/phone_rotary_dial.mp3"),
+      loadBuf("sfx/ui/phone_ring_and_pickup.mp3"),
     ]);
     // kitchen drawer open: cut the first quarter (felt late / empty lead-in),
     // then peak-match open + close halfway between original close (~0.11)
@@ -352,6 +383,23 @@ export function ensureAudioLoaded() {
       medicine: medCloseClips,
       office: offClose ? [offClose] : [],
     };
+    // Landline: isolate usable slices from the titled source clips.
+    // Receiver is already a clean ~1.7s tone → loop whole thing.
+    state.phoneReceiver = phoneReceiverRaw
+      ? normalizePeak(trimLeadingSilence(phoneReceiverRaw, 0.01), 0.55)
+      : null;
+    // Rotary: first click cluster only (~1s), not the second half of the take.
+    state.phoneRotary = phoneRotaryRaw
+      ? normalizePeak(sliceBuffer(phoneRotaryRaw, 0.1, 1.15), 0.7)
+      : null;
+    // Ring file: two ~2s dial-tone bursts with a long gap, then a short pickup.
+    // Filename says decrease gap 50% → we play bursts on a 2s/2s cadence in UI.
+    state.phoneRingBurst = phoneRingRaw
+      ? normalizePeak(sliceBuffer(phoneRingRaw, 0.16, 2.2), 0.55)
+      : null;
+    state.phoneAnswer = phoneRingRaw
+      ? normalizePeak(sliceBuffer(phoneRingRaw, 8.85, 9.5), 0.75)
+      : null;
     state.ready = true;
     if (state.primed) startMainTheme();
   })();
@@ -728,8 +776,12 @@ export function playRoomSwitchSfx() {
   playBuffer(state.roomSwitch, 0.7);
 }
 
-/* ---- Landline / Shirley ceremony (procedural — no mp3 required) ---- */
+/* ---- Landline / Shirley ceremony (real phone MP3s + cadence) ---- */
 let phoneRingTimer = null;
+
+/** Duration of one ring burst (matches phoneRingBurst slice + rattle). */
+export const PHONE_RING_ON_MS = 2000;
+export const PHONE_RING_GAP_MS = 2000;
 
 function toneBurst(freq, dur, vol = 0.35, type = "square") {
   if (state.sfxVol <= 0.001) return;
@@ -751,14 +803,67 @@ function toneBurst(freq, dur, vol = 0.35, type = "square") {
   } catch {}
 }
 
-/** Soft click when lifting the handset. */
+/** Handset up — loop the receiver tone until dial / hangup. */
+export function startPhoneReceiverLoop() {
+  stopPhoneReceiverLoop();
+  const start = () => {
+    const ctx = resumeCtx();
+    const buf = state.phoneReceiver;
+    if (!ctx || !buf || state.sfxVol <= 0.001) return;
+    try {
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+      const gain = ctx.createGain();
+      gain.gain.value = 0.85 * state.sfxVol * SFX_VOL_MAX;
+      src.connect(gain).connect(ctx.destination);
+      src.start(0);
+      state.phoneReceiverSrc = src;
+      state.phoneReceiverGain = gain;
+    } catch {}
+  };
+  const p = ensureAudioLoaded();
+  if (p && typeof p.then === "function") p.then(start);
+  else start();
+}
+
+export function stopPhoneReceiverLoop() {
+  try { state.phoneReceiverSrc?.stop(); } catch {}
+  state.phoneReceiverSrc = null;
+  state.phoneReceiverGain = null;
+}
+
+/** Soft click fallback (used only if receiver MP3 missing). */
 export function playPhonePickupSfx() {
+  if (state.phoneReceiver) {
+    startPhoneReceiverLoop();
+    return;
+  }
   toneBurst(420, 0.06, 0.22, "triangle");
   setTimeout(() => toneBurst(280, 0.08, 0.18, "triangle"), 40);
 }
 
-/** One ~1s ring burst (double chirp, then a quick echo). */
+/** Short rotary click (~1s) when you choose to dial. */
+export function playPhoneRotaryDial() {
+  stopPhoneReceiverLoop();
+  ensureAudioLoaded();
+  if (state.phoneRotary) {
+    playBuffer(state.phoneRotary, 1.05);
+    return;
+  }
+  // procedural fallback
+  toneBurst(900, 0.05, 0.2, "square");
+  setTimeout(() => toneBurst(700, 0.08, 0.18, "square"), 80);
+  setTimeout(() => toneBurst(1100, 0.06, 0.16, "square"), 200);
+}
+
+/** One dial-tone ring burst — sync with phone rattle. */
 export function playPhoneRingBurst() {
+  ensureAudioLoaded();
+  if (state.phoneRingBurst) {
+    playBuffer(state.phoneRingBurst, 0.95);
+    return;
+  }
   if (state.sfxVol <= 0.001) return;
   const pair = () => {
     toneBurst(880, 0.18, 0.28, "square");
@@ -768,12 +873,32 @@ export function playPhoneRingBurst() {
   setTimeout(pair, 450);
 }
 
+/** Shirley picks up — short answer click at end of ring file. */
+export function playPhoneAnswerSfx() {
+  stopPhoneReceiverLoop();
+  stopPhoneRingSfx();
+  ensureAudioLoaded();
+  if (state.phoneAnswer) {
+    playBuffer(state.phoneAnswer, 1.1);
+    return;
+  }
+  toneBurst(520, 0.05, 0.2, "triangle");
+  setTimeout(() => toneBurst(340, 0.07, 0.16, "triangle"), 40);
+}
+
 /**
- * Classic cadence: 1s ring, 2s gap, repeat `bursts` times.
+ * Classic cadence: ring on, gap, repeat `bursts` times.
+ * Default 2s on / 2s off matches the dial-tone slices (gap halved vs source).
  * `onBurst(i)` fires at the start of each ring; `onDone` after the final gap.
  * Returns a cancel fn.
  */
-export function playPhoneRingPattern({ bursts = 2, onMs = 1000, gapMs = 2000, onBurst, onDone } = {}) {
+export function playPhoneRingPattern({
+  bursts = 2,
+  onMs = PHONE_RING_ON_MS,
+  gapMs = PHONE_RING_GAP_MS,
+  onBurst,
+  onDone,
+} = {}) {
   stopPhoneRingSfx();
   const timers = [];
   const later = (ms, fn) => {
@@ -804,9 +929,9 @@ export function playPhoneRingPattern({ bursts = 2, onMs = 1000, gapMs = 2000, on
   };
 }
 
-/** @deprecated Prefer playPhoneRingPattern — kept for simple burst loops. */
+/** @deprecated Prefer playPhoneRingPattern */
 export function playPhoneRingSfx(loops = 2) {
-  playPhoneRingPattern({ bursts: loops, onMs: 1000, gapMs: 2000 });
+  playPhoneRingPattern({ bursts: loops });
 }
 
 export function stopPhoneRingSfx() {
@@ -822,6 +947,7 @@ export function stopPhoneRingSfx() {
 
 /** Clunk when hanging up. */
 export function playPhoneHangupSfx() {
+  stopPhoneReceiverLoop();
   stopPhoneRingSfx();
   toneBurst(180, 0.1, 0.3, "sawtooth");
   setTimeout(() => toneBurst(120, 0.12, 0.22, "triangle"), 50);
