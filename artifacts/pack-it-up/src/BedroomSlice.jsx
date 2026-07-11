@@ -45,7 +45,6 @@ import {
   sanitizeAppointments,
   markMissed,
   getNudge,
-  scrambleBookableHealthUrgencies,
 } from "./receptionist.js";
 
 /* ============================================================
@@ -2476,9 +2475,7 @@ export default function PackItUp({ glowMode = "split" }) {
   const refreshRadioUi = useCallback(() => setRadioUi(getRadioState()), []);
   /* task/urgency scaffold — real move data; daily housing card refreshes until sublet locks */
   const [tasks, setTasks] = useState(() =>
-    refreshDailyHousingTasks(
-      scrambleBookableHealthUrgencies(mergeTasks(INITIAL_TASKS, bootSave?.tasks))
-    )
+    refreshDailyHousingTasks(mergeTasks(INITIAL_TASKS, bootSave?.tasks))
   );
   const [minutes, setMinutes] = useState(() => clampMinutes(bootSave?.minutes ?? 0)); // game time advances as you pack/sell
   const [coins, setCoins] = useState(() =>

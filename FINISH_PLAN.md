@@ -13,6 +13,7 @@ Other docs (`AGENTS.md`, `CLAUDE.md`, `DEVLOG.md`, `replit.md`) should only *poi
 **Weekend ship bar (Jul 12): met — historical.** ("Definition of done" below is frozen as the record; phone smoke still on Eloisa.)  
 **Current next bar:** phone smoke · kitchen calendar portal / HUD chips (Codex leftovers) · Shirley stall · Stretchy meows.  
 **Landed Jul 11 (Grok):** Command Board + ledger/quick-add + Desk housing + 10+5 meter (Jul 15 nag).  
+**Patch Jul 11 evening:** Sol correctness (no health scramble · book-only Shirley · OB/GYN zone · one vet Book · date-aware board) + self-target jobs + archive + drop moot diet/pharmacy/records.  
 **Move:** end of month — productivity tool, not an endless art project.  
 **Product bar:** fun to open every day + helps you pack / apply / stay covered.  
 **North star mockups:** `artifacts/pack-it-up/docs/mockups/`
@@ -109,7 +110,7 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 
 ### 2. Persist progress (`localStorage`) — DONE Jul 9
 - [x] Save `objState`, `contentsState`, `coins`, `minutes`, `tasks`, `roomIndex`
-- [x] Load on boot; version key (`v: 1`) wipes on schema mismatch
+- [x] Load on boot; version key — **v2 migrates**, never wipes on schema bump (`save.js`)
 - [x] Coming back tomorrow must feel continuous
 - [x] Settings → Reset save (audio volumes stay in `pack-it-up-audio`)
 
@@ -161,10 +162,10 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 - [ ] Proof-of-done fields per lane: appt date/time + attended · labs/refills/records · job status update · follow-up sent · admin receipt/confirmation · vet certificate/records
 
 ### 9. Admin / sublet lane — [desk]
-`admin` category exists (`tasks.js:29`) but holds exactly one task — populate it; Desk-owned in v1, **no admin NPC**.
+`admin` category is populated with cutoff cards (Wi-Fi, utilities, insurance, USPS, bank, CUNY, payout, …). Desk-owned in v1, **no admin NPC**.
 - [x] Sublet sprint as a **session meter**, not cards (design: `move-spine-integration.md`): `Messages 10 · Backups 5` beside File/Stamp/Clear in `session.js`; warm-reply follow-ups + backup plan if no sublet by **Jul 15** stay as ADMIN-tray cards / Housing tray
-- [ ] Wi-Fi return card: equipment located · **DO NOT PACK** · return method confirmed · receipt/tracking saved
-- [ ] Utilities/account cutoffs: renter's insurance, USPS forwarding (once address exists), pharmacy/records, CUNY docs, final pay/insurance/PTO emails
+- [ ] Wi-Fi return card: equipment located · **DO NOT PACK** · return method confirmed · receipt/tracking saved (card exists — deepen proof-of-done later)
+- [ ] Utilities/account cutoffs: renter's insurance, USPS forwarding (once address exists), CUNY docs, final pay/insurance/PTO emails (cards exist — deepen later)
 
 ---
 
@@ -197,16 +198,15 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 - NPC casting ruled (see doc): Shirley = health+Stretchy (data only, no new code) · Sal = packing/U-Box/DO-NOT-PACK/sell cutoff · Vivian = jobs · sublet + admin = Desk-owned, **no voice, deliberately**
 - [ ] **[cursor]** Kitchen wall-calendar prop (design: `master-list-incorporation.md` → "The calendar prop"): portal object above the oven (never packable, mirror pattern) → `calendar` overlay in `Screens.jsx` — July paper page, Stretchy pin-up header, key dates inked **from the calendar spine table** (never hand-duplicated), past days penciled X, today circled, tap-a-date note strip. Read-only v1; August flip SOFT.
 
-## P1c — Command Board / Daily Dispatch (after Shirley Pass 1 — not before)
+## P1c — Command Board / Daily Dispatch — LANDED Jul 11 (Grok)
 
-One visible daily dashboard answering: what matters today, what's due/overdue, who will call, where to tap. Full spec: `docs/move-spine/` Command Board pass. **Design ruling: `docs/design/move-spine-integration.md`** — clipboard sibling, cards are doors not forms.
-- Acceptance (Fable): **3+1 card cap** · cards route to existing screens (nothing completes on the board) · critical-path strip ≤5 pinned dates, quiet · morning-dispatch boot behavior (first open of the day only, then Menu tile)
-- **v2 (Eloisa, Jul 11 — see design doc):** energy check-in first ("Fumes / Steady / Full tank") sets an effort budget; board fills slots critical-path-first within budget; low energy never punished · tasks gain `effort: 1|2|3` (fold into lifecycle ticket §8) · **ledger page-flip**: plain scrollable see-all list per lane behind the daily page · accepted goals ride the HUD as a pinned chip strip (≤3) across screens
+Energy check-in (Fumes/Steady/Full) · ≤3 lane picks · critical-path strip · ledger (sort/edit/archive) · Housing tray + daily outreach. Cards are doors to existing screens.
+- Acceptance (Fable): **3+1 card cap** · cards route to existing screens · critical-path strip quiet · morning energy check-in
+- [x] Energy budget fills board critical/due-first within effort (date-aware critical weight)
+- [x] Ledger see-all per lane (sort due/effort/score · edit · archive)
 - [ ] SOFT (after skeleton): "remind me" on a pinned goal → .ics / Google Calendar export (backend-free); in-world landline nudge variant later
-- [ ] **Grow the existing `MenuScreen` 6-tile grid** (`Screens.jsx:300` — already has per-tile due badges) into the board; don't start from zero
-- [ ] Four lanes: Packing · Health · Jobs · Admin
-- [ ] Small daily load only: one packing/move task + one job/admin task + one health/Stretchy task (+ urgent override only if needed)
-- [ ] Critical Path panel, **static from master list first**: sublet Jul 15 · vet records/cert · U-Box Jul 27 · packed Jul 30 night · flight Jul 31 3:20 PM · DO-NOT-PACK reminders
+- [ ] HUD pinned chip strip for accepted goals (≤3) — still open
+- [x] Critical Path panel seeds from master list (sublet Jul 15 · vet · U-Box Jul 27 · lock Jul 30 · flight Jul 31)
 
 ---
 

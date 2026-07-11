@@ -3,7 +3,7 @@ import STRETCHY_ICON from "./assets/Stretchy Icon.png";
 import HEALTH_CLIPBOARD from "./assets/health-clipboard.png";
 import LANDLINE_PHONE from "./assets/landline-phone.png";
 import {
-  TASK_CATEGORIES, SAMPLE_JOBS, isOpen, taskPressure,
+  TASK_CATEGORIES, SAMPLE_JOBS, isOpen, taskPressure, isHardOverdue,
   PRESSURE_LABELS, PRESSURE_COLORS,
   pickBoardTasks, doorForTask, makeQuickTask, refreshDailyHousingTasks,
   tasksAfterBooking, tasksAfterAttend,
@@ -504,6 +504,7 @@ function ledgerDueKey(t) {
 function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
   const [lane, setLane] = useState("housing");
   const [sortBy, setSortBy] = useState("due");
+  const [showArchived, setShowArchived] = useState(false);
   const [draft, setDraft] = useState("");
   const [effort, setEffort] = useState(1);
   const [editId, setEditId] = useState(null);
@@ -511,7 +512,11 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
     title: "", due: "", dueDate: "", effort: 1, category: "housing", status: "pending",
   });
   const rows = tasks
-    .filter((t) => t.category === lane && t.status !== "dismissed")
+    .filter((t) => {
+      if (t.category !== lane) return false;
+      if (showArchived) return t.status === "archived";
+      return t.status !== "dismissed" && t.status !== "archived";
+    })
     .slice()
     .sort((a, b) => {
       const ao = isOpen(a) ? 0 : 1;
@@ -569,10 +574,13 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
     if (cat !== lane) setLane(cat);
     setEditId(null);
   };
-  const dismissEdit = () => {
+  const archiveEdit = () => {
     if (!editId) return;
-    setTasks((ts) => ts.map((t) => (t.id === editId ? { ...t, status: "dismissed" } : t)));
+    setTasks((ts) => ts.map((t) => (t.id === editId ? { ...t, status: "archived" } : t)));
     setEditId(null);
+  };
+  const restoreArchived = (id) => {
+    setTasks((ts) => ts.map((t) => (t.id === id ? { ...t, status: "pending" } : t)));
   };
   const addSticky = () => {
     const title = draft.trim();
@@ -586,7 +594,7 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
     background: "#1A0F06", color: "#F2E4C0", border: "2px solid #4A2E17", fontSize: 12, ...LB,
   };
   return (
-    <Screen title="Ledger" icon="📒" onBack={() => go("board")} subtitle="See-all · tap Edit on a card" bg="#2A1A0C">
+    <Screen title="Ledger" icon="📒" onBack={() => go("board")} subtitle="See-all · Edit · Archive" bg="#2A1A0C">
       <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 }}>
         {LEDGER_LANES.map((l) => (
           <button key={l.id} type="button" onClick={() => { setLane(l.id); setEditId(null); }} style={{
@@ -607,7 +615,14 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
             border: "2px solid #120A04", ...LB,
           }}>{s.label}</button>
         ))}
+        <button type="button" onClick={() => { setShowArchived((v) => !v); setEditId(null); }} style={{
+          marginLeft: "auto", padding: "4px 8px", fontSize: 10, cursor: "pointer",
+          background: showArchived ? "#6B3A2A" : "#241509",
+          color: showArchived ? "#F2E4C0" : "#C9B896",
+          border: "2px solid #120A04", ...LB,
+        }}>{showArchived ? "Active" : "Archived"}</button>
       </div>
+      {!showArchived && (
       <div style={{ ...FR, padding: 10, marginBottom: 10 }}>
         <div style={{ color: "#FFD97A", fontSize: 10, marginBottom: 6, ...LB }}>Quick-add sticky</div>
         <input
@@ -630,8 +645,11 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
           }}>Pin</button>
         </div>
       </div>
+      )}
       {rows.length === 0 && (
-        <div style={{ color: "#8A7350", fontSize: 12, ...LB }}>No cards in this lane.</div>
+        <div style={{ color: "#8A7350", fontSize: 12, ...LB }}>
+          {showArchived ? "No archived cards in this lane." : "No cards in this lane."}
+        </div>
       )}
       {rows.map((t) => {
         const open = isOpen(t);
@@ -664,7 +682,7 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                 <button type="button" onClick={saveEdit} style={{ flex: 1, padding: "8px", background: "#5D7C3B", color: "#F2E4C0", border: "2px solid #120A04", fontSize: 11, cursor: "pointer", ...LB }}>Save</button>
                 <button type="button" onClick={() => setEditId(null)} style={{ flex: 1, padding: "8px", background: "#3A2410", color: "#C9B896", border: "2px solid #120A04", fontSize: 11, cursor: "pointer", ...LB }}>Cancel</button>
-                <button type="button" onClick={dismissEdit} style={{ flex: 1, padding: "8px", background: "#3A1810", color: "#E8C4A8", border: "2px solid #120A04", fontSize: 11, cursor: "pointer", ...LB }}>Hide</button>
+                <button type="button" onClick={archiveEdit} style={{ flex: 1, padding: "8px", background: "#3A1810", color: "#E8C4A8", border: "2px solid #120A04", fontSize: 11, cursor: "pointer", ...LB }}>Archive</button>
               </div>
             </div>
           );
@@ -682,18 +700,30 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
                 {(t.score != null || SAMPLE_JOBS[t.jobId]?.priority != null)
                   ? ` · score ${t.score ?? SAMPLE_JOBS[t.jobId].priority}`
                   : ""}
+                {t.selfTarget ? " · self-target" : ""}
+                {isHardOverdue(t) ? " · overdue" : ""}
                 {t.status === "done" ? " · done" : ""}
+                {t.status === "archived" ? " · archived" : ""}
               </div>
             </div>
-            <button type="button" onClick={() => beginEdit(t)} style={{
-              padding: "8px 8px", background: "#3A2410", color: "#FFD97A",
-              border: "2px solid #120A04", fontSize: 10, cursor: "pointer", flex: "0 0 auto", ...LB,
-            }}>Edit</button>
-            {open && (
-              <button type="button" onClick={() => markDone(t.id)} style={{
+            {showArchived ? (
+              <button type="button" onClick={() => restoreArchived(t.id)} style={{
                 padding: "8px 10px", background: "#5D7C3B", color: "#F2E4C0",
                 border: "2px solid #120A04", fontSize: 11, cursor: "pointer", flex: "0 0 auto", ...LB,
-              }}>Done</button>
+              }}>Restore</button>
+            ) : (
+              <>
+                <button type="button" onClick={() => beginEdit(t)} style={{
+                  padding: "8px 8px", background: "#3A2410", color: "#FFD97A",
+                  border: "2px solid #120A04", fontSize: 10, cursor: "pointer", flex: "0 0 auto", ...LB,
+                }}>Edit</button>
+                {open && (
+                  <button type="button" onClick={() => markDone(t.id)} style={{
+                    padding: "8px 10px", background: "#5D7C3B", color: "#F2E4C0",
+                    border: "2px solid #120A04", fontSize: 11, cursor: "pointer", flex: "0 0 auto", ...LB,
+                  }}>Done</button>
+                )}
+              </>
             )}
           </div>
         );
@@ -1706,9 +1736,8 @@ const HEALTH_ZONES = [
   { id: "teeth",   label: "Teeth",   note: "Dentist visit",             x: "50%", y: "17%", care: "balm" },
   { id: "heart",   label: "Heart",   note: "Cardiology appointment",    x: "42%", y: "32%", care: "patch" },
   { id: "lymph",   label: "Lymph",   note: "Rheumatology appointment",  x: "63%", y: "36%", care: "balm" },
-  { id: "stomach", label: "Stomach", note: "Diet — gentle, steady",     x: "50%", y: "47%", care: "herbal" },
+  { id: "obgyn",   label: "OB/GYN",  note: "IUD replacement",           x: "50%", y: "47%", care: "herbal" },
   { id: "skin",    label: "Skin",    note: "Dermatology appointment",   x: "22%", y: "42%", care: "balm" },
-  { id: "nerves",  label: "Nerves",  note: "Self-care + healthy habits", x: "78%", y: "42%", care: "patch" },
 ];
 
 const CARE_ITEMS = [
@@ -1739,7 +1768,7 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
   const diag = [
     openHealth.length >= 4 ? { c: "#C43B34", t: "Stress high" } : { c: "#5D7C3B", t: "Stress ok" },
     zoneDone("brain") ? { c: "#5D7C3B", t: "Sleep ok" } : { c: "#B9CEDC", t: "Sleep low" },
-    zoneDone("stomach") ? { c: "#5D7C3B", t: "Hydration ok" } : { c: "#C9942E", t: "Hydration watch" },
+    zoneDone("obgyn") ? { c: "#5D7C3B", t: "OB/GYN booked" } : { c: "#C9942E", t: "OB/GYN open" },
   ];
 
   const booked = activeAppointments(appointments);

@@ -14,25 +14,27 @@ export const ZONE_SHORT = {
   stomach: "diet follow-up",
   skin: "dermatology",
   nerves: "self-care check-in",
+  obgyn: "OB/GYN — IUD replacement",
 };
 
 export const BOOKABLE_ZONES = new Set([
-  "teeth", "brain", "heart", "lymph", "skin", "stomach",
+  "teeth", "brain", "heart", "lymph", "skin", "obgyn",
 ]);
 
-/** Zones that are care habits, not phone bookings. */
+/** Book cards only — habits / Attend cards are never phone bookings. */
 export function isBookableHealthTask(t) {
-  // Attend cards (spawned after Shirley books) are not re-bookable.
-  if (!t || t.category !== "health" || !isOpen(t) || !BOOKABLE_ZONES.has(t.zone)) return false;
-  if (t.kind === "attend" || String(t.id).startsWith("attend_")) return false;
-  return true;
+  if (!t || !isOpen(t) || t.kind !== "book") return false;
+  if (String(t.id).startsWith("attend_")) return false;
+  if (t.category === "health") return BOOKABLE_ZONES.has(t.zone);
+  // Stretchy travel vet Book card (cat lane, Shirley still books it)
+  if (t.category === "cat") return true;
+  return false;
 }
 
-/** Test helper: shuffle urgencies 1–3 on bookable health tasks (keeps status). */
+/** Dev/test only — do not call from production boot. */
 export function scrambleBookableHealthUrgencies(tasks) {
   const next = (tasks || []).map((t) => {
-    if (!t || t.category !== "health" || !BOOKABLE_ZONES.has(t.zone)) return t;
-    if (!isOpen(t)) return t;
+    if (!isBookableHealthTask(t)) return t;
     return { ...t, urgency: 1 + Math.floor(Math.random() * 3) };
   });
   const openBookable = next.filter((t) => isBookableHealthTask(t));
@@ -198,6 +200,8 @@ export function carePhrase(visitOrZone) {
   if (/cardio|heart/i.test(v)) return "HEART";
   if (/rheum|joint/i.test(v)) return "JOINTS";
   if (/psych|brain/i.test(v)) return "BRAIN";
+  if (/ob.?gyn|iud/i.test(v)) return "OB/GYN";
+  if (/vet|stretchy/i.test(v)) return "STRETCHY";
   return String(v || "BODY").toUpperCase();
 }
 
@@ -218,7 +222,12 @@ export function visitLabel(taskOrZone) {
   if (typeof taskOrZone === "string") {
     return ZONE_SHORT[taskOrZone] || taskOrZone;
   }
-  return ZONE_SHORT[taskOrZone.zone] || taskOrZone.title || "that appointment";
+  // Prefer the Book card title over a generic zone nickname (fixes OB/GYN → "diet").
+  if (taskOrZone.title) {
+    const cleaned = String(taskOrZone.title).replace(/^Book:\s*/i, "").trim();
+    if (cleaned) return cleaned;
+  }
+  return ZONE_SHORT[taskOrZone.zone] || "that appointment";
 }
 
 /** Highest-urgency open bookable health task. Ties break by id (stable). */

@@ -2,6 +2,8 @@
    bumps can wipe or migrate. Audio volumes live in gameAudio.js
    (`pack-it-up-audio`); this file is packing / coins / tasks / room. */
 
+import { REMOVED_TASK_IDS } from "./tasks.js";
+
 const SAVE_KEY = "pack-it-up-save";
 export const SAVE_VERSION = 2;
 
@@ -96,13 +98,17 @@ export function mergeFlagMap(defaults, saved) {
  * New INITIAL_TASKS appear; user/quick-add/attend cards (ids not in initial) are kept.
  */
 export function mergeTasks(initial, savedTasks) {
-  if (!Array.isArray(savedTasks) || savedTasks.length === 0) return initial;
+  if (!Array.isArray(savedTasks) || savedTasks.length === 0) {
+    return initial.filter((t) => !REMOVED_TASK_IDS.has(t.id));
+  }
   const byId = Object.fromEntries(
-    savedTasks.filter((t) => t && t.id).map((t) => [t.id, t])
+    savedTasks.filter((t) => t && t.id && !REMOVED_TASK_IDS.has(t.id)).map((t) => [t.id, t])
   );
-  const ok = new Set(["pending", "active", "done", "dismissed"]);
+  const ok = new Set(["pending", "active", "done", "dismissed", "archived"]);
   const initialIds = new Set(initial.map((t) => t.id));
-  const merged = initial.map((t) => {
+  const merged = initial
+    .filter((t) => !REMOVED_TASK_IDS.has(t.id))
+    .map((t) => {
     const s = byId[t.id];
     if (!s || !ok.has(s.status)) return t;
     const urgency = typeof s.urgency === "number" ? Math.min(3, Math.max(1, s.urgency)) : t.urgency;
@@ -115,7 +121,7 @@ export function mergeTasks(initial, savedTasks) {
       effort,
       needsInfo: !!s.needsInfo,
       title: typeof s.title === "string" && s.title.trim() ? s.title.trim() : t.title,
-      due: typeof s.due === "string" ? s.due : t.due,
+      due: t.selfTarget ? t.due : (typeof s.due === "string" ? s.due : t.due),
       dueDate: s.dueDate !== undefined ? s.dueDate : t.dueDate,
       dueEnd: s.dueEnd !== undefined ? s.dueEnd : t.dueEnd,
       category,
@@ -123,10 +129,11 @@ export function mergeTasks(initial, savedTasks) {
       bookTaskId: s.bookTaskId || t.bookTaskId || null,
       score: typeof s.score === "number" ? s.score : t.score,
       jobId: s.jobId !== undefined && s.jobId !== null ? s.jobId : t.jobId,
+      selfTarget: !!t.selfTarget,
     };
   });
   for (const s of savedTasks) {
-    if (!s?.id || initialIds.has(s.id) || !ok.has(s.status)) continue;
+    if (!s?.id || REMOVED_TASK_IDS.has(s.id) || initialIds.has(s.id) || !ok.has(s.status)) continue;
     merged.push({
       id: s.id,
       title: String(s.title || "Untitled").trim() || "Untitled",
@@ -147,6 +154,7 @@ export function mergeTasks(initial, savedTasks) {
       kind: s.kind || null,
       bookTaskId: s.bookTaskId || null,
       score: typeof s.score === "number" ? s.score : null,
+      selfTarget: !!s.selfTarget,
     });
   }
   return merged;
