@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-11T20:15:27.732Z",
+  "last_updated": "2026-07-11T20:32:57.712Z",
   "rules": {
     "read_before_work": true,
     "write_before_editing": true,
@@ -52,28 +52,18 @@
       "model": "GPT-5.6 Sol",
       "role": "Codex Team Lead / Senior Agentic Engineer",
       "thinking": "high",
-      "status": "ACTIVE",
+      "status": "IDLE",
       "branch": "codex",
-      "working_on": "Productivity core data layer: seed data, calendar spine, Pressure v2, save migration",
-      "files_locked": [
-        "artifacts/pack-it-up/src/tasks.js",
-        "artifacts/pack-it-up/src/movePhase.js",
-        "artifacts/pack-it-up/src/save.js"
-      ],
-      "systems_locked": [
-        "task-data",
-        "calendar-spine",
-        "pressure",
-        "stretchy-stress-data",
-        "save-migration"
-      ],
-      "risk_level": "structural",
+      "working_on": null,
+      "files_locked": [],
+      "systems_locked": [],
+      "risk_level": null,
       "commit_authority": true,
       "rate_limited": false,
       "cooldown_until": null,
       "handoff_needed": null,
-      "last_seen": "2026-07-11T20:15:27.732Z",
-      "expires_at": "2026-07-12T02:10:00Z",
+      "last_seen": "2026-07-11T20:32:57.712Z",
+      "expires_at": null,
       "notes": "Installing machine-readable coordination layer without changing game code."
     },
     "codex_luna": {
