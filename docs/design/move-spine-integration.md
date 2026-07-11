@@ -92,6 +92,20 @@ Pressure rules (binding on all future passes, including Sal/Vivian):
 - **No new NPCs before Shirley Pass 1 proves the call pattern.** Sequenced already; this doc doesn't reorder it.
 - **No new screens beyond the board.** If a spine element can't land on an existing surface, it waits.
 
+## Functional-companion gaps (Eloisa's "are we missing anything," Jul 11)
+
+Audit of "could this actually run the move" — four gaps, all connective tissue between game and reality, none of them screens:
+
+**1. The reality contract.** The apartment is an **honor-system mirror**: packing the pixel box *records* that the real box got packed — the game never verifies, never doubts. For non-physical tasks the binding rule is **≤2 taps to mark a real-world thing done** (tap task → done, anywhere it appears: card, ledger row, chip). If logging a completed errand takes more effort than the errand's dopamine pays back, she stops logging and the companion dies. Every future surface obeys this.
+
+**2. Quick-add — the biggest true gap.** Life generates tasks mid-move (a sublet reply, a form nobody predicted). Today there is no way to add a task in-app; without one this is a fixed script, not a companion. v1: one plain input on the ledger page — text + lane + effort dots, becomes a normal task card. No recurring rules, no due-date picker beyond "this week / a date"; it's a sticky note, not a form.
+
+**3. Device canon + save safety.** Saves are per-device localStorage; phone and laptop will diverge. Ruling: **the phone is canonical** — the laptop is for dev/preview, period. And after the seed-data drop, schema bumps may **never wipe status again** (today `v` mismatch wipes clean): mid-move, her packed/done states are irreplaceable real-world records. Migrations must carry status forward. SOFT: save export/import (clipboard JSON) as a lifeboat.
+
+**4. Sequencing reality check (Eloisa's call).** Sublet lock is Jul 15; the current build order (perf → Shirley Pass 1 → data drop → board) won't surface the sublet lane until after it's moot. If the app should help *this week*, the **data drop + ledger page jump the queue** ahead of Shirley Pass 1 — Shirley already works via bank lines; a companion that doesn't know about the sublet sprint during the sublet sprint doesn't get a second first impression.
+
+**Deliberately still absent** (checked, refused): accounts/cloud sync (backend), push (ruled — .ics), streaks/analytics (shame machinery), evening review ceremony (session checkmarks already close the day). SOFT someday: an **arrival ending** — Aug 1, boxes gone, one quiet screen with Stretchy in the new place. The countdown deserves a landing.
+
 ## What this changes in FINISH_PLAN (deltas only)
 
 1. **P1c acceptance gains:** 3+1 card cap · cards route to existing screens · critical-path strip ≤5 items · morning-dispatch boot behavior (once/day).
