@@ -15,7 +15,7 @@ Add this near the top of Open next, before audio cleanup:
 - [ ] Leave audio lazy-loading / incoming pulse / infinite CSS animation notes as watchlist, not broad refactor.
 - Acceptance: Shirley script bank works with no API key; live API remains opt-in; no July 10 auto-call remains; app still runs; no architecture pass.
 
-- ## Shirley OpenRouter path may be broken
+## Shirley OpenRouter path may be broken
 
 Observed during live phone testing:
 
