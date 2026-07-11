@@ -1,6 +1,6 @@
 # Codex harness playbook — sub-agents
 
-**Owner:** GPT-5.6 Sol in Codex (team lead). Luna and Terra are workers; Sol owns their output, review, commits, and merges.
+**Owner:** GPT-5.6 Sol in Codex (team lead). Luna is the default economic worker; Sol owns risk decisions, final review, commits, and merges.
 
 Before editing or delegating, read `artifacts/agent_ledger.json`, claim the exact
 files and systems involved, and stop on overlapping locks. Use
@@ -17,16 +17,20 @@ Codex can spawn independent agent threads and collect their summaries in the lea
 
 Invoke the exact agent name. If the configured agent or pinned model is unavailable, stop and tell Eloisa; never silently substitute the default worker or another model. Sub-agents start with their own context, so every ticket must restate the relevant constraints.
 
-## When Sol delegates
+## Economic routing: Luna first
 
-**Default: no delegation.** Use a sub-agent only when Eloisa asks, an approved ticket names one, or independent read-heavy work materially protects the lead thread from noisy output. Never run parallel writers in `BedroomSlice.jsx`.
+**Default: delegate bounded work to Luna.** Use Luna for repository exploration, file mapping, docs, closeout, ledger updates, routine validation, mechanical Git reconciliation, and scoped implementation. Keep Sol as a thin lead/reviewer context. Never run parallel writers in BedroomSlice.jsx.
 
-- Keep architecture, ambiguous debugging, save/load, cross-system state, taste decisions, and final verification with Sol.
+- Keep architecture decisions, ambiguous high-risk debugging, save/load, cross-system state, taste decisions, and final acceptance with Sol. Sol inspects only enough evidence to scope and review Luna's work.
 - Use `project_explorer` for questions such as tracing every `glowRegions` consumer or mapping the audio path before a change.
-- Use `luna_worker` for a ticket such as replacing one approved SFX mapping or implementing an already-decided, narrow UI adjustment.
+- Use luna_worker for repo reconnaissance, docs maintenance, closeout, routine tests, approved SFX mappings, and already-decided UI adjustments.
 - The current glow-region tuning stays with Sol or Cursor because it combines visual judgment with one-file conflict risk. Shirley voice stays with Fable/Opus until its ruleset is approved.
 
 Luna receives a ticket only when all are true: the behavior and file scope are explicit; acceptance criteria and verification are supplied; no architecture decision remains; no hidden cross-system behavior is expected; and a lead has approved the plan. `high` is the normal effort. Do not raise effort to compensate for an unclear ticket—return it to Sol.
+
+## Sol conservation rules
+
+Do not open a second Sol task for routine work. Replace giant chat transcripts with short handoffs. Do not use Sol for polling, log digestion, file inventories, routine tests, session summaries, DEVLOG/HANDOFF edits, or straightforward commits. Prefer one Luna worker. If routine work drops the five-hour window by roughly 10%, stop and re-route.
 
 ## Delegation contract
 
@@ -36,6 +40,6 @@ Sol reviews the complete diff, checks scope, reruns verification, and explains t
 
 ## Usage and failure handling
 
-At session start, record the visible five-hour and weekly allowance; ask Eloisa only when Codex does not expose it. Re-check before expensive fan-out and report remaining usage at close-out. Prefer one focused agent over broad parallelism.
+At session start, record the visible five-hour and weekly allowance; ask Eloisa only when Codex does not expose it. Re-check after the first substantive task, before fan-out, and at close-out. Prefer Luna for volume and Sol for judgment. A routine closeout should be one compact Luna pass, not a separate Sol project.
 
 Known failure modes: vague “review” prompts manufacture findings; cold agents miss constraints; overlapping writers conflict in the monolithic game file; successful builds can hide behavioral regressions; raw logs pollute the lead context; silent model fallback defeats routing. Prevent these with falsifiable tickets, exact agent names, serialized writes, lead-run behavioral checks, and summarized evidence.

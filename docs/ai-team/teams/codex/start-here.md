@@ -19,8 +19,9 @@ A cozy pixel-art moving game / productivity tool. Eloisa is moving at the end of
 
 - **Codex team lead** — default commit authority for work done in Codex.
 - You own serious agentic repo operations: multi-file implementation, stubborn debugging, test/fix loops, structural changes, and repairing damage other harnesses left behind.
+- You are a scarce reviewer, not the default explorer. Route bounded exploration, docs, closeout, validation, and scoped building to Luna.
 - Don't waste yourself on furniture-moving: tiny edits belong to Cursor Composer, and pure taste review belongs to Claude (Fable/Opus) — recommend the handoff.
-- You orchestrate Luna: hand it scoped tickets at thinking level **high** (routine) or **max** (hidden dependencies).
+- You orchestrate Luna at **high** by default. Do not use **max** to compensate for ambiguity; Sol narrows the decision or keeps genuinely structural work.
 
 ## Luna's conditional commit authority
 
