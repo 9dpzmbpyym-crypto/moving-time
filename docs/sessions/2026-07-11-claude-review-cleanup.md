@@ -8,7 +8,7 @@
 - **Reviewed Grok's playbook (on its unmerged branch): excellent content.** Real Cursor Task roster, Composer-vs-Task decision table, actual Pro usage pools (Auto+Composer 41% / API 100%), IDE settings table, plain-English roster. Ritual gaps (no session file / signed DEVLOG) are explained by its branch predating those files — backfills at its own close-out.
 - **Answered Grok's 5 review notes** (to be folded into its playbook after merge): 1) API-maxed routing confirmed — stay first-party, Luna-shaped overflow → Codex credits; 2) Explore=Composer + chat=Grok confirmed; 3) standing-branch smell real — swap sequence now in FINISH_PLAN; 4) glow = Fable judges screenshots/sets proportions, Grok edits rects; voice/pixels stay Claude; 5) Codex-stub note stale (Sol delivered) — remove.
 - **File-organization audit:** 7 raw Epidemic Sound files violate the (otherwise good) audio naming convention — 5 in the audio tree, 2 uploaded to the repo root by mistake. Grok's branch already has sliced replacements for 3. Cleanup ticket with the full list added to FINISH_PLAN (`[cursor]`, Composer-sized, after merge). Naming rule added to `README_AUDIO_INDEX.txt`. `src/assets/audio/` duplicate correctly absent from git. Open flag for Eloisa: two stray screenshots in `attached_assets/` — move to `artifacts/pack-it-up/docs/` or delete?
-- **Branch cleanup (safe portion):** deleted the 6 stale remote branches with zero unmerged commits; the 2 with unique commits stay recoverable as `archive/*` branches (tag pushes are blocked by the GitHub App, so archives are branches).
+- **Branch cleanup (blocked at the last step):** verified 5 stale branches have zero unmerged commits and 2 more are safely parked as `archive/*` branches — but the GitHub App token cannot delete branches (403), same as tag pushes. **Eloisa deletes them in the GitHub UI** (repo → Branches → trash icon): `chatgpt-version`, `claude/game-dev-setup-bhs0lt`, `claude/pack-it-up-polish-yln7jy`, `cursor/combine-local-with-replit-main`, `cursor/fix-vite-dev-server-7a01`, `cursor/local-updates-backup`, `cursor/tech-debt-housekeeping-7a01`. All are merged or archived; deleting loses nothing.
 
 ### Still broken / unfinished (do next)
 1. Grok session close: commit → session file → signed DEVLOG → merge → delete `cursor/storage-glow-7a01` → create standing `cursor` branch (sequence in FINISH_PLAN)
@@ -22,7 +22,7 @@
 - Create the standing `cursor` branch before `cursor/storage-glow-7a01` is deleted (git ref namespace blocks it)
 
 ### Quick verify
-`git branch -r` shows: `main`, `codex`, `cursor/storage-glow-7a01`, `claude/say-hi-b1ijhk`, `archive/claude-pack-it-up-polish-yln7jy`, `archive/cursor-fix-vite-dev-server-7a01`.
+After Eloisa's UI deletions, `git branch -r` shows only: `main`, `codex`, `cursor/storage-glow-7a01`, `claude/say-hi-b1ijhk`, and the two `archive/*` branches.
 
 ### Suggested next-session order
 1. Grok close-out + branch swap

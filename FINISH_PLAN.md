@@ -30,6 +30,9 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 - [ ] Update `audio_index.csv` / `audio_manifest.json` if they reference removed files
 - Naming rule now lives at the top of `README_AUDIO_INDEX.txt`
 
+### Branch deletions — [eloisa] (GitHub UI: repo → Branches → trash icon; agents get 403 on ref deletion)
+- [ ] Delete: `chatgpt-version` · `claude/game-dev-setup-bhs0lt` · `claude/pack-it-up-polish-yln7jy` · `cursor/combine-local-with-replit-main` · `cursor/fix-vite-dev-server-7a01` · `cursor/local-updates-backup` · `cursor/tech-debt-housekeeping-7a01` (all merged or parked in `archive/*` — zero loss)
+
 ### Branch swap at Grok session close — [cursor]
 - [ ] Merge `cursor/storage-glow-7a01` → `main` (with session file + signed DEVLOG per `docs/ai-team/end-here.md`)
 - [ ] Delete `cursor/storage-glow-7a01`, then create standing `cursor` branch from main (git blocks the name until the old `cursor/*` branches are gone)
