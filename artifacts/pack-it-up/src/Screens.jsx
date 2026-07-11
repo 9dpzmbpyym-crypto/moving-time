@@ -193,6 +193,7 @@ export function RewardToast({ text }) {
 }
 
 function Screen({ title, icon, onBack, children, bg = "#1A1008", subtitle, progress, progressLabel, checklist, compact = false, flush = false }) {
+  const slim = compact || flush;
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 250, background: bg, display: "flex", flexDirection: "column",
@@ -201,46 +202,45 @@ function Screen({ title, icon, onBack, children, bg = "#1A1008", subtitle, progr
       {screenCss}
       <div style={{
         flex: "0 0 auto",
-        padding: compact
-          ? "calc(env(safe-area-inset-top, 0px) + 4px) 8px 4px"
+        padding: slim
+          ? "calc(env(safe-area-inset-top, 0px) + 2px) 6px 2px"
           : "calc(env(safe-area-inset-top, 0px) + 10px) 10px 8px",
-        display: "flex", gap: compact ? 6 : 8, alignItems: "center",
+        display: "flex", gap: slim ? 4 : 8, alignItems: "center",
       }}>
         <button onClick={onBack} style={{
-          padding: compact ? "6px 10px" : "9px 12px",
-          color: "#FFD97A", fontSize: compact ? 11 : 12, cursor: "pointer", flex: "0 0 auto", ...FR, ...LB,
+          padding: slim ? "4px 8px" : "9px 12px",
+          color: "#FFD97A", fontSize: slim ? 10 : 12, cursor: "pointer", flex: "0 0 auto", ...FR, ...LB,
         }}>
           ← Back
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            padding: compact ? "4px 8px" : "8px 12px",
+            padding: slim ? "2px 6px" : "8px 12px",
             textAlign: "center", color: "#FFD97A",
-            fontSize: compact ? 12 : 14, ...GOLD_PLATE, ...LB,
+            fontSize: slim ? 11 : 14, ...GOLD_PLATE, ...LB,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
           }}>
-            {icon} {title}
-            {compact && progressLabel ? (
-              <span style={{ color: "#8A7350", fontSize: 10, marginLeft: 8 }}>{progressLabel}</span>
+            <span>{icon} {title}</span>
+            {slim && progress != null && (
+              <span style={{ flex: "0 0 auto", width: 56 }}>
+                <ProgressBar value={progress} height={6} />
+              </span>
+            )}
+            {slim && progressLabel ? (
+              <span style={{ color: "#8A7350", fontSize: 9 }}>{progressLabel}</span>
             ) : null}
           </div>
-          {(subtitle || progress != null) && (
-            <div style={{
-              marginTop: compact ? 3 : 6,
-              padding: compact ? "3px 6px" : "6px 8px",
-              ...FR,
-            }}>
+          {!slim && (subtitle || progress != null) && (
+            <div style={{ marginTop: 6, padding: "6px 8px", ...FR }}>
               {subtitle && (
-                <div style={{
-                  color: "#C9B896", fontSize: compact ? 9 : 10,
-                  marginBottom: progress != null ? (compact ? 3 : 5) : 0, ...LB,
-                }}>
+                <div style={{ color: "#C9B896", fontSize: 10, marginBottom: progress != null ? 5 : 0, ...LB }}>
                   {subtitle}
                 </div>
               )}
               {progress != null && (
                 <>
-                  <ProgressBar value={progress} height={compact ? 8 : 12} />
-                  {!compact && progressLabel && (
+                  <ProgressBar value={progress} />
+                  {progressLabel && (
                     <div style={{ color: "#8A7350", fontSize: 9, marginTop: 3, textAlign: "right", ...LB }}>
                       {progressLabel}
                     </div>
@@ -250,20 +250,20 @@ function Screen({ title, icon, onBack, children, bg = "#1A1008", subtitle, progr
             </div>
           )}
         </div>
-        {checklist && !compact && (
+        {checklist && !slim && (
           <div style={{ flex: "0 0 auto" }}>{checklist}</div>
         )}
       </div>
       <div style={{
         flex: 1, minHeight: 0,
-        overflowY: compact || flush ? "hidden" : "auto",
+        overflowY: slim ? "hidden" : "auto",
         padding: flush
-          ? "0 0 calc(env(safe-area-inset-bottom, 0px) + 6px)"
+          ? "0 0 calc(env(safe-area-inset-bottom, 0px) + 4px)"
           : compact
             ? "4px 8px calc(env(safe-area-inset-bottom, 0px) + 8px)"
             : "8px 12px calc(env(safe-area-inset-bottom, 0px) + 16px)",
-        display: compact || flush ? "flex" : undefined,
-        flexDirection: compact || flush ? "column" : undefined,
+        display: slim ? "flex" : undefined,
+        flexDirection: slim ? "column" : undefined,
       }}>
         {children}
       </div>
@@ -1127,54 +1127,47 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
       title="Body Board"
       icon="🩺"
       onBack={leave}
-      subtitle="Stabilize highlighted zones"
       progress={stabilized / HEALTH_ZONES.length}
       progressLabel={`${stabilized}/${HEALTH_ZONES.length}`}
     >
       <RewardToast text={rewardToast} />
 
-      {/* Top band — bookings sit in the space above the full-bleed board */}
-      <div style={{
-        flex: "0 0 auto",
-        padding: "4px 8px 6px",
-        display: "flex", gap: 6, overflowX: "auto",
-      }}>
-        {booked.length === 0 && (
-          <div style={{
-            flex: "0 0 auto", minWidth: 120, padding: "4px 8px", background: "#2A1709",
-            border: "2px dashed #4A2E17", color: "#8A7350", fontSize: 9, ...LB,
-          }}>
-            No bookings — call {RECEPTIONIST_NAME} from Desk
-          </div>
-        )}
-        {booked.map((a) => {
-          const due = canAttendZone(appointments, a.zone)?.id === a.id;
-          const task = tasks.find((t) => t.id === a.taskId);
-          return (
-            <button
-              key={a.id}
-              type="button"
-              onClick={() => due && finishAppt(a)}
-              disabled={!due}
-              style={{
-                flex: "0 0 auto", width: 100, padding: "4px 6px", textAlign: "left",
-                cursor: due ? "pointer" : "default",
-                background: due ? "#EFE7D2" : "#2A1709",
-                border: "2px solid #120A04", ...LB,
-              }}
-            >
-              <div style={{ fontSize: 8, color: "#8A7350" }}>{due ? "ATTEND" : "BOOKED"}</div>
-              <div style={{ fontSize: 9, color: due ? "#3A2018" : "#C9B896", marginTop: 1 }}>
-                {visitLabel(task || a.zone)}
-              </div>
-              <div style={{ fontSize: 8, color: "#5A381F", marginTop: 1 }}>
-                {formatApptDay(a.dueAt)}{a.time ? ` · ${a.time}` : ""}
-                {!due ? " · wait" : " · today"}
-              </div>
-            </button>
-          );
-        })}
-      </div>
+      {/* Top band — only when there are bookings (no empty placeholder) */}
+      {booked.length > 0 && (
+        <div style={{
+          flex: "0 0 auto",
+          padding: "2px 6px 4px",
+          display: "flex", gap: 4, overflowX: "auto",
+        }}>
+          {booked.map((a) => {
+            const due = canAttendZone(appointments, a.zone)?.id === a.id;
+            const task = tasks.find((t) => t.id === a.taskId);
+            return (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => due && finishAppt(a)}
+                disabled={!due}
+                style={{
+                  flex: "0 0 auto", width: 96, padding: "3px 5px", textAlign: "left",
+                  cursor: due ? "pointer" : "default",
+                  background: due ? "#EFE7D2" : "#2A1709",
+                  border: "2px solid #120A04", ...LB,
+                }}
+              >
+                <div style={{ fontSize: 8, color: "#8A7350" }}>{due ? "ATTEND" : "BOOKED"}</div>
+                <div style={{ fontSize: 9, color: due ? "#3A2018" : "#C9B896", marginTop: 1 }}>
+                  {visitLabel(task || a.zone)}
+                </div>
+                <div style={{ fontSize: 8, color: "#5A381F", marginTop: 1 }}>
+                  {formatApptDay(a.dueAt)}{a.time ? ` · ${a.time}` : ""}
+                  {!due ? " · wait" : " · today"}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Full-width clipboard — flush L/R; short screens clip top/bottom evenly */}
       <div style={{
@@ -1237,55 +1230,53 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
         </div>
       </div>
 
-      {/* Bottom band — zone detail, care, notes */}
-      <div style={{ flex: "0 0 auto", padding: "6px 8px 0" }}>
-        <div style={{ padding: "6px 10px", ...FR }}>
-          {sel ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <span style={{ color: "#F2E4C0", fontSize: 13, ...LB }}>{sel.label}</span>
-              <span style={{ color: zoneDone(sel.id) ? "#8FD14F" : "#C74B4F", fontSize: 10, ...LB }}>
-                {zoneDone(sel.id) ? "stable" : "needs attention"}
-              </span>
-              <span style={{ color: "#C9B896", fontSize: 10, flex: 1, minWidth: 80, ...LB }}>{sel.note}</span>
-              {!zoneDone(sel.id) && (
-                <button
-                  onClick={() => stabilizeZone(sel.id)}
-                  style={{ padding: "6px 10px", background: "#3A2410", color: "#F2E4C0", border: "2px solid #120A04", boxShadow: "inset 0 -2px 0 #1A0F06", fontSize: 11, cursor: "pointer", ...LB }}
-                >
-                  Stabilize ✨
-                </button>
-              )}
-            </div>
-          ) : (
-            <div style={{ color: "#8A7350", fontSize: 11, ...LB }}>Tap a spot on the board. Nothing here bites.</div>
-          )}
-        </div>
+      {/* Bottom band — zone detail only when selected; thin care + notes */}
+      <div style={{ flex: "0 0 auto", padding: "2px 6px 0" }}>
+        {sel && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap",
+            padding: "2px 0 2px",
+          }}>
+            <span style={{ color: "#F2E4C0", fontSize: 12, ...LB }}>{sel.label}</span>
+            <span style={{ color: zoneDone(sel.id) ? "#8FD14F" : "#C74B4F", fontSize: 9, ...LB }}>
+              {zoneDone(sel.id) ? "stable" : "needs attention"}
+            </span>
+            <span style={{ color: "#C9B896", fontSize: 9, flex: 1, minWidth: 60, ...LB }}>{sel.note}</span>
+            {!zoneDone(sel.id) && (
+              <button
+                onClick={() => stabilizeZone(sel.id)}
+                style={{ padding: "4px 8px", background: "#3A2410", color: "#F2E4C0", border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB }}
+              >
+                Stabilize ✨
+              </button>
+            )}
+          </div>
+        )}
 
-        <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
+        <div style={{ display: "flex", gap: 3, marginTop: sel ? 2 : 0 }}>
           {CARE_ITEMS.map((c) => (
             <button key={c.id} onClick={() => useCare(c.id)} style={{
-              flex: 1, padding: "6px 4px", background: "#3A2410", color: "#F2E4C0",
-              border: "2px solid #120A04", fontSize: 9, cursor: "pointer", ...LB,
+              flex: 1, padding: "4px 2px", background: "#3A2410", color: "#F2E4C0",
+              border: "2px solid #120A04", fontSize: 8, cursor: "pointer", lineHeight: 1.15, ...LB,
             }}>
-              <div style={{ fontSize: 14 }}>{c.icon}</div>
+              <div style={{ fontSize: 12 }}>{c.icon}</div>
               {c.label}
             </button>
           ))}
         </div>
 
         <div style={{
-          marginTop: 4, padding: "4px 8px", display: "flex",
-          gap: 10, alignItems: "center", flexWrap: "wrap", ...FR,
+          marginTop: 2, padding: "1px 0", display: "flex",
+          gap: 8, alignItems: "center", flexWrap: "nowrap", overflow: "hidden",
         }}>
-          <span style={{ color: "#C9B896", fontSize: 9, ...LB }}>NOTES</span>
           {diag.map((d, i) => (
-            <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 4, ...LB }}>
-              <span style={{ width: 7, height: 7, background: d.c, border: "1px solid #120A04" }} />
-              <span style={{ color: "#F2E4C0", fontSize: 10 }}>{d.t}</span>
+            <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 3, ...LB }}>
+              <span style={{ width: 6, height: 6, background: d.c, border: "1px solid #120A04", flex: "0 0 auto" }} />
+              <span style={{ color: "#C9B896", fontSize: 9, whiteSpace: "nowrap" }}>{d.t}</span>
             </span>
           ))}
           {prog.items?.length > 0 && (
-            <span style={{ marginLeft: "auto", color: "#8A7350", fontSize: 9, ...LB }}>
+            <span style={{ marginLeft: "auto", color: "#8A7350", fontSize: 8, ...LB }}>
               Care {prog.items.filter((it) => it.done).length}/{prog.items.length}
             </span>
           )}
