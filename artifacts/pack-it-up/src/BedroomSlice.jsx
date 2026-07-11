@@ -29,7 +29,7 @@ import CAT_SHEET from "./assets/Cat-Sheet.png";
 // Next-layer screens (Menu/Desk/Health/etc.) + the task/urgency scaffold.
 // The apartment stays the hub; these render as full-screen overlays above it.
 import ScreenLayer, { RewardToast, IncomingPhoneCue } from "./Screens.jsx";
-import { INITIAL_TASKS, isOpen as isTaskOpen, taskPressure, SAMPLE_JOBS, TASK_CATEGORIES, refreshDailyHousingTasks } from "./tasks.js";
+import { INITIAL_TASKS, isOpen as isTaskOpen, taskPressure, TASK_CATEGORIES, refreshDailyHousingTasks } from "./tasks.js";
 import { CONTENTS, hasContents, remainingCount, contentsFor, itemArtReady } from "./contents.js";
 import {
   loadSave,
@@ -41,7 +41,7 @@ import {
   clampRoomIndex,
 } from "./save.js";
 import { mergeSession, bumpSession } from "./session.js";
-import { ensureDailyDeal, toggleDealPick } from "./schedule.js";
+import { ensureDailyDeal, toggleDealPick, handTasks, urgencyBadge } from "./schedule.js";
 import {
   sanitizeAppointments,
   markMissed,
@@ -2983,28 +2983,42 @@ export default function PackItUp({ glowMode = "split" }) {
         return a.z - b.z || (av.y + rm.sprites[a.id].h * CELL * (av.scale || 1)) - (bv.y + rm.sprites[b.id].h * CELL * (bv.scale || 1));
       });
 
-  /* urgency scaffold: overall pressure + how many papers are on the desk */
+  /* urgency scaffold: overall pressure drives fan peek / twitch */
   const pressure = taskPressure(tasks);
-  const deskTasksOpen = tasks.filter((t) => isTaskOpen(t) && ["job", "admin", "move"].includes(t.category));
-  const deskPaperCount = deskTasksOpen.length;
-  /* the physical fan in the corner: the 3 most urgent desk papers, colored by
-     kind (job = pink/red, admin/move = blue) and labeled with the real task */
-  const fanCards = [...deskTasksOpen]
-    .sort((a, b) => b.urgency - a.urgency)
-    .slice(0, 3)
-    .map((t) => {
-      const job = t.jobId ? SAMPLE_JOBS[t.jobId] : null;
-      const isJob = t.category === "job";
-      return {
-        id: t.id,
-        name: job ? job.title : t.title,
-        due: job ? job.deadline : t.due,
-        urgency: t.urgency,
-        icon: TASK_CATEGORIES[t.category]?.icon || "📄",
-        bg: isJob ? "#E9BFB2" : "#B9CEDC",
-        lo: isJob ? "#C08578" : "#8AA6B8",
-      };
-    });
+  /* apartment corner fan = the same active Command Board hand (bound + draws) */
+  const PAPER_FAN = { job: "#E9BFB2", admin: "#B9CEDC", move: "#EBDDBA", health: "#CBDCC2", cat: "#EBD2A8", housing: "#E8C9A0" };
+  const hand = session?.energy && session?.dailyDeal
+    ? handTasks(tasks, session.dailyDeal)
+    : [];
+  const fanCards = hand.map((t) => {
+    const badge = urgencyBadge(t, new Date(), tasks);
+    const hot = (t.criticality || 1) >= 3
+      || badge === "OVERDUE"
+      || badge === "FINAL CALL"
+      || badge === "CLOSING";
+    return {
+      id: t.id,
+      name: t.title,
+      due: badge || t.targetDate || t.due || "",
+      urgency: hot ? 3 : 1,
+      icon: TASK_CATEGORIES[t.category]?.icon || "📄",
+      bg: PAPER_FAN[t.category] || "#EBDDBA",
+      bound: !!t.bound,
+    };
+  });
+  const fanW = Math.min(210, 72 + Math.max(0, fanCards.length - 1) * 28);
+  const fanLayoutApt = (n, i, width) => {
+    const cardW = 58;
+    if (n <= 1) return { left: 0, rot: -6, lift: 0 };
+    const maxTravel = Math.max(width - cardW, 1);
+    const step = Math.max(18, Math.min(34, maxTravel / (n - 1)));
+    const t = i / (n - 1);
+    return {
+      left: i * step,
+      rot: -10 + t * 18,
+      lift: Math.sin(t * Math.PI) * 4,
+    };
+  };
 
   /* everything handled across ALL rooms — feeds Inventory + Log screens.
      Carries the object's own sprite so the screens can draw tiny thumbnails. */
@@ -4149,48 +4163,51 @@ export default function PackItUp({ glowMode = "split" }) {
           ))}
         </div>
 
-        {/* ---- paper fan: 2 job apps + 1 admin card, tucked partly behind
-             the action bar. Now the physical face of the task pile: it peeks
-             out further and twitches as pressure rises, and tapping it opens
-             the Desk. ---- */}
+        {/* ---- paper fan: literal Command Board hand (bound + drawn cards),
+             tucked behind the action bar. Same papers as the board dealer
+             spread; tap opens the Board. ---- */}
         {fanCards.length > 0 && (
         <div
           className={pressure >= 3 ? "fanNudge3" : pressure === 2 ? "fanNudge2" : undefined}
-          onClick={() => setScreen("desk")}
+          onClick={() => setScreen("board")}
           style={{
-            position: "absolute", left: 22, zIndex: 110, width: 130, height: 100, cursor: "pointer",
-            /* peek: papers ride up out from behind the bar as things pile up.
+            position: "absolute", left: 22, zIndex: 110, width: fanW, height: 100, cursor: "pointer",
+            /* peek: papers ride up out from behind the bar as pressure rises.
                Kept low so the fan never climbs over Stretchy in the foreground. */
             bottom: `calc(env(safe-area-inset-bottom, 0px) + ${22 + pressure * 5}px)`,
             transition: "bottom 400ms ease",
           }}
         >
           {fanCards.map((c, i) => {
-            const pos = [{ rot: -14, dx: 0 }, { rot: -4, dx: 26 }, { rot: 7, dx: 54 }][i] || { rot: 0, dx: 54 };
+            const pos = fanLayoutApt(fanCards.length, i, fanW);
             return (
               <div key={c.id} style={{
-                position: "absolute", left: pos.dx, bottom: 0, width: 58, height: 92, background: c.bg,
+                position: "absolute", left: pos.left, bottom: pos.lift, width: 58, height: 92, background: c.bg,
                 border: "2px solid #120A04", boxShadow: "2px 2px 0 rgba(0,0,0,0.45)",
-                transform: `rotate(${pos.rot}deg)`, transformOrigin: "50% 90%", padding: "5px 5px 0", zIndex: i,
+                transform: `rotate(${pos.rot}deg)`, transformOrigin: "50% 100%", padding: "5px 5px 0", zIndex: 10 + i,
                 overflow: "hidden",
               }}>
+                {c.bound && (
+                  <div style={{
+                    position: "absolute", top: 3, right: 3, padding: "1px 3px",
+                    border: "1px solid #A3252C", color: "#A3252C", fontSize: 7,
+                    background: "rgba(255,255,255,0.55)", ...ui.label,
+                  }}>B</div>
+                )}
                 <div style={{ fontSize: 11, marginBottom: 2 }}>{c.icon}</div>
                 <div style={{ fontSize: 8, lineHeight: 1.15, fontWeight: 700, color: "#3A2018", maxHeight: 38, overflow: "hidden", ...ui.label }}>{c.name}</div>
                 <div style={{ position: "absolute", left: 5, right: 5, bottom: 4, fontSize: 7, color: c.urgency >= 3 ? "#A3252C" : "#5A4636", ...ui.label }}>{c.due}</div>
-                {/* red marker: urgent scrawl on the loudest papers */}
-                {c.urgency >= 3 && (
+                {c.urgency >= 3 && !c.bound && (
                   <div style={{ position: "absolute", top: 3, right: 4, color: "#C43B34", fontSize: 12, fontWeight: 700, transform: "rotate(8deg)", ...ui.label }}>!</div>
                 )}
               </div>
             );
           })}
-          {deskPaperCount > 0 && (
-            <span style={{
-              position: "absolute", top: -8, right: -16, zIndex: 5, minWidth: 20, height: 20, padding: "0 4px",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              background: "#C43B34", color: "#F3EDDD", fontSize: 11, border: "2px solid #120A04", ...ui.label,
-            }}>{deskPaperCount}</span>
-          )}
+          <span style={{
+            position: "absolute", top: -8, right: -16, zIndex: 50, minWidth: 20, height: 20, padding: "0 4px",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: "#C43B34", color: "#F3EDDD", fontSize: 11, border: "2px solid #120A04", ...ui.label,
+          }}>{fanCards.length}</span>
         </div>
         )}
 
