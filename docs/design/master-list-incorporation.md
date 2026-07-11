@@ -96,6 +96,14 @@ Everything above fits existing structures (tasks, trays, meters, FSM) **except**
 
 Ruling: **one small pure-data module** (`movePhase.js`-shaped, lives beside `receptionist.js`): a `PHASES` table (pack-first → mid-month → U-Box week → load days → lock night → flight day) + a date-trigger list, with helpers `currentPhase(date)` / `dueTriggers(date)`. No screen, no loop, no state — callers ask it questions. The board, the NPCs, and the HUD's "next: U-Box Jul 27" line all consume it. This is the only new game structure the master list requires; everything else is content.
 
+## The calendar prop (Eloisa, Jul 11)
+
+The calendar spine gets a physical body: a **wall calendar sprite above the oven** in the kitchen. Like the bathroom mirror, it's a portal object — never packable, tap → full-screen overlay.
+
+**The overlay:** one paper month page (July 2026), pinned curl at the top, in the walnut/parchment family. **Stretchy is the pin-up** — a tiny cat-of-the-month photo header (July: Stretchy sitting in a box). Key dates marked in ink, straight from the spine's `PHASES`/trigger table — never hand-duplicated: sublet **15** circled · vet window **22–25** bracketed · U-Box **27** · load **28–29** · lock **30** · flight **31** starred with a little plane. Days already past get pencil X's (the crossing-off is the dopamine); today gets the red circle. Tap a marked date → one-line note strip ("U-Box arrives"). Read-only v1 — it's a calendar, not a form. SOFT later: flip to August (sublet start Aug 1).
+
+Sprite: small flip-calendar, ~8–12 px wide, above the oven ([cursor] places via `layout.json`); overlay is a new `calendar` screen in `Screens.jsx`, procedural v1 (no plate PNG needed — paper grid + ink marks draw fine in canvas/inline styles).
+
 ## Order of operations
 
 1. **Seed data drop** (this manifest → `tasks.js` + `save.js` merge defaults) — [cursor/codex], mechanical, do **before or with** the board skeleton: a dispatch with fictional data teaches distrust on day one.

@@ -5,7 +5,7 @@
 
 Every full-screen UI should feel like a **physical object Eloisa would actually handle during a move** — a clipboard, a manila folder, a legal pad, a shipping label — not a game menu wearing a wood texture. The approved Body Board v2 clipboard (`docs/mockups/body-board-background-v2-codex-review.png`) and the in-game `health-clipboard.png` are the anchors: walnut + brass, wide quiet parchment center, ornament only at the edges.
 
-**Object per screen:** Health = clipboard (done) · Desk = desk blotter + paper trays (papers ARE the UI) · Tasks/Command Board = clipboard sibling · Menu/Settings = index card or luggage tag. Same material family throughout: walnut, brass, parchment, ink.
+**Object per screen:** Health = clipboard (done) · Desk = desk blotter + paper trays (papers ARE the UI) · Tasks/Command Board = clipboard sibling · Calendar = kitchen wall calendar, paper month page with ink marks (spec: `master-list-incorporation.md`) · Menu/Settings = index card or luggage tag. Same material family throughout: walnut, brass, parchment, ink.
 
 ## Rules
 
