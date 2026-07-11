@@ -118,9 +118,15 @@ const screenCss = (
       from { transform: translateY(-6px); opacity: 1; }
       to   { transform: translateY(14px) rotate(6deg); opacity: 0.4; }
     }
-    @keyframes ringPulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(201,148,46,0.5); }
-      50% { box-shadow: 0 0 0 8px rgba(201,148,46,0); }
+    @keyframes phoneRattle {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      12% { transform: translate(2px, -1px) rotate(-2deg); }
+      24% { transform: translate(-2px, 1px) rotate(2deg); }
+      36% { transform: translate(2px, 1px) rotate(-1.5deg); }
+      48% { transform: translate(-1px, -2px) rotate(2deg); }
+      60% { transform: translate(1px, 1px) rotate(-2deg); }
+      72% { transform: translate(-2px, 0) rotate(1deg); }
+      84% { transform: translate(1px, -1px) rotate(-1deg); }
     }
     @keyframes receiverRise {
       from { transform: translateY(24px) scale(0.92); opacity: 0; }
@@ -128,7 +134,7 @@ const screenCss = (
     }
     .handsetUp { animation: handsetUp 320ms ease-out both; }
     .handsetDown { animation: handsetDown 280ms ease-in both; }
-    .ringPulse { animation: ringPulse 0.9s ease-in-out infinite; }
+    .phoneRattle { animation: phoneRattle 0.28s linear infinite; transform-origin: 50% 70%; }
     .receiverRise { animation: receiverRise 380ms cubic-bezier(0.2, 1.1, 0.4, 1) both; }
   `}</style>
 );
@@ -422,7 +428,6 @@ function LandlineHotspot({ onPickUp, ringing }) {
       type="button"
       onClick={onPickUp}
       title={`Call ${RECEPTIONIST_NAME}`}
-      className={ringing ? "ringPulse" : undefined}
       style={{
         position: "absolute", left: 6, bottom: 6, zIndex: 4,
         width: 72, height: 72, padding: 4, cursor: "pointer",
@@ -433,11 +438,11 @@ function LandlineHotspot({ onPickUp, ringing }) {
         src={LANDLINE_PHONE}
         alt=""
         draggable={false}
+        className={ringing ? "phoneRattle" : undefined}
         style={{
           display: "block", width: "100%", height: "100%",
           objectFit: "contain", imageRendering: "pixelated",
           pointerEvents: "none", userSelect: "none",
-          filter: ringing ? "brightness(1.15)" : "none",
         }}
       />
       <div style={{
@@ -482,9 +487,15 @@ function ShirleyCallOverlay({
     }}>
       {(phase === "pickup" || phase === "dial" || phase === "ringing") && (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
-          <div className={phase === "pickup" ? "handsetUp" : phase === "hanging" ? "handsetDown" : "ringPulse"} style={{
-            width: 160, height: 160, position: "relative",
-          }}>
+          <div
+            className={
+              phase === "pickup" ? "handsetUp"
+                : phase === "hanging" ? "handsetDown"
+                  : phase === "ringing" ? "phoneRattle"
+                    : undefined
+            }
+            style={{ width: 160, height: 160, position: "relative" }}
+          >
             <img
               src={LANDLINE_PHONE}
               alt=""
