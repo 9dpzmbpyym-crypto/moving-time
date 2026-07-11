@@ -184,7 +184,7 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 
 ## P1b2 — Real move data drop + calendar spine (BEFORE or WITH the board — a dispatch with fictional data teaches distrust on day one)
 
-> **Sequencing decision for Eloisa:** sublet lock is **Jul 15**. If the app should help this week, this section + the ledger page jump the queue ahead of Shirley Pass 1 (Shirley works via bank lines today). Otherwise current order stands.
+> **DECIDED (Eloisa, Jul 11): this section + ledger page + quick-add JUMP THE QUEUE — ahead of Shirley Pass 1.** She needs the productivity core live now (sublet locks Jul 15). Order: [codex] data layer (seed drop, calendar spine, pressure v2, save migration) → [codex] ledger page + quick-add → board skeleton later. Shirley Pass 1 waits; she works via bank lines today. [cursor] perf patch runs in parallel (independent files).
 
 - **Binding rules (design: `move-spine-integration.md` → "Functional-companion gaps"):** ≤2 taps to mark any real-world task done, everywhere it appears · phone is the canonical save device · after this drop, schema bumps must MIGRATE status, never wipe (`save.js` `v`-mismatch wipe becomes forbidden)
 - [ ] **[cursor]** Quick-add on the ledger page: text + lane + effort dots → normal task card. A sticky note, not a form (no recurrence, no complex dates). Without this the app is a fixed script.
