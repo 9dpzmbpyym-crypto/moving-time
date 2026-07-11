@@ -757,29 +757,65 @@ export function playPhonePickupSfx() {
   setTimeout(() => toneBurst(280, 0.08, 0.18, "triangle"), 40);
 }
 
-/** Classic double-ring cadence; auto-stops after ~loops. */
-export function playPhoneRingSfx(loops = 2) {
-  stopPhoneRingSfx();
+/** One ~1s ring burst (double chirp, then a quick echo). */
+export function playPhoneRingBurst() {
   if (state.sfxVol <= 0.001) return;
   const pair = () => {
     toneBurst(880, 0.18, 0.28, "square");
     setTimeout(() => toneBurst(740, 0.18, 0.26, "square"), 200);
   };
-  let n = 0;
   pair();
-  phoneRingTimer = setInterval(() => {
-    n += 1;
-    if (n >= loops) {
-      stopPhoneRingSfx();
+  setTimeout(pair, 450);
+}
+
+/**
+ * Classic cadence: 1s ring, 2s gap, repeat `bursts` times.
+ * `onBurst(i)` fires at the start of each ring; `onDone` after the final gap.
+ * Returns a cancel fn.
+ */
+export function playPhoneRingPattern({ bursts = 2, onMs = 1000, gapMs = 2000, onBurst, onDone } = {}) {
+  stopPhoneRingSfx();
+  const timers = [];
+  const later = (ms, fn) => {
+    const id = setTimeout(fn, ms);
+    timers.push(id);
+    return id;
+  };
+  phoneRingTimer = { clear() { timers.forEach(clearTimeout); } };
+
+  let i = 0;
+  const run = () => {
+    if (i >= bursts) {
+      phoneRingTimer = null;
+      onDone?.();
       return;
     }
-    pair();
-  }, 1100);
+    const idx = i;
+    i += 1;
+    onBurst?.(idx);
+    playPhoneRingBurst();
+    later(onMs + gapMs, run);
+  };
+  run();
+
+  return () => {
+    timers.forEach(clearTimeout);
+    phoneRingTimer = null;
+  };
+}
+
+/** @deprecated Prefer playPhoneRingPattern — kept for simple burst loops. */
+export function playPhoneRingSfx(loops = 2) {
+  playPhoneRingPattern({ bursts: loops, onMs: 1000, gapMs: 2000 });
 }
 
 export function stopPhoneRingSfx() {
   if (phoneRingTimer) {
-    clearInterval(phoneRingTimer);
+    if (typeof phoneRingTimer === "object" && phoneRingTimer.clear) {
+      phoneRingTimer.clear();
+    } else {
+      clearInterval(phoneRingTimer);
+    }
     phoneRingTimer = null;
   }
 }

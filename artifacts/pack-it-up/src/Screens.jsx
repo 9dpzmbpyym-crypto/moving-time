@@ -13,7 +13,7 @@ import {
   setSfxVolume,
   playContainerSfx,
   playPhonePickupSfx,
-  playPhoneRingSfx,
+  playPhoneRingPattern,
   stopPhoneRingSfx,
   playPhoneHangupSfx,
 } from "./gameAudio.js";
@@ -422,7 +422,7 @@ function DeskCard({ task, small, onClick, resolving }) {
 
 /* ================= SHIRLEY / LANDLINE ================= */
 
-function LandlineHotspot({ onPickUp, ringing }) {
+function LandlineHotspot({ onPickUp, ringing, rattling }) {
   return (
     <button
       type="button"
@@ -438,7 +438,7 @@ function LandlineHotspot({ onPickUp, ringing }) {
         src={LANDLINE_PHONE}
         alt=""
         draggable={false}
-        className={ringing ? "phoneRattle" : undefined}
+        className={rattling ? "phoneRattle" : undefined}
         style={{
           display: "block", width: "100%", height: "100%",
           objectFit: "contain", imageRendering: "pixelated",
@@ -461,6 +461,7 @@ function ShirleyCallOverlay({
   chips,
   waiting,
   draftHint,
+  rattling,
   onDial,
   onSend,
   onHangUp,
@@ -491,7 +492,7 @@ function ShirleyCallOverlay({
             className={
               phase === "pickup" ? "handsetUp"
                 : phase === "hanging" ? "handsetDown"
-                  : phase === "ringing" ? "phoneRattle"
+                  : rattling ? "phoneRattle"
                     : undefined
             }
             style={{ width: 160, height: 160, position: "relative" }}
@@ -655,12 +656,54 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
   const [phoneWaiting, setPhoneWaiting] = useState(false);
   const [lineSource, setLineSource] = useState(null); // live | script
   const [incomingRing, setIncomingRing] = useState(!!phoneNudge);
+  const [phoneRattling, setPhoneRattling] = useState(false);
+  const ringCancelRef = useRef(null);
+  const rattleOffRef = useRef(null);
   const apptsRef = useRef(appointments);
   apptsRef.current = appointments;
   const callStateRef = useRef(callState);
   callStateRef.current = callState;
   const msgsRef = useRef(phoneMsgs);
   msgsRef.current = phoneMsgs;
+
+  const clearPhoneRing = () => {
+    if (ringCancelRef.current) {
+      ringCancelRef.current();
+      ringCancelRef.current = null;
+    }
+    if (rattleOffRef.current) {
+      clearTimeout(rattleOffRef.current);
+      rattleOffRef.current = null;
+    }
+    stopPhoneRingSfx();
+    setPhoneRattling(false);
+  };
+
+  const beginRingPattern = ({ bursts = 2, loop = false, onDone } = {}) => {
+    clearPhoneRing();
+    const startBurst = () => {
+      setPhoneRattling(true);
+      if (rattleOffRef.current) clearTimeout(rattleOffRef.current);
+      rattleOffRef.current = setTimeout(() => setPhoneRattling(false), 1000);
+    };
+    const run = () => {
+      ringCancelRef.current = playPhoneRingPattern({
+        bursts,
+        onMs: 1000,
+        gapMs: 2000,
+        onBurst: startBurst,
+        onDone: () => {
+          ringCancelRef.current = null;
+          if (loop) {
+            run();
+            return;
+          }
+          onDone?.();
+        },
+      });
+    };
+    run();
+  };
 
   useEffect(() => {
     if (phoneNudge) setIncomingRing(true);
@@ -669,14 +712,14 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
   useEffect(() => {
     if (!phoneNudge) return;
     if (phoneNudge.kind !== "remind" && phoneNudge.kind !== "overdue") return;
-    playPhoneRingSfx(2);
     setIncomingRing(true);
+    beginRingPattern({ bursts: 2, loop: true });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps — ring once when desk opens with nudge
 
-  useEffect(() => () => { stopPhoneRingSfx(); }, []);
+  useEffect(() => () => { clearPhoneRing(); }, []);
 
   const startTalking = (nudgeOverride) => {
-    stopPhoneRingSfx();
+    clearPhoneRing();
     const nudge = nudgeOverride || phoneNudge || getNudge(apptsRef.current, tasks);
     const pri = nudge?.task || priorityHealthTask(tasks, apptsRef.current);
     const days = daysUntilMove();
@@ -698,6 +741,7 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
   };
 
   const pickUpPhone = () => {
+    clearPhoneRing();
     playPhonePickupSfx();
     setPhonePhase("pickup");
     setIncomingRing(false);
@@ -707,19 +751,21 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
     setPhonePhase("dial");
     setTimeout(() => {
       setPhonePhase("ringing");
-      playPhoneRingSfx(2);
-      setTimeout(() => startTalking(phoneNudge || getNudge(apptsRef.current, tasks)), 2200);
+      beginRingPattern({
+        bursts: 2,
+        onDone: () => startTalking(phoneNudge || getNudge(apptsRef.current, tasks)),
+      });
     }, 400);
   };
 
   const cancelCeremony = () => {
-    stopPhoneRingSfx();
+    clearPhoneRing();
     playPhoneHangupSfx();
     setPhonePhase(null);
   };
 
   const hangUp = () => {
-    stopPhoneRingSfx();
+    clearPhoneRing();
     playPhoneHangupSfx();
     setPhonePhase("hanging");
     setTimeout(() => {
@@ -1002,7 +1048,7 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
           display: "flex", alignItems: "center", justifyContent: "center", position: "relative",
         }}>
           {!phonePhase && (
-            <LandlineHotspot onPickUp={pickUpPhone} ringing={incomingRing} />
+            <LandlineHotspot onPickUp={pickUpPhone} ringing={incomingRing} rattling={phoneRattling} />
           )}
           {phonePhase && (
             <ShirleyCallOverlay
@@ -1011,6 +1057,7 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
               chips={chips}
               waiting={phoneWaiting}
               draftHint={draftHint}
+              rattling={phoneRattling}
               onDial={dialShirley}
               onSend={handlePhoneSend}
               onHangUp={hangUp}
