@@ -4189,16 +4189,16 @@ export default function PackItUp({ glowMode = "split" }) {
               }}>
                 {c.bound && (
                   <div style={{
-                    position: "absolute", top: 3, right: 3, padding: "1px 3px",
-                    border: "1px solid #A3252C", color: "#A3252C", fontSize: 7,
+                    position: "absolute", top: 2, right: 2, padding: "0 2px",
+                    border: "1px solid #A3252C", color: "#A3252C", fontSize: 5,
                     background: "rgba(255,255,255,0.55)", ...ui.label,
                   }}>B</div>
                 )}
-                <div style={{ fontSize: 11, marginBottom: 2 }}>{c.icon}</div>
-                <div style={{ fontSize: 8, lineHeight: 1.15, fontWeight: 700, color: "#3A2018", maxHeight: 38, overflow: "hidden", ...ui.label }}>{c.name}</div>
-                <div style={{ position: "absolute", left: 5, right: 5, bottom: 4, fontSize: 7, color: c.urgency >= 3 ? "#A3252C" : "#5A4636", ...ui.label }}>{c.due}</div>
+                <div style={{ fontSize: 8, marginBottom: 1, lineHeight: 1 }}>{c.icon}</div>
+                <div style={{ fontSize: 6, lineHeight: 1.1, fontWeight: 700, color: "#3A2018", maxHeight: 32, overflow: "hidden", ...ui.label }}>{c.name}</div>
+                <div style={{ position: "absolute", left: 4, right: 4, bottom: 3, fontSize: 5, color: c.urgency >= 3 ? "#A3252C" : "#5A4636", ...ui.label }}>{c.due}</div>
                 {c.urgency >= 3 && !c.bound && (
-                  <div style={{ position: "absolute", top: 3, right: 4, color: "#C43B34", fontSize: 12, fontWeight: 700, transform: "rotate(8deg)", ...ui.label }}>!</div>
+                  <div style={{ position: "absolute", top: 2, right: 3, color: "#C43B34", fontSize: 9, fontWeight: 700, transform: "rotate(8deg)", ...ui.label }}>!</div>
                 )}
               </div>
             );
