@@ -1245,7 +1245,7 @@ const DINING_SPRITES = {
     r(ctx, P.out, 4, 45, 7, 5); r(ctx, P.out, 43, 45, 7, 5);
     r(ctx, P.woodDark, 5, 46, 5, 3); r(ctx, P.woodDark, 44, 46, 5, 3);
   }},
-  bar_bottles: { w: 28, h: 16, draw(ctx) {
+  bar_bottles: { w: 28, h: 16, glowRegions: [[0, 4, 6, 12], [8, 2, 4, 14], [15, 4, 5, 12], [22, 6, 6, 10]], draw(ctx) {
     r(ctx, P.out, 0, 4, 6, 12);
     r(ctx, P.wood, 1, 5, 4, 10);
     r(ctx, P.woodHi, 1, 5, 4, 1);
@@ -1533,21 +1533,19 @@ const LIVING_SPRITES = {
   // small tabletop radio — sits on the TV hutch
   // draw(ctx) is the static/editor fallback; roomArt uses drawRadio(ctx, live)
   radio: { w: 28, h: 18, draw(ctx) { drawRadio(ctx, { on: false, t: 0 }); } },
-  // hard case leaning by the amp — moving-story prop (tight procedural case)
+  // guitar-shaped hard case leaning by the amp — narrow neck, pinched waist,
+  // and a broad lower bout so it reads as an instrument case, not a coffin.
   guitar_case: { w: 22, h: 48, draw(ctx) {
-    // case body (slight lean via stepped silhouette)
-    r(ctx, P.out, 4, 2, 14, 44);
-    r(ctx, "#2A1A0C", 5, 3, 12, 42);
-    r(ctx, "#3A2410", 5, 3, 12, 6);
-    r(ctx, P.out, 3, 8, 16, 28);
-    r(ctx, "#2A1A0C", 4, 9, 14, 26);
-    // latch + handle
-    r(ctx, P.gold, 9, 6, 4, 2);
-    r(ctx, P.out, 8, 0, 6, 3); r(ctx, "#4A2E17", 9, 1, 4, 1);
-    r(ctx, P.goldHi, 10, 20, 2, 2);
-    r(ctx, P.goldHi, 10, 30, 2, 2);
-    // floor contact shadow
-    r(ctx, P.out, 2, 46, 18, 2);
+    r(ctx, P.out, 9, 0, 6, 4); r(ctx, "#4A2E17", 10, 1, 4, 2); // handle
+    r(ctx, P.out, 8, 3, 8, 17); r(ctx, "#2A1A0C", 9, 4, 6, 15); // neck
+    r(ctx, "#3A2410", 10, 4, 2, 14);
+    r(ctx, P.out, 5, 18, 14, 9); r(ctx, "#2A1A0C", 6, 19, 12, 7); // upper bout
+    r(ctx, P.out, 7, 25, 10, 7); r(ctx, "#2A1A0C", 8, 25, 8, 7); // waist
+    r(ctx, P.out, 3, 30, 18, 14); r(ctx, "#2A1A0C", 4, 31, 16, 12); // lower bout
+    r(ctx, P.out, 5, 43, 14, 4); r(ctx, "#2A1A0C", 6, 43, 12, 3);
+    r(ctx, "#4A2E17", 6, 19, 2, 6); r(ctx, "#4A2E17", 4, 32, 2, 10);
+    r(ctx, P.goldHi, 17, 22, 2, 2); r(ctx, P.goldHi, 18, 35, 2, 2);
+    r(ctx, P.out, 2, 47, 20, 1); // floor contact
   }},
   // small practice amp
   amplifier: { w: 22, h: 20, draw(ctx) {
@@ -2090,16 +2088,19 @@ function Stretchy({ spots, enterSide, pressure = 0, onOpen, playCatSfx }) {
   return (
     <div
       ref={wrapRef}
-      aria-hidden={guilty ? undefined : "true"}
-      onClick={guilty && onOpen ? (e) => { e.stopPropagation(); onOpen(); } : undefined}
+      role={onOpen ? "button" : undefined}
+      tabIndex={onOpen ? 0 : undefined}
+      aria-label={onOpen ? "Open Stretchy status" : undefined}
+      onClick={onOpen ? (e) => { e.stopPropagation(); onOpen(); } : undefined}
+      onKeyDown={onOpen ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } } : undefined}
       style={{
         position: "absolute",
         left: posRef.current.x - fw / 2,
         top: posRef.current.y - fw * CAT_FOOT_FRAC,
         width: fw,
         height: fw,
-        pointerEvents: guilty && onOpen ? "auto" : "none",
-        cursor: guilty && onOpen ? "pointer" : "default",
+        pointerEvents: onOpen ? "auto" : "none",
+        cursor: onOpen ? "pointer" : "default",
         zIndex: 90,
       }}
     >

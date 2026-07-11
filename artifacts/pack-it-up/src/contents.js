@@ -309,14 +309,15 @@ export const CONTENTS = {
   ],
 
   // ===================== DINING =====================
-  "dining:bar_cabinet": [
-    // alcohol
+  "dining:bar_bottles": [
     { id: "wine",       name: "Red Wine",          spr: art("s4_r01_i01_red_wine_bottle.png"),            value: 14 },
     { id: "liquor",     name: "Liquor Bottle",     spr: art("s4_r01_i04_liquor_bottle.png"),              value: 22 },
     { id: "shaker",     name: "Cocktail Shaker",   spr: art("s4_r01_i05_cocktail_shaker.png"),            value: 12 },
     { id: "jigger",     name: "Jigger",            spr: art("s4_r01_i06_jigger.png"),                     value: 6 },
-    { id: "corkscrew",  name: "Corkscrew",        spr: art("s4_r01_i07_corkscrew.png"),                  value: 4 },
-    { id: "opener",     name: "Bottle Opener",    spr: art("s4_r01_i08_bottle_opener.png"),              value: 3 },
+    { id: "corkscrew",  name: "Corkscrew",         spr: art("s4_r01_i07_corkscrew.png"),                  value: 4 },
+    { id: "opener",     name: "Bottle Opener",     spr: art("s4_r01_i08_bottle_opener.png"),              value: 3 },
+  ],
+  "dining:bar_cabinet": [
     // glassware
     { id: "wine_glass", name: "Wine Glass",        spr: art("s4_r02_i01_red_wine_glass.png"),             value: 5 },
     { id: "champagne",  name: "Champagne Flute",   spr: art("s4_r02_i02_champagne_flute.png"),            value: 5 },

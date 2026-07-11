@@ -121,15 +121,16 @@ async function fetchWithTimeout(url, opts, ms) {
 }
 
 async function callOpenRouterOnce({ apiKey, model, messages, timeoutMs }) {
+  const safeApiKey = String(apiKey || "").replace(/[^\x20-\x7E]/g, "").trim();
   const res = await fetchWithTimeout(
     "https://openrouter.ai/api/v1/chat/completions",
     {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${safeApiKey}`,
         "Content-Type": "application/json",
         "HTTP-Referer": typeof window !== "undefined" ? window.location.origin : "https://localhost",
-        "X-Title": "Pack It Up — Shirley",
+        "X-Title": "Pack It Up - Shirley",
       },
       body: JSON.stringify({
         model,

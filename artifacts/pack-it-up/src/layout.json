@@ -74,8 +74,8 @@
     "fridge_plant": { "x": 682, "y": 148, "scale": 1 },
     "kitchen_door": { "x": 66, "y": 41, "scale": 1 },
     "door_towel": { "x": 96, "y": 91, "scale": 1.35 },
-    "cat_food_bowl": { "x": 628, "y": 428, "scale": 1 },
-    "cat_water_bowl": { "x": 652, "y": 432, "scale": 1 }
+    "cat_food_bowl": { "x": 842, "y": 532, "scale": 1 },
+    "cat_water_bowl": { "x": 843, "y": 577, "scale": 1 }
   },
   "living": {
     "tv_hutch": { "x": 72, "y": 44, "scale": 1.15 },
@@ -89,7 +89,7 @@
     "destijl_poster": { "x": 630, "y": 309, "scale": 1.1 },
     "standing_mirror": { "x": 747, "y": 238, "scale": 1 },
     "floor_lamp": { "x": 825, "y": 170, "scale": 1.05 },
-    "guitar_case": { "x": 720, "y": 520, "scale": 1 },
+    "guitar_case": { "x": 620, "y": 470, "scale": 1 },
     "amplifier": { "x": 689, "y": 562, "scale": 1.25 }
   }
 }
