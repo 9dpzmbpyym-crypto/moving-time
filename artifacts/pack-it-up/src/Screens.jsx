@@ -398,6 +398,19 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
   const offers = energy && deal ? offerTasks(tasks, deal) : [];
   const progress = dealProgress(deal);
   const [focusId, setFocusId] = useState(null);
+  const handRef = useRef(null);
+  const [handW, setHandW] = useState(300);
+
+  useEffect(() => {
+    const el = handRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return undefined;
+    const measure = () => setHandW(Math.max(180, el.clientWidth || 300));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [energy, picks.length]);
+
   const markDone = (id) => {
     setTasks((ts) => refreshDailyHousingTasks(
       ts.map((t) => (t.id === id ? { ...t, status: "done" } : t))
@@ -418,13 +431,20 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
     : "Draw (optional)";
   const focus = picks.find((t) => t.id === focusId) || null;
 
-  // Fan positions — same spirit as the apartment paper fan (rot + dx, origin bottom).
-  const fanLayout = (n, i) => {
-    if (n <= 1) return { rot: -6, dx: 36 };
-    const t = n === 1 ? 0 : i / (n - 1);
-    const rot = -18 + t * 36;
-    const dx = 8 + t * Math.min(220, 28 + n * 22);
-    return { rot, dx };
+  /** Casino-dealer spread: fill left→right, mild arc, stay on-screen. */
+  const fanLayout = (n, i, width) => {
+    const cardW = 68;
+    const pad = 4;
+    const avail = Math.max(width - pad * 2, cardW);
+    if (n <= 1) return { left: pad, rot: -3, lift: 0 };
+    const maxTravel = avail - cardW;
+    // Dealer step: roomy with few cards, tighter as the hand grows — always L→R from pad
+    const step = Math.max(26, Math.min(58, maxTravel / (n - 1)));
+    const left = pad + i * step;
+    const t = i / (n - 1);
+    const rot = -8 + t * 16; // gentle −8° … +8°
+    const lift = Math.sin(t * Math.PI) * 6; // slight rainbow arc
+    return { left, rot, lift };
   };
 
   return (
@@ -543,22 +563,28 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
             </div>
           )}
 
-          {/* BOTTOM — hand fan (apartment-style) */}
+          {/* BOTTOM — dealer spread, fills left → right */}
           <div style={{ flex: "0 0 auto" }}>
             <div style={{ color: "#FFD97A", fontSize: 10, marginBottom: 4, ...LB }}>
               Your hand · tap a card
             </div>
-            <div style={{
-              position: "relative", height: picks.length ? 118 : 48,
-              marginBottom: 4,
-            }}>
+            <div
+              ref={handRef}
+              style={{
+                position: "relative",
+                width: "100%",
+                height: picks.length ? 124 : 48,
+                marginBottom: 4,
+                overflow: "visible",
+              }}
+            >
               {picks.length === 0 ? (
                 <div style={{ color: "#8A7350", fontSize: 11, paddingTop: 12, ...LB }}>
                   Empty hand — draw from the deck above.
                 </div>
               ) : picks.map((t, i) => {
                 const cat = TASK_CATEGORIES[t.category] || {};
-                const pos = fanLayout(picks.length, i);
+                const pos = fanLayout(picks.length, i, handW);
                 const on = focusId === t.id;
                 return (
                   <button
@@ -566,15 +592,21 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
                     type="button"
                     onClick={() => setFocusId(on ? null : t.id)}
                     style={{
-                      position: "absolute", left: pos.dx, bottom: 0,
-                      width: 72, height: 108,
+                      position: "absolute",
+                      left: pos.left,
+                      bottom: pos.lift,
+                      width: 68,
+                      height: 104,
                       background: PAPER[t.category] || "#EBDDBA",
                       border: on ? "3px solid #FFD97A" : "2px solid #120A04",
                       boxShadow: "3px 3px 0 rgba(0,0,0,0.45)",
                       transform: `rotate(${pos.rot}deg)`,
-                      transformOrigin: "50% 90%",
-                      padding: "6px 5px 0", zIndex: on ? 40 : i,
-                      overflow: "hidden", cursor: "pointer", color: "#3A2018",
+                      transformOrigin: "50% 100%",
+                      padding: "6px 5px 0",
+                      zIndex: on ? 40 : 10 + i,
+                      overflow: "hidden",
+                      cursor: "pointer",
+                      color: "#3A2018",
                       textAlign: "left",
                     }}
                   >
