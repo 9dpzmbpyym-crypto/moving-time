@@ -9,7 +9,7 @@ import {
   tasksAfterBooking, tasksAfterAttend,
 } from "./tasks.js";
 import {
-  ensureDailyDeal, handTasks, urgencyBadge,
+  ensureDailyDeal, handTasks, offerTasks, dealProgress, toggleDealPick, urgencyBadge,
 } from "./schedule.js";
 import { PixelCanvas } from "./BedroomSlice.jsx";
 import {
@@ -395,6 +395,8 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
   const energy = session?.energy || null;
   const deal = session?.dailyDeal;
   const picks = energy && deal ? handTasks(tasks, deal) : [];
+  const offers = energy && deal ? offerTasks(tasks, deal) : [];
+  const progress = dealProgress(deal);
   const markDone = (id) => {
     setTasks((ts) => refreshDailyHousingTasks(
       ts.map((t) => (t.id === id ? { ...t, status: "done" } : t))
@@ -404,7 +406,68 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
   const pickEnergy = (id) => {
     onSessionBump?.("energy", 0, null, { energy: id, dealTasks: tasks });
   };
+  const toggleOffer = (id) => {
+    onSessionBump?.("dealPick", 0, null, { toggleDealId: id });
+  };
   const stakes = (c) => (c >= 3 ? "Must" : c >= 2 ? "Need" : "Nice");
+  const renderCard = (t, { offer } = {}) => {
+    const cat = TASK_CATEGORIES[t.category] || {};
+    const badge = urgencyBadge(t, new Date(), tasks);
+    return (
+      <div key={t.id} style={{
+        position: "relative",
+        background: PAPER[t.category] || "#EBDDBA", border: "2px solid #120A04",
+        boxShadow: "3px 3px 0 rgba(0,0,0,0.4)", padding: "10px 12px", marginBottom: 8, color: "#3A2018",
+        opacity: offer && !t.picked ? 0.92 : 1,
+      }}>
+        {t.bound && (
+          <div style={{
+            position: "absolute", top: 6, right: 6, padding: "2px 6px",
+            border: "2px solid #A3252C", color: "#A3252C", fontSize: 8, background: "rgba(255,255,255,0.55)", ...LB,
+          }}>BOUND</div>
+        )}
+        {offer && t.picked && (
+          <div style={{
+            position: "absolute", top: 6, right: 6, padding: "2px 6px",
+            border: "2px solid #5D7C3B", color: "#5D7C3B", fontSize: 8, background: "rgba(255,255,255,0.55)", ...LB,
+          }}>IN HAND</div>
+        )}
+        <div style={{ fontSize: 10, marginBottom: 4, ...LB }}>
+          {cat.icon} {cat.label} · {stakes(t.criticality || 1)}
+          {badge ? ` · ${badge}` : ""}
+        </div>
+        <div style={{ fontSize: 13, marginBottom: 6, paddingRight: 56, ...LB }}>{t.title}</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 10, ...LB }}>
+            {t.targetDate || t.due || "—"}
+            {t.latestDate && t.latestDate !== t.targetDate ? ` → ${t.latestDate.slice(5)}` : ""}
+            {" · "}{EFFORT_DOT(t.effort)}
+          </span>
+          <div style={{ display: "flex", gap: 4 }}>
+            {offer ? (
+              <button type="button" onClick={() => toggleOffer(t.id)} style={{
+                padding: "6px 8px",
+                background: t.picked ? "#3A1810" : "#5D7C3B",
+                color: "#F2E4C0", border: "2px solid #120A04",
+                fontSize: 10, cursor: "pointer", ...LB,
+              }}>{t.picked ? "Remove" : "Draw"}</button>
+            ) : (
+              <>
+                <button type="button" onClick={() => go(doorForTask(t))} style={{
+                  padding: "6px 8px", background: "#3A2410", color: "#FFD97A", border: "2px solid #120A04",
+                  fontSize: 10, cursor: "pointer", ...LB,
+                }}>Go</button>
+                <button type="button" onClick={() => markDone(t.id)} style={{
+                  padding: "6px 8px", background: "#5D7C3B", color: "#F2E4C0", border: "2px solid #120A04",
+                  fontSize: 10, cursor: "pointer", ...LB,
+                }}>Done</button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
   return (
     <Screen
       title="Command Board"
@@ -419,9 +482,9 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
         <div style={{ ...FR, padding: 12, marginBottom: 10 }}>
           <div style={{ color: "#FFD97A", fontSize: 12, marginBottom: 8, ...LB }}>Running on:</div>
           {[
-            ["fumes", "Fumes", "absolute minimum to keep the move feasible"],
-            ["steady", "Steady", "fumes floor + work toward targets"],
-            ["full", "Full steam", "steady + pull work forward"],
+            ["fumes", "Fumes", "bound must-dos only — optional draws if useful"],
+            ["steady", "Steady", "bound + choose 2 more from the offer pile"],
+            ["full", "Full steam", "bound + choose 4 more from the offer pile"],
           ].map(([id, label, sub]) => (
             <button
               key={id}
@@ -437,7 +500,7 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
             </button>
           ))}
           <div style={{ color: "#6B563B", fontSize: 10, marginTop: 6, ...LB }}>
-            Fumes is the must-do floor — not a fake easy day.
+            Bound cards are already in your hand. Draw extras from the offer pile.
           </div>
         </div>
       ) : (
@@ -445,7 +508,6 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
           <div style={{ color: "#C9B896", fontSize: 10, marginBottom: 8, ...LB }}>
             Energy: {energy === "fumes" ? "Fumes" : energy === "full" ? "Full steam" : "Steady"}
             {deal?.fixedDay ? " · fixed day" : ""}
-            {deal ? ` · floor ${deal.minimumEffort}pt` : ""}
             {" · "}
             <button type="button" onClick={() => onSessionBump?.("energy", 0, null, { energy: null, clearDeal: true })}
               style={{ background: "none", border: "none", color: "#8A7350", cursor: "pointer", padding: 0, ...LB }}>
@@ -456,52 +518,32 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
             <div style={{
               ...FR, padding: "8px 10px", marginBottom: 8, color: "#E8C4A8", fontSize: 11, ...LB,
             }}>
-              Fixed day. These cards are already spoken for.
+              Fixed day. Bound cards are already spoken for.
             </div>
           )}
+
+          <div style={{ color: "#FFD97A", fontSize: 11, marginBottom: 6, ...LB }}>
+            Your hand ({picks.length})
+          </div>
           {picks.length === 0 ? (
-            <div style={{ color: "#8A7350", fontSize: 12, padding: 12, ...LB }}>Nothing open in today's hand — flip to the ledger.</div>
-          ) : picks.map((t) => {
-            const cat = TASK_CATEGORIES[t.category] || {};
-            const badge = urgencyBadge(t, new Date(), tasks);
-            return (
-              <div key={t.id} style={{
-                position: "relative",
-                background: PAPER[t.category] || "#EBDDBA", border: "2px solid #120A04",
-                boxShadow: "3px 3px 0 rgba(0,0,0,0.4)", padding: "10px 12px", marginBottom: 8, color: "#3A2018",
-              }}>
-                {t.bound && (
-                  <div style={{
-                    position: "absolute", top: 6, right: 6, padding: "2px 6px",
-                    border: "2px solid #A3252C", color: "#A3252C", fontSize: 8, background: "rgba(255,255,255,0.55)", ...LB,
-                  }}>BOUND</div>
-                )}
-                <div style={{ fontSize: 10, marginBottom: 4, ...LB }}>
-                  {cat.icon} {cat.label} · {stakes(t.criticality || 1)}
-                  {badge ? ` · ${badge}` : ""}
-                </div>
-                <div style={{ fontSize: 13, marginBottom: 6, paddingRight: t.bound ? 52 : 0, ...LB }}>{t.title}</div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 10, ...LB }}>
-                    {t.targetDate || t.due || "—"}
-                    {t.latestDate && t.latestDate !== t.targetDate ? ` → ${t.latestDate.slice(5)}` : ""}
-                    {" · "}{EFFORT_DOT(t.effort)}
-                    {t.estimatedLatest ? " · est. latest" : ""}
-                  </span>
-                  <div style={{ display: "flex", gap: 4 }}>
-                    <button type="button" onClick={() => go(doorForTask(t))} style={{
-                      padding: "6px 8px", background: "#3A2410", color: "#FFD97A", border: "2px solid #120A04",
-                      fontSize: 10, cursor: "pointer", ...LB,
-                    }}>Go</button>
-                    <button type="button" onClick={() => markDone(t.id)} style={{
-                      padding: "6px 8px", background: "#5D7C3B", color: "#F2E4C0", border: "2px solid #120A04",
-                      fontSize: 10, cursor: "pointer", ...LB,
-                    }}>Done</button>
-                  </div>
-                </div>
+            <div style={{ color: "#8A7350", fontSize: 12, padding: "8px 0", ...LB }}>No bound cards today — draw from the pile below.</div>
+          ) : picks.map((t) => renderCard(t))}
+
+          {offers.length > 0 && (
+            <div style={{ ...FR, padding: 10, marginTop: 8, marginBottom: 8 }}>
+              <div style={{ color: "#FFD97A", fontSize: 11, marginBottom: 6, ...LB }}>
+                {progress.chooseNeeded > 0
+                  ? (progress.remaining > 0
+                    ? `Choose ${progress.remaining} more · offer pile (${offers.length})`
+                    : `Hand full · offer pile (${offers.length})`)
+                  : `Optional draws · offer pile (${offers.length})`}
               </div>
-            );
-          })}
+              <div style={{ color: "#8A7350", fontSize: 9, marginBottom: 8, ...LB }}>
+                Ranked by urgency · about 2× what you need to fill
+              </div>
+              {offers.map((t) => renderCard(t, { offer: true }))}
+            </div>
+          )}
         </>
       )}
       <button type="button" onClick={() => go("ledger")} style={{

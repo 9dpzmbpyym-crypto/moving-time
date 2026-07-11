@@ -301,53 +301,91 @@ export function buildFullSteamPlan(tasks, today = new Date()) {
   };
 }
 
+/** Extra flexible cards to draw into the hand by energy (beyond bound). */
+export const ENERGY_DRAW = {
+  fumes: 0,   // absolute min — bound only; optional offer still shown
+  steady: 2,
+  full: 4,
+};
+
 /**
- * Deal for the day: all bound + enough flex for full-steam + up to 2 alts.
- * selectedIds start as the plan for the chosen energy (player can refine later).
+ * Deal for the day (draft model):
+ * - Bound cards are already in the hand (cannot discard).
+ * - Energy sets how many MORE cards you must choose (Fumes = 0).
+ * - Offer pile ≈ 2× chooseNeeded, urgency-ranked (Fumes still gets a small optional pile).
+ * - selectedTaskIds starts as bound only until the player draws.
  */
 export function dealDailyHand(tasks, energy = "steady", today = new Date()) {
   const full = buildFullSteamPlan(tasks, today);
   const fumesSet = new Set(full.fumesIds);
-  const boundIds = normalizeTasks(tasks)
-    .filter(isOpen)
-    .filter((t) => isBoundToday(t, today, tasks, fumesSet))
-    .map((t) => t.id);
-
-  // Bound always includes fumes floor
+  const boundIds = [];
   for (const id of full.fumesIds) {
     if (!boundIds.includes(id)) boundIds.push(id);
   }
+  for (const t of normalizeTasks(tasks).filter(isOpen)) {
+    if (isBoundToday(t, today, tasks, fumesSet) && !boundIds.includes(t.id)) {
+      boundIds.push(t.id);
+    }
+  }
 
-  const boundSet = new Set(boundIds);
-  const planIds =
-    energy === "fumes" ? full.fumesIds
-      : energy === "full" ? full.fullIds
-        : full.steadyIds;
-
-  const selectedIds = [...new Set([...boundIds, ...planIds])];
-
-  // Deal pool = bound + full plan + up to 2 alternatives
-  const exclude = new Set(selectedIds);
-  const alts = eligibleFlexible(tasks, today, tasks, exclude).slice(0, 2);
-  const dealtTaskIds = [...selectedIds, ...alts.map((t) => t.id)];
-  const dealCount = Math.min(9, dealtTaskIds.length);
-  // If bound > 9, still show all bound (scroll) — don't hide obligations
-  const dealt = boundIds.length > 9
-    ? [...new Set([...boundIds, ...dealtTaskIds])]
-    : dealtTaskIds.slice(0, Math.max(dealCount, boundIds.length));
+  const chooseNeeded = ENERGY_DRAW[energy] ?? ENERGY_DRAW.steady;
+  // Offer ~2× what you need to fill; fumes still gets a tiny optional deck
+  const offerSize = chooseNeeded > 0
+    ? Math.max(chooseNeeded * 2, chooseNeeded)
+    : 2;
+  const exclude = new Set(boundIds);
+  const offerTaskIds = eligibleFlexible(tasks, today, tasks, exclude)
+    .slice(0, offerSize)
+    .map((t) => t.id);
 
   return {
     day: todayKey(today),
     energy,
     boundTaskIds: boundIds,
-    dealtTaskIds: dealt,
-    selectedTaskIds: selectedIds,
+    offerTaskIds,
+    selectedTaskIds: [...boundIds], // hand starts as bound only
     fumesIds: full.fumesIds,
+    chooseNeeded,
     minimumEffort: full.fumesEffort,
     steadyEffort: full.steadyEffort,
     fullEffort: full.fullEffort,
     fixedDay: full.fixedDay,
-    dealConfirmed: true,
+    dealConfirmed: chooseNeeded === 0, // fumes can play immediately; others confirm after picks
+  };
+}
+
+/** Toggle a flexible card into / out of the hand (bound cards ignored). */
+export function toggleDealPick(dailyDeal, taskId) {
+  if (!dailyDeal || !taskId) return dailyDeal;
+  const bound = new Set(dailyDeal.boundTaskIds || []);
+  if (bound.has(taskId)) return dailyDeal;
+  const offer = new Set(dailyDeal.offerTaskIds || []);
+  if (!offer.has(taskId)) return dailyDeal;
+  const selected = new Set(dailyDeal.selectedTaskIds || dailyDeal.boundTaskIds || []);
+  if (selected.has(taskId)) selected.delete(taskId);
+  else selected.add(taskId);
+  // Bound always stay selected
+  for (const id of bound) selected.add(id);
+  const flexCount = [...selected].filter((id) => !bound.has(id)).length;
+  const chooseNeeded = dailyDeal.chooseNeeded || 0;
+  return {
+    ...dailyDeal,
+    selectedTaskIds: [...selected],
+    dealConfirmed: flexCount >= chooseNeeded,
+  };
+}
+
+export function dealProgress(dailyDeal) {
+  if (!dailyDeal) return { flexPicked: 0, chooseNeeded: 0, remaining: 0, ready: false };
+  const bound = new Set(dailyDeal.boundTaskIds || []);
+  const flexPicked = (dailyDeal.selectedTaskIds || []).filter((id) => !bound.has(id)).length;
+  const chooseNeeded = dailyDeal.chooseNeeded || 0;
+  const remaining = Math.max(0, chooseNeeded - flexPicked);
+  return {
+    flexPicked,
+    chooseNeeded,
+    remaining,
+    ready: remaining === 0 || chooseNeeded === 0,
   };
 }
 
@@ -361,8 +399,8 @@ export function ensureDailyDeal(session, tasks, energy, today = new Date()) {
     prev
     && prev.day === day
     && prev.energy === e
-    && prev.dealConfirmed
     && Array.isArray(prev.selectedTaskIds)
+    && Array.isArray(prev.offerTaskIds)
   ) {
     return session;
   }
@@ -384,4 +422,15 @@ export function handTasks(tasks, dailyDeal) {
     .map((id) => byId[id])
     .filter((t) => t && isOpen(t))
     .map((t) => ({ ...normalizeTask(t), bound: bound.has(t.id) }));
+}
+
+/** Offer pile cards (not yet required to be in hand). */
+export function offerTasks(tasks, dailyDeal) {
+  if (!dailyDeal?.offerTaskIds?.length) return [];
+  const byId = Object.fromEntries((tasks || []).map((t) => [t.id, t]));
+  const selected = new Set(dailyDeal.selectedTaskIds || []);
+  return dailyDeal.offerTaskIds
+    .map((id) => byId[id])
+    .filter((t) => t && isOpen(t))
+    .map((t) => ({ ...normalizeTask(t), picked: selected.has(t.id) }));
 }

@@ -41,7 +41,7 @@ import {
   clampRoomIndex,
 } from "./save.js";
 import { mergeSession, bumpSession } from "./session.js";
-import { ensureDailyDeal } from "./schedule.js";
+import { ensureDailyDeal, toggleDealPick } from "./schedule.js";
 import {
   sanitizeAppointments,
   markMissed,
@@ -2684,6 +2684,9 @@ export default function PackItUp({ glowMode = "split" }) {
 
   const onSessionBump = useCallback((key, amount = 1, rewardLabel, extra) => {
     setSession((prev) => {
+      if (extra?.toggleDealId && prev.dailyDeal) {
+        return { ...prev, dailyDeal: toggleDealPick(prev.dailyDeal, extra.toggleDealId) };
+      }
       if (extra && Object.prototype.hasOwnProperty.call(extra, "energy")) {
         if (extra.clearDeal || extra.energy == null) {
           return { ...prev, energy: null, dailyDeal: null };

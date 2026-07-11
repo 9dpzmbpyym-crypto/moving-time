@@ -135,7 +135,9 @@ export function mergeTasks(initial, savedTasks) {
       urgency,
       effort,
       needsInfo: !!s.needsInfo,
-      title: typeof s.title === "string" && s.title.trim() ? s.title.trim() : t.title,
+      title: t.jobId
+        ? t.title
+        : (typeof s.title === "string" && s.title.trim() ? s.title.trim() : t.title),
       due: t.selfTarget ? t.due : (typeof s.due === "string" ? s.due : t.due),
       dueDate: s.dueDate !== undefined ? s.dueDate : t.dueDate,
       dueEnd: s.dueEnd !== undefined ? s.dueEnd : t.dueEnd,
