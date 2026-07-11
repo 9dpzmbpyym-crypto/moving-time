@@ -17,12 +17,15 @@ export const ZONE_SHORT = {
 };
 
 export const BOOKABLE_ZONES = new Set([
-  "teeth", "brain", "heart", "lymph", "skin",
+  "teeth", "brain", "heart", "lymph", "skin", "stomach",
 ]);
 
 /** Zones that are care habits, not phone bookings. */
 export function isBookableHealthTask(t) {
-  return t && t.category === "health" && isOpen(t) && BOOKABLE_ZONES.has(t.zone);
+  // Attend cards (spawned after Shirley books) are not re-bookable.
+  if (!t || t.category !== "health" || !isOpen(t) || !BOOKABLE_ZONES.has(t.zone)) return false;
+  if (t.kind === "attend" || String(t.id).startsWith("attend_")) return false;
+  return true;
 }
 
 /** Test helper: shuffle urgencies 1–3 on bookable health tasks (keeps status). */

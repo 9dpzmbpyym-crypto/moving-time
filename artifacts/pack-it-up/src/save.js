@@ -92,8 +92,8 @@ export function mergeFlagMap(defaults, saved) {
 }
 
 /**
- * Keep task definitions from code; restore status + needsInfo from save.
- * New tasks in INITIAL_TASKS appear; removed ids are dropped.
+ * Keep task definitions from code; restore editable fields + status from save.
+ * New INITIAL_TASKS appear; user/quick-add/attend cards (ids not in initial) are kept.
  */
 export function mergeTasks(initial, savedTasks) {
   if (!Array.isArray(savedTasks) || savedTasks.length === 0) return initial;
@@ -101,19 +101,52 @@ export function mergeTasks(initial, savedTasks) {
     savedTasks.filter((t) => t && t.id).map((t) => [t.id, t])
   );
   const ok = new Set(["pending", "active", "done", "dismissed"]);
-  return initial.map((t) => {
+  const initialIds = new Set(initial.map((t) => t.id));
+  const merged = initial.map((t) => {
     const s = byId[t.id];
     if (!s || !ok.has(s.status)) return t;
     const urgency = typeof s.urgency === "number" ? Math.min(3, Math.max(1, s.urgency)) : t.urgency;
     const effort = typeof s.effort === "number" ? Math.min(3, Math.max(1, s.effort)) : t.effort;
+    const category = typeof s.category === "string" && s.category ? s.category : t.category;
     return {
       ...t,
       status: s.status,
       urgency,
       effort,
       needsInfo: !!s.needsInfo,
+      title: typeof s.title === "string" && s.title.trim() ? s.title.trim() : t.title,
+      due: typeof s.due === "string" ? s.due : t.due,
+      dueDate: s.dueDate !== undefined ? s.dueDate : t.dueDate,
+      dueEnd: s.dueEnd !== undefined ? s.dueEnd : t.dueEnd,
+      category,
+      kind: s.kind || t.kind || null,
+      bookTaskId: s.bookTaskId || t.bookTaskId || null,
     };
   });
+  for (const s of savedTasks) {
+    if (!s?.id || initialIds.has(s.id) || !ok.has(s.status)) continue;
+    merged.push({
+      id: s.id,
+      title: String(s.title || "Untitled").trim() || "Untitled",
+      category: s.category || "admin",
+      effort: Math.min(3, Math.max(1, Number(s.effort) || 1)),
+      urgency: Math.min(3, Math.max(1, Number(s.urgency) || 1)),
+      due: typeof s.due === "string" ? s.due : "",
+      dueDate: s.dueDate ?? null,
+      dueEnd: s.dueEnd ?? null,
+      criticalPath: !!s.criticalPath,
+      status: s.status,
+      room: s.room ?? null,
+      objectId: s.objectId ?? null,
+      relief: s.relief || "stamp",
+      jobId: s.jobId ?? null,
+      zone: s.zone ?? null,
+      needsInfo: !!s.needsInfo,
+      kind: s.kind || null,
+      bookTaskId: s.bookTaskId || null,
+    });
+  }
+  return merged;
 }
 
 export function clampCoins(n) {

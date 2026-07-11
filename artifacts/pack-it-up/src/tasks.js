@@ -76,6 +76,9 @@ export const INITIAL_TASKS = [
   base({ id: "j_mocs", title: "Apply: MOCS Project Manager", category: "job", effort: 3, urgency: 2, due: "Jul 26", dueDate: "2026-07-26", jobId: "job_mocs" }),
   base({ id: "j_mopt", title: "Apply: MOPT Outreach Coordinator", category: "job", effort: 3, urgency: 2, due: "Jul 28", dueDate: "2026-07-28", jobId: "job_mopt" }),
   base({ id: "j_labor", title: "Apply: Labor Relations Associate, H+H", category: "job", effort: 3, urgency: 1, due: "Aug 30", dueDate: "2026-08-30", jobId: "job_labor" }),
+  // Already applied from tracker — watch/follow-up only (not the full 33-row CRM)
+  base({ id: "j_hpd", title: "Follow up: HPD Tenant & Owner Resources PM (applied Jul 2)", category: "job", effort: 1, urgency: 1, due: "Jul 19", dueDate: "2026-07-19", jobId: "job_hpd" }),
+  base({ id: "j_dycd", title: "DYCD Operations Analyst (applied — posting closed)", category: "job", effort: 1, urgency: 1, due: "Closed", status: "dismissed", jobId: "job_dycd" }),
 
   // Admin cutoff cards
   base({ id: "a_wifi", title: "Wi-Fi return: kit, serial photos, cancel, method, receipt", category: "admin", effort: 2, urgency: 2, due: "Before Jul 30", dueDate: "2026-07-30", criticalPath: true, relief: "file" }),
@@ -118,6 +121,8 @@ export const SAMPLE_JOBS = {
   job_mocs: { title: "Project Manager", org: "MOCS", location: "New York, NY", salary: "", deadline: "Jul 26", status: "not started", priority: 82, url: "#", notes: "Real shortlist.", nextAction: "Review and submit" },
   job_mopt: { title: "Outreach Coordinator", org: "MOPT", location: "New York, NY", salary: "", deadline: "Jul 28", status: "not started", priority: 78, url: "#", notes: "Real shortlist.", nextAction: "Review and submit" },
   job_labor: { title: "Labor Relations Associate", org: "NYC Health + Hospitals", location: "New York, NY", salary: "", deadline: "Aug 30", status: "backburner", priority: 55, url: "#", notes: "Backburner until move-critical work clears.", nextAction: "Revisit in August" },
+  job_hpd: { title: "Project Manager — Tenant & Owner Resources", org: "HPD", location: "New York, NY", salary: "$62k–$72k", deadline: "Jul 19", status: "applied", priority: 75, url: "#", notes: "Applied Jul 2 — watch / follow up.", nextAction: "Monitor" },
+  job_dycd: { title: "Operations Analyst", org: "DYCD", location: "New York, NY", salary: "", deadline: "Jul 3", status: "applied", priority: 66, url: "#", notes: "Applied Jul 2; posting closed.", nextAction: "Closed" },
 };
 
 export const isOpen = (task) => task.status === "pending" || task.status === "active";
@@ -261,4 +266,60 @@ export function makeQuickTask({ title, category, effort = 1 }) {
     zone: null,
     needsInfo: false,
   };
+}
+
+function dueLabelFromISO(iso, time) {
+  if (!iso || typeof iso !== "string") return "";
+  const parts = iso.slice(0, 10).split("-").map(Number);
+  if (parts.length < 3 || parts.some((n) => !n)) return iso;
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const label = `${months[parts[1] - 1]} ${parts[2]}`;
+  return time ? `${label} ${time}` : label;
+}
+
+/** After Shirley confirms a booking: mark Book done, spawn Attend with that date. */
+export function tasksAfterBooking(tasks, appt, bookTask) {
+  if (!appt?.dueAt || !bookTask?.id) return tasks;
+  const list = Array.isArray(tasks) ? tasks : [];
+  const attendId = `attend_${bookTask.id}`;
+  const baseTitle = String(bookTask.title || "appointment").replace(/^Book:\s*/i, "");
+  const due = dueLabelFromISO(appt.dueAt, appt.time);
+  const attend = {
+    id: attendId,
+    title: `Attend: ${baseTitle}`,
+    category: bookTask.category === "cat" ? "cat" : "health",
+    effort: bookTask.effort || 2,
+    urgency: 3,
+    due,
+    dueDate: appt.dueAt,
+    dueEnd: null,
+    criticalPath: !!bookTask.criticalPath,
+    status: "pending",
+    room: null,
+    objectId: null,
+    relief: "slide",
+    jobId: null,
+    zone: bookTask.zone || null,
+    needsInfo: false,
+    kind: "attend",
+    bookTaskId: bookTask.id,
+  };
+  let next = list.map((t) => (t.id === bookTask.id ? { ...t, status: "done" } : t));
+  if (next.some((t) => t.id === attendId)) {
+    return next.map((t) => (
+      t.id === attendId
+        ? { ...attend, status: t.status === "done" ? "done" : "pending" }
+        : t
+    ));
+  }
+  return [...next, attend];
+}
+
+/** When Body Board marks an appointment attended, close the Attend card too. */
+export function tasksAfterAttend(tasks, appt) {
+  if (!appt?.taskId) return tasks;
+  const attendId = `attend_${appt.taskId}`;
+  return (tasks || []).map((t) => (
+    t.id === attendId || t.id === appt.taskId ? { ...t, status: "done" } : t
+  ));
 }

@@ -6,6 +6,7 @@ import {
   TASK_CATEGORIES, SAMPLE_JOBS, isOpen, taskPressure,
   PRESSURE_LABELS, PRESSURE_COLORS,
   pickBoardTasks, doorForTask, makeQuickTask, refreshDailyHousingTasks,
+  tasksAfterBooking, tasksAfterAttend,
 } from "./tasks.js";
 import { PixelCanvas } from "./BedroomSlice.jsx";
 import {
@@ -493,6 +494,10 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
   const [lane, setLane] = useState("housing");
   const [draft, setDraft] = useState("");
   const [effort, setEffort] = useState(1);
+  const [editId, setEditId] = useState(null);
+  const [editDraft, setEditDraft] = useState({
+    title: "", due: "", dueDate: "", effort: 1, category: "housing", status: "pending",
+  });
   const rows = tasks
     .filter((t) => t.category === lane && t.status !== "dismissed")
     .slice()
@@ -507,6 +512,43 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
       ts.map((t) => (t.id === id ? { ...t, status: "done" } : t))
     ));
     onSessionBump?.("cleared", 1, "Cleared +1");
+    if (editId === id) setEditId(null);
+  };
+  const beginEdit = (t) => {
+    setEditId(t.id);
+    setEditDraft({
+      title: t.title || "",
+      due: t.due || "",
+      dueDate: t.dueDate || "",
+      effort: t.effort || 1,
+      category: t.category || lane,
+      status: t.status || "pending",
+    });
+  };
+  const saveEdit = () => {
+    if (!editId) return;
+    const title = editDraft.title.trim();
+    if (!title) return;
+    const cat = TASK_CATEGORIES[editDraft.category] ? editDraft.category : lane;
+    const dueDate = editDraft.dueDate.trim() || null;
+    setTasks((ts) => refreshDailyHousingTasks(
+      ts.map((t) => (t.id === editId ? {
+        ...t,
+        title,
+        due: editDraft.due.trim(),
+        dueDate,
+        effort: Math.min(3, Math.max(1, Number(editDraft.effort) || 1)),
+        category: cat,
+        status: editDraft.status === "done" ? "done" : "pending",
+      } : t))
+    ));
+    if (cat !== lane) setLane(cat);
+    setEditId(null);
+  };
+  const dismissEdit = () => {
+    if (!editId) return;
+    setTasks((ts) => ts.map((t) => (t.id === editId ? { ...t, status: "dismissed" } : t)));
+    setEditId(null);
   };
   const addSticky = () => {
     const title = draft.trim();
@@ -515,11 +557,15 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
     setDraft("");
     setEffort(1);
   };
+  const field = {
+    width: "100%", boxSizing: "border-box", padding: "8px", marginBottom: 6,
+    background: "#1A0F06", color: "#F2E4C0", border: "2px solid #4A2E17", fontSize: 12, ...LB,
+  };
   return (
-    <Screen title="Ledger" icon="📒" onBack={() => go("board")} subtitle="See-all · planning page" bg="#2A1A0C">
+    <Screen title="Ledger" icon="📒" onBack={() => go("board")} subtitle="See-all · tap Edit on a card" bg="#2A1A0C">
       <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
         {LEDGER_LANES.map((l) => (
-          <button key={l.id} type="button" onClick={() => setLane(l.id)} style={{
+          <button key={l.id} type="button" onClick={() => { setLane(l.id); setEditId(null); }} style={{
             padding: "6px 8px", fontSize: 10, cursor: "pointer",
             background: lane === l.id ? "#C9942E" : "#3A2410",
             color: lane === l.id ? "#120A04" : "#C9B896",
@@ -533,10 +579,7 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder="One line…"
-          style={{
-            width: "100%", boxSizing: "border-box", padding: "8px", marginBottom: 6,
-            background: "#1A0F06", color: "#F2E4C0", border: "2px solid #4A2E17", fontSize: 12, ...LB,
-          }}
+          style={field}
         />
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
           {[1, 2, 3].map((n) => (
@@ -557,9 +600,43 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
       )}
       {rows.map((t) => {
         const open = isOpen(t);
+        if (editId === t.id) {
+          return (
+            <div key={t.id} style={{ ...FR, padding: 10, marginBottom: 8 }}>
+              <div style={{ color: "#FFD97A", fontSize: 10, marginBottom: 6, ...LB }}>Edit card</div>
+              <input value={editDraft.title} onChange={(e) => setEditDraft((d) => ({ ...d, title: e.target.value }))} style={field} />
+              <input value={editDraft.due} onChange={(e) => setEditDraft((d) => ({ ...d, due: e.target.value }))} placeholder="Due label (e.g. Jul 15)" style={field} />
+              <input value={editDraft.dueDate} onChange={(e) => setEditDraft((d) => ({ ...d, dueDate: e.target.value }))} placeholder="dueDate YYYY-MM-DD" style={field} />
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>
+                {LEDGER_LANES.map((l) => (
+                  <button key={l.id} type="button" onClick={() => setEditDraft((d) => ({ ...d, category: l.id }))} style={{
+                    padding: "4px 6px", fontSize: 9, cursor: "pointer",
+                    background: editDraft.category === l.id ? "#C9942E" : "#241509",
+                    color: editDraft.category === l.id ? "#120A04" : "#C9B896",
+                    border: "2px solid #120A04", ...LB,
+                  }}>{l.label}</button>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
+                {[1, 2, 3].map((n) => (
+                  <button key={n} type="button" onClick={() => setEditDraft((d) => ({ ...d, effort: n }))} style={{
+                    flex: 1, padding: "6px", fontSize: 10, cursor: "pointer",
+                    background: editDraft.effort === n ? "#5D7C3B" : "#241509", color: "#F2E4C0",
+                    border: "2px solid #120A04", ...LB,
+                  }}>{EFFORT_DOT(n)}</button>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                <button type="button" onClick={saveEdit} style={{ flex: 1, padding: "8px", background: "#5D7C3B", color: "#F2E4C0", border: "2px solid #120A04", fontSize: 11, cursor: "pointer", ...LB }}>Save</button>
+                <button type="button" onClick={() => setEditId(null)} style={{ flex: 1, padding: "8px", background: "#3A2410", color: "#C9B896", border: "2px solid #120A04", fontSize: 11, cursor: "pointer", ...LB }}>Cancel</button>
+                <button type="button" onClick={dismissEdit} style={{ flex: 1, padding: "8px", background: "#3A1810", color: "#E8C4A8", border: "2px solid #120A04", fontSize: 11, cursor: "pointer", ...LB }}>Hide</button>
+              </div>
+            </div>
+          );
+        }
         return (
           <div key={t.id} style={{
-            display: "flex", gap: 8, alignItems: "center", marginBottom: 6, padding: "8px 10px",
+            display: "flex", gap: 6, alignItems: "center", marginBottom: 6, padding: "8px 10px",
             background: open ? (PAPER[t.category] || "#EBDDBA") : "#3A2A1A",
             border: "2px solid #120A04", color: open ? "#3A2018" : "#8A7350", opacity: open ? 1 : 0.7,
           }}>
@@ -569,6 +646,10 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
                 {t.due || "—"} · {EFFORT_DOT(t.effort)}{t.status === "done" ? " · done" : ""}
               </div>
             </div>
+            <button type="button" onClick={() => beginEdit(t)} style={{
+              padding: "8px 8px", background: "#3A2410", color: "#FFD97A",
+              border: "2px solid #120A04", fontSize: 10, cursor: "pointer", flex: "0 0 auto", ...LB,
+            }}>Edit</button>
             {open && (
               <button type="button" onClick={() => markDone(t.id)} style={{
                 padding: "8px 10px", background: "#5D7C3B", color: "#F2E4C0",
@@ -1191,6 +1272,10 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
   const applyBookResult = (result) => {
     if (!result?.ok) return;
     setAppointments(result.appointments);
+    const bookTask = tasks.find((t) => t.id === result.appt?.taskId);
+    if (bookTask) {
+      setTasks((ts) => refreshDailyHousingTasks(tasksAfterBooking(ts, result.appt, bookTask)));
+    }
   };
 
   const handlePhoneSend = async (userText) => {
@@ -1640,6 +1725,7 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
     const gate = canAttendZone(appointments, appt.zone);
     if (!gate || gate.id !== appt.id) return;
     setAppointments((list) => attendAppointment(list, appt.id));
+    setTasks((ts) => tasksAfterAttend(ts, appt));
     stabilizeZone(appt.zone);
     onSessionBump?.("appt", 1, "Appointment ✓");
   };
