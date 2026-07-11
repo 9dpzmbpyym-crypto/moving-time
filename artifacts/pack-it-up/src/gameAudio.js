@@ -372,27 +372,32 @@ export function ensureAudioLoaded() {
     const offOpen = offOpenRaw
       ? normalizePeak(trimLeadingSilence(offOpenRaw, 0.015), 0.75)
       : null;
-    // Cabinet combo: peak 4 (~3.28s) open, peak 6 (~5.72s) close.
+    const offCloseNorm = offClose ? normalizePeak(offClose, 0.75) : null;
+    // Cabinet combo: peak 4 (~3.28s) open, peak 6 (~5.72s) close — same peak target.
+    const CONTAINER_PEAK = 0.72;
     const cabOpen = cabComboRaw
-      ? normalizePeak(trimLeadingSilence(sliceBuffer(cabComboRaw, 3.12, 3.9), 0.01), 0.72)
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(cabComboRaw, 3.12, 3.9), 0.01), CONTAINER_PEAK)
       : null;
     const cabClose = cabComboRaw
-      ? normalizePeak(trimLeadingSilence(sliceBuffer(cabComboRaw, 5.52, 6.5), 0.01), 0.72)
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(cabComboRaw, 5.52, 6.5), 0.01), CONTAINER_PEAK)
       : null;
     // Fridge open+close combo → fridge only.
     const fridgeOpen = fridgeComboRaw
-      ? normalizePeak(trimLeadingSilence(sliceBuffer(fridgeComboRaw, 0.15, 0.85), 0.01), 0.72)
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(fridgeComboRaw, 0.15, 0.85), 0.01), CONTAINER_PEAK)
       : null;
     const fridgeClose = fridgeComboRaw
-      ? normalizePeak(trimLeadingSilence(sliceBuffer(fridgeComboRaw, 2.4, 3.05), 0.01), 0.72)
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(fridgeComboRaw, 2.4, 3.05), 0.01), CONTAINER_PEAK)
       : null;
     // Wooden drawer open (quiet scrape) + close (slam) → bedroom dresser/nightstand/vanity.
     const woodDrawerOpen = drawerComboRaw
-      ? normalizePeak(trimLeadingSilence(sliceBuffer(drawerComboRaw, 0.18, 1.05), 0.008), 0.72)
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(drawerComboRaw, 0.18, 1.05), 0.008), CONTAINER_PEAK)
       : null;
     const woodDrawerClose = drawerComboRaw
-      ? normalizePeak(trimLeadingSilence(sliceBuffer(drawerComboRaw, 1.55, 2.55), 0.01), 0.72)
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(drawerComboRaw, 1.55, 2.55), 0.01), CONTAINER_PEAK)
       : null;
+    // Closet doors — peak-match open/close to the same container target.
+    const closetOpenNorm = closetOpen ? normalizePeak(closetOpen, CONTAINER_PEAK) : null;
+    const closetCloseNorm = closetClose ? normalizePeak(closetClose, CONTAINER_PEAK) : null;
     state.sell = sell;
     state.pack = pack;
     state.stamp = stamp;
@@ -402,13 +407,13 @@ export function ensureAudioLoaded() {
     state.catStressed = stressed;
     state.catDesperate = desperate;
     // medicine: original open/close mapping, peak-normalized so loudness matches
-    const medOpenClips = medOpen ? [normalizePeak(medOpen, 0.72)] : [];
-    const medCloseClips = [medClose1, medClose2].filter(Boolean).map((b) => normalizePeak(b, 0.72));
+    const medOpenClips = medOpen ? [normalizePeak(medOpen, CONTAINER_PEAK)] : [];
+    const medCloseClips = [medClose1, medClose2].filter(Boolean).map((b) => normalizePeak(b, CONTAINER_PEAK));
     state.containerOpen = {
       cabinet: cabOpen ? [cabOpen] : [],
-      closet: closetOpen ? [closetOpen] : [],
+      closet: closetOpenNorm ? [closetOpenNorm] : [],
       // pantry: bedroom closet-door open for both open + close
-      pantry: closetOpen ? [closetOpen] : [],
+      pantry: closetOpenNorm ? [closetOpenNorm] : [],
       kitchen_drawer: kitOpen ? [kitOpen] : [],
       medicine: medOpenClips,
       office: offOpen ? [offOpen] : [],
@@ -417,12 +422,12 @@ export function ensureAudioLoaded() {
     };
     state.containerClose = {
       cabinet: cabClose ? [cabClose] : [],
-      closet: closetClose ? [closetClose] : [],
+      closet: closetCloseNorm ? [closetCloseNorm] : [],
       // pantry close: medicine cabinet close (leveled)
-      pantry: medCloseClips.length ? medCloseClips : (closetOpen ? [closetOpen] : []),
+      pantry: medCloseClips.length ? medCloseClips : (closetOpenNorm ? [closetOpenNorm] : []),
       kitchen_drawer: kitCloseNorm ? [kitCloseNorm] : [],
       medicine: medCloseClips,
-      office: offClose ? [offClose] : [],
+      office: offCloseNorm ? [offCloseNorm] : [],
       fridge: fridgeClose ? [fridgeClose] : [],
       drawer: woodDrawerClose ? [woodDrawerClose] : [],
     };
@@ -444,9 +449,10 @@ export function ensureAudioLoaded() {
     state.phoneAnswer = phoneRingRaw
       ? normalizePeak(sliceBuffer(phoneRingRaw, 8.85, 9.5), 0.55)
       : null;
-    // Shirley calling you — old bell ringtone; leveled like other UI one-shots (no music duck).
+    // Shirley calling you — old bell ringtone; sit under short UI one-shots
+    // (looped bells read louder than the same peak on a one-shot).
     state.phoneIncomingRingtone = phoneIncomingRaw
-      ? normalizePeak(trimLeadingSilence(phoneIncomingRaw, 0.01), 0.5)
+      ? normalizePeak(trimLeadingSilence(phoneIncomingRaw, 0.01), 0.38)
       : null;
     state.ready = true;
     if (state.primed) startMainTheme();
@@ -918,7 +924,7 @@ export function startPhoneIncomingRingtone() {
       src.buffer = buf;
       src.loop = true;
       const gain = ctx.createGain();
-      gain.gain.value = 0.65 * state.sfxVol * SFX_VOL_MAX;
+      gain.gain.value = 0.48 * state.sfxVol * SFX_VOL_MAX;
       src.connect(gain).connect(ctx.destination);
       src.start(0);
       state.phoneIncomingSrc = src;
