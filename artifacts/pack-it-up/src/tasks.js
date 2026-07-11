@@ -28,8 +28,59 @@ const base = (task) => ({
   jobId: null,
   zone: null,
   needsInfo: false,
+  score: null,
   ...task,
 });
+
+/**
+ * Active job tracker only (Saved + Applied-watch still in play).
+ * Excludes ghosted, withdrawn, closed postings (e.g. DYCD), and loss-cause.
+ * Verify-open stays — still Saved in the tracker; portal may still be open.
+ * Source: docs/move-spine/master/MASTER_REAL_WORLD_GOALS_JULY_2026.md
+ */
+const JOB_TRACKER = [
+  { id: "job_hpd", taskId: "j_hpd", title: "Project Manager — Tenant & Owner Resources", org: "HPD", score: 75, due: "Jul 19", dueDate: "2026-07-19", salary: "$62,868–$72,298", tracker: "applied", prefix: "Follow up:", notes: "Applied Jul 2 — watch.", next: "Monitor", effort: 1, urgency: 2 },
+  { id: "job_hunter", taskId: "j_hunter", title: "Administrative Coordinator — Business Office", org: "Hunter College (CUNY)", score: 73, due: "Jul 14", dueDate: "2026-07-14", salary: "$84,815–$94,409", tracker: "saved", prefix: "Apply:", notes: "P0 CUNY/back-end admin.", next: "Tailor and submit", effort: 3, urgency: 3 },
+  { id: "job_acm", taskId: "j_acm", title: "Assistant Coordinating Manager — Managed Care Finance", org: "H+H — Elmhurst", score: 73, due: "Jul 5", dueDate: "2026-07-05", salary: "$55,105–$63,371", tracker: "saved", prefix: "Verify open:", notes: "Self-imposed target missed; check portal.", next: "Verify still open", effort: 1, urgency: 2 },
+  { id: "job_hopwa1", taskId: "j_hopwa1", title: "HOPWA Program Analyst — seat 1", org: "DOHMH — BHHS", score: 71, due: "Jul 18", dueDate: "2026-07-18", salary: "$62,868–$72,298", tracker: "saved", prefix: "Apply:", notes: "P0 housing + public health.", next: "Tailor and submit", effort: 3, urgency: 2 },
+  { id: "job_hopwa2", taskId: "j_hopwa2", title: "HOPWA Program Analyst — seat 2", org: "DOHMH — BHHS", score: 71, due: "Jul 18", dueDate: "2026-07-18", salary: "$62,868–$72,298", tracker: "saved", prefix: "Apply:", notes: "Reuse seat-1 materials.", next: "Submit", effort: 3, urgency: 2 },
+  { id: "job_cphds", taskId: "j_cphds", title: "Contract Manager — Population Health Data Science", org: "DOHMH — CPHDS", score: 68, due: "Jul 11", dueDate: "2026-07-11", salary: "$68,214–$110,000", tracker: "saved", prefix: "Apply:", notes: "Closes Jul 11 — only if still open/fast.", next: "Check portal", effort: 2, urgency: 3 },
+  { id: "job_mopt", taskId: "j_mopt", title: "Public Housing Outreach & Advocacy Coordinator", org: "MOPT", score: 68, due: "Jul 28", dueDate: "2026-07-28", salary: "$100,000–$105,000", tracker: "saved", prefix: "Apply:", notes: "After CUNY/DOHMH batch; watch outreach-heavy duties.", next: "Review and submit", effort: 3, urgency: 2 },
+  { id: "job_enroll", taskId: "j_enroll", title: "Enrollment Registrar Specialist", org: "Hunter — School of Social Work", score: 67, due: "Jul 7", dueDate: "2026-07-07", salary: "$82,663–$94,909", tracker: "saved", prefix: "Verify open:", notes: "Open until filled; first review already began.", next: "Verify still open", effort: 1, urgency: 2 },
+  { id: "job_hpd_hqe", taskId: "j_hpd_hqe", title: "Housing Quality Enforcement Specialist", org: "HPD — Budget & Program Ops", score: 63, due: "Jul 25", dueDate: "2026-07-25", salary: "$44,545–$51,227", tracker: "saved", prefix: "Apply:", notes: "P2 — salary low; possible inspection flavor.", next: "Decide fit", effort: 2, urgency: 1 },
+  { id: "job_exec", taskId: "j_exec", title: "Confidential Executive Associate", org: "CUNY — University HR", score: 62, due: "Jul 3", dueDate: "2026-07-03", salary: "$98,995–$109,898", tracker: "saved", prefix: "Verify open:", notes: "High salary; steep experience bar.", next: "Verify still open", effort: 1, urgency: 1 },
+  { id: "job_onboard", taskId: "j_onboard", title: "Onboarding Specialist", org: "H+H — Harlem Hospital", score: 62, due: "Jul 10", dueDate: "2026-07-10", salary: "$60,000–$65,000", tracker: "saved", prefix: "Apply:", notes: "Self-imposed Jul 10 target; H+H HR/back-end.", next: "Quick apply if open", effort: 2, urgency: 2 },
+  { id: "job_student", taskId: "j_student", title: "Administrative Coordinator — Student Services, Social Work", org: "Hunter — School of Social Work", score: 61, due: "Jul 8", dueDate: "2026-07-08", salary: "$63,003–$72,236", tracker: "saved", prefix: "Verify open:", notes: "Lower priority; student-facing concern.", next: "Verify still open", effort: 1, urgency: 1 },
+  { id: "job_labor", taskId: "j_labor", title: "Labor Relations Associate", org: "H+H Central Office", score: 60, due: "Aug 30", dueDate: "2026-08-30", salary: "$68,000", tracker: "saved", prefix: "Apply:", notes: "Backburner until after move triage.", next: "Revisit in August", effort: 2, urgency: 1 },
+  { id: "job_mocs", taskId: "j_mocs", title: "Project Manager", org: "MOCS", score: 58, due: "Jul 26", dueDate: "2026-07-26", salary: "$70,000–$80,000", tracker: "saved", prefix: "Apply:", notes: "P1/P2 contracts/admin.", next: "Review and submit", effort: 3, urgency: 2 },
+  { id: "job_equity", taskId: "j_equity", title: "Housing Equity Associate", org: "NYC Public Advocate", score: 56, due: "Jul 15", dueDate: "2026-07-15", salary: "$63,916", tracker: "saved", prefix: "Apply:", notes: "P2 — mission fit; may be advocacy-facing.", next: "Decide fit", effort: 2, urgency: 2 },
+];
+
+export const SAMPLE_JOBS = Object.fromEntries(JOB_TRACKER.map((j) => [j.id, {
+  title: j.title,
+  org: j.org,
+  location: "New York, NY",
+  salary: j.salary,
+  deadline: j.due,
+  status: j.tracker,
+  priority: j.score,
+  url: "#",
+  notes: j.notes,
+  nextAction: j.next,
+}]));
+
+const JOB_TRACKER_TASKS = JOB_TRACKER.map((j) => base({
+  id: j.taskId,
+  title: `${j.prefix} ${j.title}`,
+  category: "job",
+  effort: j.effort,
+  urgency: j.urgency,
+  due: j.due,
+  dueDate: j.dueDate,
+  jobId: j.id,
+  score: j.score,
+  relief: "stamp",
+}));
 
 export const INITIAL_TASKS = [
   // Packing / U-Box
@@ -69,16 +120,8 @@ export const INITIAL_TASKS = [
   base({ id: "h_widen", title: "If not locked: widen to furnished room / month-to-month / friends", category: "housing", effort: 2, urgency: 2, due: "Jul 15+", dueDate: "2026-07-15" }),
   base({ id: "h_comfort_box", title: "Sublet comfort box — ship once address is confirmed", category: "housing", effort: 1, due: "After address", status: "dismissed" }),
 
-  // Real job shortlist
-  base({ id: "j_hunter", title: "Apply: Administrative Coordinator, Business Office", category: "job", effort: 3, urgency: 3, due: "Jul 14", dueDate: "2026-07-14", jobId: "job_hunter" }),
-  base({ id: "j_hopwa1", title: "Apply: HOPWA Program Analyst — seat 1", category: "job", effort: 3, urgency: 2, due: "Jul 18", dueDate: "2026-07-18", jobId: "job_hopwa1" }),
-  base({ id: "j_hopwa2", title: "Apply: HOPWA Program Analyst — seat 2", category: "job", effort: 3, urgency: 2, due: "Jul 18", dueDate: "2026-07-18", jobId: "job_hopwa2" }),
-  base({ id: "j_mocs", title: "Apply: MOCS Project Manager", category: "job", effort: 3, urgency: 2, due: "Jul 26", dueDate: "2026-07-26", jobId: "job_mocs" }),
-  base({ id: "j_mopt", title: "Apply: MOPT Outreach Coordinator", category: "job", effort: 3, urgency: 2, due: "Jul 28", dueDate: "2026-07-28", jobId: "job_mopt" }),
-  base({ id: "j_labor", title: "Apply: Labor Relations Associate, H+H", category: "job", effort: 3, urgency: 1, due: "Aug 30", dueDate: "2026-08-30", jobId: "job_labor" }),
-  // Already applied from tracker — watch/follow-up only (not the full 33-row CRM)
-  base({ id: "j_hpd", title: "Follow up: HPD Tenant & Owner Resources PM (applied Jul 2)", category: "job", effort: 1, urgency: 1, due: "Jul 19", dueDate: "2026-07-19", jobId: "job_hpd" }),
-  base({ id: "j_dycd", title: "DYCD Operations Analyst (applied — posting closed)", category: "job", effort: 1, urgency: 1, due: "Closed", status: "dismissed", jobId: "job_dycd" }),
+  // Active job tracker only (score + dueDate) — no ghosted/withdrawn/closed/loss-cause
+  ...JOB_TRACKER_TASKS,
 
   // Admin cutoff cards
   base({ id: "a_wifi", title: "Wi-Fi return: kit, serial photos, cancel, method, receipt", category: "admin", effort: 2, urgency: 2, due: "Before Jul 30", dueDate: "2026-07-30", criticalPath: true, relief: "file" }),
@@ -113,17 +156,6 @@ export const INITIAL_TASKS = [
   base({ id: "c_carrier", title: "Leave carrier out for daily practice", category: "cat", effort: 1, due: "Daily" }),
   base({ id: "c_kit", title: "Pack Stretchy's plane-day kit", category: "cat", effort: 1, urgency: 3, due: "Jul 30", dueDate: "2026-07-30", criticalPath: true }),
 ];
-
-export const SAMPLE_JOBS = {
-  job_hunter: { title: "Administrative Coordinator, Business Office", org: "CUNY — Hunter College", location: "New York, NY", salary: "", deadline: "Jul 14", status: "not started", priority: 96, url: "#", notes: "Real shortlist. Check CUNY schedule fit.", nextAction: "Tailor and submit" },
-  job_hopwa1: { title: "HOPWA Program Analyst — seat 1", org: "NYC", location: "New York, NY", salary: "", deadline: "Jul 18", status: "not started", priority: 90, url: "#", notes: "First of two seats.", nextAction: "Tailor and submit" },
-  job_hopwa2: { title: "HOPWA Program Analyst — seat 2", org: "NYC", location: "New York, NY", salary: "", deadline: "Jul 18", status: "not started", priority: 89, url: "#", notes: "Second of two seats.", nextAction: "Tailor and submit" },
-  job_mocs: { title: "Project Manager", org: "MOCS", location: "New York, NY", salary: "", deadline: "Jul 26", status: "not started", priority: 82, url: "#", notes: "Real shortlist.", nextAction: "Review and submit" },
-  job_mopt: { title: "Outreach Coordinator", org: "MOPT", location: "New York, NY", salary: "", deadline: "Jul 28", status: "not started", priority: 78, url: "#", notes: "Real shortlist.", nextAction: "Review and submit" },
-  job_labor: { title: "Labor Relations Associate", org: "NYC Health + Hospitals", location: "New York, NY", salary: "", deadline: "Aug 30", status: "backburner", priority: 55, url: "#", notes: "Backburner until move-critical work clears.", nextAction: "Revisit in August" },
-  job_hpd: { title: "Project Manager — Tenant & Owner Resources", org: "HPD", location: "New York, NY", salary: "$62k–$72k", deadline: "Jul 19", status: "applied", priority: 75, url: "#", notes: "Applied Jul 2 — watch / follow up.", nextAction: "Monitor" },
-  job_dycd: { title: "Operations Analyst", org: "DYCD", location: "New York, NY", salary: "", deadline: "Jul 3", status: "applied", priority: 66, url: "#", notes: "Applied Jul 2; posting closed.", nextAction: "Closed" },
-};
 
 export const isOpen = (task) => task.status === "pending" || task.status === "active";
 

@@ -121,6 +121,8 @@ export function mergeTasks(initial, savedTasks) {
       category,
       kind: s.kind || t.kind || null,
       bookTaskId: s.bookTaskId || t.bookTaskId || null,
+      score: typeof s.score === "number" ? s.score : t.score,
+      jobId: s.jobId !== undefined && s.jobId !== null ? s.jobId : t.jobId,
     };
   });
   for (const s of savedTasks) {
@@ -144,6 +146,7 @@ export function mergeTasks(initial, savedTasks) {
       needsInfo: !!s.needsInfo,
       kind: s.kind || null,
       bookTaskId: s.bookTaskId || null,
+      score: typeof s.score === "number" ? s.score : null,
     });
   }
   return merged;

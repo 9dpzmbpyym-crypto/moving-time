@@ -490,8 +490,20 @@ const LEDGER_LANES = [
   { id: "cat", label: "Stretchy" },
 ];
 
+const LEDGER_SORTS = [
+  { id: "due", label: "Due" },
+  { id: "effort", label: "Effort" },
+  { id: "score", label: "Score" },
+];
+
+function ledgerDueKey(t) {
+  if (t.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(t.dueDate)) return t.dueDate;
+  return "9999-99-99";
+}
+
 function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
   const [lane, setLane] = useState("housing");
+  const [sortBy, setSortBy] = useState("due");
   const [draft, setDraft] = useState("");
   const [effort, setEffort] = useState(1);
   const [editId, setEditId] = useState(null);
@@ -505,6 +517,18 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
       const ao = isOpen(a) ? 0 : 1;
       const bo = isOpen(b) ? 0 : 1;
       if (ao !== bo) return ao - bo;
+      if (sortBy === "effort") {
+        const e = (b.effort || 1) - (a.effort || 1);
+        if (e !== 0) return e;
+      } else if (sortBy === "score") {
+        const as = a.score ?? SAMPLE_JOBS[a.jobId]?.priority ?? -1;
+        const bs = b.score ?? SAMPLE_JOBS[b.jobId]?.priority ?? -1;
+        const s = bs - as;
+        if (s !== 0) return s;
+      } else {
+        const d = ledgerDueKey(a).localeCompare(ledgerDueKey(b));
+        if (d !== 0) return d;
+      }
       return (b.urgency || 1) - (a.urgency || 1);
     });
   const markDone = (id) => {
@@ -563,7 +587,7 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
   };
   return (
     <Screen title="Ledger" icon="📒" onBack={() => go("board")} subtitle="See-all · tap Edit on a card" bg="#2A1A0C">
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 }}>
         {LEDGER_LANES.map((l) => (
           <button key={l.id} type="button" onClick={() => { setLane(l.id); setEditId(null); }} style={{
             padding: "6px 8px", fontSize: 10, cursor: "pointer",
@@ -571,6 +595,17 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
             color: lane === l.id ? "#120A04" : "#C9B896",
             border: "2px solid #120A04", ...LB,
           }}>{l.label}</button>
+        ))}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10, alignItems: "center" }}>
+        <span style={{ color: "#8A7350", fontSize: 9, ...LB }}>Sort</span>
+        {LEDGER_SORTS.map((s) => (
+          <button key={s.id} type="button" onClick={() => setSortBy(s.id)} style={{
+            padding: "4px 8px", fontSize: 10, cursor: "pointer",
+            background: sortBy === s.id ? "#5D7C3B" : "#241509",
+            color: sortBy === s.id ? "#F2E4C0" : "#C9B896",
+            border: "2px solid #120A04", ...LB,
+          }}>{s.label}</button>
         ))}
       </div>
       <div style={{ ...FR, padding: 10, marginBottom: 10 }}>
@@ -643,7 +678,11 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 12, ...LB }}>{t.title}</div>
               <div style={{ fontSize: 9, marginTop: 2, ...LB }}>
-                {t.due || "—"} · {EFFORT_DOT(t.effort)}{t.status === "done" ? " · done" : ""}
+                {t.due || "—"} · {EFFORT_DOT(t.effort)}
+                {(t.score != null || SAMPLE_JOBS[t.jobId]?.priority != null)
+                  ? ` · score ${t.score ?? SAMPLE_JOBS[t.jobId].priority}`
+                  : ""}
+                {t.status === "done" ? " · done" : ""}
               </div>
             </div>
             <button type="button" onClick={() => beginEdit(t)} style={{
