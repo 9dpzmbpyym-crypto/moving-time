@@ -3093,6 +3093,15 @@ export default function PackItUp({ glowMode = "split" }) {
         background: transparent;
         border-radius: 1px;
       }
+      /* White fridge/pantry: same single-face cue, a bit stronger so it reads
+         on cream appliances (dual door glows were easy to miss reversing). */
+      @keyframes applianceGlowPulse {
+        0%, 100% { box-shadow: 0 0 8px 3px rgba(143,209,79,0.62), 0 0 4px 2px rgba(218,200,90,0.45); }
+        50%      { box-shadow: 0 0 14px 5px rgba(143,209,79,0.92), 0 0 7px 3px rgba(218,200,90,0.65); }
+      }
+      .drawerGlow.applianceGlow {
+        animation: applianceGlowPulse 3.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+      }
       /* red dot pulse for the Tasks chip when pressure is high */
       @keyframes redPulse {
         0%, 100% { box-shadow: 0 0 0 0 rgba(196,59,52,0); }
@@ -3295,10 +3304,11 @@ export default function PackItUp({ glowMode = "split" }) {
                   box-shadow keeps the face readable. Only while storage still
                   has unpacked items. */}
               {useFaceGlow && (() => {
+                const appliance = o.id === "fridge" || o.id === "pantry";
                 return activeGlowRegions.map(([gx, gy, gw, gh], i) => (
                   <div
                     key={`drawerGlow-${i}`}
-                    className="drawerGlow"
+                    className={appliance ? "drawerGlow applianceGlow" : "drawerGlow"}
                     style={{
                       position: "absolute",
                       left: gx * CELL,
