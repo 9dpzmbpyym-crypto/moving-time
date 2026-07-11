@@ -164,7 +164,7 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 
 ### 9. Admin / sublet lane — [desk]
 `admin` category exists (`tasks.js:29`) but holds exactly one task — populate it; Desk-owned in v1, **no admin NPC**.
-- [ ] Sublet sprint cards: messages sent (10 serious + 5 backup / day), warm replies, follow-ups, backup plan if no sublet by **Jul 15**
+- [ ] Sublet sprint as a **session meter**, not cards (design: `move-spine-integration.md`): `Messages 10 · Backups 5` beside File/Stamp/Clear in `session.js`; warm-reply follow-ups + backup plan if no sublet by **Jul 15** stay as ADMIN-tray cards
 - [ ] Wi-Fi return card: equipment located · **DO NOT PACK** · return method confirmed · receipt/tracking saved
 - [ ] Utilities/account cutoffs: renter's insurance, USPS forwarding (once address exists), pharmacy/records, CUNY docs, final pay/insurance/PTO emails
 
@@ -184,7 +184,8 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 
 ## P1c — Command Board / Daily Dispatch (after Shirley Pass 1 — not before)
 
-One visible daily dashboard answering: what matters today, what's due/overdue, who will call, where to tap. Full spec: `docs/move-spine/` Command Board pass.
+One visible daily dashboard answering: what matters today, what's due/overdue, who will call, where to tap. Full spec: `docs/move-spine/` Command Board pass. **Design ruling: `docs/design/move-spine-integration.md`** — clipboard sibling, cards are doors not forms.
+- Acceptance (Fable): **3+1 card cap** · cards route to existing screens (nothing completes on the board) · critical-path strip ≤5 pinned dates, quiet · morning-dispatch boot behavior (first open of the day only, then Menu tile)
 - [ ] **Grow the existing `MenuScreen` 6-tile grid** (`Screens.jsx:300` — already has per-tile due badges) into the board; don't start from zero
 - [ ] Four lanes: Packing · Health · Jobs · Admin
 - [ ] Small daily load only: one packing/move task + one job/admin task + one health/Stretchy task (+ urgent override only if needed)
@@ -220,7 +221,7 @@ Today: one bundled `t_vet` task (`tasks.js:48`) + 3 static flavor rows on Stretc
 
 ### U-Box / do-not-pack / final sweep — [apartment/packing]
 - [ ] U-Box readiness cards: lock bought · boxes labeled · heavy boxes staged · delivery **Jul 27** · fully packed **Jul 30 night** · no normal packing Jul 31
-- [ ] **DO NOT PACK** list in app: ID, meds, insurance card, health/vet paperwork, laptop, phone, chargers, power bank, travel outfit, Stretchy kit, Wi-Fi equipment, CUNY/sublet docs, keys
+- [ ] **DO NOT PACK** as a `noPack` item flag (design: `move-spine-integration.md`): flagged items refuse the Pack verb with one in-world line ("That stays out."); Wi-Fi router is already an object — flag it. Carry-on checklist rides the same flag. List: ID, meds, insurance card, health/vet paperwork, laptop, phone, chargers, power bank, travel outfit, Stretchy kit, Wi-Fi equipment, CUNY/sublet docs, keys
 - [ ] Final sweep checklist (Jul 31): closets, drawers, cabinets, outlets, fridge, medicine cabinet, under bed, behind doors, router, meds/docs/cat kit
 
 **Defer:** side-view cutaway rebuild, Death Closet as a 7th room, roof/balcony staging.
