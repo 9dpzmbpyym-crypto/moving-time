@@ -445,10 +445,10 @@ export function ensureAudioLoaded() {
       : null;
     // Wooden drawer open (scrape) + close (slam) → bedroom dresser/nightstand/vanity.
     const woodDrawerOpen = drawerComboRaw
-      ? normalizePeak(trimLeadingSilence(sliceBuffer(drawerComboRaw, 0.18, 1.05), 0.008), 0.48)
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(drawerComboRaw, 0.18, 1.05), 0.008), 0.42)
       : null;
     const woodDrawerClose = drawerComboRaw
-      ? normalizePeak(trimLeadingSilence(sliceBuffer(drawerComboRaw, 1.55, 2.55), 0.01), 0.88)
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(drawerComboRaw, 1.55, 2.55), 0.01), 0.94)
       : null;
     // Closet doors — same open-under-close bias.
     const closetOpenNorm = closetOpen ? normalizePeak(closetOpen, OPEN_PEAK) : null;
