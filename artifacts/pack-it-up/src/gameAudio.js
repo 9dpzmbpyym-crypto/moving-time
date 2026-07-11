@@ -431,17 +431,17 @@ export function ensureAudioLoaded() {
     const CLOSE_PEAK = 0.78;
     // Cabinet combo: peak 4 open, peak 6 close (close bumped a tad more — was quiet).
     const cabOpen = cabComboRaw
-      ? normalizePeak(trimLeadingSilence(sliceBuffer(cabComboRaw, 3.12, 3.9), 0.01), OPEN_PEAK)
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(cabComboRaw, 3.12, 3.9), 0.01), 0.464)
       : null;
     const cabClose = cabComboRaw
-      ? normalizePeak(trimLeadingSilence(sliceBuffer(cabComboRaw, 5.52, 6.5), 0.01), 0.84)
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(cabComboRaw, 5.52, 6.5), 0.01), 0.672)
       : null;
     // Fridge open+close combo → fridge only (close raised a little).
     const fridgeOpen = fridgeComboRaw
       ? normalizePeak(trimLeadingSilence(sliceBuffer(fridgeComboRaw, 0.15, 0.85), 0.01), OPEN_PEAK)
       : null;
     const fridgeClose = fridgeComboRaw
-      ? normalizePeak(trimLeadingSilence(sliceBuffer(fridgeComboRaw, 2.4, 3.05), 0.01), 0.82)
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(fridgeComboRaw, 2.4, 3.05), 0.01), 0.984)
       : null;
     // Wooden drawer open (scrape) + close (slam) → bedroom dresser/nightstand/vanity.
     const woodDrawerOpen = drawerComboRaw
