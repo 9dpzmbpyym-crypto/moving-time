@@ -8,6 +8,8 @@ const SETTINGS_KEY = "pack-it-up-audio";
 const MUSIC_VOL_MAX = 0.0875; // was 0.175 — another −50% (Jul 9)
 const RADIO_VOL_MAX = 0.07;   // was 0.14 — stay slightly quieter than main
 const SFX_VOL_MAX = 0.25;     // SFX master (another −50%)
+/** While on the landline, keep BGM/radio at this fraction (duck, don't stop). */
+const PHONE_MUSIC_DUCK = 0.2;
 /** Hard rule: never overlap songs. Stop previous → silence → start next. */
 const SONG_GAP_MS = 1000;
 
@@ -123,6 +125,7 @@ const state = {
   phoneAnswer: null,
   phoneReceiverSrc: null,
   phoneReceiverGain: null,
+  phoneMusicDuck: false,
 };
 
 function ensureCtx() {
@@ -435,11 +438,13 @@ function pickOne(list) {
 }
 
 function mainTargetVol() {
-  return state.radioOn ? 0 : MUSIC_VOL_MAX * state.musicVol;
+  const duck = state.phoneMusicDuck ? PHONE_MUSIC_DUCK : 1;
+  return state.radioOn ? 0 : MUSIC_VOL_MAX * state.musicVol * duck;
 }
 
 function radioTargetVol() {
-  return state.radioOn ? RADIO_VOL_MAX * state.musicVol : 0;
+  const duck = state.phoneMusicDuck ? PHONE_MUSIC_DUCK : 1;
+  return state.radioOn ? RADIO_VOL_MAX * state.musicVol * duck : 0;
 }
 
 function applyMusicGain() {
@@ -448,6 +453,29 @@ function applyMusicGain() {
   } catch {}
   try {
     if (state.radioGain) state.radioGain.gain.value = radioTargetVol();
+  } catch {}
+}
+
+/** Soft-duck (or restore) BGM/radio during the landline ceremony. */
+export function setPhoneMusicDuck(on) {
+  state.phoneMusicDuck = !!on;
+  const ctx = state.ctx;
+  const now = ctx?.currentTime ?? 0;
+  try {
+    if (state.mainGain && ctx) {
+      state.mainGain.gain.cancelScheduledValues(now);
+      state.mainGain.gain.setTargetAtTime(mainTargetVol(), now, 0.07);
+    } else {
+      applyMusicGain();
+    }
+  } catch {
+    applyMusicGain();
+  }
+  try {
+    if (state.radioGain && ctx) {
+      state.radioGain.gain.cancelScheduledValues(now);
+      state.radioGain.gain.setTargetAtTime(radioTargetVol(), now, 0.07);
+    }
   } catch {}
 }
 
@@ -887,6 +915,14 @@ export function playPhoneAnswerSfx() {
   setTimeout(() => toneBurst(340, 0.07, 0.16, "triangle"), 40);
 }
 
+/** Hang up — same pickup/answer click to close the call loop. */
+export function playPhoneHangupSfx() {
+  stopPhoneReceiverLoop();
+  stopPhoneRingSfx();
+  setPhoneMusicDuck(false);
+  playPhoneAnswerSfx();
+}
+
 /**
  * Classic cadence: ring on, gap, repeat `bursts` times.
  * Default 2s on / 2s off matches the dial-tone slices (gap halved vs source).
@@ -944,14 +980,6 @@ export function stopPhoneRingSfx() {
     }
     phoneRingTimer = null;
   }
-}
-
-/** Clunk when hanging up. */
-export function playPhoneHangupSfx() {
-  stopPhoneReceiverLoop();
-  stopPhoneRingSfx();
-  toneBurst(180, 0.1, 0.3, "sawtooth");
-  setTimeout(() => toneBurst(120, 0.12, 0.22, "triangle"), 50);
 }
 
 function containerKind(objectId, zone) {

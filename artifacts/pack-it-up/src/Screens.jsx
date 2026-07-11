@@ -21,6 +21,7 @@ import {
   playPhoneHangupSfx,
   PHONE_RING_ON_MS,
   PHONE_RING_GAP_MS,
+  setPhoneMusicDuck,
 } from "./gameAudio.js";
 import { clearSave } from "./save.js";
 import {
@@ -686,6 +687,7 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
 
   const beginRingPattern = ({ bursts = 2, loop = false, onDone } = {}) => {
     clearPhoneRing();
+    setPhoneMusicDuck(true);
     const startBurst = () => {
       setPhoneRattling(true);
       if (rattleOffRef.current) clearTimeout(rattleOffRef.current);
@@ -724,11 +726,13 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
   useEffect(() => () => {
     clearPhoneRing();
     stopPhoneReceiverLoop();
+    setPhoneMusicDuck(false);
   }, []);
 
   const startTalking = (nudgeOverride) => {
     clearPhoneRing();
     stopPhoneReceiverLoop();
+    setPhoneMusicDuck(true);
     playPhoneAnswerSfx();
     const nudge = nudgeOverride || phoneNudge || getNudge(apptsRef.current, tasks);
     const pri = nudge?.task || priorityHealthTask(tasks, apptsRef.current);
@@ -752,12 +756,14 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
 
   const pickUpPhone = () => {
     clearPhoneRing();
+    setPhoneMusicDuck(true);
     playPhonePickupSfx(); // starts looping receiver tone
     setPhonePhase("pickup");
     setIncomingRing(false);
   };
 
   const dialShirley = () => {
+    setPhoneMusicDuck(true);
     playPhoneRotaryDial(); // stops receiver loop + short rotary
     setPhonePhase("dial");
     setTimeout(() => {
@@ -772,14 +778,14 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
   const cancelCeremony = () => {
     clearPhoneRing();
     stopPhoneReceiverLoop();
-    playPhoneHangupSfx();
+    playPhoneHangupSfx(); // answer click + unduck
     setPhonePhase(null);
   };
 
   const hangUp = () => {
     clearPhoneRing();
     stopPhoneReceiverLoop();
-    playPhoneHangupSfx();
+    playPhoneHangupSfx(); // same pickup click as Shirley answering
     setPhonePhase("hanging");
     setTimeout(() => {
       setPhonePhase(null);
