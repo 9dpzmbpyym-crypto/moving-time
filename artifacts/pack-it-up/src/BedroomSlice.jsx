@@ -2358,13 +2358,30 @@ export default function PackItUp({ glowMode = "split" }) {
   const [phoneNudge, setPhoneNudge] = useState(null);
   const phoneNudgeShownRef = useRef(false);
   useEffect(() => {
-    if (phoneNudgeShownRef.current) return;
-    phoneNudgeShownRef.current = true;
     const n = getNudge(appointments, tasks);
     // Soft desk nudge for remind/overdue; cold open is available anytime via landline
     if (n && (n.kind === "remind" || n.kind === "overdue")) {
+      if (phoneNudgeShownRef.current) return;
+      phoneNudgeShownRef.current = true;
       setPhoneNudge(n);
+      return;
     }
+    // TEST (today only): Shirley calls ~5s after every refresh so we can hear the ringtone.
+    // Real rule later: first open of day + appointment within ~48h (getNudge remind/overdue).
+    const d = new Date();
+    const isTestDay = d.getFullYear() === 2026 && d.getMonth() === 6 && d.getDate() === 10;
+    if (!isTestDay) return;
+    const t = setTimeout(() => {
+      if (phoneNudgeShownRef.current) return;
+      phoneNudgeShownRef.current = true;
+      setPhoneNudge({
+        kind: "remind",
+        appt: null,
+        task: null,
+        test: true,
+      });
+    }, 5000);
+    return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps — boot once
 
   // Shirley calling: bell ringtone as normal UI SFX (no music duck) while nudge is live.

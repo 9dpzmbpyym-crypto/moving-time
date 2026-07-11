@@ -12,6 +12,12 @@ const SFX_VOL_MAX = 0.25;     // SFX master (another −50%)
 const PHONE_MUSIC_DUCK = 0.4;
 /** Soft ramp when ducking / restoring music during a call. */
 const PHONE_DUCK_FADE = 0.28;
+/** ~3× time-constant — music duck is effectively settled. */
+export const PHONE_DUCK_SETTLE_MS = Math.ceil(PHONE_DUCK_FADE * 3 * 1000);
+/** Quiet beat after duck settles, before ceremony SFX (pickup / rotary / ring). */
+export const PHONE_DUCK_LEAD_MS = 1000;
+/** Total delay from duck-on → first outbound phone SFX. */
+export const PHONE_SFX_AFTER_DUCK_MS = PHONE_DUCK_SETTLE_MS + PHONE_DUCK_LEAD_MS;
 /** Hard rule: never overlap songs. Stop previous → silence → start next. */
 const SONG_GAP_MS = 1000;
 
@@ -302,9 +308,10 @@ export function ensureAudioLoaded() {
     const [
       sell, pack, stamp, roomSw, mainTheme,
       happy, stressed, desperate,
-      cabOpen, cabClose, closetOpen, closetClose,
+      cabComboRaw, closetOpen, closetClose,
       kitOpenRaw, kitClose, medOpen, medClose1, medClose2,
       offOpenRaw, offClose,
+      fridgeComboRaw, drawerComboRaw,
       phoneReceiverRaw, phoneRotaryRaw, phoneRingRaw, phoneIncomingRaw,
     ] = await Promise.all([
       loadBuf("sfx/ui/sell_chime.mp3"),
@@ -334,8 +341,8 @@ export function ensureAudioLoaded() {
         "sfx/cat/stretchy_desperate_meow_06.mp3",
         "sfx/cat/stretchy_desperate_meow_07.mp3",
       ]),
-      loadBuf("sfx/containers/cabinet_open_01.mp3"),
-      loadBuf("sfx/containers/cabinet_close_01.mp3"),
+      // multi-take cupboard: ~6 peaks — use 4th=open, 6th=close (replaces old cabinet_*.mp3)
+      loadBuf("sfx/containers/cabinet_open_close_es.mp3"),
       loadBuf("sfx/containers/closet_door_open_01.mp3"),
       loadBuf("sfx/containers/closet_door_close_01.mp3"),
       loadBuf("sfx/containers/kitchen_drawer_open_01.mp3"),
@@ -345,6 +352,8 @@ export function ensureAudioLoaded() {
       loadBuf("sfx/containers/medicine_cabinet_close_02.mp3"),
       loadBuf("sfx/containers/office_drawer_open_01.mp3"),
       loadBuf("sfx/containers/office_drawer_close_01.mp3"),
+      loadBuf("sfx/containers/fridge_open_close_es.mp3"),
+      loadBuf("sfx/containers/drawer_open_close_es.mp3"),
       loadBuf("sfx/ui/phone_receiver_tone.mp3"),
       loadBuf("sfx/ui/phone_rotary_dial.mp3"),
       loadBuf("sfx/ui/phone_ring_and_pickup.mp3"),
@@ -362,6 +371,27 @@ export function ensureAudioLoaded() {
     // trim + normalize in memory; we do NOT rewrite the file on disk.
     const offOpen = offOpenRaw
       ? normalizePeak(trimLeadingSilence(offOpenRaw, 0.015), 0.75)
+      : null;
+    // Cabinet combo: peak 4 (~3.28s) open, peak 6 (~5.72s) close.
+    const cabOpen = cabComboRaw
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(cabComboRaw, 3.12, 3.9), 0.01), 0.72)
+      : null;
+    const cabClose = cabComboRaw
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(cabComboRaw, 5.52, 6.5), 0.01), 0.72)
+      : null;
+    // Fridge open+close combo → fridge only.
+    const fridgeOpen = fridgeComboRaw
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(fridgeComboRaw, 0.15, 0.85), 0.01), 0.72)
+      : null;
+    const fridgeClose = fridgeComboRaw
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(fridgeComboRaw, 2.4, 3.05), 0.01), 0.72)
+      : null;
+    // Wooden drawer open (quiet scrape) + close (slam) → bedroom dresser/nightstand/vanity.
+    const woodDrawerOpen = drawerComboRaw
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(drawerComboRaw, 0.18, 1.05), 0.008), 0.72)
+      : null;
+    const woodDrawerClose = drawerComboRaw
+      ? normalizePeak(trimLeadingSilence(sliceBuffer(drawerComboRaw, 1.55, 2.55), 0.01), 0.72)
       : null;
     state.sell = sell;
     state.pack = pack;
@@ -382,6 +412,8 @@ export function ensureAudioLoaded() {
       kitchen_drawer: kitOpen ? [kitOpen] : [],
       medicine: medOpenClips,
       office: offOpen ? [offOpen] : [],
+      fridge: fridgeOpen ? [fridgeOpen] : [],
+      drawer: woodDrawerOpen ? [woodDrawerOpen] : [],
     };
     state.containerClose = {
       cabinet: cabClose ? [cabClose] : [],
@@ -391,6 +423,8 @@ export function ensureAudioLoaded() {
       kitchen_drawer: kitCloseNorm ? [kitCloseNorm] : [],
       medicine: medCloseClips,
       office: offClose ? [offClose] : [],
+      fridge: fridgeClose ? [fridgeClose] : [],
+      drawer: woodDrawerClose ? [woodDrawerClose] : [],
     };
     // Landline: isolate usable slices from the titled source clips.
     // Receiver is already a clean ~1.7s tone → loop whole thing.
@@ -1033,12 +1067,13 @@ function containerKind(objectId, zone) {
   if (objectId === "pantry") return "pantry";
   if (objectId.includes("closet")) return "closet";
   if (objectId.includes("medicine") || objectId === "mirror_cabinet") return "medicine";
-  // bedroom drawers — office drawer clips for now (until dedicated ones land)
+  if (objectId === "fridge" || objectId.includes("fridge")) return "fridge";
+  // bedroom wood drawers — dedicated open-scrape / close-slam combo
   if (
     objectId === "nightstand" ||
     objectId === "dresser" ||
     objectId === "vanity"
-  ) return "office";
+  ) return "drawer";
   // office side cabinet is a cabinet door, not a desk drawer
   if (objectId === "side_cabinet") return "cabinet";
   if (
@@ -1047,7 +1082,7 @@ function containerKind(objectId, zone) {
     objectId.includes("office")
   ) return "office";
   if (objectId.includes("drawer") || objectId === "counter_sink") return "kitchen_drawer";
-  // bath_vanity (tiled vanity) + fridge/bar/tv → generic cabinet
+  // bath_vanity / bar / tv / everything else → generic cabinet (peak 4/6)
   return "cabinet";
 }
 

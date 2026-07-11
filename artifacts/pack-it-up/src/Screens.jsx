@@ -24,6 +24,7 @@ import {
   setPhoneMusicDuck,
   startPhoneIncomingRingtone,
   stopPhoneIncomingRingtone,
+  PHONE_SFX_AFTER_DUCK_MS,
 } from "./gameAudio.js";
 import { clearSave } from "./save.js";
 import {
@@ -746,6 +747,7 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
   const [phoneRattling, setPhoneRattling] = useState(false);
   const ringCancelRef = useRef(null);
   const rattleOffRef = useRef(null);
+  const ceremonyDelayRef = useRef(null);
   const apptsRef = useRef(appointments);
   apptsRef.current = appointments;
   const callStateRef = useRef(callState);
@@ -753,7 +755,25 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
   const msgsRef = useRef(phoneMsgs);
   msgsRef.current = phoneMsgs;
 
+  const clearCeremonyDelay = () => {
+    if (ceremonyDelayRef.current) {
+      clearTimeout(ceremonyDelayRef.current);
+      ceremonyDelayRef.current = null;
+    }
+  };
+
+  /** Duck music first; run SFX only after fade settles + 1s quiet lead. */
+  const afterPhoneDuck = (fn) => {
+    clearCeremonyDelay();
+    setPhoneMusicDuck(true);
+    ceremonyDelayRef.current = setTimeout(() => {
+      ceremonyDelayRef.current = null;
+      fn();
+    }, PHONE_SFX_AFTER_DUCK_MS);
+  };
+
   const clearPhoneRing = () => {
+    clearCeremonyDelay();
     if (ringCancelRef.current) {
       ringCancelRef.current();
       ringCancelRef.current = null;
@@ -769,21 +789,22 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
   /** Outbound dial-tone cadence only (ducks music). Incoming uses bell ringtone elsewhere. */
   const beginRingPattern = ({ bursts = 2, onDone } = {}) => {
     clearPhoneRing();
-    setPhoneMusicDuck(true);
-    const startBurst = () => {
-      setPhoneRattling(true);
-      if (rattleOffRef.current) clearTimeout(rattleOffRef.current);
-      rattleOffRef.current = setTimeout(() => setPhoneRattling(false), PHONE_RING_ON_MS);
-    };
-    ringCancelRef.current = playPhoneRingPattern({
-      bursts,
-      onMs: PHONE_RING_ON_MS,
-      gapMs: PHONE_RING_GAP_MS,
-      onBurst: startBurst,
-      onDone: () => {
-        ringCancelRef.current = null;
-        onDone?.();
-      },
+    afterPhoneDuck(() => {
+      const startBurst = () => {
+        setPhoneRattling(true);
+        if (rattleOffRef.current) clearTimeout(rattleOffRef.current);
+        rattleOffRef.current = setTimeout(() => setPhoneRattling(false), PHONE_RING_ON_MS);
+      };
+      ringCancelRef.current = playPhoneRingPattern({
+        bursts,
+        onMs: PHONE_RING_ON_MS,
+        gapMs: PHONE_RING_GAP_MS,
+        onBurst: startBurst,
+        onDone: () => {
+          ringCancelRef.current = null;
+          onDone?.();
+        },
+      });
     });
   };
 
@@ -836,20 +857,35 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
       startTalking(phoneNudge || getNudge(apptsRef.current, tasks));
       return;
     }
-    setPhoneMusicDuck(true);
-    playPhonePickupSfx(); // starts looping receiver tone
     setPhonePhase("pickup");
+    afterPhoneDuck(() => {
+      playPhonePickupSfx(); // starts looping receiver tone
+    });
   };
 
   const dialShirley = () => {
+    // Music already ducked from pickup — no second lead-in before rotary.
+    setPhonePhase("dial");
     setPhoneMusicDuck(true);
     playPhoneRotaryDial(); // stops receiver loop + short rotary
-    setPhonePhase("dial");
-    setTimeout(() => {
+    clearCeremonyDelay();
+    ceremonyDelayRef.current = setTimeout(() => {
+      ceremonyDelayRef.current = null;
       setPhonePhase("ringing");
-      beginRingPattern({
+      const startBurst = () => {
+        setPhoneRattling(true);
+        if (rattleOffRef.current) clearTimeout(rattleOffRef.current);
+        rattleOffRef.current = setTimeout(() => setPhoneRattling(false), PHONE_RING_ON_MS);
+      };
+      ringCancelRef.current = playPhoneRingPattern({
         bursts: 2,
-        onDone: () => startTalking(phoneNudge || getNudge(apptsRef.current, tasks)),
+        onMs: PHONE_RING_ON_MS,
+        gapMs: PHONE_RING_GAP_MS,
+        onBurst: startBurst,
+        onDone: () => {
+          ringCancelRef.current = null;
+          startTalking(phoneNudge || getNudge(apptsRef.current, tasks));
+        },
       });
     }, 1100);
   };
