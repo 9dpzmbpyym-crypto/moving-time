@@ -9,6 +9,16 @@ Covers **July 5–10, 2026**. Combines:
 
 ---
 
+## 2026-07-11 — [Cursor / Grok 4.5] Perf patch + Shirley Pass 1 + Fable queue
+- Standing `cursor` branch from main; tiny OpenRouter/usage safety + per-minute HUD clock + dead test-call removal
+- Audio raw-ES cleanup; kitchen 4 zones; hard-case guitar; bowls pinned; crop guard; toiletries/tote containers; ringtone radio duck; glow shrink
+- Shirley Pass 1 prompt + thin bank from move-spine; session `docs/sessions/2026-07-11-cursor-perf-shirley-queue.md`; merge to main
+
+## 2026-07-11 — [Codex / GPT-5.6 Sol] Productivity core data layer
+- Replaced fictional sample tasks with the real move/housing/jobs/admin/health/Stretchy manifest and effort metadata
+- Added the calendar spine and deadline-loudness Pressure v2 data contract, including cat-only `stretchyStress`
+- Added save v2 migration that preserves phone progress and saved task status; verified typecheck, migration fixture, and production build
+- Session: `docs/sessions/2026-07-11-codex-productivity-core.md`
 ## 2026-07-11 — [Claude / Fable 5 + Opus 4.8] Design sprint: move-spine integration
 - ChatGPT perf/alignment reviews code-verified (Opus) and folded into FINISH_PLAN; two overclaims corrected; Shirley "live badge lies" diagnosis written into the ticket
 - Claude `start-here.md` added — per-team onboarding set complete

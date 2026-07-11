@@ -11,7 +11,7 @@ Other docs (`AGENTS.md`, `CLAUDE.md`, `DEVLOG.md`, `replit.md`) should only *poi
 | **Definition of done** | Weekend ship bar |
 
 **Weekend ship bar (Jul 12): met — historical.** ("Definition of done" below is frozen as the record; phone smoke still on Eloisa.)  
-**Current next bar:** tiny perf/usage safety patch + safe Shirley Pass 1 + phone smoke test. **No scope expansion until those land.**  
+**Current next bar:** phone smoke · Codex consumer wiring (Pressure v2 / housing in BedroomSlice+Screens) · Shirley stall tune · Stretchy meow tiers.  
 **Move:** end of month — productivity tool, not an endless art project.  
 **Product bar:** fun to open every day + helps you pack / apply / stay covered.  
 **North star mockups:** `artifacts/pack-it-up/docs/mockups/`
@@ -24,62 +24,59 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 
 ### Branch swap at Grok session close — [cursor] (this close-out)
 - [x] Merge `cursor/storage-glow-7a01` → `main` (session file + signed DEVLOG)
-- [ ] **[eloisa]** Delete `cursor/storage-glow-7a01` in GitHub UI (agents get 403), then create standing `cursor` from main
+- [x] **[eloisa]** Delete stale `cursor/*` in GitHub UI; standing `cursor` created from main and pushed (Jul 11 Grok)
 
-### Tiny perf / usage safety patch — [cursor] (from ChatGPT Jul 11 review, Opus-verified against code — do FIRST)
-- [ ] **Grok-sized — Shirley API tightening** (`receptionistCall.js`, the only real usage/$ risk): cap fallback chain to configured model + **one** backup (today: 4 free fallbacks × 25s timeout ≈ up to ~125s of hanging attempts per send) · `max_tokens` 320→~120 · `temperature` 0.95→~0.6 · fail loudly on unknown model slug · surface reply source + last error **in the phone UI** — the Settings "live" badge is only `improvEnabled()` (config check), so silent failures read as live improv. This explains Eloisa's "OpenRouter on, dashboard shows nothing, replies match bank verbatim" report: likely invalid slug (`deepseek/deepseek-v4-flash`) → all attempts 404 → bank answers behind a "live" badge. Per-message source IS tracked (`setLineSource` `live`/`script`) — expose it.
-- [ ] **Composer-sized — clock churn:** `now` ticks every 1s at the top of BedroomSlice (~line 2919) → full-tree re-render of the 3,800-line monolith every second, and **neither clock displays seconds** (both `h:mm`) → tick per minute. Leave `DeskScreen`'s `deskNow` alone (only runs while Desk is open).
-- [ ] **Composer-sized — dead code:** delete the July-10 test-call block (BedroomSlice ~2475–2490). Date-gated to 2026-07-10 so it's already inert — hygiene, not active churn.
+### Tiny perf / usage safety patch — [cursor] (from ChatGPT Jul 11 review, Opus-verified against code — LANDED)
+- [x] **Grok-sized — Shirley API tightening** (`receptionistCall.js`): one backup · `max_tokens` ~120 · temperature ~0.6 · fail loudly on unknown model slug · surface reply source + last error in the phone UI · Settings status no longer claims “live”
+- [x] **Composer-sized — clock churn:** HUD `now` ticks per minute (DeskScreen `deskNow` left alone)
+- [x] **Composer-sized — dead code:** July-10 test-call block deleted
 - Acceptance: bank works with no key · live improv opt-in · one failed call falls back fast · phone UI shows source/error · a real test call appears on the OpenRouter dashboard **or** the UI shows why not · no broad refactor.
 - Watchlist only, do NOT touch this pass: audio front-load, radio preload, 40ms phone pulse (self-clears), infinite CSS animations.
 
-### Audio file cleanup — [cursor] Composer-sized (now that Grok session is merging)
-- [ ] Delete the 7 **original-named** Epidemic drops only — code slices `cabinet/fridge/drawer_open_close_es.mp3` at runtime and uses all four `phone_*.mp3`, so those STAY:
-  - repo root: `ES_Doors, Appliance, Fridge…`.mp3 + `ES_Doors, Cabinet, Cupboard…`.mp3 (uploaded to the wrong folder)
-  - `sfx/ui/`: `Dial Tone and pickup…`, `Receiver Tone…`, `Rotary dial…`, `ES_Communications, Telephone…`
-  - `sfx/containers/`: `ES_Drawers, Wood, Writing Bureau…`
-- [ ] Slice/wire the cupboard creak if still wanted (no replacement on the branch yet)
-- [ ] Update `audio_index.csv` / `audio_manifest.json` if they reference removed files
+### Audio file cleanup — [cursor] Composer-sized (LANDED)
+- [x] Delete the 7 **original-named** Epidemic drops only — code slices `cabinet/fridge/drawer_open_close_es.mp3` at runtime and uses all four `phone_*.mp3`, so those STAY
+- [ ] Slice/wire the cupboard creak if still wanted (no replacement yet)
+- [x] `audio_index.csv` / `audio_manifest.json` did not reference the removed raw filenames (no update needed)
 - Naming rule now lives at the top of `README_AUDIO_INDEX.txt`
 
 ### Fable design review tickets (Jul 12 — see docs/design/2026-07-12-fable-game-review.md)
-- [ ] **[cursor]** Kitchen counter → 4 zones: **Utensil drawer / Junk drawer** (upper L/R) · **Cookware / Under-sink** (lower L/R). Data supports it; touch `kitchenTapZone` (quadrants), `containerKind` (SFX), `storageTitle` (panel names); re-tag items' `zone` in contents.js
-- [ ] **[cursor]** Guitar: replace with **hard case leaning by the amp** (tight-cropped PNG — pipeline blits whole image; current PNG doesn't render in live build)
-- [ ] **[cursor]** Pin kitchen cat bowls against counter/fridge base (currently float mid-tile, no anchor)
-- [ ] **[cursor]** Crop guard: clamp/bounds-check thumbnail crop rect in contents.js (pipeline blind-trusts manifest center values)
-- [ ] **[cursor]** Make `toiletries` + `storage_bin` real containers (CONTENTS keys + glow + SFX kind); move vanity `perfume` item → toiletries; move sewing items from `office:side_cabinet` → tote
+- [x] **[cursor]** Kitchen counter → 4 zones: **Utensil drawer / Junk drawer** (upper L/R) · **Cookware / Under-sink** (lower L/R)
+- [x] **[cursor]** Guitar: procedural **hard case** leaning by the amp (PNG path removed)
+- [x] **[cursor]** Pin kitchen cat bowls against fridge base (`layout.json`)
+- [x] **[cursor]** Crop guard: clamp/bounds-check thumbnail crop rect in contents.js
+- [x] **[cursor]** Make `toiletries` + `storage_bin` real containers; perfume → toiletries; sewing → tote
 - [ ] **[chatgpt/eloisa]** Asset pulls from source stack: more dresser items (only 3 now), unique "Leftovers" sprite (currently reuses canned-food), regenerate off-center normalized item PNGs
-- [ ] **[cursor]** Listen-check on phone: incoming ringtone vs radio; duck radio ~0.6 during ring if they fight
+- [x] **[cursor]** Incoming ringtone ducks radio ~0.6
 - Medicine cabinet ruling: **portal only, meds stay in vanity** — already true in code; do not add storage to the mirror
 
-### Branch deletions — [eloisa] (GitHub UI: repo → Branches → trash icon; agents get 403 on ref deletion)
-- [ ] Delete: `chatgpt-version` · `claude/game-dev-setup-bhs0lt` · `claude/pack-it-up-polish-yln7jy` · `cursor/combine-local-with-replit-main` · `cursor/fix-vite-dev-server-7a01` · `cursor/local-updates-backup` · `cursor/tech-debt-housekeeping-7a01` (all merged or parked in `archive/*` — zero loss)
+### Branch deletions — [eloisa] (GitHub UI)
+- [x] Stale `cursor/*` / listed branches cleaned (Jul 11) — standing `cursor` + `codex` + `main` remain
 
 ### Storage glow (IN PROGRESS — handoff)
-- [ ] **Outstanding:** container glows still read as two looks — soft outer halo on some faces vs heavy/full-face aura on others (fridge/pantry/closet regions cover most of the sprite). Mirror correctly keeps silhouette `.portal`; storage should stay bar-cabinet `.drawerGlow` only.
-- [ ] **[claude]** Judge screenshots / set proportions; **[cursor]** tune `glowRegions` rects (shrink fridge/pantry/closet toward vanity/bar door proportions)
+- [ ] **Outstanding:** Fable still judges screenshots / sets proportions after Grok shrink pass
+- [x] **[cursor]** Shrink fridge/pantry/closet `glowRegions` toward door-face proportions (first pass)
 - [ ] Optional: delete `?glow=outline` path if unused; default is face-only for storage
 - [x] Partial: route all storage through `glowRegions` + edge-only `.drawerGlow` (no green fill); closet/fridge/pantry renamed off `faceGlowRegions`
 
 ### Shirley / receptionist — source of truth LANDED: `docs/move-spine/` (Fable-reviewed ✓)
 - [x] Style + ruleset prompt landed: `docs/move-spine/npc-guides/SHIRLEY_HEALTH_RECEPTIONIST.md` + `prompts/RUNTIME_SYSTEM_PROMPTS.md`
-- [ ] [cursor] **Pass 1** per `docs/move-spine/systems/IMPLEMENTATION_MANIFEST.md`: rebuild `SHIRLEY_SYSTEM_PROMPT` + thin fallback bank from the guide; keep FSM bookings; calibration lines are style source, not verbatim scripts (except the small curated bank)
-- [ ] [cursor] Tune stall → hang-up + “mention objective ≤1 message gap” once prompt lands
+- [x] [cursor] **Pass 1**: rebuild `SHIRLEY_SYSTEM_PROMPT` + thin fallback bank from the guide; FSM bookings kept; calibration lines in bank sparingly
+- [ ] [cursor] Tune stall → hang-up + “mention objective ≤1 message gap”
 - [ ] Optional: landline pixel art per `docs/art-briefs/landline-shirley.md`
 - Later passes (Command Board → lifecycle states → Sal → Vivian) sequenced in the implementation manifest; don’t start them in Pass 1
 
 ### Apartment contents / env props (Jul 11 Cursor session)
 - [x] Fill remaining `container_item` homes in `contents.js` (pantry cat food, desk electronics, TV hutch guitar accessories, vanity meds, etc.)
 - [x] Kitchen counter upper/lower zones; procedural bowls; office router/cat bed/hutch books; living amp + coffee-table books
-- [ ] **[cursor]** Replace living `guitar_case` art — current acoustic PNG is a stopgap (crop odd; with an amp it should be electric **or** a hard case). Hold Stretchy travel/toys for hallway / coat closet / “death closet”
+- [x] **[cursor]** Replace living `guitar_case` art with hard case (procedural). Hold Stretchy travel/toys for hallway / coat closet / “death closet”
 - [ ] Soft: extras / task piles still deferred
 
 ### Audio
 - [ ] **[cursor]** Replace **room switch** SFX when Eloisa drops the new file (`sfx/ui/room_switch_01.mp3`)
 - [ ] **[cursor]** Replace **cabinet** open/close SFX when new files land
 - [ ] Grab / drop in the **other SFX** Eloisa flagged (tomorrow grab list)
-- [ ] **[cursor]** Wire stressed / desperate Stretchy meows (buffers already load in `gameAudio.js`; ambient path is happy-only today) — **tiers now specced in Pressure v2 ticket (P1b2); don't wire against old `taskPressure`**
-- [ ] **[cursor]** Prefer `public/assets/audio/` only — do not commit `src/assets/audio/` duplicate
+- [ ] **[cursor]** Wire stressed / desperate Stretchy meows (buffers already load; Pressure v2 core landed on Codex — wire tiers next)
+- [x] **[cursor]** Prefer `public/assets/audio/` only — do not commit `src/assets/audio/` duplicate
 
 ### Cursor grunt / Composer-sized
 - [ ] **[cursor]** Delete unused `?glow=outline` plumbing *only if* Claude confirms face-only forever (else leave)
@@ -190,9 +187,12 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 - [ ] **[cursor]** Quick-add on the ledger page: text + lane + effort dots → normal task card. A sticky note, not a form (no recurrence, no complex dates). Without this the app is a fixed script.
 - [ ] SOFT **[cursor]** Save export/import (clipboard JSON) as a lifeboat
 
-- [ ] **[cursor/codex]** Seed `tasks.js` + `save.js` defaults from the manifest in **`docs/design/master-list-incorporation.md`** (mechanical transcription): ~12 packing/U-Box process tasks · new `housing` category (4 tasks; daily 10+5 quota is a session meter, NOT tasks) · **replace all 3 fictional SAMPLE_JOBS with the real shortlist** (Hunter Jul 14, HOPWA ×2 Jul 18, MOCS Jul 26, MOPT Jul 28, Labor Relations Aug 30) · ~10 admin cutoff cards · health additions (OB/GYN IUD by ~Jul 25 → nearest existing zone for v1, PCP 90-day bridge) · fix `t_vet` due to the real **Jul 22–25** window · Stretchy chain tasks
+- [x] **[cursor/codex]** Seed `tasks.js` + `save.js` defaults from the manifest in **`docs/design/master-list-incorporation.md`** (mechanical transcription): ~12 packing/U-Box process tasks · new `housing` category (4 tasks; daily 10+5 quota is a session meter, NOT tasks) · **replace all 3 fictional SAMPLE_JOBS with the real shortlist** (Hunter Jul 14, HOPWA ×2 Jul 18, MOCS Jul 26, MOPT Jul 28, Labor Relations Aug 30) · ~10 admin cutoff cards · health additions (OB/GYN IUD by ~Jul 25 → nearest existing zone for v1, PCP 90-day bridge) · fix `t_vet` due to the real **Jul 22–25** window · Stretchy chain tasks
 - [ ] **[cursor/codex]** **Pressure v2 — MUST land with the data drop** (design: `move-spine-integration.md` → "Pressure v2 & Stretchy stress"): current sum-of-all-urgency `taskPressure` pins at 3 forever once ~35 real tasks seed. v2 = overdue/due-≤48h count (critical-path ×2) via calendar spine; consumers unchanged. Decouple `stretchyStress` (0–2, reads HIS travel chain + U-Box-week disruption only); "!" bubble only when a cat task is truly due; wire stressed/desperate meow tiers (desperate = final week + chain incomplete only); Fumes-day quiet rule (vignette/fan suppressed); morning check-in = his status line
-- [ ] **[cursor/codex]** Calendar spine: one pure-data module (`movePhase.js`-shaped) — `PHASES` table (pack-first → mid-month → U-Box week → load days → lock night → flight day) + date triggers, helpers `currentPhase(date)` / `dueTriggers(date)`. No screen, no state. Board emphasis, Sal's ladder, flight-day mode, and the HUD "next: U-Box Jul 27" line all consume it. **The only new structure the master list requires.**
+  - [x] **[codex] Core landed on codex:** due/overdue weighted pressure + decoupled cat-chain/U-Box stretchyStress data API.
+  - [ ] **[codex/cursor integration]** Wire Stretchy hearts/mood/glow/bubble and later meow tiers to stretchyStress; Fumes-day suppression waits for energy check-in.
+  - [x] **[codex] Save v2 migration:** schema bumps preserve packed/content state and saved task status; no version-mismatch wipe.
+- [x] **[cursor/codex]** Calendar spine: one pure-data module (`movePhase.js`-shaped) — `PHASES` table (pack-first → mid-month → U-Box week → load days → lock night → flight day) + date triggers, helpers `currentPhase(date)` / `dueTriggers(date)`. No screen, no state. Board emphasis, Sal's ladder, flight-day mode, and the HUD "next: U-Box Jul 27" line all consume it. **The only new structure the master list requires.**
 - NPC casting ruled (see doc): Shirley = health+Stretchy (data only, no new code) · Sal = packing/U-Box/DO-NOT-PACK/sell cutoff · Vivian = jobs · sublet + admin = Desk-owned, **no voice, deliberately**
 - [ ] **[cursor]** Kitchen wall-calendar prop (design: `master-list-incorporation.md` → "The calendar prop"): portal object above the oven (never packable, mirror pattern) → `calendar` overlay in `Screens.jsx` — July paper page, Stretchy pin-up header, key dates inked **from the calendar spine table** (never hand-duplicated), past days penciled X, today circled, tap-a-date note strip. Read-only v1; August flip SOFT.
 

@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-11T20:16:46.661Z",
+  "last_updated": "2026-07-11T20:36:34.899Z",
   "rules": {
     "read_before_work": true,
     "write_before_editing": true,
@@ -14,32 +14,18 @@
       "model": "Grok 4.5",
       "role": "Cursor Team Lead / Repair Tech",
       "thinking": "high fast",
-      "status": "ACTIVE",
+      "status": "IDLE",
       "branch": "cursor",
-      "working_on": "Claude cursor queue: audio cleanup + Fable tickets + Shirley Pass 1",
-      "files_locked": [
-        "artifacts/pack-it-up/src/receptionistCall.js",
-        "artifacts/pack-it-up/src/BedroomSlice.jsx",
-        "artifacts/pack-it-up/src/Screens.jsx",
-        "artifacts/pack-it-up/src/contents.js",
-        "artifacts/pack-it-up/src/gameAudio.js",
-        "artifacts/pack-it-up/src/layout.json",
-        "artifacts/pack-it-up/src/receptionist.js"
-      ],
-      "systems_locked": [
-        "shirley-api",
-        "hud-clock",
-        "audio",
-        "storage",
-        "env-props"
-      ],
-      "risk_level": "routine",
+      "working_on": null,
+      "files_locked": [],
+      "systems_locked": [],
+      "risk_level": null,
       "commit_authority": true,
       "rate_limited": false,
       "cooldown_until": null,
-      "handoff_needed": "Codex P1b2 parallel — avoid tasks.js/save.js/pressure",
-      "last_seen": "2026-07-11T20:16:46.661Z",
-      "expires_at": "2026-07-12T08:00:00Z",
+      "handoff_needed": null,
+      "last_seen": "2026-07-11T20:36:34.899Z",
+      "expires_at": null,
       "notes": "Default Cursor lead. Owns structural Cursor work and reviews Composer output."
     },
     "cursor_composer_2_5": {
@@ -66,28 +52,18 @@
       "model": "GPT-5.6 Sol",
       "role": "Codex Team Lead / Senior Agentic Engineer",
       "thinking": "high",
-      "status": "ACTIVE",
+      "status": "IDLE",
       "branch": "codex",
-      "working_on": "Productivity core data layer: seed data, calendar spine, Pressure v2, save migration",
-      "files_locked": [
-        "artifacts/pack-it-up/src/tasks.js",
-        "artifacts/pack-it-up/src/movePhase.js",
-        "artifacts/pack-it-up/src/save.js"
-      ],
-      "systems_locked": [
-        "task-data",
-        "calendar-spine",
-        "pressure",
-        "stretchy-stress-data",
-        "save-migration"
-      ],
-      "risk_level": "structural",
+      "working_on": null,
+      "files_locked": [],
+      "systems_locked": [],
+      "risk_level": null,
       "commit_authority": true,
       "rate_limited": false,
       "cooldown_until": null,
       "handoff_needed": null,
-      "last_seen": "2026-07-11T20:15:27.732Z",
-      "expires_at": "2026-07-12T02:10:00Z",
+      "last_seen": "2026-07-11T20:32:57.712Z",
+      "expires_at": null,
       "notes": "Installing machine-readable coordination layer without changing game code."
     },
     "codex_luna": {

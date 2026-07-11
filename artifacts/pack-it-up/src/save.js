@@ -3,7 +3,7 @@
    (`pack-it-up-audio`); this file is packing / coins / tasks / room. */
 
 const SAVE_KEY = "pack-it-up-save";
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 /** After Reset save, block writeSave so the unmount/pagehide flush cannot
  *  resurrect the wiped progress before reload finishes. */
@@ -21,17 +21,30 @@ function sanitizeFlags(raw) {
   };
 }
 
-/** Read raw save or null if missing / bad / wrong version. */
+export function migrateSave(data) {
+  if (!data || typeof data !== "object") return null;
+  const sourceVersion = Number(data.v) || 1;
+  if (sourceVersion > SAVE_VERSION) return null;
+  return {
+    ...data,
+    v: SAVE_VERSION,
+    objState: data.objState && typeof data.objState === "object" ? data.objState : {},
+    contentsState: data.contentsState && typeof data.contentsState === "object" ? data.contentsState : {},
+    tasks: Array.isArray(data.tasks) ? data.tasks : [],
+    appointments: Array.isArray(data.appointments) ? data.appointments : [],
+  };
+}
+
+/** Read and migrate the save. A schema bump must never wipe phone progress. */
 export function loadSave() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
-    const data = JSON.parse(raw);
-    if (!data || typeof data !== "object") return null;
-    if (data.v !== SAVE_VERSION) {
-      // Schema bump: wipe so we never half-apply an old shape.
-      clearSave();
-      return null;
+    const parsed = JSON.parse(raw);
+    const data = migrateSave(parsed);
+    if (!data) return null;
+    if (data.v !== parsed.v) {
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ ...data, savedAt: Date.now() }));
     }
     return data;
   } catch {
@@ -92,10 +105,12 @@ export function mergeTasks(initial, savedTasks) {
     const s = byId[t.id];
     if (!s || !ok.has(s.status)) return t;
     const urgency = typeof s.urgency === "number" ? Math.min(3, Math.max(1, s.urgency)) : t.urgency;
+    const effort = typeof s.effort === "number" ? Math.min(3, Math.max(1, s.effort)) : t.effort;
     return {
       ...t,
       status: s.status,
       urgency,
+      effort,
       needsInfo: !!s.needsInfo,
     };
   });
