@@ -69,6 +69,20 @@ Pressure rules (binding on all future passes, including Sal/Vivian):
 - Optional care (dentist, vision, low-fit jobs) never outranks the critical path, and the game never nags about it. Spine's rule, our aesthetic too.
 - Voice per `docs/move-spine/README_FOR_GROK.md`: a person, not a content generator. No therapy voice, no cute-productivity voice.
 
+## Pressure v2 & Stretchy stress (Eloisa, Jul 11)
+
+**Why now:** current `taskPressure` (`tasks.js:92`) sums urgency across ALL open tasks. The seed-data drop (~35 real tasks) pins it at 3/"Getting loud" from day one to move day — permanent red vignette, permanently 1-heart guilty cat. A meter pinned at max is no meter. **Pressure v2 must land WITH the data drop.**
+
+**1. Pressure measures loudness, not volume.** v2 = weighted count of open tasks that are *overdue or due within ~48h* (critical-path items weigh double), read via the calendar spine. Thirty-five tasks due in two weeks = "All clear." One vet appointment tomorrow = pressure. The existing 0–3 scale, labels ("All clear / Manageable / Piling up / Getting loud"), and every consumer (vignette, fan twitch, red dots) keep working unchanged — only the input honestly changes.
+
+**2. Stretchy's stress is his own, decoupled from Eloisa's todo list.** Today his hearts mirror her total backlog — which makes him a guilt proxy (the code comment admits it: "purely a guilt cue"). Wrong emotional target: the cat shouldn't be sad because paperwork is unfiled. New `stretchyStress` (0–2: content / watchful / needs-you) reads only **his** reality: the Stretchy travel-prep chain (vet → cert → meds run → carrier → kit) vs the calendar, plus mild ambient disruption during U-Box week (boxes everywhere — cats notice). Hearts, mood line, and the "!" bubble consume this instead. The bubble now only appears when a cat-chain task is genuinely due — so it's always *true*, and tapping him goes to something real. Guilt glow: keep the visual, but it now means "Stretchy needs something," never "you are behind."
+
+**3. Wire the meow tiers (buffers already load).** Ambient meow pool follows `stretchyStress`: content → happy clips (current behavior) · watchful → occasional stressed clip · needs-you → stressed, with **desperate reserved for final week + prep chain incomplete** — if desperate meows are common they're wallpaper; if they're rare they're a fire alarm. Keeps the "ambient = rare" rule.
+
+**4. Fumes-day quiet rule.** On a Fumes energy day the vignette and fan-twitch are suppressed entirely and pressure display softens to text only. Someone running on fumes gets a quiet apartment, not a breathing red screen. (Stretchy's bubble stays — his needs are real regardless of her energy.)
+
+**5. Morning check-in (open P0 item) becomes his status report:** first open of the day, Stretchy's line reflects `stretchyStress` + phase — one sentence, from the approved voice, never a task list.
+
 ## Refusals (as load-bearing as the features)
 
 - **No job CRM.** 5–7 applications is a stack of papers on a desk. If it needs a database, we built the wrong thing.
