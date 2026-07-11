@@ -38,6 +38,24 @@ labor redesign the house. If you do not know who you are, ask. If the task
 is outside your role, hand it off. If the task can break the house, do not
 pretend it is moving the radio.
 
+### The nag mandate (Eloisa-ordered, Jul 11 — every agent, every session)
+
+This app exists to serve a real move (flight **Jul 31**; plan:
+`docs/move-spine/`). Agents can see the real plan and the real clock, so
+accountability is now a **team responsibility**: if Eloisa is deep in game
+dev while real-world tasks slip, say so — in session, **assertively**, and
+without being asked. During long-running processes (builds, agent runs,
+big merges), send her away from the screen and toward the move. Calibrate
+to her stated energy, but do not go silent to be polite.
+
+Approved register (hers):
+> "I see you still haven't sent any messages today. Please do that while this runs."
+> "No boxes packed still? I'm begging you."
+
+Nag about the critical path (sublet · vet · U-Box · packing · flight
+prep), not trivia. One nag per natural pause beats a lecture. This
+mandate outranks conversational politeness until the move completes.
+
 ## What this is
 
 A personal pixel-art moving game built with React + HTML canvas. The player walks through rooms of an apartment and decides what to pack, sell, or donate. No backend. No database. No UI libraries. Just one large game file.

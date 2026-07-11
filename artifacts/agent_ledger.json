@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-11T04:30:56.157Z",
+  "last_updated": "2026-07-11T19:56:19.549Z",
   "rules": {
     "read_before_work": true,
     "write_before_editing": true,
@@ -110,7 +110,7 @@
       "role": "Claude Team Lead / Principal Consultant / Creative Director",
       "thinking": "medium/high",
       "status": "IDLE",
-      "branch": "claude/say-hi-b1ijhk",
+      "branch": "claude/team-onboarding-b0c4c9",
       "working_on": null,
       "files_locked": [],
       "systems_locked": [],
@@ -119,9 +119,9 @@
       "rate_limited": false,
       "cooldown_until": null,
       "handoff_needed": null,
-      "last_seen": "2026-07-11T04:30:56.157Z",
+      "last_seen": "2026-07-11T19:56:19.549Z",
       "expires_at": null,
-      "notes": "Fable was interrupted by Claude usage limits while reorganizing the AI-team docs/org-chart. Codex may add the ledger system but should preserve Fable's design authority."
+      "notes": "Active Jul 11 session: orientation + whatever Eloisa queues next. Prior interruption (usage limit mid docs/org-chart pass) was reconciled in the Jul 11 review-cleanup session."
     },
     "claude_opus": {
       "harness": "Claude",
@@ -183,14 +183,14 @@
       "note": "Out-of-pocket unless Eloisa explicitly approves."
     },
     "claude": {
-      "status": "PAUSED_USAGE_LIMIT",
-      "spent": "unknown; usage limit reached during Fable docs/org-chart pass",
-      "reset": "next Claude usage reset",
+      "status": "AVAILABLE",
+      "spent": "unknown; limit that paused the Jul 10-11 pass has reset (Fable active again Jul 11)",
+      "reset": "unknown; ask Eloisa for current meter",
       "models": [
         "Fable 5",
         "Opus 4.8"
       ],
-      "note": "Fable was paused mid AI-team docs/org-chart pass. Resume via docs/ai-team/fable-resume-note.md."
+      "note": "Fable resumed Jul 11 on claude/team-onboarding-b0c4c9. Resume trail (fable-resume-note.md) largely reconciled in the Jul 11 review session."
     },
     "codex": {
       "status": "AVAILABLE",
