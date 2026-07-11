@@ -114,17 +114,50 @@ export const CONTENTS = {
     { id: "salt_1",    name: "Salt Shaker",         spr: art("s1_r02_i06_salt_shaker.png"),                 value: 2 },
     { id: "pepper_1",  name: "Pepper Grinder",      spr: art("s1_r02_i07_pepper_grinder.png"),              value: 5 },
     { id: "herb_1",    name: "Green Herb Jar",      spr: art("s1_r02_i08_green_herb_jar.png"),              value: 3 },
+    { id: "cat_food",  name: "Dry Cat Food",        spr: art("s1_r12_i03_dry_cat_food_bag.png"),            value: 8 },
+    { id: "cat_bowl",  name: "Cat Food Bowl",       spr: art("s1_r12_i01_blue_cat_food_bowl.png"),          value: 4 },
+    { id: "water_bowl", name: "Water Bowl",         spr: art("s1_r12_i02_teal_water_bowl.png"),             value: 3 },
   ],
   "kitchen:fridge": [
     { id: "leftovers", name: "Leftovers",          spr: art("s1_r01_i05_green_canned_food.png"),           value: 0 },
+    { id: "tupper_1",  name: "Food Container",     spr: art("s1_r09_i02_rectangular_food_container.png"),  value: 3 },
+    { id: "tupper_2",  name: "Storage Stack",      spr: art("s1_r09_i03_stacked_food_storage_containers.png"), value: 5 },
+    { id: "bento_1",   name: "Bento Box",          spr: art("s1_r09_i06_white_bento_storage_box.png"),     value: 4 },
+    { id: "wet_food",  name: "Wet Cat Food",       spr: art("s1_r12_i04_wet_food_can.png"),               value: 2 },
   ],
+  // Counter & sink: upper drawers = tools/cutlery (+ junk drawer bits);
+  // lower cabinets = dishes, cookware, bakeware, under-sink cleaning.
   "kitchen:counter_sink": [
-    { id: "plate_1",   name: "Dinner Plate",       spr: art("s1_r08_i01_dinner_plate.png"),                value: 4 },
-    { id: "plate_2",   name: "Dinner Plate",       spr: art("s1_r08_i01_dinner_plate.png"),                value: 4 },
-    { id: "bowl_1",    name: "Bowl",                spr: art("s1_r08_i03_bowl.png"),                        value: 4 },
-    { id: "mug_1",     name: "Red Mug",            spr: art("s1_r08_i04_red_mug.png"),                     value: 2 },
-    { id: "mug_2",     name: "Red Mug",            spr: art("s1_r08_i04_red_mug.png"),                     value: 2 },
-    { id: "plate_stack", name: "Plate Stack",      spr: art("s1_r08_i06_plate_stack.png"),                 value: 6 },
+    // ---- upper ----
+    { id: "fork_1",    name: "Fork",               zone: "upper", spr: art("s1_r03_i01_fork.png"),         value: 1 },
+    { id: "spoon_1",   name: "Spoon",              zone: "upper", spr: art("s1_r03_i02_spoon.png"),        value: 1 },
+    { id: "knife_1",   name: "Table Knife",        zone: "upper", spr: art("s1_r03_i03_table_knife.png"),  value: 1 },
+    { id: "spatula_1", name: "Spatula",            zone: "upper", spr: art("s1_r03_i05_spatula.png"),      value: 3 },
+    { id: "whisk_1",   name: "Whisk",              zone: "upper", spr: art("s1_r03_i06_whisk.png"),        value: 3 },
+    { id: "tongs_1",   name: "Tongs",              zone: "upper", spr: art("s1_r03_i08_tongs.png"),        value: 3 },
+    { id: "wood_spoon", name: "Wooden Spoon",      zone: "upper", spr: art("s1_r03_i09_wooden_spoon.png"), value: 2 },
+    { id: "batteries", name: "Batteries",          zone: "upper", spr: art("s1_r04_i01_batteries.png"),    value: 2 },
+    { id: "tape_roll", name: "Tape Roll",          zone: "upper", spr: art("s1_r04_i03_tape_roll.png"),    value: 1 },
+    { id: "flashlight", name: "Flashlight",        zone: "upper", spr: art("s1_r04_i09_flashlight.png"),  value: 4 },
+    { id: "screwdriver", name: "Screwdriver",      zone: "upper", spr: art("s1_r04_i12_screwdriver.png"), value: 3 },
+    // ---- lower ----
+    { id: "plate_1",   name: "Dinner Plate",       zone: "lower", spr: art("s1_r08_i01_dinner_plate.png"), value: 4 },
+    { id: "plate_2",   name: "Dinner Plate",       zone: "lower", spr: art("s1_r08_i01_dinner_plate.png"), value: 4 },
+    { id: "bowl_1",    name: "Bowl",               zone: "lower", spr: art("s1_r08_i03_bowl.png"),         value: 4 },
+    { id: "mug_1",     name: "Red Mug",            zone: "lower", spr: art("s1_r08_i04_red_mug.png"),      value: 2 },
+    { id: "mug_2",     name: "Red Mug",            zone: "lower", spr: art("s1_r08_i04_red_mug.png"),      value: 2 },
+    { id: "plate_stack", name: "Plate Stack",      zone: "lower", spr: art("s1_r08_i06_plate_stack.png"),  value: 6 },
+    { id: "skillet",   name: "Skillet",            zone: "lower", spr: art("s1_r06_i01_skillet.png"),      value: 12 },
+    { id: "saucepan",  name: "Saucepan",           zone: "lower", spr: art("s1_r06_i03_saucepan.png"),     value: 10 },
+    { id: "stock_pot", name: "Stock Pot",          zone: "lower", spr: art("s1_r06_i04_stock_pot.png"),    value: 14 },
+    { id: "pot_lid",   name: "Pot Lid",            zone: "lower", spr: art("s1_r06_i05_pot_lid.png"),      value: 4 },
+    { id: "baking_sheet", name: "Baking Sheet",    zone: "lower", spr: art("s1_r07_i01_baking_sheet.png"), value: 6 },
+    { id: "muffin_tin", name: "Muffin Tin",       zone: "lower", spr: art("s1_r07_i02_muffin_tin.png"),   value: 5 },
+    { id: "casserole", name: "Casserole Dish",     zone: "lower", spr: art("s1_r07_i04_casserole_dish.png"), value: 8 },
+    { id: "cleaner",   name: "Spray Cleaner",      zone: "lower", spr: art("s1_r05_i01_spray_cleaner.png"), value: 3 },
+    { id: "sponge",    name: "Sponge",             zone: "lower", spr: art("s1_r05_i02_sponge.png"),       value: 1 },
+    { id: "gloves",    name: "Rubber Gloves",      zone: "lower", spr: art("s1_r05_i07_rubber_gloves.png"), value: 2 },
+    { id: "trash_bags", name: "Trash Bags",        zone: "lower", spr: art("s1_r05_i08_trash_bags.png"),  value: 2 },
   ],
 
   // ===================== BATHROOM =====================
@@ -258,17 +291,27 @@ export const CONTENTS = {
 // image decode can still finish just after the first canvas paint.
 export const itemArtReady = Promise.all(imageReadyPromises);
 
+/** Items inside a storage object, optionally filtered by tap zone (upper/lower). */
+export function contentsFor(roomId, objectId, zone = null) {
+  const items = CONTENTS[`${roomId}:${objectId}`] || [];
+  if (!zone) return items;
+  const zoned = items.some((it) => it.zone);
+  if (!zoned) return items;
+  return items.filter((it) => it.zone === zone);
+}
+
 // convenience predicate: does this room+object have interior contents?
-export const hasContents = (roomId, objectId) => !!CONTENTS[`${roomId}:${objectId}`];
+export const hasContents = (roomId, objectId) => !!CONTENTS[`${roomId}:${objectId}`]?.length;
 
 // shared count of how many items inside a storage object are still unhandled
 // (not packed / sold / donated). Used by both the drawer-glow render block and
 // the .portal silhouette glow so they turn off together once a container is
 // emptied. `contentsState` is the per-item state map keyed by `${storageKey}:${itemId}`.
-export const remainingCount = (roomId, objectId, contentsState) => {
+// Pass `zone` to count only that half of a split container (kitchen counter).
+export const remainingCount = (roomId, objectId, contentsState, zone = null) => {
   const storageKey = `${roomId}:${objectId}`;
-  const items = CONTENTS[storageKey];
-  if (!items) return 0;
+  const items = contentsFor(roomId, objectId, zone);
+  if (!items.length) return 0;
   let remaining = 0;
   for (const it of items) {
     const st = contentsState[`${storageKey}:${it.id}`];

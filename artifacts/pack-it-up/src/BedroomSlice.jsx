@@ -32,7 +32,7 @@ import CAT_SHEET from "./assets/Cat-Sheet.png";
 // The apartment stays the hub; these render as full-screen overlays above it.
 import ScreenLayer, { RewardToast, IncomingPhoneCue } from "./Screens.jsx";
 import { INITIAL_TASKS, isOpen as isTaskOpen, taskPressure, SAMPLE_JOBS, TASK_CATEGORIES } from "./tasks.js";
-import { CONTENTS, hasContents, remainingCount, itemArtReady } from "./contents.js";
+import { CONTENTS, hasContents, remainingCount, contentsFor, itemArtReady } from "./contents.js";
 import {
   loadSave,
   writeSave,
@@ -3136,13 +3136,14 @@ export default function PackItUp({ glowMode = "split" }) {
                 // Emptied storage → select the furniture so Pack/Sell/Donate
                 // can run on the cabinet itself (empty-first rule).
                 if (hasContents(rm.id, o.id) && remainingCount(rm.id, o.id, contentsState) > 0) {
-                  // kitchen counter only: tap upper half → drawer SFX,
-                  // lower half → cabinet SFX (same contents panel either way).
+                  // kitchen counter only: tap upper half → drawer SFX + tools/cutlery,
+                  // lower half → cabinet SFX + dishes/cookware.
                   const box = e.currentTarget.getBoundingClientRect();
                   let zone = null;
                   if (o.id === "counter_sink") {
                     const localY = ((e.clientY - box.top) / Math.max(1, box.height)) * (spr?.h || 1);
                     zone = kitchenTapZone(o.id, localY);
+                    if (remainingCount(rm.id, o.id, contentsState, zone) <= 0) return;
                   }
                   playContainerSfx(o.id, "open", zone);
                   setStorageZone(zone);
@@ -3219,7 +3220,7 @@ export default function PackItUp({ glowMode = "split" }) {
           if (!o) return null;
           const saved = SAVED_LAYOUT[room.id]?.[o.id] || {};
           const placed = { ...o, ...saved };
-          const items = CONTENTS[sk(rm.id, o.id)] || [];
+          const items = contentsFor(rm.id, o.id, storageZone);
           const sKey = `${rm.id}:${o.id}`;
           const rem = items.filter((it) => {
             const st = contentsState[`${sKey}:${it.id}`];
@@ -3228,6 +3229,11 @@ export default function PackItUp({ glowMode = "split" }) {
           const sel = items.find((it) => it.id === selectedContentId) || null;
           const selSt = sel ? (contentsState[`${sKey}:${sel.id}`] || { packed: false, sold: false, soldFor: 0, donated: false }) : null;
           const selDone = selSt && (selSt.packed || selSt.sold || selSt.donated);
+          const storageTitle = storageZone === "upper"
+            ? "Upper drawers"
+            : storageZone === "lower"
+              ? "Lower cabinets"
+              : o.name;
           // Compact card above the furniture. Mobile portals it in screen px
           // (room zoom must not scale the UI). Desktop stays stage-absolute.
           const panelW = Math.min(260, typeof window !== "undefined" ? window.innerWidth - 36 : 260);
@@ -3300,7 +3306,7 @@ export default function PackItUp({ glowMode = "split" }) {
                 .storageScroll::-webkit-scrollbar-thumb:hover { background: #6B4A28; }
               `}</style>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4, flex: "0 0 auto" }}>
-                <div style={{ color: "#FFD97A", fontSize: 13, ...ui.label }}>{o.name}</div>
+                <div style={{ color: "#FFD97A", fontSize: 13, ...ui.label }}>{storageTitle}</div>
                 <button
                   onClick={(e) => { e.stopPropagation(); closeStorage(o.id); }}
                   style={{ background: "none", border: "none", color: "#C9B896", fontSize: 18, cursor: "pointer", lineHeight: 1, minWidth: 32, minHeight: 32, ...ui.label }}
