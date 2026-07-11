@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-11T20:52:15.685Z",
+  "last_updated": "2026-07-11T21:04:10.481Z",
   "rules": {
     "read_before_work": true,
     "write_before_editing": true,
@@ -52,28 +52,18 @@
       "model": "GPT-5.6 Sol",
       "role": "Codex Team Lead / Senior Agentic Engineer",
       "thinking": "high",
-      "status": "ACTIVE",
+      "status": "IDLE",
       "branch": "codex",
-      "working_on": "Fix hard case, restore bowls, add bar storage, repair Shirley header encoding",
-      "files_locked": [
-        "artifacts/pack-it-up/src/BedroomSlice.jsx",
-        "artifacts/pack-it-up/src/layout.json",
-        "artifacts/pack-it-up/src/contents.js",
-        "artifacts/pack-it-up/src/receptionistCall.js"
-      ],
-      "systems_locked": [
-        "living-art",
-        "kitchen-layout",
-        "dining-storage",
-        "shirley-openrouter"
-      ],
-      "risk_level": "routine",
+      "working_on": null,
+      "files_locked": [],
+      "systems_locked": [],
+      "risk_level": null,
       "commit_authority": true,
       "rate_limited": false,
       "cooldown_until": null,
       "handoff_needed": null,
-      "last_seen": "2026-07-11T20:52:15.685Z",
-      "expires_at": "2026-07-12T03:30:00Z",
+      "last_seen": "2026-07-11T21:04:10.481Z",
+      "expires_at": null,
       "notes": "Installing machine-readable coordination layer without changing game code."
     },
     "codex_luna": {
