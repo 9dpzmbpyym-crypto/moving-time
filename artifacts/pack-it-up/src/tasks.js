@@ -111,12 +111,12 @@ export const INITIAL_TASKS = [
   base({ id: "m_pack_office", title: "Pack office supplies and papers", category: "move", effort: 2, due: "Jul 16–24", dueDate: "2026-07-16", dueEnd: "2026-07-24" }),
   base({ id: "m_pack_kitchen", title: "Pack nonessential kitchen", category: "move", effort: 2, due: "Jul 16–24", dueDate: "2026-07-16", dueEnd: "2026-07-24" }),
   base({ id: "m_pack_living", title: "Pack living decor/electronics + dining/bar", category: "move", effort: 2, due: "Jul 16–24", dueDate: "2026-07-16", dueEnd: "2026-07-24" }),
-  base({ id: "m_load1", title: "U-Box day: load heavy / boring / low-theft first", category: "move", effort: 3, urgency: 3, due: "Jul 27", dueDate: "2026-07-27", criticalPath: true }),
+  base({ id: "m_load1", title: "U-Box day: load heavy / boring / low-theft first", category: "move", effort: 3, urgency: 3, due: "Jul 27", dueDate: "2026-07-27", exactDate: "2026-07-27", criticalPath: true }),
   base({ id: "m_load_main", title: "Main loading days", category: "move", effort: 3, urgency: 3, due: "Jul 28–29", dueDate: "2026-07-28", dueEnd: "2026-07-29", criticalPath: true }),
   base({ id: "m_sell_final", title: "Final sell / free / donate calls", category: "move", effort: 2, urgency: 2, due: "Jul 29", dueDate: "2026-07-29" }),
   base({ id: "m_photo_lock", title: "Photograph packed interior + lock placement", category: "move", effort: 1, urgency: 2, due: "Jul 30", dueDate: "2026-07-30" }),
-  base({ id: "m_lock_final", title: "Lock the U-Box — packed by tonight", category: "move", effort: 1, urgency: 3, due: "Jul 30", dueDate: "2026-07-30", criticalPath: true }),
-  base({ id: "m_sweep", title: "Final sweep — flight day, no packing", category: "move", effort: 2, urgency: 3, due: "Jul 31", dueDate: "2026-07-31", criticalPath: true }),
+  base({ id: "m_lock_final", title: "Lock the U-Box — packed by tonight", category: "move", effort: 1, urgency: 3, due: "Jul 30", dueDate: "2026-07-30", exactDate: "2026-07-30", criticalPath: true }),
+  base({ id: "m_sweep", title: "Final sweep — flight day, no packing", category: "move", effort: 2, urgency: 3, due: "Jul 31", dueDate: "2026-07-31", exactDate: "2026-07-31", criticalPath: true }),
 
   // Housing. Session meter = Messages 10 / Backups 5 ticks; daily card = today's outreach batch.
   base({ id: "h_lock", title: "Lock the Aug 1 sublet", category: "housing", effort: 3, urgency: 3, due: "Jul 15", dueDate: "2026-07-15", criticalPath: true }),

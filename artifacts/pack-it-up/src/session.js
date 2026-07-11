@@ -37,8 +37,9 @@ export function defaultSession() {
     appt: 0,
     messages: 0,
     backups: 0,
-    energy: null, // null | "fumes" | "steady" | "full" — set once per day on the board
-    calmedZones: {}, // zoneId -> true (persists within the day)
+    energy: null, // null | "fumes" | "steady" | "full"
+    dailyDeal: null, // persisted hand for the local day (see schedule.js)
+    calmedZones: {},
   };
 }
 
@@ -49,6 +50,22 @@ export function mergeSession(savedSession) {
   if (savedSession.day !== fresh.day) return fresh;
   const energy = ["fumes", "steady", "full"].includes(savedSession.energy)
     ? savedSession.energy
+    : null;
+  const dailyDeal = savedSession.dailyDeal && typeof savedSession.dailyDeal === "object"
+    && savedSession.dailyDeal.day === fresh.day
+    ? {
+      day: fresh.day,
+      energy: savedSession.dailyDeal.energy || energy,
+      boundTaskIds: Array.isArray(savedSession.dailyDeal.boundTaskIds) ? savedSession.dailyDeal.boundTaskIds : [],
+      dealtTaskIds: Array.isArray(savedSession.dailyDeal.dealtTaskIds) ? savedSession.dailyDeal.dealtTaskIds : [],
+      selectedTaskIds: Array.isArray(savedSession.dailyDeal.selectedTaskIds) ? savedSession.dailyDeal.selectedTaskIds : [],
+      fumesIds: Array.isArray(savedSession.dailyDeal.fumesIds) ? savedSession.dailyDeal.fumesIds : [],
+      minimumEffort: Math.max(0, Number(savedSession.dailyDeal.minimumEffort) || 0),
+      steadyEffort: Math.max(0, Number(savedSession.dailyDeal.steadyEffort) || 0),
+      fullEffort: Math.max(0, Number(savedSession.dailyDeal.fullEffort) || 0),
+      fixedDay: !!savedSession.dailyDeal.fixedDay,
+      dealConfirmed: !!savedSession.dailyDeal.dealConfirmed,
+    }
     : null;
   return {
     ...fresh,
@@ -61,6 +78,7 @@ export function mergeSession(savedSession) {
     messages: Math.max(0, Number(savedSession.messages) || 0),
     backups: Math.max(0, Number(savedSession.backups) || 0),
     energy,
+    dailyDeal,
     calmedZones: savedSession.calmedZones && typeof savedSession.calmedZones === "object"
       ? { ...savedSession.calmedZones }
       : {},

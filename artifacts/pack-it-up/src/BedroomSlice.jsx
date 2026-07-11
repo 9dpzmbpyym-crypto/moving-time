@@ -41,6 +41,7 @@ import {
   clampRoomIndex,
 } from "./save.js";
 import { mergeSession, bumpSession } from "./session.js";
+import { ensureDailyDeal } from "./schedule.js";
 import {
   sanitizeAppointments,
   markMissed,
@@ -2684,8 +2685,12 @@ export default function PackItUp({ glowMode = "split" }) {
   const onSessionBump = useCallback((key, amount = 1, rewardLabel, extra) => {
     setSession((prev) => {
       if (extra && Object.prototype.hasOwnProperty.call(extra, "energy")) {
-        const next = { ...prev, energy: extra.energy };
-        return next;
+        if (extra.clearDeal || extra.energy == null) {
+          return { ...prev, energy: null, dailyDeal: null };
+        }
+        const withEnergy = { ...prev, energy: extra.energy };
+        const dealTasks = extra.dealTasks || [];
+        return ensureDailyDeal(withEnergy, dealTasks, extra.energy);
       }
       const { session: next, justCompletedGoal, rewardLabel: auto } = bumpSession(prev, key, amount, rewardLabel);
       if (extra?.calmedZone) {

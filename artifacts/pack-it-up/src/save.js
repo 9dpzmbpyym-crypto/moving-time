@@ -3,9 +3,11 @@
    (`pack-it-up-audio`); this file is packing / coins / tasks / room. */
 
 import { REMOVED_TASK_IDS, FORCE_TASK_CATEGORY } from "./tasks.js";
+import { normalizeTask } from "./schedule.js";
 
 const SAVE_KEY = "pack-it-up-save";
-export const SAVE_VERSION = 2;
+const SAVE_BACKUP_KEY = "pack-it-up-save-pre-migration";
+export const SAVE_VERSION = 3;
 
 /** After Reset save, block writeSave so the unmount/pagehide flush cannot
  *  resurrect the wiped progress before reload finishes. */
@@ -27,12 +29,15 @@ export function migrateSave(data) {
   if (!data || typeof data !== "object") return null;
   const sourceVersion = Number(data.v) || 1;
   if (sourceVersion > SAVE_VERSION) return null;
+  const tasks = Array.isArray(data.tasks)
+    ? data.tasks.map((t) => (t && t.id ? normalizeTask(t) : t))
+    : [];
   return {
     ...data,
     v: SAVE_VERSION,
     objState: data.objState && typeof data.objState === "object" ? data.objState : {},
     contentsState: data.contentsState && typeof data.contentsState === "object" ? data.contentsState : {},
-    tasks: Array.isArray(data.tasks) ? data.tasks : [],
+    tasks,
     appointments: Array.isArray(data.appointments) ? data.appointments : [],
   };
 }
@@ -43,6 +48,15 @@ export function loadSave() {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
+    const sourceVersion = Number(parsed?.v) || 1;
+    if (sourceVersion < SAVE_VERSION) {
+      try {
+        // One-shot backup before rewriting a newer schema
+        if (!localStorage.getItem(SAVE_BACKUP_KEY)) {
+          localStorage.setItem(SAVE_BACKUP_KEY, raw);
+        }
+      } catch {}
+    }
     const data = migrateSave(parsed);
     if (!data) return null;
     if (data.v !== parsed.v) {
@@ -99,7 +113,7 @@ export function mergeFlagMap(defaults, saved) {
  */
 export function mergeTasks(initial, savedTasks) {
   if (!Array.isArray(savedTasks) || savedTasks.length === 0) {
-    return initial.filter((t) => !REMOVED_TASK_IDS.has(t.id));
+    return initial.filter((t) => !REMOVED_TASK_IDS.has(t.id)).map(normalizeTask);
   }
   const byId = Object.fromEntries(
     savedTasks.filter((t) => t && t.id && !REMOVED_TASK_IDS.has(t.id)).map((t) => [t.id, t])
@@ -110,12 +124,12 @@ export function mergeTasks(initial, savedTasks) {
     .filter((t) => !REMOVED_TASK_IDS.has(t.id))
     .map((t) => {
     const s = byId[t.id];
-    if (!s || !ok.has(s.status)) return t;
+    if (!s || !ok.has(s.status)) return normalizeTask(t);
     const urgency = typeof s.urgency === "number" ? Math.min(3, Math.max(1, s.urgency)) : t.urgency;
     const effort = typeof s.effort === "number" ? Math.min(3, Math.max(1, s.effort)) : t.effort;
     const category = FORCE_TASK_CATEGORY[t.id]
       || (typeof s.category === "string" && s.category ? s.category : t.category);
-    return {
+    return normalizeTask({
       ...t,
       status: s.status,
       urgency,
@@ -125,17 +139,23 @@ export function mergeTasks(initial, savedTasks) {
       due: t.selfTarget ? t.due : (typeof s.due === "string" ? s.due : t.due),
       dueDate: s.dueDate !== undefined ? s.dueDate : t.dueDate,
       dueEnd: s.dueEnd !== undefined ? s.dueEnd : t.dueEnd,
+      targetDate: s.targetDate !== undefined ? s.targetDate : t.targetDate,
+      latestDate: s.latestDate !== undefined ? s.latestDate : t.latestDate,
+      exactDate: s.exactDate !== undefined ? s.exactDate : t.exactDate,
+      availableFrom: s.availableFrom !== undefined ? s.availableFrom : t.availableFrom,
+      criticality: s.criticality !== undefined ? s.criticality : t.criticality,
       category,
       kind: s.kind || t.kind || null,
       bookTaskId: s.bookTaskId || t.bookTaskId || null,
       score: typeof s.score === "number" ? s.score : t.score,
       jobId: s.jobId !== undefined && s.jobId !== null ? s.jobId : t.jobId,
       selfTarget: !!t.selfTarget,
-    };
+      estimatedLatest: s.estimatedLatest !== undefined ? !!s.estimatedLatest : !!t.estimatedLatest,
+    });
   });
   for (const s of savedTasks) {
     if (!s?.id || REMOVED_TASK_IDS.has(s.id) || initialIds.has(s.id) || !ok.has(s.status)) continue;
-    merged.push({
+    merged.push(normalizeTask({
       id: s.id,
       title: String(s.title || "Untitled").trim() || "Untitled",
       category: s.category || "admin",
@@ -144,6 +164,11 @@ export function mergeTasks(initial, savedTasks) {
       due: typeof s.due === "string" ? s.due : "",
       dueDate: s.dueDate ?? null,
       dueEnd: s.dueEnd ?? null,
+      targetDate: s.targetDate ?? null,
+      latestDate: s.latestDate ?? null,
+      exactDate: s.exactDate ?? null,
+      availableFrom: s.availableFrom ?? null,
+      criticality: s.criticality ?? null,
       criticalPath: !!s.criticalPath,
       status: s.status,
       room: s.room ?? null,
@@ -156,7 +181,8 @@ export function mergeTasks(initial, savedTasks) {
       bookTaskId: s.bookTaskId || null,
       score: typeof s.score === "number" ? s.score : null,
       selfTarget: !!s.selfTarget,
-    });
+      estimatedLatest: !!s.estimatedLatest,
+    }));
   }
   return merged;
 }
