@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-11T19:11:13.356Z",
+  "last_updated": "2026-07-11T19:56:19.549Z",
   "rules": {
     "read_before_work": true,
     "write_before_editing": true,
@@ -109,20 +109,17 @@
       "model": "Fable 5",
       "role": "Claude Team Lead / Principal Consultant / Creative Director",
       "thinking": "medium/high",
-      "status": "ACTIVE",
+      "status": "IDLE",
       "branch": "claude/team-onboarding-b0c4c9",
-      "working_on": "Folding ChatGPT alignment+perf reviews into FINISH_PLAN (Opus-verified corrections)",
-      "files_locked": [
-        "FINISH_PLAN.md",
-        "docs/inbox"
-      ],
+      "working_on": null,
+      "files_locked": [],
       "systems_locked": [],
-      "risk_level": "docs",
+      "risk_level": null,
       "commit_authority": "docs/design only unless explicitly authorized for repo code",
       "rate_limited": false,
       "cooldown_until": null,
       "handoff_needed": null,
-      "last_seen": "2026-07-11T19:11:13.356Z",
+      "last_seen": "2026-07-11T19:56:19.549Z",
       "expires_at": null,
       "notes": "Active Jul 11 session: orientation + whatever Eloisa queues next. Prior interruption (usage limit mid docs/org-chart pass) was reconciled in the Jul 11 review-cleanup session."
     },

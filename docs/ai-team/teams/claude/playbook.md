@@ -35,6 +35,12 @@ Default spawns inherit the lead's model (Fable) — expensive. Override down unl
 4. **Never spawn a sub-agent to make a taste decision.** Taste is why the Claude team exists; delegating it defeats the roster.
 5. Playbook edits: propose in-session, Eloisa approves, commit message says what changed.
 
+## Patterns that worked (Jul 11 design sprint)
+
+- **Verify-then-fold:** another harness's code review (ChatGPT perf notes) gets an Opus verification pass against the actual code before its claims enter FINISH_PLAN — two of three "red flags" were overstated; the fold inherited the corrections.
+- **Sonnet extraction → Fable synthesis:** intern inventories a doc corpus or gap-diffs plan-vs-code (falsifiable, file:line evidence); the lead writes the design from the report. Two spawns did the work of ~2hrs of lead reading.
+- **Reminder relay:** `send_later` (schedules a message into this session) + `PushNotification` = real phone reminders with zero backend. Keep relay wakeups cheap: the scheduled message must say "one push, then stop."
+
 ## Known failure modes
 
 - Sub-agent results return to the lead, not to Eloisa — the lead must relay conclusions, not just say "done."

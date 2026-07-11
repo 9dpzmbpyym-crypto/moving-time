@@ -9,6 +9,14 @@ Covers **July 5–10, 2026**. Combines:
 
 ---
 
+## 2026-07-11 — [Claude / Fable 5 + Opus 4.8] Design sprint: move-spine integration
+- ChatGPT perf/alignment reviews code-verified (Opus) and folded into FINISH_PLAN; two overclaims corrected; Shirley "live badge lies" diagnosis written into the ticket
+- Claude `start-here.md` added — per-team onboarding set complete
+- Move-spine design layer: energy dispatch (Fumes/Steady/Full tank), ledger page, pinned goals, seed-task manifest (~35 missing items), NPC casting, calendar spine + kitchen wall-calendar prop, Pressure v2 + Stretchy stress decoupling, companion gaps (2-tap rule, quick-add, phone=canon/migrate-never-wipe)
+- Sequencing decided: data drop + ledger jump ahead of Shirley Pass 1 (sublet locks Jul 15); Codex + Cursor handoff prompts delivered in-chat
+- Interim phone reminders live via Claude session push relay; nag mandate added to AGENTS.md
+- Session: `docs/sessions/2026-07-11-claude-design-sprint.md`
+
 ## 2026-07-11 — [Codex / GPT-5.6 Sol] Agent ledger coordination
 - Added the machine-readable agent ledger, ESM updater, coordination cross-links, and Fable resume trail; no game behavior changed
 - Added the sparse/modular Body Board background v2 as an uninstalled Fable review asset; tactile-prop UI direction remains taste-review pending
