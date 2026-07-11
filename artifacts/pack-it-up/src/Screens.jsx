@@ -397,84 +397,44 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
   const picks = energy && deal ? handTasks(tasks, deal) : [];
   const offers = energy && deal ? offerTasks(tasks, deal) : [];
   const progress = dealProgress(deal);
+  const [focusId, setFocusId] = useState(null);
   const markDone = (id) => {
     setTasks((ts) => refreshDailyHousingTasks(
       ts.map((t) => (t.id === id ? { ...t, status: "done" } : t))
     ));
     onSessionBump?.("cleared", 1, "Cleared +1");
+    if (focusId === id) setFocusId(null);
   };
   const pickEnergy = (id) => {
+    setFocusId(null);
     onSessionBump?.("energy", 0, null, { energy: id, dealTasks: tasks });
   };
   const toggleOffer = (id) => {
     onSessionBump?.("dealPick", 0, null, { toggleDealId: id });
   };
   const stakes = (c) => (c >= 3 ? "Must" : c >= 2 ? "Need" : "Nice");
-  const renderCard = (t, { offer } = {}) => {
-    const cat = TASK_CATEGORIES[t.category] || {};
-    const badge = urgencyBadge(t, new Date(), tasks);
-    return (
-      <div key={t.id} style={{
-        position: "relative",
-        background: PAPER[t.category] || "#EBDDBA", border: "2px solid #120A04",
-        boxShadow: "3px 3px 0 rgba(0,0,0,0.4)", padding: "10px 12px", marginBottom: 8, color: "#3A2018",
-        opacity: offer && !t.picked ? 0.92 : 1,
-      }}>
-        {t.bound && (
-          <div style={{
-            position: "absolute", top: 6, right: 6, padding: "2px 6px",
-            border: "2px solid #A3252C", color: "#A3252C", fontSize: 8, background: "rgba(255,255,255,0.55)", ...LB,
-          }}>BOUND</div>
-        )}
-        {offer && t.picked && (
-          <div style={{
-            position: "absolute", top: 6, right: 6, padding: "2px 6px",
-            border: "2px solid #5D7C3B", color: "#5D7C3B", fontSize: 8, background: "rgba(255,255,255,0.55)", ...LB,
-          }}>IN HAND</div>
-        )}
-        <div style={{ fontSize: 10, marginBottom: 4, ...LB }}>
-          {cat.icon} {cat.label} · {stakes(t.criticality || 1)}
-          {badge ? ` · ${badge}` : ""}
-        </div>
-        <div style={{ fontSize: 13, marginBottom: 6, paddingRight: 56, ...LB }}>{t.title}</div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 10, ...LB }}>
-            {t.targetDate || t.due || "—"}
-            {t.latestDate && t.latestDate !== t.targetDate ? ` → ${t.latestDate.slice(5)}` : ""}
-            {" · "}{EFFORT_DOT(t.effort)}
-          </span>
-          <div style={{ display: "flex", gap: 4 }}>
-            {offer ? (
-              <button type="button" onClick={() => toggleOffer(t.id)} style={{
-                padding: "6px 8px",
-                background: t.picked ? "#3A1810" : "#5D7C3B",
-                color: "#F2E4C0", border: "2px solid #120A04",
-                fontSize: 10, cursor: "pointer", ...LB,
-              }}>{t.picked ? "Remove" : "Draw"}</button>
-            ) : (
-              <>
-                <button type="button" onClick={() => go(doorForTask(t))} style={{
-                  padding: "6px 8px", background: "#3A2410", color: "#FFD97A", border: "2px solid #120A04",
-                  fontSize: 10, cursor: "pointer", ...LB,
-                }}>Go</button>
-                <button type="button" onClick={() => markDone(t.id)} style={{
-                  padding: "6px 8px", background: "#5D7C3B", color: "#F2E4C0", border: "2px solid #120A04",
-                  fontSize: 10, cursor: "pointer", ...LB,
-                }}>Done</button>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-    );
+  const drawLabel = progress.chooseNeeded > 0
+    ? `Draw (${progress.remaining})`
+    : "Draw (optional)";
+  const focus = picks.find((t) => t.id === focusId) || null;
+
+  // Fan positions — same spirit as the apartment paper fan (rot + dx, origin bottom).
+  const fanLayout = (n, i) => {
+    if (n <= 1) return { rot: -6, dx: 36 };
+    const t = n === 1 ? 0 : i / (n - 1);
+    const rot = -18 + t * 36;
+    const dx = 8 + t * Math.min(220, 28 + n * 22);
+    return { rot, dx };
   };
+
   return (
     <Screen
       title="Command Board"
       icon="📋"
       onBack={() => go("menu")}
-      subtitle={energy ? "Today's hand" : "Running on — pick one"}
+      subtitle={energy ? "Draw · then play your hand" : "Running on — pick one"}
       bg="#2A1A0C"
+      compact
     >
       <RewardToast text={rewardToast} />
       <CriticalStrip />
@@ -483,8 +443,8 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
           <div style={{ color: "#FFD97A", fontSize: 12, marginBottom: 8, ...LB }}>Running on:</div>
           {[
             ["fumes", "Fumes", "bound must-dos only — optional draws if useful"],
-            ["steady", "Steady", "bound + choose 2 more from the offer pile"],
-            ["full", "Full steam", "bound + choose 4 more from the offer pile"],
+            ["steady", "Steady", "bound + draw 2 more from the offer deck"],
+            ["full", "Full steam", "bound + draw 4 more from the offer deck"],
           ].map(([id, label, sub]) => (
             <button
               key={id}
@@ -499,56 +459,151 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
               <div style={{ color: "#8A7350", fontSize: 10, marginTop: 2 }}>{sub}</div>
             </button>
           ))}
-          <div style={{ color: "#6B563B", fontSize: 10, marginTop: 6, ...LB }}>
-            Bound cards are already in your hand. Draw extras from the offer pile.
-          </div>
         </div>
       ) : (
-        <>
-          <div style={{ color: "#C9B896", fontSize: 10, marginBottom: 8, ...LB }}>
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, gap: 8 }}>
+          <div style={{ color: "#C9B896", fontSize: 10, flex: "0 0 auto", ...LB }}>
             Energy: {energy === "fumes" ? "Fumes" : energy === "full" ? "Full steam" : "Steady"}
             {deal?.fixedDay ? " · fixed day" : ""}
             {" · "}
-            <button type="button" onClick={() => onSessionBump?.("energy", 0, null, { energy: null, clearDeal: true })}
+            <button type="button" onClick={() => { setFocusId(null); onSessionBump?.("energy", 0, null, { energy: null, clearDeal: true }); }}
               style={{ background: "none", border: "none", color: "#8A7350", cursor: "pointer", padding: 0, ...LB }}>
               change
             </button>
           </div>
-          {deal?.fixedDay && (
+
+          {/* TOP — offer deck */}
+          <div style={{
+            ...FR, padding: 10, flex: "1 1 auto", minHeight: 120, overflowY: "auto",
+          }}>
             <div style={{
-              ...FR, padding: "8px 10px", marginBottom: 8, color: "#E8C4A8", fontSize: 11, ...LB,
+              display: "flex", alignItems: "baseline", justifyContent: "space-between",
+              marginBottom: 8, gap: 8,
             }}>
-              Fixed day. Bound cards are already spoken for.
+              <div style={{ color: "#FFD97A", fontSize: 14, ...LB }}>{drawLabel}</div>
+              <div style={{ color: "#8A7350", fontSize: 9, ...LB }}>
+                {offers.length} in deck · urgency
+              </div>
             </div>
-          )}
-
-          <div style={{ color: "#FFD97A", fontSize: 11, marginBottom: 6, ...LB }}>
-            Your hand ({picks.length})
+            {deal?.fixedDay && (
+              <div style={{ color: "#E8C4A8", fontSize: 10, marginBottom: 8, ...LB }}>
+                Fixed day — bound cards already spoken for.
+              </div>
+            )}
+            {offers.length === 0 ? (
+              <div style={{ color: "#8A7350", fontSize: 11, ...LB }}>No extras to draw right now.</div>
+            ) : offers.map((t) => {
+              const cat = TASK_CATEGORIES[t.category] || {};
+              const badge = urgencyBadge(t, new Date(), tasks);
+              return (
+                <div key={t.id} style={{
+                  display: "flex", gap: 8, alignItems: "center", marginBottom: 6,
+                  padding: "8px 10px",
+                  background: t.picked ? "#3A2A1A" : (PAPER[t.category] || "#EBDDBA"),
+                  border: "2px solid #120A04",
+                  color: t.picked ? "#8A7350" : "#3A2018",
+                }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 9, ...LB }}>
+                      {cat.icon} {stakes(t.criticality || 1)}{badge ? ` · ${badge}` : ""}
+                    </div>
+                    <div style={{ fontSize: 12, ...LB }}>{t.title}</div>
+                    <div style={{ fontSize: 9, marginTop: 2, ...LB }}>
+                      {t.targetDate || t.due || "—"} · {EFFORT_DOT(t.effort)}
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => toggleOffer(t.id)} style={{
+                    padding: "8px 10px", flex: "0 0 auto",
+                    background: t.picked ? "#3A1810" : "#5D7C3B",
+                    color: "#F2E4C0", border: "2px solid #120A04",
+                    fontSize: 11, cursor: "pointer", ...LB,
+                  }}>{t.picked ? "Remove" : "Draw"}</button>
+                </div>
+              );
+            })}
           </div>
-          {picks.length === 0 ? (
-            <div style={{ color: "#8A7350", fontSize: 12, padding: "8px 0", ...LB }}>No bound cards today — draw from the pile below.</div>
-          ) : picks.map((t) => renderCard(t))}
 
-          {offers.length > 0 && (
-            <div style={{ ...FR, padding: 10, marginTop: 8, marginBottom: 8 }}>
-              <div style={{ color: "#FFD97A", fontSize: 11, marginBottom: 6, ...LB }}>
-                {progress.chooseNeeded > 0
-                  ? (progress.remaining > 0
-                    ? `Choose ${progress.remaining} more · offer pile (${offers.length})`
-                    : `Hand full · offer pile (${offers.length})`)
-                  : `Optional draws · offer pile (${offers.length})`}
+          {/* Focused hand card actions */}
+          {focus && (
+            <div style={{
+              ...FR, padding: "8px 10px", flex: "0 0 auto",
+              display: "flex", gap: 6, alignItems: "center",
+            }}>
+              <div style={{ flex: 1, minWidth: 0, color: "#F2E4C0", fontSize: 11, ...LB }}>
+                {focus.bound ? "BOUND · " : ""}{focus.title}
               </div>
-              <div style={{ color: "#8A7350", fontSize: 9, marginBottom: 8, ...LB }}>
-                Ranked by urgency · about 2× what you need to fill
-              </div>
-              {offers.map((t) => renderCard(t, { offer: true }))}
+              <button type="button" onClick={() => go(doorForTask(focus))} style={{
+                padding: "6px 8px", background: "#3A2410", color: "#FFD97A",
+                border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB,
+              }}>Go</button>
+              <button type="button" onClick={() => markDone(focus.id)} style={{
+                padding: "6px 8px", background: "#5D7C3B", color: "#F2E4C0",
+                border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB,
+              }}>Done</button>
             </div>
           )}
-        </>
+
+          {/* BOTTOM — hand fan (apartment-style) */}
+          <div style={{ flex: "0 0 auto" }}>
+            <div style={{ color: "#FFD97A", fontSize: 10, marginBottom: 4, ...LB }}>
+              Your hand · tap a card
+            </div>
+            <div style={{
+              position: "relative", height: picks.length ? 118 : 48,
+              marginBottom: 4,
+            }}>
+              {picks.length === 0 ? (
+                <div style={{ color: "#8A7350", fontSize: 11, paddingTop: 12, ...LB }}>
+                  Empty hand — draw from the deck above.
+                </div>
+              ) : picks.map((t, i) => {
+                const cat = TASK_CATEGORIES[t.category] || {};
+                const pos = fanLayout(picks.length, i);
+                const on = focusId === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setFocusId(on ? null : t.id)}
+                    style={{
+                      position: "absolute", left: pos.dx, bottom: 0,
+                      width: 72, height: 108,
+                      background: PAPER[t.category] || "#EBDDBA",
+                      border: on ? "3px solid #FFD97A" : "2px solid #120A04",
+                      boxShadow: "3px 3px 0 rgba(0,0,0,0.45)",
+                      transform: `rotate(${pos.rot}deg)`,
+                      transformOrigin: "50% 90%",
+                      padding: "6px 5px 0", zIndex: on ? 40 : i,
+                      overflow: "hidden", cursor: "pointer", color: "#3A2018",
+                      textAlign: "left",
+                    }}
+                  >
+                    {t.bound && (
+                      <div style={{
+                        position: "absolute", top: 3, right: 3, padding: "1px 3px",
+                        border: "1px solid #A3252C", color: "#A3252C", fontSize: 7,
+                        background: "rgba(255,255,255,0.55)", ...LB,
+                      }}>B</div>
+                    )}
+                    <div style={{ fontSize: 12, marginBottom: 2 }}>{cat.icon}</div>
+                    <div style={{
+                      fontSize: 8, lineHeight: 1.15, fontWeight: 700,
+                      maxHeight: 44, overflow: "hidden", ...LB,
+                    }}>{t.title}</div>
+                    <div style={{
+                      position: "absolute", left: 5, right: 5, bottom: 5,
+                      fontSize: 7, color: "#5A4636", ...LB,
+                    }}>{EFFORT_DOT(t.effort)}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       )}
       <button type="button" onClick={() => go("ledger")} style={{
-        width: "100%", marginTop: 8, padding: "12px", background: "#241509", color: "#FFD97A",
-        border: "3px solid #120A04", fontSize: 12, cursor: "pointer", ...LB,
+        width: "100%", marginTop: 6, padding: "10px", background: "#241509", color: "#FFD97A",
+        border: "3px solid #120A04", fontSize: 12, cursor: "pointer", flex: "0 0 auto", ...LB,
       }}>
         Flip page — full ledger
       </button>
