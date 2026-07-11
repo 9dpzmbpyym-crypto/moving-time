@@ -573,6 +573,8 @@ function ShirleyCallOverlay({
   waiting,
   draftHint,
   rattling,
+  lineSource,
+  lineError,
   onDial,
   onSend,
   onHangUp,
@@ -590,6 +592,17 @@ function ShirleyCallOverlay({
     setText("");
     onSend(t);
   };
+
+  const sourceLabel = (() => {
+    if (waiting) return "…";
+    if (lineSource === "live") return "live · OpenRouter";
+    if (lineSource === "script") {
+      return lineError
+        ? `script bank · ${lineError}`
+        : "script bank";
+    }
+    return "doctors office · or whatever";
+  })();
 
   return (
     <div style={{
@@ -660,8 +673,8 @@ function ShirleyCallOverlay({
             />
             <div style={{ flex: 1 }}>
               <div style={{ color: "#FFD97A", fontSize: 13 }}>{RECEPTIONIST_NAME}</div>
-              <div style={{ color: "#8A7350", fontSize: 10 }}>
-                {waiting ? "…" : "doctors office · or whatever"}
+              <div style={{ color: lineSource === "live" ? "#8FD14F" : lineError ? "#C9942E" : "#8A7350", fontSize: 10 }}>
+                {sourceLabel}
               </div>
             </div>
             <button type="button" onClick={onHangUp} style={{
@@ -766,6 +779,7 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
   const [callState, setCallState] = useState({ phase: "await_visit", draft: {}, priorityId: null });
   const [phoneWaiting, setPhoneWaiting] = useState(false);
   const [lineSource, setLineSource] = useState(null); // live | script
+  const [lineError, setLineError] = useState(null); // last improv failure reason, if any
   const [incomingRing, setIncomingRing] = useState(!!phoneNudge);
   const [phoneRattling, setPhoneRattling] = useState(false);
   const [incomingPulse, setIncomingPulse] = useState(false);
@@ -937,6 +951,8 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
     setTimeout(() => {
       setPhonePhase(null);
       setPhoneMsgs([]);
+      setLineSource(null);
+      setLineError(null);
       setCallState({ phase: "await_visit", draft: {}, priorityId: null });
     }, 320);
   };
@@ -951,6 +967,7 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
     const nextMsgs = [...msgsRef.current, { role: "user", text: userText }];
     setPhoneMsgs(nextMsgs);
     setPhoneWaiting(true);
+    setLineError(null);
 
     let usedAgent = false;
     if (improvEnabled()) {
@@ -975,11 +992,16 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
           }
         }
         setLineSource("live");
+        setLineError(null);
         setPhoneMsgs([...nextMsgs, { role: "shirley", text: line }]);
         setPhoneWaiting(false);
         return;
       }
-      console.warn("[Shirley] falling back to script bank:", agent.error);
+      const errLabel = agent.detail
+        ? `${agent.error} — ${String(agent.detail).slice(0, 80)}`
+        : (agent.error || "failed");
+      setLineError(errLabel);
+      console.warn("[Shirley] falling back to script bank:", errLabel);
     }
 
     if (!usedAgent) {
@@ -1229,6 +1251,8 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
               waiting={phoneWaiting}
               draftHint={draftHint}
               rattling={phoneRattling}
+              lineSource={lineSource}
+              lineError={lineError}
               onDial={dialShirley}
               onSend={handlePhoneSend}
               onHangUp={hangUp}
@@ -1720,7 +1744,9 @@ function SettingsScreen({ go }) {
         </button>
         <div style={{ color: improv && apiKey.trim() ? "#8FD14F" : "#C9942E", fontSize: 10, marginBottom: 8, ...LB }}>
           {apiKey.trim()
-            ? (improv ? "Status: live (OpenRouter on)" : "Status: key saved, improv off")
+            ? (improv
+              ? "Status: improv on (OpenRouter key saved) — phone shows live vs script per reply"
+              : "Status: key saved, improv off")
             : "Status: offline script bank"}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>

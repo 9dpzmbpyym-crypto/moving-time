@@ -11,14 +11,17 @@ import {
 
 const SETTINGS_KEY = "pack-it-up-shirley";
 export const DEFAULT_MODEL = "deepseek/deepseek-chat-v3.1:free";
-/** Free models are slow / flaky — give them room, then try a backup. */
+/** Free models are slow / flaky — give them room, then try one backup. */
 const TIMEOUT_MS = 25000;
-const FALLBACK_MODELS = [
-  "deepseek/deepseek-chat-v3.1:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "google/gemma-3-12b-it:free",
-  "openrouter/free",
-];
+const MAX_TOKENS = 120;
+const TEMPERATURE = 0.6;
+/** Single backup only — long fallback chains hang (~25s each) and hide bad slugs. */
+const FALLBACK_MODEL = "meta-llama/llama-3.3-70b-instruct:free";
+
+/** OpenRouter slugs look like `vendor/model[:variant]`. */
+export function isPlausibleModelSlug(model) {
+  return typeof model === "string" && /^[a-z0-9._-]+\/[a-z0-9._/:_-]+$/i.test(model.trim());
+}
 
 export function loadShirleySettings() {
   try {
@@ -131,8 +134,8 @@ async function callOpenRouterOnce({ apiKey, model, messages, timeoutMs }) {
       body: JSON.stringify({
         model,
         messages,
-        temperature: 0.95,
-        max_tokens: 320,
+        temperature: TEMPERATURE,
+        max_tokens: MAX_TOKENS,
       }),
     },
     timeoutMs
@@ -155,8 +158,8 @@ async function callOpenRouterOnce({ apiKey, model, messages, timeoutMs }) {
 }
 
 /**
- * Ask Shirley via OpenRouter. Returns { ok, text, book, error }.
- * Tries the configured model, then free fallbacks.
+ * Ask Shirley via OpenRouter. Returns { ok, text, book, error, detail?, model? }.
+ * Tries the configured model, then at most one backup.
  */
 export async function askShirley({
   messages,
@@ -167,6 +170,18 @@ export async function askShirley({
   const settings = loadShirleySettings();
   if (!settings.improv || !settings.apiKey.trim()) {
     return { ok: false, text: "", book: null, error: "disabled" };
+  }
+
+  const primary = (settings.model || DEFAULT_MODEL).trim();
+  if (!isPlausibleModelSlug(primary)) {
+    console.warn("[Shirley] bad model slug:", primary);
+    return {
+      ok: false,
+      text: "",
+      book: null,
+      error: "bad_model",
+      detail: `Unknown model slug: ${primary || "(empty)"}`,
+    };
   }
 
   const facts = factsBlock({
@@ -186,12 +201,11 @@ export async function askShirley({
     })),
   ];
 
-  const models = [];
-  for (const m of [settings.model, ...FALLBACK_MODELS]) {
-    if (m && !models.includes(m)) models.push(m);
-  }
+  const models = [primary];
+  if (FALLBACK_MODEL && FALLBACK_MODEL !== primary) models.push(FALLBACK_MODEL);
 
   let lastError = "network";
+  let lastDetail = "";
   for (const model of models) {
     try {
       const raw = await callOpenRouterOnce({
@@ -201,18 +215,19 @@ export async function askShirley({
         timeoutMs,
       });
       const { display, book } = parseBookTag(raw);
-      if (model !== settings.model) {
+      if (model !== primary) {
         console.info("[Shirley] used fallback model:", model);
       }
       return { ok: true, text: display || raw.trim(), book, error: null, model };
     } catch (e) {
       lastError = e?.name === "AbortError" ? "timeout" : (e?.message || "network");
-      console.warn("[Shirley] model failed:", model, lastError, e?.detail || "");
-      // Auth errors — don't burn through fallbacks
+      lastDetail = e?.detail || "";
+      console.warn("[Shirley] model failed:", model, lastError, lastDetail);
+      // Auth errors — don't burn the backup
       if (e?.status === 401 || e?.status === 402 || e?.status === 403) break;
     }
   }
-  return { ok: false, text: "", book: null, error: lastError };
+  return { ok: false, text: "", book: null, error: lastError, detail: lastDetail || undefined };
 }
 
 /** Apply a BOOK payload through the FSM; returns bookAppointment result or null. */

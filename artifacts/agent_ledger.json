@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-11T19:56:19.549Z",
+  "last_updated": "2026-07-11T20:12:06.587Z",
   "rules": {
     "read_before_work": true,
     "write_before_editing": true,
@@ -14,18 +14,25 @@
       "model": "Grok 4.5",
       "role": "Cursor Team Lead / Repair Tech",
       "thinking": "high fast",
-      "status": "IDLE",
+      "status": "ACTIVE",
       "branch": "cursor",
-      "working_on": null,
-      "files_locked": [],
-      "systems_locked": [],
-      "risk_level": null,
+      "working_on": "Tiny perf / usage safety patch (parallel with Codex P1b2)",
+      "files_locked": [
+        "artifacts/pack-it-up/src/receptionistCall.js",
+        "artifacts/pack-it-up/src/BedroomSlice.jsx",
+        "artifacts/pack-it-up/src/Screens.jsx"
+      ],
+      "systems_locked": [
+        "shirley-api",
+        "hud-clock"
+      ],
+      "risk_level": "routine",
       "commit_authority": true,
       "rate_limited": false,
       "cooldown_until": null,
-      "handoff_needed": null,
-      "last_seen": null,
-      "expires_at": null,
+      "handoff_needed": "Codex on P1b2 productivity core — avoid colliding on Screens.jsx / BedroomSlice / save.js / tasks.js merges",
+      "last_seen": "2026-07-11T20:12:06.587Z",
+      "expires_at": "2026-07-12T06:00:00Z",
       "notes": "Default Cursor lead. Owns structural Cursor work and reviews Composer output."
     },
     "cursor_composer_2_5": {

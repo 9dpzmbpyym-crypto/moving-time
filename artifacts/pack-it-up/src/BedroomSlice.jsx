@@ -2470,24 +2470,7 @@ export default function PackItUp({ glowMode = "split" }) {
       if (phoneNudgeShownRef.current) return;
       phoneNudgeShownRef.current = true;
       setPhoneNudge(n);
-      return;
     }
-    // TEST (today only): Shirley calls ~5s after every refresh so we can hear the ringtone.
-    // Real rule later: first open of day + appointment within ~48h (getNudge remind/overdue).
-    const d = new Date();
-    const isTestDay = d.getFullYear() === 2026 && d.getMonth() === 6 && d.getDate() === 10;
-    if (!isTestDay) return;
-    const t = setTimeout(() => {
-      if (phoneNudgeShownRef.current) return;
-      phoneNudgeShownRef.current = true;
-      setPhoneNudge({
-        kind: "remind",
-        appt: null,
-        task: null,
-        test: true,
-      });
-    }, 5000);
-    return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps — boot once
 
   // Shirley calling: bell ringtone as normal UI SFX (no music duck) while nudge is live.
@@ -2915,11 +2898,20 @@ export default function PackItUp({ glowMode = "split" }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [selectedId, hoverId, packObject]);
 
-  /* Real wall-clock — ticks every second so the HUD stays honest. */
+  /* Real wall-clock — minute tick (HUD shows h:mm only; 1s re-rendered the whole tree). */
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(id);
+    const tick = () => setNow(new Date());
+    const alignMs = 60000 - (Date.now() % 60000);
+    let intervalId = null;
+    const timeoutId = setTimeout(() => {
+      tick();
+      intervalId = setInterval(tick, 60000);
+    }, alignMs);
+    return () => {
+      clearTimeout(timeoutId);
+      if (intervalId) clearInterval(intervalId);
+    };
   }, []);
   const clock = formatRealTime(now);
   const dateLabel = formatRealDate(now);
