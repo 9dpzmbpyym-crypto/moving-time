@@ -15,6 +15,36 @@ Add this near the top of Open next, before audio cleanup:
 - [ ] Leave audio lazy-loading / incoming pulse / infinite CSS animation notes as watchlist, not broad refactor.
 - Acceptance: Shirley script bank works with no API key; live API remains opt-in; no July 10 auto-call remains; app still runs; no architecture pass.
 
+- ## Shirley OpenRouter path may be broken
+
+Observed during live phone testing:
+
+- Settings showed `Status: live (OpenRouter on)`.
+- Improv dialogue was enabled.
+- Model field was `deepseek/deepseek-v4-flash`.
+- OpenRouter dashboard showed no usage.
+- Shirley returned lines that exactly match the hardcoded fallback bank.
+
+Likely issue:
+- the chat UI may not be calling `askShirley()`,
+- the configured model call may be failing silently,
+- or the app may be falling back to scripted lines while still displaying “live.”
+
+Add a small debug pass before further Shirley voice work:
+
+- visibly identify each response source as `openrouter` or `bank`
+- record the model used
+- surface the OpenRouter error when a call fails
+- verify `askShirley()` is reached when Improv is on
+- use one test call only
+- disable multi-model fallback during debugging
+- do not rewrite Shirley dialogue in this debugging pass
+
+Acceptance:
+- OpenRouter dashboard records the test request.
+- The app clearly indicates whether the reply came from OpenRouter or the fallback bank.
+- Failed calls no longer appear to the player as successful live improv.
+
 2. Make Command Board / Daily Dispatch an explicit future ticket, not just “later passes.”
 
 FINISH_PLAN currently says later passes are sequenced in the implementation manifest and should not start in Shirley Pass 1.  That is correct, but too buried. The actual spec says the app needs one visible daily dashboard that answers what matters today, what is due, what is overdue, who will call, and where to tap.
