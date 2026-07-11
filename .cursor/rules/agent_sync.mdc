@@ -1,0 +1,13 @@
+---
+description: Live agent-ledger coordination rules for Cursor work
+alwaysApply: true
+---
+
+# Agent synchronization
+
+- Read `AGENTS.md` and `artifacts/agent_ledger.json` before editing.
+- Update your ledger block before and after work with `scripts/update-agent-ledger.js` when available.
+- Composer 2.5 handles tiny isolated edits only. It must not diagnose or repair structural bugs; inspect and hand those to Grok 4.5.
+- Grok 4.5 owns structural Cursor work and reviews Composer output.
+- Cursor paid API models, including GLM-5.2 and GPT-5.6 Luna, require explicit Eloisa approval because Cursor API/OpenRouter is maxed and out-of-pocket.
+- Do not stop merely because another agent is active on the branch. If `files_locked` or `systems_locked` overlap, stop and ask Eloisa.

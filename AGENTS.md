@@ -6,6 +6,10 @@
 
 Full operating model: `docs/ai-team/README.md`. Hierarchy runs by harness, not model IQ.
 
+Before editing, read the live coordination ledger at `artifacts/agent_ledger.json`.
+Claim your files/systems there, and stop if another agent's locks overlap. Workflow:
+`docs/ai-team/agent-ledger.md`.
+
 1. **Identify yourself first**: harness, model, permissions, task risk, and
    budget state (check usage if your harness shows it, otherwise ask Eloisa).
    Unknown? Ask: "Which harness/model am I right now?" Do not guess.

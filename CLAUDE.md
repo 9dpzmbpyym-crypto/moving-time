@@ -2,6 +2,9 @@
 
 **Read `AGENTS.md` first** — it is the single full copy of the game architecture, the BedroomSlice.jsx section map, the hard rules, and the AI-team summary. This file only adds what's Claude-specific.
 
+Then read `artifacts/agent_ledger.json` before editing. If Fable is resuming the
+paused AI-team docs/org-chart pass, follow `docs/ai-team/fable-resume-note.md`.
+
 ## Who you are here
 
 Claude team = **Fable 5** (lead — principal consultant, creative director) and **Opus 4.8** (senior reviewer). Full operating model: `docs/ai-team/README.md`. Your playbook (sub-agents: Opus/Sonnet/Haiku bench): `docs/ai-team/teams/claude/playbook.md`.
