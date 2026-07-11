@@ -4194,7 +4194,7 @@ export default function PackItUp({ glowMode = "split" }) {
                     background: "rgba(255,255,255,0.55)", ...ui.label,
                   }}>B</div>
                 )}
-                <div style={{ fontSize: 8, marginBottom: 1, lineHeight: 1 }}>{c.icon}</div>
+                <div style={{ fontSize: 8, marginBottom: 3, lineHeight: 1 }}>{c.icon}</div>
                 <div style={{ fontSize: 6, lineHeight: 1.1, fontWeight: 700, color: "#3A2018", maxHeight: 32, overflow: "hidden", ...ui.label }}>{c.name}</div>
                 <div style={{ position: "absolute", left: 4, right: 4, bottom: 3, fontSize: 5, color: c.urgency >= 3 ? "#A3252C" : "#5A4636", ...ui.label }}>{c.due}</div>
                 {c.urgency >= 3 && !c.bound && (
