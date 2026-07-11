@@ -38,6 +38,27 @@ A **clipboard sibling** per `ui-direction.md` — same walnut/brass/parchment fa
 - **Critical-path strip:** five pinned dates max (sublet Jul 15 · vet window · U-Box Jul 27 · packed Jul 30 night · flight Jul 31 3:20 PM), a thin paper strip under the clip — present, quiet, never blinking.
 - **Cadence:** the board is the first screen once per day (the morning dispatch), then retreats to a Menu tile. Second open of the day goes straight to the apartment.
 
+## v2 — energy dispatch, the ledger page, pinned goals (Eloisa, Jul 11)
+
+Eloisa's refinement (Sweepy-style): the board should carry the executive functioning, not just list work. Four additions, all riding the clipboard:
+
+**1. The energy check-in.** First open of the day, before goals are offered, the clipboard asks one form question — *"Running on: ☐ Fumes ☐ Steady ☐ Full tank."* Every task gets an `effort` field (1 tiny · 2 medium · 3 heavy). The day's energy sets an effort budget, and the board fills the 3+1 slots by **critical-path-first within budget**:
+- **Fumes** ≈ 3 points: tiny tasks only, gentlest wins first — one drawer, one message batch, one care item. Completing *one* thing earns the full session reward.
+- **Steady** ≈ 5–6 points: the normal 1+1+1 mix.
+- **Full tank** ≈ 8–9 points: structural work gets offered — pack the closet, two applications, the vet call.
+Binding rule: **low energy is never punished or even remarked on.** No "you're behind," no smaller reward chips on fumes days. The dial adjusts the ask, never the tone.
+
+**2. The ledger page (see-all).** The daily dispatch is page one on the clipboard; **flip the page** for the full manifest — one plain scrollable list per lane (Packing · Health/Stretchy · Jobs · Admin), every task with status, effort dots, and due date. No fancy chrome, no interactions beyond scroll/inspect — it exists for *planning ahead*, not doing. This is the pressure-relief valve that lets the daily page stay tiny: you can always see everything, so the board never has to show everything.
+
+**3. Pinned goals.** Goals accepted at morning dispatch ride the HUD as a slim chip strip (≤3) across every screen — same visual grammar as the room-quest chip. Tap a chip → jump to its surface. Chips check off in place; ✓ chips linger until midnight (the pile principle: evidence stays visible).
+
+**4. Reminders — honest ruling.** True SMS/push needs a server; the game has no backend and that stays true. Two backend-free paths, both SOFT:
+- **In-world:** if the app is open around a chosen time, the landline rings — Sal/Shirley already own the phone; "you said you'd start boxes around now" is one line.
+- **Out-of-world:** "remind me" on a pinned goal exports a calendar event (.ics / Google Calendar link) — her real phone then does the notifying, reliably, for free.
+Park both until after the board skeleton; ticket the .ics version first (cheaper, more reliable).
+
+Amended acceptance for P1c: energy check-in precedes goal offer · `effort` field on tasks (this folds into the lifecycle ticket, P1 §8) · ledger page-flip per lane · pinned-goal chip strip.
+
 ## Motivation architecture
 
 Everything that already works here is **accumulation you can see**: the outbox pile, the box stack, the session checkmarks, Stretchy's hearts. We extend those and add nothing novel. New meters (sublet messages, U-Box readiness) reuse existing visual grammar.

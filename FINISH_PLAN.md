@@ -186,6 +186,8 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 
 One visible daily dashboard answering: what matters today, what's due/overdue, who will call, where to tap. Full spec: `docs/move-spine/` Command Board pass. **Design ruling: `docs/design/move-spine-integration.md`** — clipboard sibling, cards are doors not forms.
 - Acceptance (Fable): **3+1 card cap** · cards route to existing screens (nothing completes on the board) · critical-path strip ≤5 pinned dates, quiet · morning-dispatch boot behavior (first open of the day only, then Menu tile)
+- **v2 (Eloisa, Jul 11 — see design doc):** energy check-in first ("Fumes / Steady / Full tank") sets an effort budget; board fills slots critical-path-first within budget; low energy never punished · tasks gain `effort: 1|2|3` (fold into lifecycle ticket §8) · **ledger page-flip**: plain scrollable see-all list per lane behind the daily page · accepted goals ride the HUD as a pinned chip strip (≤3) across screens
+- [ ] SOFT (after skeleton): "remind me" on a pinned goal → .ics / Google Calendar export (backend-free); in-world landline nudge variant later
 - [ ] **Grow the existing `MenuScreen` 6-tile grid** (`Screens.jsx:300` — already has per-tile due badges) into the board; don't start from zero
 - [ ] Four lanes: Packing · Health · Jobs · Admin
 - [ ] Small daily load only: one packing/move task + one job/admin task + one health/Stretchy task (+ urgent override only if needed)
