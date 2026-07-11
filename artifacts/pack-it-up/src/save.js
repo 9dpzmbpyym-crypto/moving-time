@@ -5,6 +5,10 @@
 const SAVE_KEY = "pack-it-up-save";
 export const SAVE_VERSION = 1;
 
+/** After Reset save, block writeSave so the unmount/pagehide flush cannot
+ *  resurrect the wiped progress before reload finishes. */
+let saveSuspended = false;
+
 const EMPTY_FLAGS = { packed: false, sold: false, soldFor: 0, donated: false };
 
 function sanitizeFlags(raw) {
@@ -36,6 +40,7 @@ export function loadSave() {
 }
 
 export function clearSave() {
+  saveSuspended = true;
   try {
     localStorage.removeItem(SAVE_KEY);
   } catch {}
@@ -43,6 +48,7 @@ export function clearSave() {
 
 /** Persist progress. Safe to call often (caller should debounce). */
 export function writeSave(partial) {
+  if (saveSuspended) return;
   try {
     const payload = {
       v: SAVE_VERSION,

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import STRETCHY_ICON from "./assets/Stretchy Icon.png";
+import HEALTH_CLIPBOARD from "./assets/health-clipboard.png";
 import {
   TASK_CATEGORIES, SAMPLE_JOBS, isOpen, taskPressure,
   PRESSURE_LABELS, PRESSURE_COLORS,
@@ -1043,7 +1044,8 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
   appointments, setAppointments }) {
   const [zone, setZone] = useState(null);
   const sel = HEALTH_ZONES.find((z) => z.id === zone) || null;
-  const part = (st) => <div style={{ position: "absolute", background: "#EFE7D2", border: "3px solid #221306", ...st }} />;
+  // Tan silhouette so the figure reads on the clipboard parchment (not cream-on-cream).
+  const part = (st) => <div style={{ position: "absolute", background: "#C4A882", border: "3px solid #2A180C", ...st }} />;
   const leave = () => {
     playContainerSfx("mirror_cabinet", "close");
     go("apartment");
@@ -1140,20 +1142,27 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
       </div>
 
       <div style={{
-        position: "relative", border: "3px solid #120A04", background: "#7C2E37",
-        boxShadow: "inset 0 0 0 3px #591F27, 0 3px 0 #000", height: 340, overflow: "hidden",
+        position: "relative",
+        height: 380,
+        overflow: "hidden",
+        backgroundColor: "#14100C",
+        backgroundImage: `url(${HEALTH_CLIPBOARD})`,
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "center top",
+        backgroundSize: "contain",
+        imageRendering: "pixelated",
       }}>
-        <div style={{ position: "absolute", top: 8, left: 0, right: 0, textAlign: "center", color: "#EFC463", fontSize: 11, letterSpacing: 3, ...LB }}>
-          ✦ BODY BOARD ✦
-        </div>
-        <div style={{ position: "absolute", left: "50%", top: 36, transform: "translateX(-50%)", width: 210, height: 300 }}>
-          {part({ left: 73, top: 0, width: 64, height: 60, borderRadius: 14 })}
-          {part({ left: 88, top: 58, width: 34, height: 14 })}
-          {part({ left: 52, top: 70, width: 106, height: 118, borderRadius: 10 })}
-          {part({ left: 22, top: 76, width: 26, height: 96, borderRadius: 9 })}
-          {part({ left: 162, top: 76, width: 26, height: 96, borderRadius: 9 })}
-          {part({ left: 58, top: 190, width: 34, height: 110, borderRadius: 9 })}
-          {part({ left: 118, top: 190, width: 34, height: 110, borderRadius: 9 })}
+        <div style={{
+          position: "absolute", left: "50%", top: "14%", transform: "translateX(-50%)",
+          width: "58%", height: "72%",
+        }}>
+          {part({ left: "35%", top: "0%", width: "30%", height: "18%", borderRadius: 14 })}
+          {part({ left: "42%", top: "17%", width: "16%", height: "5%" })}
+          {part({ left: "25%", top: "21%", width: "50%", height: "36%", borderRadius: 10 })}
+          {part({ left: "10%", top: "23%", width: "12%", height: "30%", borderRadius: 9 })}
+          {part({ left: "78%", top: "23%", width: "12%", height: "30%", borderRadius: 9 })}
+          {part({ left: "28%", top: "58%", width: "16%", height: "34%", borderRadius: 9 })}
+          {part({ left: "56%", top: "58%", width: "16%", height: "34%", borderRadius: 9 })}
           {HEALTH_ZONES.map((z) => {
             const ok = zoneDone(z.id);
             return (
@@ -1464,6 +1473,8 @@ function SettingsScreen({ go }) {
         type="button"
         onClick={() => {
           if (!window.confirm("Wipe packing progress, coins, minutes, and task status? Audio settings stay.")) return;
+          // clearSave suspends further writes so the PackItUp unmount flush
+          // cannot rewrite the old in-memory save over the wipe.
           clearSave();
           window.location.reload();
         }}

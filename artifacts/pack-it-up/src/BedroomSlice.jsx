@@ -2514,7 +2514,7 @@ export default function PackItUp({ glowMode = "split" }) {
     prevPacked: prev.packed, prevSold: prev.sold, prevSoldFor: prev.soldFor, prevDonated: prev.donated,
     coinsDelta, minutesDelta,
   });
-  const busy = packingId || sellingId || donatingId;
+  const busy = packingId || sellingId || donatingId || packingContentKey;
 
   const showReward = useCallback((label) => {
     if (!label) return;
@@ -2614,10 +2614,12 @@ export default function PackItUp({ glowMode = "split" }) {
     if (!prev || prev.packed || prev.sold || prev.donated || busy) return;
     haptic(HAPTIC.pack);
     playPackSfx();
+    // Flip packed immediately so the room box pile stays visible after the
+    // fly ends (visibility is driven by packed counts, not only packingHere).
+    setContentsState((s) => ({ ...s, [k]: { ...s[k], packed: true } }));
     // Close back to the apartment so the box stack is visible, then fly the
     // item sprite from the storage object to the box pile's mouth — same
-    // packToBox keyframe the furniture uses. The content state flips to
-    // packed when the fly lands, which grows the box pile by one.
+    // packToBox keyframe the furniture uses.
     const items = CONTENTS[`${room.id}:${storageId}`] || [];
     const it = items.find((x) => x.id === itemId);
     const spr = it?.spr;
@@ -2626,7 +2628,6 @@ export default function PackItUp({ glowMode = "split" }) {
     if (spr && storageObj && storageSpr) {
       // Fly originates from the storage sprite's TOP (where the inline panel
       // sits), so visually the item flies out of the open UI and into the box.
-      // We keep the panel open (don't clear storageId) until the fly lands.
       const saved = SAVED_LAYOUT[room.id]?.[storageId] || {};
       const placed = { ...storageObj, ...saved };
       const sScale = saved.scale ?? storageObj.scale ?? 1;
@@ -2640,16 +2641,16 @@ export default function PackItUp({ glowMode = "split" }) {
       // start centered horizontally over the storage sprite, at its top edge
       const ox = placed.x + (sw - iw) / 2;
       const oy = placed.y - Math.max(8, ih * 0.35);
-      // target: next box slot mouth (rmPacked count determines which slot)
+      // target: receiving box slot. Count already includes this item (optimistic
+      // pack above), so the open mouth is at settled-1.
       const rmPacked = room.objects.filter(
         (o) => o.removable && objState[sk(room.id, o.id)].packed
       ).length;
-      // also count already-packed contents so multiple content packs stack
       const contentPacked = Object.entries(contentsState)
         .filter(([key, st]) => key.startsWith(`${room.id}:`) && st.packed)
-        .length;
+        .length + 1; // +1 = this item (state update not flushed yet)
       const totalPacked = rmPacked + contentPacked;
-      const boxIdx = Math.min(totalPacked, BOX_MAX - 1);
+      const boxIdx = Math.min(Math.max(0, totalPacked - 1), BOX_MAX - 1);
       const boxTarget = boxSlotCenter(boxIdx);
       setContentFlyFx({
         spr,
@@ -2669,7 +2670,6 @@ export default function PackItUp({ glowMode = "split" }) {
     setPackingContentKey(k);
     setContentAnim({ key: k, kind: "pack" });
     schedule(() => {
-      setContentsState((s) => ({ ...s, [k]: { ...s[k], packed: true } }));
       setUndoStack((stack) => [...stack, undoContentEntry(storageId, itemId, prev, 0, 10)]);
       setPackingContentKey(null);
       setContentAnim(null);
@@ -2997,8 +2997,16 @@ export default function PackItUp({ glowMode = "split" }) {
     // an item is flying to the pile now — furniture (packingId) OR a content
     // item (packingContentKey). Both must open the box to catch it.
     const packingHere = rm.id === room.id && (!!packingId || !!packingContentKey);
-    const openIdx = packingHere ? Math.min(rmBoxes, BOX_MAX - 1) : -1; // box that opens to catch it
-    const boxTarget = boxSlotCenter(openIdx < 0 ? rmBoxes : openIdx);  // fly-to point (stage px)
+    // Content packs flip packed immediately; open the slot for the newest box
+    // (rmBoxes-1) while the fly is in progress. Furniture packs still settle
+    // packed at the end of the anim, so open at rmBoxes while in flight.
+    const openIdx = packingHere
+      ? Math.min(
+          Math.max(0, packingContentKey ? rmBoxes - 1 : rmBoxes),
+          BOX_MAX - 1,
+        )
+      : -1;
+    const boxTarget = boxSlotCenter(openIdx < 0 ? Math.max(0, rmBoxes - 1) : openIdx);
     return (
       <>
         {/* LAYER 0 — room shell */}
@@ -3094,10 +3102,10 @@ export default function PackItUp({ glowMode = "split" }) {
                   refreshRadioUi();
                   return;
                 }
-                // other storage objects (cabinets/drawers/closets) open an
-                // inline contents panel above the sprite — the apartment stays
-                // visible so the pack-to-box fly animation plays in context.
-                if (hasContents(rm.id, o.id)) {
+                // Storage with remaining items → open contents panel.
+                // Emptied storage → select the furniture so Pack/Sell/Donate
+                // can run on the cabinet itself (empty-first rule).
+                if (hasContents(rm.id, o.id) && remainingCount(rm.id, o.id, contentsState) > 0) {
                   // kitchen counter only: tap upper half → drawer SFX,
                   // lower half → cabinet SFX (same contents panel either way).
                   const box = e.currentTarget.getBoundingClientRect();
@@ -3118,6 +3126,7 @@ export default function PackItUp({ glowMode = "split" }) {
                 }
                 setSelectedId(o.id);
                 closeRadio();
+                closeStorage();
               }}
               onMouseEnter={() => setHoverId(o.id)}
               onMouseLeave={() => setHoverId((h) => (h === o.id ? null : h))}
@@ -3549,8 +3558,10 @@ export default function PackItUp({ glowMode = "split" }) {
         )}
 
         {/* box stack near the open door — grows as you pack; the top box opens
-            to catch the incoming item, then closes as part of the pile */}
-        {(rmPacked > 0 || packingHere) && (
+            to catch the incoming item, then closes as part of the pile.
+            Show for furniture packs OR storage-content packs (rmBoxes includes
+            both). packingHere covers the fly-in frame before state flips. */}
+        {(rmBoxes > 0 || packingHere) && (
           <div style={{ position: "absolute", left: BOX_ORIGIN.x, top: BOX_ORIGIN.y, zIndex: 60, animation: "popIn 220ms ease-out" }}>
             <div className={packingHere ? "boxReceiving" : ""} style={{ transformOrigin: "bottom center" }}>
               <PixelCanvas w={BOX_CW} h={BOX_CH} draw={(ctx) => drawBoxes(ctx, rmBoxes, openIdx)} redrawKey={`${rmBoxes}-${openIdx}`} />
@@ -3714,13 +3725,11 @@ export default function PackItUp({ glowMode = "split" }) {
 
     // empty-first rule: a removable storage object (bar cabinet, nightstand, etc.)
     // can't be packed/sold/donated as a whole while it still has items inside.
+    // Once emptied, Pack unlocks (tap the furniture — it selects instead of
+    // reopening an empty storage panel).
     const selectedHasContents = selected && hasContents(room.id, selected.id);
     const selectedContentsRemaining = selectedHasContents
-      ? (CONTENTS[sk(room.id, selected.id)] || []).filter((it) => {
-          const st = contentsState[`${sk(room.id, selected.id)}:${it.id}`];
-          if (!st) return true;
-          return !st.packed && !st.sold && !st.donated;
-        }).length
+      ? remainingCount(room.id, selected.id, contentsState)
       : 0;
     const blockedByContents = selectedHasContents && selectedContentsRemaining > 0;
     const actions = [
