@@ -385,20 +385,21 @@ export function ensureAudioLoaded() {
     };
     // Landline: isolate usable slices from the titled source clips.
     // Receiver is already a clean ~1.7s tone → loop whole thing.
+    // Peak targets sit under one-shot UI SFX so the line doesn't dominate.
     state.phoneReceiver = phoneReceiverRaw
-      ? normalizePeak(trimLeadingSilence(phoneReceiverRaw, 0.01), 0.55)
+      ? normalizePeak(trimLeadingSilence(phoneReceiverRaw, 0.01), 0.38)
       : null;
     // Rotary: first click cluster only (~1s), not the second half of the take.
     state.phoneRotary = phoneRotaryRaw
-      ? normalizePeak(sliceBuffer(phoneRotaryRaw, 0.1, 1.15), 0.7)
+      ? normalizePeak(sliceBuffer(phoneRotaryRaw, 0.1, 1.15), 0.52)
       : null;
     // Ring file: two ~2s dial-tone bursts with a long gap, then a short pickup.
     // Filename says decrease gap 50% → we play bursts on a 2s/2s cadence in UI.
     state.phoneRingBurst = phoneRingRaw
-      ? normalizePeak(sliceBuffer(phoneRingRaw, 0.16, 2.2), 0.55)
+      ? normalizePeak(sliceBuffer(phoneRingRaw, 0.16, 2.2), 0.4)
       : null;
     state.phoneAnswer = phoneRingRaw
-      ? normalizePeak(sliceBuffer(phoneRingRaw, 8.85, 9.5), 0.75)
+      ? normalizePeak(sliceBuffer(phoneRingRaw, 8.85, 9.5), 0.55)
       : null;
     state.ready = true;
     if (state.primed) startMainTheme();
@@ -815,7 +816,7 @@ export function startPhoneReceiverLoop() {
       src.buffer = buf;
       src.loop = true;
       const gain = ctx.createGain();
-      gain.gain.value = 0.85 * state.sfxVol * SFX_VOL_MAX;
+      gain.gain.value = 0.48 * state.sfxVol * SFX_VOL_MAX;
       src.connect(gain).connect(ctx.destination);
       src.start(0);
       state.phoneReceiverSrc = src;
@@ -848,7 +849,7 @@ export function playPhoneRotaryDial() {
   stopPhoneReceiverLoop();
   ensureAudioLoaded();
   if (state.phoneRotary) {
-    playBuffer(state.phoneRotary, 1.05);
+    playBuffer(state.phoneRotary, 0.65);
     return;
   }
   // procedural fallback
@@ -861,7 +862,7 @@ export function playPhoneRotaryDial() {
 export function playPhoneRingBurst() {
   ensureAudioLoaded();
   if (state.phoneRingBurst) {
-    playBuffer(state.phoneRingBurst, 0.95);
+    playBuffer(state.phoneRingBurst, 0.55);
     return;
   }
   if (state.sfxVol <= 0.001) return;
@@ -879,7 +880,7 @@ export function playPhoneAnswerSfx() {
   stopPhoneRingSfx();
   ensureAudioLoaded();
   if (state.phoneAnswer) {
-    playBuffer(state.phoneAnswer, 1.1);
+    playBuffer(state.phoneAnswer, 0.7);
     return;
   }
   toneBurst(520, 0.05, 0.2, "triangle");
