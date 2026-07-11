@@ -972,7 +972,7 @@ const KITCHEN_SPRITES = {
     r(ctx, P.whiteLo, 4, 39, 72, 4);
     r(ctx, P.out, 4, 43, 72, 1);
   }},
-  fridge: { w: 32, h: 60, glowRegions: [[6, 5, 16, 14], [6, 26, 16, 24]], draw(ctx) {
+  fridge: { w: 32, h: 60, glowRegions: [[3, 2, 26, 56]], draw(ctx) {
     r(ctx, P.out, 0, 0, 32, 60);
     r(ctx, P.white, 1, 1, 30, 58);
     r(ctx, "#FBF6E6", 1, 1, 30, 2);
@@ -982,7 +982,7 @@ const KITCHEN_SPRITES = {
     r(ctx, "#B8AE96", 25, 28, 2, 26);
     r(ctx, P.whiteLo, 1, 56, 30, 3);
   }},
-  pantry: { w: 26, h: 72, glowRegions: [[6, 8, 14, 24], [6, 42, 14, 22]], draw(ctx) {
+  pantry: { w: 26, h: 72, glowRegions: [[3, 3, 20, 66]], draw(ctx) {
     r(ctx, P.out, 0, 0, 26, 72);
     r(ctx, P.cream, 1, 1, 24, 70); r(ctx, "#FBF6E6", 1, 1, 24, 2);
     outlineRect(ctx, P.creamLo, 4, 5, 18, 30);
