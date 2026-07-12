@@ -946,17 +946,19 @@ const KITCHEN_SPRITES = {
     r(ctx, P.whiteLo, 1, 39, 28, 4);
   }},
   wall_calendar: { w: 16, h: 18, draw(ctx) {
-    // two binder clips at top
-    r(ctx, P.out, 4, 0, 2, 4); r(ctx, "#55504A", 4, 1, 2, 2); r(ctx, "#6E685F", 4, 1, 1, 1);
-    r(ctx, P.out, 10, 0, 2, 4); r(ctx, "#55504A", 10, 1, 2, 2); r(ctx, "#6E685F", 10, 1, 1, 1);
-    // black frame + red header + white body
+    // two chunky clips (dark, gray highlight) sticking up
+    [4, 9].forEach((cx) => { r(ctx, P.out, cx, 0, 3, 4); r(ctx, "#948E84", cx + 1, 1, 1, 2); });
+    // black frame
     r(ctx, P.out, 1, 3, 14, 14);
-    r(ctx, "#C4463A", 2, 4, 12, 3);
-    r(ctx, "#D65A4C", 2, 4, 12, 1);
-    r(ctx, P.white, 2, 7, 12, 9);
-    // 4×3 day grid; today in red
+    // bright red header with highlight + shade
+    r(ctx, "#CC4B3C", 2, 4, 12, 4);
+    r(ctx, "#E06456", 2, 4, 12, 1);
+    r(ctx, "#A83A2E", 2, 7, 12, 1);
+    // white body
+    r(ctx, P.white, 2, 8, 12, 8);
+    // 4×3 grid of light-gray days; today in red
     for (let gy = 0; gy < 3; gy++) for (let gx = 0; gx < 4; gx++) {
-      r(ctx, (gx === 2 && gy === 1) ? "#C4463A" : "#4A463F", 3 + gx * 3, 8 + gy * 3, 2, 2);
+      r(ctx, (gx === 2 && gy === 1) ? "#CC4B3C" : "#C0BAAE", 3 + gx * 3, 9 + gy * 2, 2, 2);
     }
   }},
   counter_sink: { w: 80, h: 44,
@@ -2511,23 +2513,47 @@ export default function PackItUp({ glowMode = "split" }) {
   const [phoneNudge, setPhoneNudge] = useState(null);
   const phoneNudgeShownRef = useRef(false);
   /** Apartment hand fan — drag to place/resize; badge offset from rightmost card (draggable). */
+  // Old fallback geometry (tiny card, floated up-left) — kept only so a saved layout
+  // that exactly matches it can be recognized as "never customized" and migrated below.
+  const FAN_DEFAULTS_V1 = { left: 18, bottom: 18, cardW: Math.round(56 * 1.3), badgeOx: -10, badgeOy: -8 };
+  // New default: lower-left anchor, cards tucked low into the action-bar band, readable width.
+  const FAN_DEFAULTS = { left: 12, bottom: 10, cardW: 140, badgeOx: 6, badgeOy: -12 };
+  const clampFanLayout = (v) => {
+    const vw = typeof window !== "undefined" ? window.innerWidth : 390;
+    const vh = typeof window !== "undefined" ? window.innerHeight : 700;
+    return {
+      left: Math.round(Math.min(Math.max(v.left, -40), Math.max(40, vw - 40))),
+      bottom: Math.round(Math.min(Math.max(v.bottom, 0), Math.max(40, vh - 60))),
+      cardW: Math.round(Math.min(160, Math.max(40, v.cardW))),
+      badgeOx: Math.round(Math.min(80, Math.max(-80, v.badgeOx))),
+      badgeOy: Math.round(Math.min(80, Math.max(-80, v.badgeOy))),
+    };
+  };
   const [fanLayout, setFanLayout] = useState(() => {
-    const defaults = { left: 18, bottom: 18, cardW: Math.round(56 * 1.3), badgeOx: -10, badgeOy: -8 };
     try {
       const raw = localStorage.getItem("packitup-apt-fan-layout")
         || localStorage.getItem("packitup-apt-fan-pos");
-      if (!raw) return defaults;
+      if (!raw) return FAN_DEFAULTS;
       const p = JSON.parse(raw);
-      return {
-        left: typeof p.left === "number" ? p.left : defaults.left,
-        bottom: typeof p.bottom === "number" ? p.bottom : defaults.bottom,
-        cardW: typeof p.cardW === "number" ? p.cardW : defaults.cardW,
+      const loaded = {
+        left: typeof p.left === "number" ? p.left : FAN_DEFAULTS.left,
+        bottom: typeof p.bottom === "number" ? p.bottom : FAN_DEFAULTS.bottom,
+        cardW: typeof p.cardW === "number" ? p.cardW : FAN_DEFAULTS.cardW,
         badgeOx: typeof p.badgeOx === "number" ? p.badgeOx
-          : (typeof p.badgeLeft === "number" ? 0 : defaults.badgeOx),
+          : (typeof p.badgeLeft === "number" ? 0 : FAN_DEFAULTS.badgeOx),
         badgeOy: typeof p.badgeOy === "number" ? p.badgeOy
-          : (typeof p.badgeTop === "number" ? 0 : defaults.badgeOy),
+          : (typeof p.badgeTop === "number" ? 0 : FAN_DEFAULTS.badgeOy),
       };
-    } catch { return defaults; }
+      // A saved layout that's identical to the old fallback was never actually
+      // touched by the player — safe to migrate it to the new default placement.
+      // Anything else (even one field off) is a deliberate placement: load it untouched.
+      const isUntouchedOldDefault = loaded.left === FAN_DEFAULTS_V1.left
+        && loaded.bottom === FAN_DEFAULTS_V1.bottom
+        && loaded.cardW === FAN_DEFAULTS_V1.cardW
+        && loaded.badgeOx === FAN_DEFAULTS_V1.badgeOx
+        && loaded.badgeOy === FAN_DEFAULTS_V1.badgeOy;
+      return clampFanLayout(isUntouchedOldDefault ? FAN_DEFAULTS : loaded);
+    } catch { return FAN_DEFAULTS; }
   });
   const fanDrag = useRef(null);
   useEffect(() => {
@@ -3035,13 +3061,15 @@ export default function PackItUp({ glowMode = "split" }) {
     ? handTasks(tasks, session.dailyDeal)
     : [];
   const fanCards = hand;
-  const fanPreferredW = Math.max(40, Math.min(160, fanLayout.cardW || Math.round(56 * 1.3)));
+  const fanPreferredW = Math.max(40, Math.min(160, fanLayout.cardW || FAN_DEFAULTS.cardW));
   // Same idea as Command Board hand: keep the fan inside a max span; shrink cards as n grows.
   const fanMaxSpan = Math.min(
     Math.max(fanPreferredW + 8, (viewSize.w || 360) - fanLayout.left - 24),
     Math.round((viewSize.w || 360) * 0.62),
   );
-  const fanStepRatio = 0.34;
+  // ~45-55% overlap step: leftmost card fanned hardest left, each next card overlapping
+  // rightward, rightmost card landing near-upright (see rot below).
+  const fanStepRatio = 0.48;
   const fanCardW = (() => {
     const n = Math.max(1, fanCards.length);
     const fit = Math.floor(fanMaxSpan / (1 + (n - 1) * fanStepRatio));
@@ -3055,13 +3083,13 @@ export default function PackItUp({ glowMode = "split" }) {
     const t = i / (n - 1);
     return {
       left: i * fanStep,
-      rot: -10 + t * 18,
+      rot: -18 + t * 18, // leftmost -18deg (most fanned) → rightmost 0deg (near-upright endpoint)
       lift: Math.sin(t * Math.PI) * Math.max(3, Math.round(fanCardH * 0.03)),
     };
   };
   const fanRightmost = fanLayoutApt(Math.max(1, fanCards.length), Math.max(0, fanCards.length - 1));
-  const badgeLeft = fanRightmost.left + fanCardW + (fanLayout.badgeOx ?? -10);
-  const badgeTop = -fanRightmost.lift + (fanLayout.badgeOy ?? -8);
+  const badgeLeft = fanRightmost.left + fanCardW + (fanLayout.badgeOx ?? FAN_DEFAULTS.badgeOx);
+  const badgeTop = -fanRightmost.lift + (fanLayout.badgeOy ?? FAN_DEFAULTS.badgeOy);
   const onFanPointerDown = (e, mode = "move") => {
     e.preventDefault();
     e.stopPropagation();
@@ -3073,8 +3101,8 @@ export default function PackItUp({ glowMode = "split" }) {
       origLeft: fanLayout.left,
       origBottom: fanLayout.bottom,
       origCardW: fanPreferredW,
-      origBadgeOx: fanLayout.badgeOx ?? -10,
-      origBadgeOy: fanLayout.badgeOy ?? -8,
+      origBadgeOx: fanLayout.badgeOx ?? FAN_DEFAULTS.badgeOx,
+      origBadgeOy: fanLayout.badgeOy ?? FAN_DEFAULTS.badgeOy,
       moved: false,
     };
   };
@@ -3086,10 +3114,16 @@ export default function PackItUp({ glowMode = "split" }) {
     if (!d.moved && Math.abs(dx) + Math.abs(dy) > 6) d.moved = true;
     if (!d.moved) return;
     if (d.mode === "move") {
+      // Soft clamp: whole-fan drag can't be pushed permanently off-screen/unreachable,
+      // but never snaps away a deliberate in-bounds placement.
+      const vw = viewSize.w || 390;
+      const vh = viewSize.h || 700;
+      const nextLeft = Math.round(d.origLeft + dx);
+      const nextBottom = Math.round(d.origBottom - dy);
       setFanLayout((prev) => ({
         ...prev,
-        left: Math.round(d.origLeft + dx),
-        bottom: Math.round(d.origBottom - dy),
+        left: Math.min(Math.max(nextLeft, -40), Math.max(40, vw - 40)),
+        bottom: Math.min(Math.max(nextBottom, 0), Math.max(40, vh - 60)),
       }));
     } else if (d.mode === "resize") {
       const delta = Math.max(dx, -dy);
@@ -3100,8 +3134,8 @@ export default function PackItUp({ glowMode = "split" }) {
     } else if (d.mode === "badge") {
       setFanLayout((prev) => ({
         ...prev,
-        badgeOx: Math.round(d.origBadgeOx + dx),
-        badgeOy: Math.round(d.origBadgeOy + dy),
+        badgeOx: Math.round(Math.min(80, Math.max(-80, d.origBadgeOx + dx))),
+        badgeOy: Math.round(Math.min(80, Math.max(-80, d.origBadgeOy + dy))),
       }));
     }
   };
