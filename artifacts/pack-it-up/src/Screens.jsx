@@ -119,15 +119,16 @@ function clampPips(n) {
 
 /** Absolute pip centers as % of card — measured from the PNGs. */
 const H_PIP = {
-  // footer hollow circles — centers + inner fill size
-  effort: [[66.75, 74.75], [70.55, 74.75], [74.35, 74.75]],
-  importance: [[87.85, 74.75], [91.75, 74.75], [95.15, 74.75]],
-  size: 1.35,
+  // outer diameter of hollow rings ≈ 2.2% of card width
+  effort: [[66.7, 74.8], [70.5, 74.8], [74.4, 74.8]],
+  importance: [[87.85, 74.8], [91.7, 74.8], [95.2, 74.8]],
+  size: 2.15,
 };
 const V_PIP = {
-  effort: [[20.3, 16.65], [27.7, 16.65], [35.4, 16.65]],
-  importance: [[20.2, 86.85], [27.9, 86.85], [35.5, 86.85]],
-  size: 3.35,
+  // outer diameter ≈ 5.4% of card width
+  effort: [[20.55, 16.6], [28.22, 16.65], [36.13, 16.61]],
+  importance: [[20.77, 86.88], [28.55, 86.93], [36.27, 86.97]],
+  size: 5.2,
 };
 
 /** Fill hollow circles baked into the art — centers are % of card box. */
@@ -139,18 +140,18 @@ function BubblePips({ filled, centers, sizePct }) {
         i < n ? (
           <span
             key={i}
+            aria-hidden
             style={{
               position: "absolute",
               left: `${x}%`,
               top: `${y}%`,
               width: `${sizePct}%`,
-              height: 0,
-              paddingBottom: `${sizePct}%`,
+              aspectRatio: "1 / 1",
               borderRadius: "50%",
-              background: "#1A1008",
+              background: "#120A04",
               transform: "translate(-50%, -50%)",
               pointerEvents: "none",
-              boxSizing: "border-box",
+              display: "block",
             }}
           />
         ) : null
@@ -166,7 +167,7 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
   const importance = clampPips(task?.criticality || 1) || 1;
   return (
     <div style={{
-      position: "relative", width: "80%", lineHeight: 0,
+      position: "relative", width: "100%", lineHeight: 0,
       opacity: dimmed ? 0.42 : 1, filter: dimmed ? "grayscale(0.35)" : "none",
       ...style,
     }}>
@@ -177,20 +178,22 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
         style={{ width: "100%", height: "auto", display: "block", imageRendering: "pixelated" }}
       />
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+        {/* Title vertically centered between header and dashed rail */}
         <div style={{
-          position: "absolute", left: "4%", right: "4%", top: "24%", height: "30%",
-          color: "#1A1008", fontSize: 11, lineHeight: 1.15, overflow: "hidden", textAlign: "left", ...LB,
+          position: "absolute", left: "3.5%", right: "3.5%", top: "22%", height: "34%",
+          color: "#1A1008", fontSize: 12, lineHeight: 1.2, overflow: "hidden", textAlign: "left",
+          display: "flex", alignItems: "center", ...LB,
         }}>
-          {task?.title || ""}
+          <span style={{ display: "block", width: "100%" }}>{task?.title || ""}</span>
         </div>
-        {/* Date values: align with TARGET/LATEST; air above underline */}
+        {/* Date values — wide enough not to clip "Jul 11" */}
         <div style={{
-          position: "absolute", left: "19%", top: "69.5%", width: "10%",
-          color: "#1A1008", fontSize: 8, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
+          position: "absolute", left: "18.5%", top: "69.5%", width: "14%",
+          color: "#1A1008", fontSize: 9, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap", ...LB,
         }}>{fmtCardDate(task?.targetDate || task?.due)}</div>
         <div style={{
-          position: "absolute", left: "48%", top: "69.5%", width: "10%",
-          color: "#1A1008", fontSize: 8, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
+          position: "absolute", left: "47.5%", top: "69.5%", width: "14%",
+          color: "#1A1008", fontSize: 9, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap", ...LB,
         }}>{fmtCardDate(task?.latestDate)}</div>
         <BubblePips filled={effort} centers={H_PIP.effort} sizePct={H_PIP.size} />
         <BubblePips filled={importance} centers={H_PIP.importance} sizePct={H_PIP.size} />
@@ -241,24 +244,25 @@ export function VerticalTaskCard({
           }}>B</div>
         )}
         <BubblePips filled={effort} centers={V_PIP.effort} sizePct={V_PIP.size} />
-        {/* Title field box ~21–35% — tight type so 1–2 lines stay inside the frame */}
+        {/* Title field — vertically centered in the framed box */}
         <div style={{
-          position: "absolute", left: "11%", right: "11%", top: "23%", height: compact ? "11%" : "11%",
-          color: "#1A1008", fontSize: titlePx, lineHeight: 1.05, overflow: "hidden", textAlign: "left",
+          position: "absolute", left: "11%", right: "11%", top: "21.5%", height: compact ? "13%" : "13%",
+          color: "#1A1008", fontSize: titlePx, lineHeight: 1.1, overflow: "hidden", textAlign: "left",
+          display: "flex", alignItems: "center",
           letterSpacing: "0.2px", fontFamily: LB.fontFamily, fontWeight: 700,
         }}>
-          {task?.title || ""}
+          <span style={{ display: "block", width: "100%" }}>{task?.title || ""}</span>
         </div>
         {!compact && (
           <>
-            {/* Dates just above underline; left-edge justified to underline start */}
+            {/* Dates at annotated height, left-justified to underline start; no clip */}
             <div style={{
-              position: "absolute", left: "36.5%", top: "38.6%", width: "52%",
-              color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
+              position: "absolute", left: "36.5%", top: "36.8%", width: "55%",
+              color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap", ...LB,
             }}>{fmtCardDate(task?.targetDate || task?.due)}</div>
             <div style={{
-              position: "absolute", left: "36.5%", top: "43.6%", width: "52%",
-              color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
+              position: "absolute", left: "36.5%", top: "41.8%", width: "55%",
+              color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap", ...LB,
             }}>{fmtCardDate(task?.latestDate)}</div>
             {(task?.notes || task?.detail) && (
               <div style={{
@@ -636,7 +640,7 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
   const handCardW = 106;
   const fanLayout = (n, i, width) => {
     const cardW = handCardW;
-    const pad = 14; // keep leftmost card fully in frame when rotated
+    const pad = 18; // keep leftmost card fully in frame when rotated
     const avail = Math.max(width - pad * 2, cardW);
     if (n <= 1) return { left: pad, rot: -2, lift: 0 };
     const maxTravel = avail - cardW;
