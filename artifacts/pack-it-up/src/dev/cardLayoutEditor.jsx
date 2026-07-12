@@ -45,11 +45,11 @@ const SAMPLE = {
 /** Defaults match current Screens.jsx (full title eased from the too-tight inset). */
 const DEFAULTS = {
   thin: {
-    title: { left: 3, top: 28.2, width: 94.4, height: 24 },
-    target: { left: 18.5, top: 69.5, width: 14, height: 6 },
-    latest: { left: 47.5, top: 69.5, width: 14, height: 6 },
-    titleMaxPx: 11,
-    datePx: 8,
+    title: { left: 2.4, top: 30.1, width: 94.4, height: 26.5 },
+    target: { left: 18.5, top: 67.9, width: 14, height: 6 },
+    latest: { left: 47.6, top: 67.8, width: 14, height: 6 },
+    titleMaxPx: 13,
+    datePx: 9,
     pips: {
       effort: [[66.7, 74.8], [70.5, 74.8], [74.4, 74.8]],
       importance: [[87.85, 74.8], [91.7, 74.8], [95.2, 74.8]],
@@ -57,12 +57,12 @@ const DEFAULTS = {
     },
   },
   full: {
-    title: { left: 12, top: 22.5, width: 76, height: 15.5 },
-    target: { left: 34, top: 41.3, width: 58, height: 4 },
-    latest: { left: 34, top: 46.3, width: 58, height: 4 },
-    bound: { left: 4, top: 2, width: 10, height: 4.5 },
-    titleMaxPx: 11,
-    datePx: 9,
+    title: { left: 8.2, top: 21.7, width: 82.6, height: 16.9 },
+    target: { left: 36.3, top: 41.3, width: 58, height: 4 },
+    latest: { left: 36.5, top: 46.5, width: 58, height: 4 },
+    bound: { left: 3.9, top: 1.1, width: 9.8, height: 8.4 },
+    titleMaxPx: 12.5,
+    datePx: 10.5,
     pips: {
       effort: [[20.55, 16.6], [28.22, 16.65], [36.13, 16.61]],
       importance: [[20.77, 86.88], [28.55, 86.93], [36.27, 86.97]],
