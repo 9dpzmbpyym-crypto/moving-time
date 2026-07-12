@@ -227,13 +227,13 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
         style={{ width: "100%", height: "auto", display: "block", imageRendering: "pixelated" }}
       />
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-        {/* Title vertically centered between header and dashed rail — shrink to fit */}
+        {/* Title band (cream body above dashed rail) — shrink to fit, no clip */}
         <div style={{
-          position: "absolute", left: "3.5%", right: "3.5%", top: "22%", height: "34%",
-          color: "#1A1008", textAlign: "left",
+          position: "absolute", left: "4%", right: "4%", top: "24%", height: "28%",
+          color: "#1A1008", textAlign: "left", overflow: "hidden",
           display: "flex", alignItems: "center", ...LB,
         }}>
-          <FitText text={task?.title || ""} maxPx={13} minPx={7} style={{ fontWeight: 700, letterSpacing: "0.5px" }} />
+          <FitText text={task?.title || ""} maxPx={12} minPx={6} style={{ fontWeight: 700, letterSpacing: "0.5px", lineHeight: 1.1 }} />
         </div>
         {/* Date values — wide enough not to clip "Jul 11" */}
         <div style={{
@@ -293,25 +293,32 @@ export function VerticalTaskCard({
           }}>B</div>
         )}
         <BubblePips filled={effort} centers={V_PIP.effort} sizePct={V_PIP.size} />
-        {/* Title field — vertically centered in the framed box */}
+        {/* Title field — shrink-to-fit, vertically centered in the framed box */}
         <div style={{
-          position: "absolute", left: "11%", right: "11%", top: "21.5%", height: compact ? "13%" : "13%",
-          color: "#1A1008", fontSize: titlePx, lineHeight: 1.1, overflow: "hidden", textAlign: "left",
+          position: "absolute", left: "11%", right: "11%", top: "21.5%", height: "13%",
+          color: "#1A1008", textAlign: "left",
           display: "flex", alignItems: "center",
-          letterSpacing: "0.2px", fontFamily: LB.fontFamily, fontWeight: 700,
+          fontFamily: LB.fontFamily, fontWeight: 700,
         }}>
-          <span style={{ display: "block", width: "100%" }}>{task?.title || ""}</span>
+          <FitText
+            text={task?.title || ""}
+            maxPx={titlePx}
+            minPx={Math.max(4, Math.round(width * 0.045))}
+            style={{ letterSpacing: "0.2px", fontWeight: 700 }}
+          />
         </div>
         {!compact && (
           <>
-            {/* Dates at annotated height, left-justified to underline start; no clip */}
+            {/* Left-justified to underline start (annotation) */}
             <div style={{
-              position: "absolute", left: "36.5%", top: "36.8%", width: "55%",
-              color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap", ...LB,
+              position: "absolute", left: "34%", top: "36.8%", width: "58%",
+              color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap",
+              textAlign: "left", ...LB,
             }}>{fmtCardDate(task?.targetDate || task?.due)}</div>
             <div style={{
-              position: "absolute", left: "36.5%", top: "41.8%", width: "55%",
-              color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap", ...LB,
+              position: "absolute", left: "34%", top: "41.8%", width: "58%",
+              color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap",
+              textAlign: "left", ...LB,
             }}>{fmtCardDate(task?.latestDate)}</div>
             {(task?.notes || task?.detail) && (
               <div style={{
@@ -686,14 +693,14 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
   const focus = picks.find((t) => t.id === focusId) || null;
 
   /** Casino-dealer spread: fill left→right, mild arc, stay on-screen. */
-  const handCardW = 106;
+  const handCardW = 128;
   const fanLayout = (n, i, width) => {
     const cardW = handCardW;
-    const pad = 18; // keep leftmost card fully in frame when rotated
+    const pad = 22; // keep leftmost card fully in frame when rotated
     const avail = Math.max(width - pad * 2, cardW);
     if (n <= 1) return { left: pad, rot: -2, lift: 0 };
     const maxTravel = avail - cardW;
-    const step = Math.max(28, Math.min(58, maxTravel / (n - 1)));
+    const step = Math.max(32, Math.min(68, maxTravel / (n - 1)));
     const left = pad + i * step;
     const t = i / (n - 1);
     const rot = -6 + t * 12;
@@ -712,7 +719,6 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
       compact
     >
       <RewardToast text={rewardToast} />
-      <CriticalStrip />
       {!energy ? (
         <div style={{ ...FR, padding: 12, marginBottom: 10 }}>
           <div style={{ color: "#FFD97A", fontSize: 12, marginBottom: 8, ...LB }}>Running on:</div>
@@ -747,9 +753,9 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
             </button>
           </div>
 
-          {/* TOP — offer deck (thinner so hand sits higher) */}
+          {/* TOP — offer deck (compact — hand gets the freed critical-strip space) */}
           <div style={{
-            ...FR, padding: "6px 8px", flex: "1 1 auto", minHeight: 72, maxHeight: "42%", overflowY: "auto",
+            ...FR, padding: "6px 8px", flex: "0 1 auto", minHeight: 64, maxHeight: "34%", overflowY: "auto",
           }}>
             <div style={{
               display: "flex", alignItems: "baseline", justifyContent: "space-between",
@@ -804,9 +810,9 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
             </div>
           )}
 
-          {/* BOTTOM — dealer spread, fills left → right */}
-          <div style={{ flex: "0 0 auto" }}>
-            <div style={{ color: "#FFD97A", fontSize: 10, marginBottom: 4, ...LB }}>
+          {/* BOTTOM — dealer spread gets the freed vertical room */}
+          <div style={{ flex: "1 1 auto", minHeight: 0, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+            <div style={{ color: "#FFD97A", fontSize: 10, marginBottom: 4, flex: "0 0 auto", ...LB }}>
               Your hand · tap a card
             </div>
             <div
