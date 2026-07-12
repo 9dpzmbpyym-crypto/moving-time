@@ -64,10 +64,19 @@ export function mergeSession(savedSession) {
             ? savedSession.dailyDeal.boundTaskIds.length
             : 0),
       ),
+      // Effort model (Part D). A save from before this field existed comes through
+      // as 0 here — schedule.js's ensureDailyDeal detects that via effortById
+      // coverage (not this number) and migrates in place, so no data is lost.
+      boundEffort: Math.max(0, Number(savedSession.dailyDeal.boundEffort) || 0),
       offerTaskIds: Array.isArray(savedSession.dailyDeal.offerTaskIds) ? savedSession.dailyDeal.offerTaskIds : [],
       selectedTaskIds: Array.isArray(savedSession.dailyDeal.selectedTaskIds) ? savedSession.dailyDeal.selectedTaskIds : [],
       fumesIds: Array.isArray(savedSession.dailyDeal.fumesIds) ? savedSession.dailyDeal.fumesIds : [],
-      chooseNeeded: Math.max(0, Number(savedSession.dailyDeal.chooseNeeded) || 0),
+      // Old (pre-effort) saves never had this map — {} here is the legacy signal
+      // schedule.js's needsEffortMigration() checks for, per id, to backfill it.
+      effortById: savedSession.dailyDeal.effortById && typeof savedSession.dailyDeal.effortById === "object"
+        ? { ...savedSession.dailyDeal.effortById }
+        : {},
+      requiredOptionalEffort: Math.max(0, Number(savedSession.dailyDeal.requiredOptionalEffort) || 0),
       minimumEffort: Math.max(0, Number(savedSession.dailyDeal.minimumEffort) || 0),
       steadyEffort: Math.max(0, Number(savedSession.dailyDeal.steadyEffort) || 0),
       fullEffort: Math.max(0, Number(savedSession.dailyDeal.fullEffort) || 0),

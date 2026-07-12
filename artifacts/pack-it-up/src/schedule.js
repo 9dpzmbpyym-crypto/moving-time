@@ -86,7 +86,10 @@ export function taskScheduleStatus(task, today = new Date(), tasks = []) {
   if (t.availableFrom && todayK < t.availableFrom) return "not-available";
   if (!depsComplete(t, tasks)) return "blocked";
   if (t.exactDate && todayK < t.exactDate) return "scheduled";
-  if (t.latestDate && todayK > t.latestDate) return "past-latest";
+  // Inclusive — the latest day itself is FINAL CALL, not one more day of grace
+  // (buildMinimumSchedule / isBoundToday already bind todayK >= latestDate; this
+  // keeps the display state machine in step with the scheduler's own math).
+  if (t.latestDate && todayK >= t.latestDate) return "past-latest";
   if (t.targetDate && todayK > t.targetDate) return "overdue";
   if (t.targetDate && todayK === t.targetDate) return "due";
   return "available";
@@ -113,12 +116,13 @@ export function urgencyScore(task, today = new Date()) {
     timePressure = 10 + 20 * progress;
   } else if (todayK === t.targetDate) {
     timePressure = 35;
-  } else if (!t.latestDate || todayK <= t.latestDate) {
+  } else if (!t.latestDate || todayK < t.latestDate) {
     const grace = Math.max(1, daysBetween(t.targetDate, t.latestDate || t.targetDate) || 1);
     const overdue = Math.max(1, daysBetween(t.targetDate, todayK) || 1);
     const progress = Math.min(1, overdue / grace);
     timePressure = 35 + 50 * progress * progress;
   } else {
+    // On or after latestDate — FINAL CALL floor; may still climb slightly for visual intensity.
     const past = daysBetween(t.latestDate, todayK) || 0;
     timePressure = 95 + Math.min(5, past * 2);
   }
@@ -130,19 +134,49 @@ export function urgencyScore(task, today = new Date()) {
   return score;
 }
 
-export function urgencyBadge(task, today = new Date(), tasks = []) {
-  const status = taskScheduleStatus(task, today, tasks);
-  if (status === "overdue") return "OVERDUE";
-  if (status === "past-latest") return "FINAL CALL";
-  if (status === "due") return "DUE";
-  if (status === "blocked") return "BLOCKED";
-  if (status === "scheduled") return "SCHEDULED";
-  const score = urgencyScore(task, today);
-  if (score >= 90) return "FINAL CALL";
-  if (score >= 70) return "CLOSING";
-  if (score >= 50) return "OVERDUE";
-  if (score >= 30) return "SOON";
-  return null;
+/**
+ * Display status (Sol §4 / Part A): one of
+ * SOON/DUE/OVERDUE/CLOSING/FINAL CALL/BLOCKED/SCHEDULED/available.
+ * A thin wrapper over taskScheduleStatus (the one state machine) — only adds
+ * the SOON (approaching target) / OVERDUE-vs-CLOSING (progress within the
+ * target→latest grace window) refinement needed for display. Job fit score
+ * (task.score) is never consulted here — deadline urgency stays separate.
+ */
+export function taskStatus(task, today = new Date(), tasks = []) {
+  const t = normalizeTask(task);
+  if (!t) return "available";
+  const status = taskScheduleStatus(t, today, tasks);
+  switch (status) {
+    case "blocked":
+      return "BLOCKED";
+    case "scheduled":
+      return "SCHEDULED";
+    case "past-latest":
+      return "FINAL CALL";
+    case "due":
+      return "DUE";
+    case "overdue": {
+      const todayK = dateKey(today);
+      const target = t.targetDate;
+      const latest = t.latestDate || target;
+      if (!target || !latest || latest <= target) return "OVERDUE";
+      const span = Math.max(1, daysBetween(target, latest) || 1);
+      const elapsed = Math.max(0, daysBetween(target, todayK) || 0);
+      const progress = Math.min(1, elapsed / span);
+      return progress >= 0.5 ? "CLOSING" : "OVERDUE";
+    }
+    case "done":
+    case "archived":
+    case "not-available":
+      return "available";
+    case "available":
+    default: {
+      if (!t.targetDate) return "available";
+      const todayK = dateKey(today);
+      const daysToTarget = daysBetween(todayK, t.targetDate);
+      return daysToTarget != null && daysToTarget >= 0 && daysToTarget <= 3 ? "SOON" : "available";
+    }
+  }
 }
 
 function effortOf(t) {
@@ -332,18 +366,15 @@ export function buildFullSteamPlan(tasks, today = new Date()) {
   };
 }
 
-/** Extra flexible cards to draw into the hand by energy (beyond bound). */
-export const ENERGY_DRAW = {
-  fumes: 0,   // absolute min — bound only; optional offer still shown
-  steady: 2,
-  full: 4,
-};
-
 /**
- * Deal for the day (draft model):
- * - Bound hand = reverse-scheduled fumes floor (true minimum for today).
- * - Energy sets how many MORE flexible cards you draw (Fumes = 0).
- * - Offer pile ≈ 2× chooseNeeded, urgency-ranked.
+ * Deal for the day (effort model — Part D):
+ * - Bound hand = reverse-scheduled fumes floor (true minimum for today), plus
+ *   any other isBoundToday cards (exact-date-today, past-latest real deadlines).
+ * - optionalEffortNeeded = max(0, energyBudget - boundEffort) — a soft target,
+ *   not a card count. One effort-3 card OR three effort-1 cards both satisfy
+ *   3 required optional effort; overfilling is fine.
+ * - Offer pile ≈ 2× the effort still needed, urgency-ranked. Fumes never
+ *   requires extras, but the optional pile is still offered.
  * - Does not touch task data / localStorage saves — only reshapes today's deal.
  */
 export function dealDailyHand(tasks, energy = "steady", today = new Date()) {
@@ -354,39 +385,54 @@ export function dealDailyHand(tasks, energy = "steady", today = new Date()) {
   for (const id of full.fumesIds) {
     if (!boundIds.includes(id)) boundIds.push(id);
   }
-  for (const t of normalizeTasks(tasks).filter(isOpen)) {
+  const openTasks = normalizeTasks(tasks).filter(isOpen);
+  for (const t of openTasks) {
     if (isBoundToday(t, today, tasks, fumesSet) && !boundIds.includes(t.id)) {
       boundIds.push(t.id);
     }
   }
 
-  const chooseNeeded = ENERGY_DRAW[energy] ?? ENERGY_DRAW.steady;
-  const offerSize = chooseNeeded > 0
-    ? Math.max(chooseNeeded * 2, chooseNeeded)
-    : 2;
+  const byId = Object.fromEntries(openTasks.map((t) => [t.id, t]));
+  const boundEffort = boundIds.reduce((s, id) => s + effortOf(byId[id] || {}), 0);
+  const budget = ENERGY_BUDGET[energy] ?? ENERGY_BUDGET.steady;
+  // If boundEffort already meets/exceeds budget (any energy, including Fumes), zero optional effort required.
+  const requiredOptionalEffort = Math.max(0, budget - boundEffort);
+
   const exclude = new Set(boundIds);
-  const offerTaskIds = eligibleFlexible(tasks, today, tasks, exclude)
-    .slice(0, offerSize)
-    .map((t) => t.id);
+  const flexible = eligibleFlexible(tasks, today, tasks, exclude);
+  // Offer pile ≈ 2x the effort still needed; Fumes (0 required) still gets a small optional pile.
+  const offerSize = requiredOptionalEffort > 0
+    ? Math.max(4, requiredOptionalEffort * 2)
+    : 3;
+  const offerList = flexible.slice(0, offerSize);
+  const offerTaskIds = offerList.map((t) => t.id);
+
+  // Cache effort per id so toggleDealPick / dealProgress never need the full task list.
+  const effortById = {};
+  for (const id of boundIds) effortById[id] = effortOf(byId[id] || {});
+  for (const t of offerList) effortById[t.id] = effortOf(t);
 
   return {
     day: todayKey(today),
     energy,
     boundTaskIds: boundIds,
     boundTotal: boundIds.length,
+    boundEffort,
     offerTaskIds,
     selectedTaskIds: [...boundIds],
     fumesIds: full.fumesIds,
-    chooseNeeded,
+    effortById,
+    requiredOptionalEffort,
     minimumEffort: full.fumesEffort,
     steadyEffort: full.steadyEffort,
     fullEffort: full.fullEffort,
     fixedDay: full.fixedDay,
-    dealConfirmed: chooseNeeded === 0,
+    dealConfirmed: requiredOptionalEffort === 0,
   };
 }
 
-/** Toggle a flexible card into / out of the hand (bound cards ignored). */
+/** Toggle a flexible card into / out of the hand (bound cards ignored). Effort
+ *  is read from the deal's own effortById cache — never recomputed from task data. */
 export function toggleDealPick(dailyDeal, taskId) {
   if (!dailyDeal || !taskId) return dailyDeal;
   const bound = new Set(dailyDeal.boundTaskIds || []);
@@ -398,46 +444,112 @@ export function toggleDealPick(dailyDeal, taskId) {
   else selected.add(taskId);
   // Bound always stay selected
   for (const id of bound) selected.add(id);
-  const flexCount = [...selected].filter((id) => !bound.has(id)).length;
-  const chooseNeeded = dailyDeal.chooseNeeded || 0;
+  const effortById = dailyDeal.effortById || {};
+  const selectedOptionalEffort = [...selected]
+    .filter((id) => !bound.has(id))
+    .reduce((s, id) => s + (effortById[id] ?? 1), 0);
+  const requiredOptionalEffort = dailyDeal.requiredOptionalEffort || 0;
+  const remainingEffort = Math.max(0, requiredOptionalEffort - selectedOptionalEffort);
   return {
     ...dailyDeal,
     selectedTaskIds: [...selected],
-    dealConfirmed: flexCount >= chooseNeeded,
+    dealConfirmed: remainingEffort <= 0,
   };
 }
 
+/** {selectedOptionalEffort, requiredOptionalEffort, remainingEffort} — effort model (Part D). */
 export function dealProgress(dailyDeal) {
-  if (!dailyDeal) return { flexPicked: 0, chooseNeeded: 0, remaining: 0, ready: false };
+  if (!dailyDeal) {
+    return { selectedOptionalEffort: 0, requiredOptionalEffort: 0, remainingEffort: 0, ready: true };
+  }
   const bound = new Set(dailyDeal.boundTaskIds || []);
-  const flexPicked = (dailyDeal.selectedTaskIds || []).filter((id) => !bound.has(id)).length;
-  const chooseNeeded = dailyDeal.chooseNeeded || 0;
-  const remaining = Math.max(0, chooseNeeded - flexPicked);
+  const effortById = dailyDeal.effortById || {};
+  const selectedOptionalEffort = (dailyDeal.selectedTaskIds || [])
+    .filter((id) => !bound.has(id))
+    .reduce((s, id) => s + (effortById[id] ?? 1), 0);
+  const requiredOptionalEffort = dailyDeal.requiredOptionalEffort || 0;
+  const remainingEffort = Math.max(0, requiredOptionalEffort - selectedOptionalEffort);
   return {
-    flexPicked,
-    chooseNeeded,
-    remaining,
-    ready: remaining === 0 || chooseNeeded === 0,
+    selectedOptionalEffort,
+    requiredOptionalEffort,
+    remainingEffort,
+    ready: remainingEffort <= 0,
+  };
+}
+
+/**
+ * Detects a same-day deal saved before the effort model (old chooseNeeded /
+ * card-count shape) — its effortById cache is missing or incomplete for the
+ * ids it carries. Robust to mergeSession's field coercion (which always fills
+ * in `{}` / `0` defaults) because it checks per-id coverage, not presence.
+ */
+function needsEffortMigration(deal) {
+  if (!deal) return false;
+  const ids = [...(deal.boundTaskIds || []), ...(deal.offerTaskIds || [])];
+  if (!ids.length) return false;
+  const effortById = deal.effortById || {};
+  return ids.some((id) => effortById[id] == null);
+}
+
+/**
+ * Migrate an existing (possibly legacy card-count) deal to the effort model
+ * IN PLACE — never touches boundTaskIds / offerTaskIds / selectedTaskIds /
+ * fumesIds, so selected cards, Bound cards, and manual picks all survive.
+ * Only backfills the effort bookkeeping fields from current task data.
+ */
+export function migrateDealEffort(deal, tasks, energy) {
+  if (!deal) return deal;
+  const byId = Object.fromEntries(normalizeTasks(tasks).map((t) => [t.id, t]));
+  const effortById = { ...(deal.effortById || {}) };
+  const ids = new Set([
+    ...(deal.boundTaskIds || []),
+    ...(deal.offerTaskIds || []),
+    ...(deal.selectedTaskIds || []),
+  ]);
+  for (const id of ids) {
+    if (effortById[id] == null) {
+      effortById[id] = byId[id] ? effortOf(byId[id]) : 1;
+    }
+  }
+  const boundEffort = (deal.boundTaskIds || [])
+    .reduce((s, id) => s + (effortById[id] ?? 1), 0);
+  const budget = ENERGY_BUDGET[energy || deal.energy] ?? ENERGY_BUDGET.steady;
+  const requiredOptionalEffort = Math.max(0, budget - boundEffort);
+  const boundSet = new Set(deal.boundTaskIds || []);
+  const selectedOptionalEffort = (deal.selectedTaskIds || [])
+    .filter((id) => !boundSet.has(id))
+    .reduce((s, id) => s + (effortById[id] ?? 1), 0);
+  const remainingEffort = Math.max(0, requiredOptionalEffort - selectedOptionalEffort);
+  return {
+    ...deal,
+    effortById,
+    boundEffort,
+    requiredOptionalEffort,
+    dealConfirmed: remainingEffort <= 0,
   };
 }
 
 /** Ensure session has today's deal for the chosen energy (persistent hand).
- *  Re-deals if a prior bloated hand was persisted (task data untouched). */
+ *  Re-deals if a prior bloated hand was persisted (task data untouched).
+ *  A same-day legacy (pre-effort) deal is migrated in place instead — never
+ *  rebuilt from scratch — so selected/Bound cards are never lost. */
 export function ensureDailyDeal(session, tasks, energy, today = new Date()) {
   const day = todayKey(today);
   const e = energy || session?.energy;
   if (!e) return session;
   const prev = session?.dailyDeal;
   const bloated = Array.isArray(prev?.boundTaskIds) && prev.boundTaskIds.length > 12;
-  if (
+  const sameDaySameEnergy = !!(
     prev
     && prev.day === day
     && prev.energy === e
     && Array.isArray(prev.selectedTaskIds)
     && Array.isArray(prev.offerTaskIds)
     && !bloated
-  ) {
-    return session;
+  );
+  if (sameDaySameEnergy) {
+    if (!needsEffortMigration(prev)) return session;
+    return { ...session, dailyDeal: migrateDealEffort(prev, tasks, e) };
   }
   const deal = dealDailyHand(tasks, e, today);
   return {
@@ -448,24 +560,38 @@ export function ensureDailyDeal(session, tasks, energy, today = new Date()) {
   };
 }
 
-/** Resolve selected hand tasks from a deal (open only; drop completed). */
+/** Resolve selected hand tasks from a deal (open only; drop completed).
+ *  Each task carries `urgencyStatus` (Part E badge text) computed against the
+ *  full task list, so card components never need tasks/today plumbed in. */
 export function handTasks(tasks, dailyDeal) {
   if (!dailyDeal?.selectedTaskIds?.length) return [];
-  const byId = Object.fromEntries((tasks || []).map((t) => [t.id, t]));
+  const all = tasks || [];
+  const byId = Object.fromEntries(all.map((t) => [t.id, t]));
   const bound = new Set(dailyDeal.boundTaskIds || []);
+  const today = new Date();
   return dailyDeal.selectedTaskIds
     .map((id) => byId[id])
     .filter((t) => t && isOpen(t))
-    .map((t) => ({ ...normalizeTask(t), bound: bound.has(t.id) }));
+    .map((t) => ({
+      ...normalizeTask(t),
+      bound: bound.has(t.id),
+      urgencyStatus: taskStatus(t, today, all),
+    }));
 }
 
 /** Offer pile cards (not yet required to be in hand). */
 export function offerTasks(tasks, dailyDeal) {
   if (!dailyDeal?.offerTaskIds?.length) return [];
-  const byId = Object.fromEntries((tasks || []).map((t) => [t.id, t]));
+  const all = tasks || [];
+  const byId = Object.fromEntries(all.map((t) => [t.id, t]));
   const selected = new Set(dailyDeal.selectedTaskIds || []);
+  const today = new Date();
   return dailyDeal.offerTaskIds
     .map((id) => byId[id])
     .filter((t) => t && isOpen(t))
-    .map((t) => ({ ...normalizeTask(t), picked: selected.has(t.id) }));
+    .map((t) => ({
+      ...normalizeTask(t),
+      picked: selected.has(t.id),
+      urgencyStatus: taskStatus(t, today, all),
+    }));
 }

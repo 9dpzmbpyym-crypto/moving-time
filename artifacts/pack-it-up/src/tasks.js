@@ -2,6 +2,12 @@
    calendar and pressure behavior. Effort: 1 tiny, 2 medium, 3 heavy. */
 import { currentPhase, isDueSoon, isOverdue, dateKey, taskDueDelta } from "./movePhase.js";
 import { ENERGY_BUDGET } from "./session.js";
+// Deadline urgency lives in schedule.js (the one engine) — pressure reads it
+// rather than re-deriving its own overdue/due-soon math. (Note: schedule.js
+// imports `isOpen` from this file — a circular ESM import, safe here because
+// both sides only touch the other's exports inside function bodies, never at
+// module-eval time.)
+import { taskStatus, urgencyScore } from "./schedule.js";
 
 export const SUBLET_OUTREACH_ID = "h_outreach_daily";
 
@@ -369,17 +375,32 @@ export function refreshDailyHousingTasks(tasks, date = new Date()) {
   return [...list, fresh];
 }
 
-/** Pressure is deadline loudness, never backlog volume. Self-targets don't overdue. */
+/**
+ * Pressure (Part F) is deadline loudness (urgency statuses/scores), never raw
+ * backlog count. A large pile of distant low-criticality tasks stays quiet; a
+ * single true FINAL CALL on real (non-self-target) criticality ≥ 2 work maxes
+ * it out on its own, exactly like one genuinely late thing should feel.
+ */
 export function taskPressure(tasks, date = new Date()) {
-  const weight = tasks.filter(isOpen).reduce((sum, task) => {
-    if (!isHardOverdue(task, date) && !isDueSoon(task, date, 2)) return sum;
-    if (task.selfTarget) return sum + 0.5; // mild due-soon nudge only
-    return sum + (task.criticalPath ? 2 : 1);
-  }, 0);
-  if (weight === 0) return 0;
-  if (weight <= 2) return 1;
-  if (weight <= 4) return 2;
-  return 3;
+  const open = (tasks || []).filter(isOpen);
+  let maxScore = 0;
+  let closingOrLouder = false;
+  let genuineFinalCall = false;
+  for (const task of open) {
+    const status = taskStatus(task, date, tasks);
+    if (status === "BLOCKED") continue; // excluded from actionable pressure — see ledger BLOCKED label instead
+    const score = urgencyScore(task, date);
+    if (score > maxScore) maxScore = score;
+    if (status === "FINAL CALL" && (task.criticality || 1) >= 2 && !task.selfTarget) {
+      genuineFinalCall = true;
+    } else if (status === "FINAL CALL" || status === "CLOSING") {
+      closingOrLouder = true;
+    }
+  }
+  if (genuineFinalCall) return 3;
+  if (maxScore >= 70 || closingOrLouder) return 2;
+  if (maxScore >= 30) return 1;
+  return 0;
 }
 
 /** Stretchy reacts only to his own due chain plus mild U-Box disruption. */

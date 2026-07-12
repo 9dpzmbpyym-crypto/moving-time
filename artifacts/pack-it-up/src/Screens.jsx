@@ -118,6 +118,47 @@ function clampPips(n) {
 }
 
 /**
+ * Urgency badge colors (Part E) — task.urgencyStatus comes pre-computed from
+ * schedule.js's taskStatus() via handTasks()/offerTasks(); cards never
+ * recompute it, so they don't need the full task list or "today" passed in.
+ * Sharp corners, small type — no modern pill components.
+ */
+const URGENCY_TAG_STYLE = {
+  SOON: { bg: "#C9942E", fg: "#1A1008" },
+  DUE: { bg: "#E8B94A", fg: "#1A1008" },
+  OVERDUE: { bg: "#C9773A", fg: "#FFF3DE" },
+  CLOSING: { bg: "#C43B34", fg: "#FFF3DE" },
+  "FINAL CALL": { bg: "#7A1E1E", fg: "#FFD97A" },
+  BLOCKED: { bg: "#5B6472", fg: "#F3EDDD" },
+  SCHEDULED: { bg: "#3E6491", fg: "#F3EDDD" },
+};
+
+/** Small pixel-native urgency tag — caller positions it (corner varies per card layout). */
+function UrgencyTag({ status, fontSize, style }) {
+  const tone = URGENCY_TAG_STYLE[status];
+  if (!tone) return null;
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: "absolute",
+        fontSize,
+        lineHeight: 1,
+        padding: "1px 3px",
+        background: tone.bg,
+        color: tone.fg,
+        border: "1px solid #120A04",
+        whiteSpace: "nowrap",
+        ...LB,
+        ...style,
+      }}
+    >
+      {status}
+    </div>
+  );
+}
+
+/**
  * Overlay layout from /?cards=1 (Eloisa 2026-07-11).
  * refW = designer preview width so px fonts scale with live card size.
  */
@@ -274,6 +315,11 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
           position: "absolute", ...L.latest,
           color: "#1A1008", fontSize: datePx, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap", ...LB,
         }}>{fmtCardDate(task?.latestDate)}</div>
+        <UrgencyTag
+          status={task?.urgencyStatus}
+          fontSize={scaleOverlayPx(8, cardW, L.refW)}
+          style={{ top: "4%", right: "3%" }}
+        />
         <BubblePips filled={effort} centers={L.pips.effort} sizePct={L.pips.size} />
         <BubblePips filled={importance} centers={L.pips.importance} sizePct={L.pips.size} />
       </div>
@@ -350,6 +396,11 @@ export function VerticalTaskCard({
             }}>B</span>
           </div>
         )}
+        <UrgencyTag
+          status={task?.urgencyStatus}
+          fontSize={Math.max(4, Math.round(fontW * 0.06))}
+          style={{ top: "1.5%", right: "3%" }}
+        />
         <BubblePips filled={effort} centers={L.pips.effort} sizePct={L.pips.size} />
         <div style={{
           position: "absolute", ...L.title,
@@ -780,8 +831,8 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
   const toggleOffer = (id) => {
     onSessionBump?.("dealPick", 0, null, { toggleDealId: id });
   };
-  const drawLabel = progress.chooseNeeded > 0
-    ? `Draw (${progress.remaining})`
+  const drawLabel = progress.requiredOptionalEffort > 0
+    ? `Draw · ${progress.remainingEffort} effort left`
     : "Draw (optional)";
   const focus = picks.find((t) => t.id === focusId) || null;
 
