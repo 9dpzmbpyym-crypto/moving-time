@@ -20,8 +20,9 @@ import STRETCHY_FULL from "../assets/items/task_card_assets/vertical/stretchy_fu
  * Copy emits % values ready to paste into Screens.jsx.
  */
 
+const STORE_KEY = "packitup-card-layout-v2";
+
 const LB = { fontFamily: "'Courier New', monospace", fontWeight: 700, letterSpacing: "0.5px" };
-const STORE_KEY = "packitup-card-layout-v1";
 
 const ROW_SRC = {
   job: JOB_ROW, housing: HOUSING_ROW, move: MOVE_ROW,
@@ -59,6 +60,7 @@ const DEFAULTS = {
     title: { left: 12, top: 22.5, width: 76, height: 15.5 },
     target: { left: 34, top: 41.3, width: 58, height: 4 },
     latest: { left: 34, top: 46.3, width: 58, height: 4 },
+    bound: { left: 4, top: 2, width: 10, height: 4.5 },
     titleMaxPx: 11,
     datePx: 9,
     pips: {
@@ -69,8 +71,8 @@ const DEFAULTS = {
   },
 };
 
-const BOX_KEYS = ["title", "target", "latest"];
-const BOX_COLORS = { title: "#FF4D4D", target: "#4D9FFF", latest: "#5DDE7A" };
+const BOX_KEYS = ["title", "target", "latest", "bound"];
+const BOX_COLORS = { title: "#FF4D4D", target: "#4D9FFF", latest: "#5DDE7A", bound: "#E8A0FF" };
 
 function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
@@ -82,9 +84,19 @@ function round1(n) {
 
 function loadStored() {
   try {
-    const raw = localStorage.getItem(STORE_KEY);
+    const raw = localStorage.getItem(STORE_KEY) || localStorage.getItem("packitup-card-layout-v1");
     if (!raw) return null;
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    // merge missing keys (e.g. bound badge) from defaults
+    return {
+      thin: { ...structuredClone(DEFAULTS.thin), ...parsed.thin, pips: { ...DEFAULTS.thin.pips, ...(parsed.thin?.pips || {}) } },
+      full: {
+        ...structuredClone(DEFAULTS.full),
+        ...parsed.full,
+        bound: parsed.full?.bound || structuredClone(DEFAULTS.full.bound),
+        pips: { ...DEFAULTS.full.pips, ...(parsed.full?.pips || {}) },
+      },
+    };
   } catch {
     return null;
   }
@@ -118,6 +130,7 @@ title: left ${f.title.left}% / top ${f.title.top}% / width ${f.title.width}% / h
   → style left:"${f.title.left}%", right:"${round1(100 - f.title.left - f.title.width)}%", top:"${f.title.top}%", height:"${f.title.height}%"
 target: left ${f.target.left}% top ${f.target.top}% width ${f.target.width}%
 latest: left ${f.latest.left}% top ${f.latest.top}% width ${f.latest.width}%
+bound B: left ${f.bound.left}% top ${f.bound.top}% width ${f.bound.width}% height ${f.bound.height}%
 titleMaxPx ${f.titleMaxPx}  datePx ${f.datePx}
 V_PIP.effort: [${fmtPips(f.pips.effort)}]
 V_PIP.importance: [${fmtPips(f.pips.importance)}]
@@ -160,7 +173,7 @@ function FitPreview({ text, maxPx, minPx = 5, style }) {
 }
 
 function OverlayBox({
-  id, box, color, selected, label, children, onSelect, onMove, onResize,
+  id, box, color, selected, label, children, onSelect, onMove, onResize, showOutlines = true,
 }) {
   const drag = useRef(null);
 
@@ -218,6 +231,8 @@ function OverlayBox({
     />
   );
 
+  const showChrome = showOutlines || selected;
+
   return (
     <div
       onPointerDown={(e) => onPointerDown(e, "move")}
@@ -225,20 +240,22 @@ function OverlayBox({
       onPointerUp={onPointerUp}
       style={{
         position: "absolute", ...boxToCss(box),
-        border: `2px solid ${color}`,
-        background: selected ? `${color}22` : `${color}11`,
+        border: showChrome ? `2px solid ${color}` : "2px solid transparent",
+        background: showOutlines ? (selected ? `${color}22` : `${color}11`) : (selected ? `${color}18` : "transparent"),
         boxSizing: "border-box",
         cursor: "move",
         zIndex: selected ? 4 : 2,
-        display: "flex", alignItems: "center",
+        display: "flex", alignItems: "center", justifyContent: label === "bound" ? "center" : "flex-start",
         overflow: "hidden",
         touchAction: "none",
       }}
     >
-      <div style={{
-        position: "absolute", top: -16, left: 0, fontSize: 9, color, whiteSpace: "nowrap",
-        pointerEvents: "none", ...LB,
-      }}>{label}</div>
+      {showChrome && (
+        <div style={{
+          position: "absolute", top: -16, left: 0, fontSize: 9, color, whiteSpace: "nowrap",
+          pointerEvents: "none", ...LB,
+        }}>{label}</div>
+      )}
       {children}
       {selected && (
         <>
@@ -292,7 +309,7 @@ function PipDot({ x, y, sizePct, selected, onSelect, onMove, label }) {
 }
 
 function CardStage({
-  kind, src, displayW, layout, selected, onSelect, setLayoutBox, setPip, sampleTitle,
+  kind, src, displayW, layout, selected, onSelect, setLayoutBox, setPip, sampleTitle, showOutlines,
 }) {
   const L = layout[kind];
   return (
@@ -305,12 +322,32 @@ function CardStage({
         style={{ width: "100%", height: "auto", display: "block", imageRendering: "pixelated" }}
       />
       <div style={{ position: "absolute", inset: 0 }}>
+        {kind === "full" && L.bound && (
+          <OverlayBox
+            id="full:bound"
+            box={L.bound}
+            color={BOX_COLORS.bound}
+            selected={selected === "full:bound"}
+            label="bound"
+            showOutlines={showOutlines}
+            onSelect={onSelect}
+            onMove={(_, p) => setLayoutBox("full", "bound", p)}
+            onResize={(_, p) => setLayoutBox("full", "bound", p)}
+          >
+            <span style={{
+              color: "#A3252C", fontSize: Math.max(8, Math.round(displayW * 0.045)),
+              border: "1px solid #A3252C", background: "rgba(255,248,235,0.9)",
+              padding: "1px 3px", lineHeight: 1, ...LB,
+            }}>B</span>
+          </OverlayBox>
+        )}
         <OverlayBox
           id={`${kind}:title`}
           box={L.title}
           color={BOX_COLORS.title}
           selected={selected === `${kind}:title`}
           label="title"
+          showOutlines={showOutlines}
           onSelect={onSelect}
           onMove={(_, p) => setLayoutBox(kind, "title", p)}
           onResize={(_, p) => setLayoutBox(kind, "title", p)}
@@ -327,6 +364,7 @@ function CardStage({
           color={BOX_COLORS.target}
           selected={selected === `${kind}:target`}
           label="target"
+          showOutlines={showOutlines}
           onSelect={onSelect}
           onMove={(_, p) => setLayoutBox(kind, "target", p)}
           onResize={(_, p) => setLayoutBox(kind, "target", p)}
@@ -339,6 +377,7 @@ function CardStage({
           color={BOX_COLORS.latest}
           selected={selected === `${kind}:latest`}
           label="latest"
+          showOutlines={showOutlines}
           onSelect={onSelect}
           onMove={(_, p) => setLayoutBox(kind, "latest", p)}
           onResize={(_, p) => setLayoutBox(kind, "latest", p)}
@@ -377,6 +416,7 @@ export default function CardLayoutEditor() {
   const [selected, setSelected] = useState("full:title");
   const [copied, setCopied] = useState(false);
   const [sampleTitle, setSampleTitle] = useState(SAMPLE.title);
+  const [showOutlines, setShowOutlines] = useState(true);
 
   useEffect(() => {
     localStorage.setItem(STORE_KEY, JSON.stringify(layout));
@@ -435,8 +475,9 @@ export default function CardLayoutEditor() {
       const step = e.shiftKey ? 1 : 0.5;
       const [kind, part, idx] = selected.split(":");
       if (!layout[kind]) return;
-      if (part === "title" || part === "target" || part === "latest") {
+      if (part === "title" || part === "target" || part === "latest" || part === "bound") {
         const box = layout[kind][part];
+        if (!box) return;
         if (e.key === "ArrowLeft") { e.preventDefault(); setLayoutBox(kind, part, { left: round1(clamp(box.left - step, 0, 99)) }); }
         if (e.key === "ArrowRight") { e.preventDefault(); setLayoutBox(kind, part, { left: round1(clamp(box.left + step, 0, 99)) }); }
         if (e.key === "ArrowUp") { e.preventDefault(); setLayoutBox(kind, part, { top: round1(clamp(box.top - step, 0, 99)) }); }
@@ -471,6 +512,9 @@ export default function CardLayoutEditor() {
         <select value={cat} onChange={(e) => setCat(e.target.value)} style={selStyle}>
           {CATS.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
+        <button type="button" onClick={() => setShowOutlines((v) => !v)} style={btnStyle}>
+          {showOutlines ? "Hide outlines" : "Show outlines"}
+        </button>
         <button type="button" onClick={() => setLayout(structuredClone(DEFAULTS))} style={btnStyle}>Reset defaults</button>
         <button type="button" onClick={copyOut} style={{ ...btnStyle, background: "#5D7C3B" }}>
           {copied ? "Copied!" : "Copy layout"}
@@ -479,8 +523,8 @@ export default function CardLayoutEditor() {
       </div>
 
       <div style={{ color: "#8A7350", fontSize: 11, marginBottom: 12, maxWidth: 720 }}>
-        Flat upright samples. Drag red/blue/green boxes to place title & dates; drag black dots for pip centers.
-        Corner handle = resize. Arrows nudge 0.5% (Shift = 1%). Draft autosaves in localStorage. Copy → paste into Screens.jsx.
+        Flat upright samples. Drag boxes for title / dates / bound B; drag dots for pips.
+        Hide outlines to preview clean. Arrows nudge 0.5% (Shift = 1%). Copy → paste into Screens.jsx.
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 28, alignItems: "flex-start" }}>
@@ -496,6 +540,7 @@ export default function CardLayoutEditor() {
             setLayoutBox={setLayoutBox}
             setPip={setPip}
             sampleTitle={sampleTitle}
+            showOutlines={showOutlines}
           />
         </div>
         <div>
@@ -510,6 +555,7 @@ export default function CardLayoutEditor() {
             setLayoutBox={setLayoutBox}
             setPip={setPip}
             sampleTitle={sampleTitle}
+            showOutlines={showOutlines}
           />
         </div>
 
