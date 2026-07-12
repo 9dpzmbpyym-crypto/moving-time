@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useUiLayout } from "./dev/uiLayout.js";
 import STRETCHY_ICON from "./assets/Stretchy Icon.png";
 import HEALTH_CLIPBOARD from "./assets/health-clipboard.png";
 import HEALTH_BODY_FIGURE from "./assets/items/packitup_cropped_assets/ui_mockups/health_slices/body_figure.png";
@@ -732,6 +733,7 @@ const MENU_TILE_ICON = {
 const PRESSURE_TRACK = { left: 7.06, right: 7.79, top: 37.7, bottom: 31.4 };
 
 function MenuScreen({ go, tasks }) {
+  const uiLayout = useUiLayout();
   const pressure = taskPressure(tasks);
   const count = (cats) => tasks.filter((t) => isOpen(t) && cats.includes(t.category)).length;
   const soonest = (cats) => {
@@ -757,9 +759,9 @@ function MenuScreen({ go, tasks }) {
     }}>
       {screenCss}
       <div style={{
-        flex: 1, minHeight: 0, overflowY: "auto",
+        flex: 1, minHeight: 0, overflow: "hidden",
         padding: "calc(env(safe-area-inset-top, 0px) + 8px) 10px calc(env(safe-area-inset-bottom, 0px) + 14px)",
-        display: "flex", flexDirection: "column", gap: 10,
+        display: "flex", flexDirection: "column", gap: `clamp(4px, ${uiLayout.overview.gapDvh}dvh, 8px)`,
       }}>
         {/* Header: back arrow + list icon + title, on the ornate wood rail.
             Inset (not padding-on-100%-width) keeps this within the viewport —
@@ -797,7 +799,7 @@ function MenuScreen({ go, tasks }) {
           backgroundImage: `url(${MENU_PRESSURE_FRAME})`, backgroundSize: "100% 100%", imageRendering: "pixelated",
         }}>
           <div style={{
-            position: "absolute", left: "5%", right: "7%", top: "8%",
+            position: "absolute", left: "5%", right: "7%", top: `${uiLayout.overview.pressureTop}%`,
             display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 6,
             color: "#3A2018", fontSize: "clamp(7px, 2.2vw, 9px)", ...LB,
           }}>
@@ -832,15 +834,15 @@ function MenuScreen({ go, tasks }) {
         </button>
 
         {/* Tile grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div style={{ flex: "1 1 auto", minHeight: 0, display: "grid", gridTemplateColumns: "1fr 1fr", gridTemplateRows: "repeat(3, minmax(0, 1fr))", gap: `clamp(4px, ${uiLayout.overview.gapDvh}dvh, 8px)` }}>
           {tiles.map((t) => (
             <button key={t.key} onClick={() => go(t.key)} style={{
-              position: "relative", width: "100%", aspectRatio: "414 / 376", background: "none", border: "none",
+              position: "relative", width: "100%", height: "100%", minHeight: 0, background: "none", border: "none",
               padding: 0, cursor: "pointer", textAlign: "left",
               backgroundImage: `url(${MENU_TILE_FRAME})`, backgroundSize: "100% 100%", imageRendering: "pixelated",
             }}>
               <div style={{
-                position: "absolute", inset: "10% 8%",
+                position: "absolute", inset: `${uiLayout.overview.tileTop}% 8% 8% ${uiLayout.overview.tileLeft}%`,
                 display: "flex", flexDirection: "column", alignItems: "flex-start",
               }}>
                 <img src={MENU_TILE_ICON[t.key]} alt="" style={{ width: "28%", marginBottom: "6%", imageRendering: "pixelated" }} />
@@ -2535,8 +2537,8 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
  * key off them directly.
  */
 const HEALTH_ZONES = [
-  { id: "brain",  label: "PSYCHIATRY",   note: "Psychiatry + med renewals", icon: HEALTH_ZONE_PSYCH,  x: 50,   y: 5,  care: "herbal" },
-  { id: "teeth",  label: "DENTIST",      note: "Dentist visit",             icon: HEALTH_ZONE_DENTIST, x: 50,  y: 17, care: "balm" },
+  { id: "brain",  label: "PSYCHIATRY",   note: "Psychiatry + med renewals", icon: HEALTH_ZONE_PSYCH,  x: 50,   y: 5,   size: 15, care: "herbal" },
+  { id: "teeth",  label: "DENTIST",      note: "Dentist visit",             icon: HEALTH_ZONE_DENTIST, x: 50,  y: 15.5, size: 15, care: "balm" },
   { id: "heart",  label: "CARDIOLOGY",   note: "Cardiology appointment",    icon: HEALTH_ZONE_CARDIO,  x: 50,  y: 29, care: "patch" },
   { id: "skin",   label: "DERMATOLOGY",  note: "Dermatology appointment",   icon: HEALTH_ZONE_DERM,    x: 20,  y: 36, care: "balm" },
   { id: "lymph",  label: "RHEUMATOLOGY", note: "Rheumatology appointment",  icon: HEALTH_ZONE_RHEUM,   x: 79,  y: 36, care: "balm" },
@@ -2561,10 +2563,12 @@ const healthCallBtnStyle = {
 
 function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast,
   appointments, setAppointments }) {
+  const uiLayout = useUiLayout();
+  const healthZones = HEALTH_ZONES.map((z) => ({ ...z, ...(uiLayout.body.zones[z.id] || {}) }));
   const [zone, setZone] = useState(null);
   const [panel, setPanel] = useState(null); // null | "care" | "records"
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const sel = HEALTH_ZONES.find((z) => z.id === zone) || null;
+  const sel = healthZones.find((z) => z.id === zone) || null;
 
   const leave = () => {
     playContainerSfx("mirror_cabinet", "close");
@@ -2576,8 +2580,8 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
     const t = tasks.find((x) => x.zone === zid);
     return t ? t.status === "done" : false;
   };
-  const stabilized = HEALTH_ZONES.filter((z) => zoneDone(z.id)).length;
-  const openCount = HEALTH_ZONES.length - stabilized;
+  const stabilized = healthZones.filter((z) => zoneDone(z.id)).length;
+  const openCount = healthZones.length - stabilized;
   const prog = sessionProgress(session, HEALTH_SESSION_GOALS);
   const booked = activeAppointments(appointments);
 
@@ -2591,7 +2595,7 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
     if (bt && isBookableHealthTask(bt)) return "ready";
     return "later";
   };
-  const stateCounts = HEALTH_ZONES.reduce((acc, z) => {
+  const stateCounts = healthZones.reduce((acc, z) => {
     const s = zoneState(z);
     if (s !== "done") acc[s] = (acc[s] || 0) + 1;
     return acc;
@@ -2608,7 +2612,7 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
 
   const useCare = (careId) => {
     const target = sel && !zoneDone(sel.id) ? sel
-      : HEALTH_ZONES.find((z) => z.care === careId && !zoneDone(z.id));
+      : healthZones.find((z) => z.care === careId && !zoneDone(z.id));
     if (target && !zoneDone(target.id)) {
       setTasks((ts) => ts.map((t) => (t.zone === target.id ? { ...t, status: "done" } : t)));
       onSessionBump?.("zones", 1, null, { calmedZone: target.id });
@@ -2719,7 +2723,7 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
                   imageRendering: "pixelated", pointerEvents: "none", userSelect: "none",
                 }}
               />
-              {HEALTH_ZONES.map((z) => {
+              {healthZones.map((z) => {
                 const state = zoneState(z);
                 const isSel = zone === z.id;
                 return (
@@ -2731,7 +2735,7 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
                     style={{
                       position: "absolute", left: `${z.x}%`, top: `${z.y}%`, zIndex: 2,
                       transform: "translate(-50%, -38%)",
-                      width: "19%", aspectRatio: "140 / 188",
+                      width: `${z.size || 19}%`, aspectRatio: "140 / 188",
                       background: "transparent", appearance: "none", WebkitAppearance: "none",
                       border: "none", padding: 0, cursor: "pointer",
                       outline: isSel ? "3px solid #FFD97A" : "none",
@@ -2762,13 +2766,13 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
                 clipboard's bottom edge so it overlaps the figure's legs,
                 sized to ~30% of the parchment height like the mockup. */}
             <div style={{
-              position: "absolute", left: "6%", right: "9%", top: "61%", bottom: "8%",
+              position: "absolute", left: "6%", right: "9%", top: `${uiLayout.body.paper.top}%`, bottom: `${uiLayout.body.paper.bottom}%`,
               backgroundImage: panel ? "none" : `url(${HEALTH_NOTE_PAPER})`,
               backgroundColor: panel ? "#241509" : "transparent",
               backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
               border: panel ? "3px solid #120A04" : "none",
               boxShadow: panel ? "inset 0 0 0 2px #6B4423" : "none",
-              padding: panel ? "8px 10px" : "6% 12px 8px 17%",
+              padding: panel ? "8px 10px" : `${uiLayout.body.paper.paddingTop}% 12px 8px 17%`,
               imageRendering: "pixelated", overflow: "auto",
             }}>
               {panel === "care" && (

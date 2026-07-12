@@ -27,6 +27,7 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 ### Jul 12 screenshot correction pass — [codex]
 - [x] Match Body Board zone markers to the enlarged figure, keep OB/GYN fully selectable, and raise/inset the selected-zone paper.
 - [x] Re-center apartment HUD and room-navigation text inside the existing mockup chrome; no room-art or layout redesign.
+- [x] Second pass: shrink Psychiatry/Dentist, lower the paper over the feet, fit Overview into 390×844 without scrolling, and refine Overview/apartment text placement.
 
 ### Scheduler engine — [codex] ADOPTED, SHIP BAR: usable tonight/tomorrow
 - Ruling: **`docs/design/scheduler-adoption.md`** · spec: `docs/inbox/chatgpt-productivity-structure-for-claude-7-11.md` · paste-ready prompt: **`docs/inbox/handoff-codex-scheduler.md`**

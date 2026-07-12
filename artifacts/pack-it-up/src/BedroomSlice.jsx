@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
+import { useUiLayout } from "./dev/uiLayout.js";
 import SAVED_LAYOUT from "./layout.json";
 // Game audio lives in gameAudio.js (module singleton) so React StrictMode / HMR
 // remounts don't kill the AudioContext or stop the music. Assets load from
@@ -2408,7 +2409,8 @@ const HAPTIC = { room: [10], pack: [20], sell: [15, 30, 15], donate: [12] };
 /* ============================================================
    APP
    ============================================================ */
-export default function PackItUp({ glowMode = "split" }) {
+export default function PackItUp({ glowMode = "split", initialScreen = "apartment" }) {
+  const uiLayout = useUiLayout();
   /* mobile = portrait phone layout with its own UI chrome; desktop keeps the
      original single-scale stage. */
   const mobileQuery = "(max-width: 760px), (orientation: portrait)";
@@ -2504,7 +2506,7 @@ export default function PackItUp({ glowMode = "split" }) {
   const [sheetOpen, setSheetOpen] = useState(false); // mobile object-detail bottom sheet
   /* next-layer navigation: apartment is the hub, everything else is an
      overlay screen (menu/desk/health/inventory/log/stretchy/settings) */
-  const [screen, setScreen] = useState("apartment");
+  const [screen, setScreen] = useState(initialScreen);
   // which storage object's contents are open in the StorageScreen overlay.
   // Set when a storage object (cabinet/drawer/closet) is tapped.
   const [storageId, setStorageId] = useState(null);
@@ -4095,7 +4097,7 @@ export default function PackItUp({ glowMode = "split" }) {
       >
         <img src={dir < 0 ? NAV_ARROW_LEFT_BG : NAV_ARROW_RIGHT_BG} alt="" style={chromeImgFill} />
         <span style={{
-          position: "absolute", left: "15%", right: "15%", top: "64%", bottom: "12%",
+          position: "absolute", left: "15%", right: "15%", top: `${uiLayout.apartment.nav.top}%`, bottom: `${uiLayout.apartment.nav.bottom}%`,
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
           {/* block + textAlign (not flex-centered raw text) so long room names
@@ -4190,29 +4192,29 @@ export default function PackItUp({ glowMode = "split" }) {
           <div style={{ position: "relative", flex: "33 1 0%", minWidth: 0, height: 74 }}>
             <img src={HUD_CLOCK_BG} alt="" style={chromeImgFill} />
             <div style={{
-              ...chromeContent, position: "absolute", left: "30%", right: "8%", top: "14%", bottom: "18%",
+              ...chromeContent, position: "absolute", left: `${uiLayout.apartment.clock.left}%`, right: `${uiLayout.apartment.clock.right}%`, top: `${uiLayout.apartment.clock.top}%`, bottom: `${uiLayout.apartment.clock.bottom}%`,
               display: "flex", flexDirection: "column", justifyContent: "space-between", height: "auto",
             }}>
-              <div style={{ color: INK.strong, fontSize: 11, lineHeight: 1, whiteSpace: "nowrap", overflow: "hidden", ...ui.label }}>{clock}</div>
-              <div style={{ color: INK.mid, fontSize: 9, lineHeight: 1, whiteSpace: "nowrap", overflow: "hidden", ...ui.label }}>
+              <div style={{ color: INK.strong, fontSize: 11, lineHeight: 1, whiteSpace: "nowrap", overflow: "hidden", transform: `translateY(${uiLayout.apartment.clock.timeY}px)`, ...ui.label }}>{clock}</div>
+              <div style={{ color: INK.mid, fontSize: 9, lineHeight: 1, whiteSpace: "nowrap", overflow: "hidden", transform: `translateY(${uiLayout.apartment.clock.dateY}px)`, ...ui.label }}>
                 {dateLabel}
               </div>
-              <div style={{ color: INK.soft, fontSize: 8, lineHeight: 1, whiteSpace: "nowrap", marginLeft: "-18%", textAlign: "center", ...ui.label }}>
+              <div style={{ color: INK.soft, fontSize: 8, lineHeight: 1, whiteSpace: "nowrap", marginLeft: `${uiLayout.apartment.clock.daysLeft}%`, textAlign: "center", transform: `translateY(${uiLayout.apartment.clock.daysY}px)`, ...ui.label }}>
                 {daysLeft === 0 ? "Move day" : `${daysLeft}d left`}
               </div>
             </div>
           </div>
           <div style={{ position: "relative", flex: "17 1 0%", minWidth: 0, height: 74 }}>
             <img src={HUD_COINS_BG} alt="" style={chromeImgFill} />
-            <div style={{ ...chromeContent, padding: "0 8px 0 40%", transform: "translateY(-3px)", display: "flex", alignItems: "center", color: INK.strong, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", ...ui.label }}>
+            <div style={{ ...chromeContent, padding: `0 8px 0 ${uiLayout.apartment.coins.padLeft}%`, transform: `translateY(${uiLayout.apartment.coins.y}px)`, display: "flex", alignItems: "center", color: INK.strong, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", ...ui.label }}>
               {coins}
             </div>
           </div>
           <div style={{ position: "relative", flex: "24 1 0%", minWidth: 0, height: 74 }}>
             <img src={HUD_ROOM_BG} alt="" style={chromeImgFill} />
-            <div style={{ ...chromeContent, padding: "16% 8px 0 26%", textAlign: "left" }}>
+            <div style={{ ...chromeContent, padding: `${uiLayout.apartment.room.padTop}% 8px 0 ${uiLayout.apartment.room.padLeft}%`, textAlign: "left" }}>
               <div style={{ color: INK.strong, fontSize: roomNameFontSize, lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", ...ui.label }}>{room.name}</div>
-              <div style={{ color: INK.mid, fontSize: 9, lineHeight: 1.1, marginTop: 1, whiteSpace: "nowrap", ...ui.label }}>
+              <div style={{ color: INK.mid, fontSize: 9, lineHeight: 1.1, marginTop: uiLayout.apartment.room.countGap, whiteSpace: "nowrap", ...ui.label }}>
                 {total > 0 ? `${clearedCount}/${total}` : "—"}
               </div>
               {total > 0 && (
@@ -4227,7 +4229,7 @@ export default function PackItUp({ glowMode = "split" }) {
           </div>
           <div style={{ position: "relative", flex: "15 1 0%", minWidth: 0, height: 74 }} title="Furniture packed into boxes (apartment-wide)">
             <img src={HUD_BOXES_BG} alt="" style={chromeImgFill} />
-            <div style={{ ...chromeContent, padding: "0 8px 0 30%", transform: "translateY(-3px)", display: "flex", alignItems: "center" }}>
+            <div style={{ ...chromeContent, padding: `0 8px 0 ${uiLayout.apartment.boxes.padLeft}%`, transform: `translateY(${uiLayout.apartment.boxes.y}px)`, display: "flex", alignItems: "center" }}>
               <div style={{ color: INK.strong, fontSize: 11, whiteSpace: "nowrap", ...ui.label }}>
                 {globalPacked}/{globalTotal}
               </div>
