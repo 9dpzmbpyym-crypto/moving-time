@@ -7,13 +7,13 @@ import { normalizeTask } from "./schedule.js";
 
 const SAVE_KEY = "pack-it-up-save";
 const SAVE_BACKUP_KEY = "pack-it-up-save-pre-migration";
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 /** After Reset save, block writeSave so the unmount/pagehide flush cannot
  *  resurrect the wiped progress before reload finishes. */
 let saveSuspended = false;
 
-const EMPTY_FLAGS = { packed: false, sold: false, soldFor: 0, donated: false };
+const EMPTY_FLAGS = { packed: false, sold: false, soldFor: 0, donated: false, buyerFound: false };
 
 function sanitizeFlags(raw) {
   if (!raw || typeof raw !== "object") return { ...EMPTY_FLAGS };
@@ -22,6 +22,7 @@ function sanitizeFlags(raw) {
     sold: !!raw.sold,
     soldFor: Math.max(0, Number(raw.soldFor) || 0),
     donated: !!raw.donated,
+    buyerFound: !!raw.buyerFound,
   };
 }
 

@@ -1875,6 +1875,21 @@ ROOMS.office = {
 /* object state is keyed per-room so an id reused across rooms can never collide */
 const sk = (roomId, id) => `${roomId}:${id}`;
 
+// Furniture with an explicit "find buyer" task. Confirming one object marks
+// its whole sale lot (for example, table + chairs) and completes that task.
+const BUYER_BINDINGS = [
+  { taskId: "f_buyer_dining", objects: ["dining:dining_table", "dining:dining_chairs"] },
+  { taskId: "f_buyer_entertainment", objects: ["living:tv_hutch"] },
+  { taskId: "f_buyer_coffee", objects: ["living:coffee_table"] },
+  { taskId: "f_buyer_desk", objects: ["office:desk_hutch", "office:office_chair"] },
+  { taskId: "f_buyer_sofa", objects: ["living:sofa"] },
+  { taskId: "f_buyer_dresser", objects: ["bedroom:dresser"] },
+  { taskId: "f_buyer_bedside", objects: ["bedroom:nightstand"] },
+];
+const BUYER_BINDING_BY_OBJECT = Object.fromEntries(
+  BUYER_BINDINGS.flatMap((binding) => binding.objects.map((key) => [key, binding]))
+);
+
 const CATEGORY_COLORS = {
   furniture: "#B07A3C", textiles: "#5C8C7C", decor: "#96424C",
   plants: "#5D7C3B", lighting: "#C9942E",
@@ -2434,7 +2449,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
         ROOMS_ORDER.flatMap((rid) =>
           ROOMS[rid].objects.map((o) => [
             sk(rid, o.id),
-            { packed: false, sold: false, soldFor: 0, donated: false },
+            { packed: false, sold: false, soldFor: 0, donated: false, buyerFound: false },
           ])
         )
       ),
@@ -2464,7 +2479,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
   const catEnterSide = roomIndex >= prevRoomIdxRef.current ? -1 : 1;
   useEffect(() => { prevRoomIdxRef.current = roomIndex; }, [roomIndex]);
 
-  // object state: { [`${roomId}:${id}`]: { packed, sold, soldFor, donated } }
+  // object state: { [`${roomId}:${id}`]: { packed, sold, soldFor, donated, buyerFound } }
   const [objState, setObjState] = useState(() =>
     mergeFlagMap(defaultObjState, bootSave?.objState)
   );
@@ -2771,6 +2786,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
   const undoEntry = (id, prev, coinsDelta, minutesDelta) => ({
     roomId: room.id, id,
     prevPacked: prev.packed, prevSold: prev.sold, prevSoldFor: prev.soldFor, prevDonated: prev.donated,
+    prevBuyerFound: prev.buyerFound,
     coinsDelta, minutesDelta,
   });
   const busy = packingId || sellingId || donatingId || packingContentKey;
@@ -2867,6 +2883,41 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
       onSessionBump("cleared", 1, "Cleared +1");
     }, 520);
   }, [room, objState, busy, schedule, onSessionBump]);
+
+  const confirmBuyerFound = useCallback((id) => {
+    const binding = BUYER_BINDING_BY_OBJECT[sk(room.id, id)];
+    if (!binding || busy) return;
+    const alreadyConfirmed = binding.objects.every((key) => objState[key]?.buyerFound);
+    if (alreadyConfirmed) return;
+    const prevStates = Object.fromEntries(
+      binding.objects.map((key) => [key, { ...objState[key] }])
+    );
+    const task = tasks.find((candidate) => candidate.id === binding.taskId);
+    setObjState((state) => {
+      const next = { ...state };
+      for (const key of binding.objects) {
+        if (next[key]) next[key] = { ...next[key], buyerFound: true };
+      }
+      return next;
+    });
+    setTasks((current) => current.map((candidate) =>
+      candidate.id === binding.taskId && isTaskOpen(candidate)
+        ? { ...candidate, status: "done" }
+        : candidate
+    ));
+    setUndoStack((stack) => [...stack, {
+      kind: "buyerFound",
+      roomId: room.id,
+      id,
+      objectKeys: binding.objects,
+      prevStates,
+      taskId: binding.taskId,
+      prevTaskStatus: task?.status || "pending",
+      coinsDelta: 0,
+      minutesDelta: 0,
+    }]);
+    showReward("Buyer found ✓");
+  }, [room.id, objState, tasks, busy, showReward]);
 
   /* ---- content actions: pack/sell/donate items from inside storage ----
      All three close the storage overlay first (close-then-fly), then flip
@@ -3021,7 +3072,19 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
   const undoLast = () => {
     if (undoStack.length === 0) return;
     const entry = undoStack[undoStack.length - 1];
-    const { roomId, id, storageId, prevPacked, prevSold, prevSoldFor, prevDonated, coinsDelta, minutesDelta } = entry;
+    if (entry.kind === "buyerFound") {
+      setObjState((state) => {
+        const next = { ...state };
+        for (const key of entry.objectKeys) next[key] = { ...entry.prevStates[key] };
+        return next;
+      });
+      setTasks((current) => current.map((task) =>
+        task.id === entry.taskId ? { ...task, status: entry.prevTaskStatus } : task
+      ));
+      setUndoStack((stack) => stack.slice(0, -1));
+      return;
+    }
+    const { roomId, id, storageId, prevPacked, prevSold, prevSoldFor, prevDonated, prevBuyerFound, coinsDelta, minutesDelta } = entry;
     if (storageId) {
       // content undo: restore contentsState at ${roomId}:${storageId}:${id}
       const ck = `${roomId}:${storageId}:${id}`;
@@ -3029,7 +3092,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     } else {
       // object undo: restore objState at ${roomId}:${id}
       const k = sk(roomId, id);
-      setObjState((s) => ({ ...s, [k]: { ...s[k], packed: prevPacked, sold: prevSold, soldFor: prevSoldFor, donated: prevDonated } }));
+      setObjState((s) => ({ ...s, [k]: { ...s[k], packed: prevPacked, sold: prevSold, soldFor: prevSoldFor, donated: prevDonated, buyerFound: !!prevBuyerFound } }));
     }
     setCoins((c) => c - coinsDelta);
     setMinutes((m) => m - minutesDelta);
@@ -3204,11 +3267,14 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
   }
 
   const selected = room.objects.find((o) => o.id === selectedId) || null;
+  const selectedBuyerBinding = selected ? BUYER_BINDING_BY_OBJECT[sk(room.id, selected.id)] : null;
+  const selectedBuyerConfirmed = !!selectedBuyerBinding
+    && selectedBuyerBinding.objects.every((key) => objState[key]?.buyerFound);
   const packedList = removable.filter((o) => objState[sk(room.id, o.id)].packed);
   const soldList = removable.filter((o) => objState[sk(room.id, o.id)].sold);
   const donatedList = removable.filter((o) => objState[sk(room.id, o.id)].donated);
   const lastUndo = undoStack.length > 0 ? undoStack[undoStack.length - 1] : null;
-  const lastUndoObj = lastUndo && ROOMS[lastUndo.roomId].objects.find((o) => o.id === lastUndo.id);
+  const lastUndoObj = lastUndo && ROOMS[lastUndo.roomId]?.objects.find((o) => o.id === lastUndo.id);
 
   const ui = {
     // Match Screens.jsx mockup chrome (gold-warm inset, hard outer border)
@@ -4500,6 +4566,21 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
               <div style={{ color: "#DACBA6", fontSize: 15, lineHeight: 1.5, marginTop: 10, ...ui.label }}>
                 {selected.check}
               </div>
+              {selectedBuyerBinding && (
+                <button
+                  onClick={() => confirmBuyerFound(selected.id)}
+                  disabled={!!busy || selectedBuyerConfirmed}
+                  style={{
+                    width: "100%", minHeight: 46, marginTop: 12, fontSize: 14,
+                    cursor: selectedBuyerConfirmed ? "default" : "pointer",
+                    background: selectedBuyerConfirmed ? "#294523" : "linear-gradient(#78B86A,#477A42)",
+                    color: "#F2E4C0", border: "3px solid #120A04",
+                    boxShadow: "inset 0 -3px 0 #294523", fontWeight: 700, ...ui.label,
+                  }}
+                >
+                  {selectedBuyerConfirmed ? "✓ BUYER FOUND" : "🤝 I found a buyer"}
+                </button>
+              )}
               {selected.removable ? (
                 sellFormOpen ? (
                   <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10 }}>
@@ -4767,6 +4848,21 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
               <div style={{ color: "#DACBA6", fontSize: 13, lineHeight: 1.45, marginTop: 8, ...ui.label }}>
                 {selected.check}
               </div>
+              {selectedBuyerBinding && (
+                <button
+                  onClick={() => confirmBuyerFound(selected.id)}
+                  disabled={!!busy || selectedBuyerConfirmed}
+                  style={{
+                    width: "100%", padding: "7px 0", marginTop: 9, fontSize: 12,
+                    cursor: selectedBuyerConfirmed ? "default" : "pointer",
+                    background: selectedBuyerConfirmed ? "#294523" : "linear-gradient(#78B86A,#477A42)",
+                    color: "#F2E4C0", border: "2px solid #120A04",
+                    boxShadow: "inset 0 -2px 0 #294523", fontWeight: 700, ...ui.label,
+                  }}
+                >
+                  {selectedBuyerConfirmed ? "✓ BUYER FOUND" : "🤝 I found a buyer"}
+                </button>
+              )}
               <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                 {selected.removable ? (
                   sellFormOpen ? (
