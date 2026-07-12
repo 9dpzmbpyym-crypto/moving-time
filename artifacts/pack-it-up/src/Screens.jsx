@@ -119,15 +119,15 @@ function clampPips(n) {
 
 /** Absolute pip centers as % of card — measured from the PNGs. */
 const H_PIP = {
-  // footer hollow circles (job/admin/move average)
-  effort: [[66.7, 74.8], [70.5, 74.8], [74.4, 74.8]],
-  importance: [[87.8, 74.8], [91.7, 74.8], [95.2, 74.8]],
-  size: 1.45, // slightly inside the ring so fill reads centered
+  // footer hollow circles — centers + inner fill size
+  effort: [[66.75, 74.75], [70.55, 74.75], [74.35, 74.75]],
+  importance: [[87.85, 74.75], [91.75, 74.75], [95.15, 74.75]],
+  size: 1.35,
 };
 const V_PIP = {
-  effort: [[20.2, 16.7], [27.6, 16.7], [35.3, 16.7]],
-  importance: [[20.1, 86.8], [27.8, 86.8], [35.4, 86.8]],
-  size: 3.55,
+  effort: [[20.3, 16.65], [27.7, 16.65], [35.4, 16.65]],
+  importance: [[20.2, 86.85], [27.9, 86.85], [35.5, 86.85]],
+  size: 3.35,
 };
 
 /** Fill hollow circles baked into the art — centers are % of card box. */
@@ -166,7 +166,7 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
   const importance = clampPips(task?.criticality || 1) || 1;
   return (
     <div style={{
-      position: "relative", width: "100%", lineHeight: 0,
+      position: "relative", width: "80%", lineHeight: 0,
       opacity: dimmed ? 0.42 : 1, filter: dimmed ? "grayscale(0.35)" : "none",
       ...style,
     }}>
@@ -179,18 +179,18 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
         <div style={{
           position: "absolute", left: "4%", right: "4%", top: "24%", height: "30%",
-          color: "#1A1008", fontSize: 12, lineHeight: 1.15, overflow: "hidden", textAlign: "left", ...LB,
+          color: "#1A1008", fontSize: 11, lineHeight: 1.15, overflow: "hidden", textAlign: "left", ...LB,
         }}>
           {task?.title || ""}
         </div>
-        {/* Date values: align with TARGET/LATEST row; air above the underline */}
+        {/* Date values: align with TARGET/LATEST; air above underline */}
         <div style={{
           position: "absolute", left: "19%", top: "69.5%", width: "10%",
-          color: "#1A1008", fontSize: 9, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
+          color: "#1A1008", fontSize: 8, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
         }}>{fmtCardDate(task?.targetDate || task?.due)}</div>
         <div style={{
           position: "absolute", left: "48%", top: "69.5%", width: "10%",
-          color: "#1A1008", fontSize: 9, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
+          color: "#1A1008", fontSize: 8, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
         }}>{fmtCardDate(task?.latestDate)}</div>
         <BubblePips filled={effort} centers={H_PIP.effort} sizePct={H_PIP.size} />
         <BubblePips filled={importance} centers={H_PIP.importance} sizePct={H_PIP.size} />
@@ -204,7 +204,7 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
  * Natural PNG aspect (no stretch) so % overlays stay locked to art.
  */
 export function VerticalTaskCard({
-  task, width = 88, bound = false, selected = false, compact = false, onClick, style,
+  task, width = 106, bound = false, selected = false, compact = false, onClick, style,
 }) {
   const src = CARD_FULL[task?.category] || CARD_FULL.admin;
   const effort = clampPips(task?.effort || 1) || 1;
@@ -251,12 +251,13 @@ export function VerticalTaskCard({
         </div>
         {!compact && (
           <>
+            {/* Dates just above underline; left-edge justified to underline start */}
             <div style={{
-              position: "absolute", left: "33%", top: "36.2%", width: "55%",
+              position: "absolute", left: "36.5%", top: "38.6%", width: "52%",
               color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
             }}>{fmtCardDate(task?.targetDate || task?.due)}</div>
             <div style={{
-              position: "absolute", left: "33%", top: "41.2%", width: "55%",
+              position: "absolute", left: "36.5%", top: "43.6%", width: "52%",
               color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
             }}>{fmtCardDate(task?.latestDate)}</div>
             {(task?.notes || task?.detail) && (
@@ -632,18 +633,18 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
   const focus = picks.find((t) => t.id === focusId) || null;
 
   /** Casino-dealer spread: fill left→right, mild arc, stay on-screen. */
-  const handCardW = 88;
+  const handCardW = 106;
   const fanLayout = (n, i, width) => {
     const cardW = handCardW;
-    const pad = 4;
+    const pad = 14; // keep leftmost card fully in frame when rotated
     const avail = Math.max(width - pad * 2, cardW);
-    if (n <= 1) return { left: pad, rot: -3, lift: 0 };
+    if (n <= 1) return { left: pad, rot: -2, lift: 0 };
     const maxTravel = avail - cardW;
     const step = Math.max(28, Math.min(58, maxTravel / (n - 1)));
     const left = pad + i * step;
     const t = i / (n - 1);
-    const rot = -8 + t * 16;
-    const lift = Math.sin(t * Math.PI) * 5;
+    const rot = -6 + t * 12;
+    const lift = Math.sin(t * Math.PI) * 4;
     return { left, rot, lift };
   };
   const handCardH = Math.round(handCardW * (490 / 286));
@@ -693,21 +694,21 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
             </button>
           </div>
 
-          {/* TOP — offer deck */}
+          {/* TOP — offer deck (thinner so hand sits higher) */}
           <div style={{
-            ...FR, padding: 10, flex: "1 1 auto", minHeight: 120, overflowY: "auto",
+            ...FR, padding: "6px 8px", flex: "1 1 auto", minHeight: 72, maxHeight: "42%", overflowY: "auto",
           }}>
             <div style={{
               display: "flex", alignItems: "baseline", justifyContent: "space-between",
-              marginBottom: 8, gap: 8,
+              marginBottom: 4, gap: 8,
             }}>
-              <div style={{ color: "#FFD97A", fontSize: 14, ...LB }}>{drawLabel}</div>
+              <div style={{ color: "#FFD97A", fontSize: 13, ...LB }}>{drawLabel}</div>
               <div style={{ color: "#8A7350", fontSize: 9, ...LB }}>
                 {offers.length} in deck · urgency
               </div>
             </div>
             {deal?.fixedDay && (
-              <div style={{ color: "#E8C4A8", fontSize: 10, marginBottom: 8, ...LB }}>
+              <div style={{ color: "#E8C4A8", fontSize: 9, marginBottom: 4, ...LB }}>
                 Fixed day — bound cards already spoken for.
               </div>
             )}
@@ -715,16 +716,16 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
               <div style={{ color: "#8A7350", fontSize: 11, ...LB }}>No extras to draw right now.</div>
             ) : offers.map((t) => (
               <div key={t.id} style={{
-                display: "flex", gap: 8, alignItems: "center", marginBottom: 8,
+                display: "flex", gap: 6, alignItems: "center", marginBottom: 4,
               }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ flex: 1, minWidth: 0, displayAlign: "left" }}>
                   <HorizontalTaskCard task={t} dimmed={!!t.picked} />
                 </div>
                 <button type="button" onClick={() => toggleOffer(t.id)} style={{
-                  padding: "10px 10px", flex: "0 0 auto", alignSelf: "stretch",
+                  padding: "8px 8px", flex: "0 0 auto", alignSelf: "stretch",
                   background: t.picked ? "#3A1810" : "#5D7C3B",
                   color: "#F2E4C0", border: "2px solid #120A04",
-                  fontSize: 11, cursor: "pointer", ...LB,
+                  fontSize: 10, cursor: "pointer", ...LB,
                 }}>{t.picked ? "Remove" : "Draw"}</button>
               </div>
             ))}
