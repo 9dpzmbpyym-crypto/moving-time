@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-12T02:02:54.675Z",
+  "last_updated": "2026-07-12T02:15:54.689Z",
   "rules": {
     "read_before_work": true,
     "write_before_editing": true,
@@ -109,17 +109,19 @@
       "model": "Fable 5",
       "role": "Claude Team Lead / Principal Consultant / Creative Director",
       "thinking": "medium/high",
-      "status": "IDLE",
+      "status": "ACTIVE",
       "branch": "claude/team-onboarding-b0c4c9",
-      "working_on": null,
-      "files_locked": [],
+      "working_on": "Data-only transcription of scheduler spec into tasks.js (Sonnet intern, Fable review)",
+      "files_locked": [
+        "artifacts/pack-it-up/src/tasks.js"
+      ],
       "systems_locked": [],
-      "risk_level": null,
+      "risk_level": "routine",
       "commit_authority": "docs/design only unless explicitly authorized for repo code",
       "rate_limited": false,
       "cooldown_until": null,
       "handoff_needed": null,
-      "last_seen": "2026-07-12T02:02:54.675Z",
+      "last_seen": "2026-07-12T02:15:54.689Z",
       "expires_at": null,
       "notes": "Active Jul 11 session: orientation + whatever Eloisa queues next. Prior interruption (usage limit mid docs/org-chart pass) was reconciled in the Jul 11 review-cleanup session."
     },
@@ -194,13 +196,13 @@
     },
     "codex": {
       "status": "WINDOW_EXHAUSTED",
-      "spent": "100% of 5-hour window (Jul 11 eve) \u2014 mostly context catch-up + card pixel-match; weekly unknown/stale",
+      "spent": "100% of 5-hour window (Jul 11 eve) — mostly context catch-up + card pixel-match; weekly unknown/stale",
       "reset": "5h window rolls over tonight; weekly 2026-07-17",
       "models": [
         "GPT-5.6 Sol",
         "GPT-5.6 Luna"
       ],
-      "note": "Back tonight when window rolls. Lesson: catch-up context tax is huge \u2014 one focused task per window, prompt files not chat archaeology."
+      "note": "Back tonight when window rolls. Lesson: catch-up context tax is huge — one focused task per window, prompt files not chat archaeology."
     },
     "chatgpt": {
       "status": "AVAILABLE",
