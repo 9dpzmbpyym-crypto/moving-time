@@ -4,10 +4,14 @@ import { createRoot } from "react-dom/client";
 import PackItUp, { LayoutEditor } from "./BedroomSlice.jsx";
 // @ts-ignore
 import SpritePreview from "./dev/spritePreview.jsx";
+// @ts-ignore
+import CardLayoutEditor from "./dev/cardLayoutEditor.jsx";
 
-const isPreview = new URLSearchParams(window.location.search).get("preview") === "bed";
-const isEditor = new URLSearchParams(window.location.search).get("edit") === "1";
-const requestedGlowMode = new URLSearchParams(window.location.search).get("glow");
+const params = new URLSearchParams(window.location.search);
+const isPreview = params.get("preview") === "bed";
+const isEditor = params.get("edit") === "1";
+const isCardLayout = params.get("cards") === "1";
+const requestedGlowMode = params.get("glow");
 const glowMode =
   requestedGlowMode === "outline" || requestedGlowMode === "face"
     ? requestedGlowMode
@@ -15,6 +19,14 @@ const glowMode =
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    {isEditor ? <LayoutEditor /> : isPreview ? <SpritePreview /> : <PackItUp glowMode={glowMode} />}
+    {isCardLayout ? (
+      <CardLayoutEditor />
+    ) : isEditor ? (
+      <LayoutEditor />
+    ) : isPreview ? (
+      <SpritePreview />
+    ) : (
+      <PackItUp glowMode={glowMode} />
+    )}
   </StrictMode>
 );
