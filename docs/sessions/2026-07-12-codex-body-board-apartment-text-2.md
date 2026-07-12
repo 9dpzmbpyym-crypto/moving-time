@@ -11,6 +11,7 @@
 - Refined apartment clock, coin, room-progress, and box-count placement inside the existing chrome.
 - Added `/?ui=1`, a live 390×844 layout editor for Body Board zones/paper, apartment HUD text boxes, and Overview text/grid placement. It persists editor drafts locally, supports Reset defaults, and copies JSON without changing normal production rendering.
 - Added a paper-content X control and shortened apartment arrow labels to Bath, Dining, and Living without changing full room titles.
+- Luna follow-up: expanded Paper content top to 45%, removed the selected-paper plus icon, and placed an explicit `N DAYS LEFT` countdown beneath the apartment date/time.
 - Verified empty and selected Body Board states, Overview viewport fit, and apartment HUD at phone sizes. Full typecheck and production build pass.
 
 ### Still broken / unfinished (do next)
