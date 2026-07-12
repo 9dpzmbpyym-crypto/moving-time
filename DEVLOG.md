@@ -9,6 +9,11 @@ Covers **July 5–10, 2026**. Combines:
 
 ---
 
+## 2026-07-11 — [Claude / Fable 5] Scheduler adoption ruling
+- Adopted ChatGPT's full scheduler spec with 4 binding amendments (editable dates via existing Ledger editor, explainable bindings, tone guard, absolute save protection) — `docs/design/scheduler-adoption.md`
+- Re-cut to Eloisa's bar (usable tonight/tomorrow): engine on existing board first, presentation after; ticket atop FINISH_PLAN; paste-ready Codex prompt in `docs/inbox/handoff-codex-scheduler.md`
+- Session: `docs/sessions/2026-07-11-claude-scheduler-adoption.md`
+
 ## 2026-07-11 — [Cursor / Grok 4.5] Task card overlays + layout designer
 - Wired thin/full task-card PNGs into Board draw + hand (+ apt fan); built `/？cards=1` overlay designer (drag/resize, bound B, outline toggle, copy)
 - Applied Eloisa `CARD_OVERLAY` layout; taller full title frame without moving footer; clamped card minWidth; fixed clipped-hand CSS-scale mistake

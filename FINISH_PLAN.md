@@ -24,7 +24,14 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 
 ## Open next (Jul 11 — after Grok env/storage session)
 
-### Task card overlay pixel-match — [codex] (from Cursor close-out)
+### Scheduler engine — [codex] ADOPTED, SHIP BAR: usable tonight/tomorrow
+- Ruling: **`docs/design/scheduler-adoption.md`** · spec: `docs/inbox/chatgpt-productivity-structure-for-claude-7-11.md` · paste-ready prompt: **`docs/inbox/handoff-codex-scheduler.md`**
+- [ ] **[codex]** Commits 1–3 (schema+migration+real dated data → urgency/status/deps → backward scheduler + persisted deal) wired minimally into the EXISTING board = usable bar. Bound cards preselected + explained ("why" one-liner); "minimum today: N pts"; OVERDUE badges; Ledger editor extended to target/latest
+- [ ] **[codex]** After bar: commit 4 (card-draft presentation + graduated pressure visuals per companion note) · commit 5 (object/card sync, furniture state machine)
+- Binding: save protection absolute (never wipe, backup before migration, branch-only, report per spec §21 — prod push is Eloisa's) · tone guard (in-world stamps, fumes = quieter) · fallback = ship commits 1–2 alone
+- Call system from the pressure/calls note = LATER (Sal/Vivian trigger layer, after scheduler)
+
+### Task card overlay pixel-match — [codex] (from Cursor close-out — AFTER scheduler bar, separate session)
 - [ ] **[codex]** Make live Command Board thin + full cards match `/？cards=1` (outlines hidden). Shared source of truth: `CARD_OVERLAY` in `Screens.jsx`. Prompt in `docs/sessions/2026-07-11-cursor-task-card-overlays.md`. Pitfalls: no broken CSS-scale clip; keep VerticalTaskCard minWidth clamp; don’t touch full-card footer art.
 - Acceptance: Eloisa side-by-side can’t spot obvious drift; apartment fan stays ~56px.
 

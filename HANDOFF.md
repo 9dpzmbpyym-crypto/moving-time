@@ -1,5 +1,7 @@
 # Latest handoff
 
+→ **`docs/sessions/2026-07-11-claude-scheduler-adoption.md`** (Claude — scheduler ADOPTED w/ amendments; Codex prompt: `docs/inbox/handoff-codex-scheduler.md`; bar = usable tonight/tomorrow)
+
 → **`docs/sessions/2026-07-11-cursor-task-card-overlays.md`** (Cursor Grok — task card PNGs + `/？cards=1` designer + overlay apply; subtle Board↔designer mismatch left for Codex)
 
 **Codex next:** paste the prompt in that session file — calibrate live Board overlays to match `/？cards=1`. Pull `main` into `codex` first. Do not rebuild Board.
