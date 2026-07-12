@@ -293,9 +293,9 @@ export function VerticalTaskCard({
           }}>B</div>
         )}
         <BubblePips filled={effort} centers={V_PIP.effort} sizePct={V_PIP.size} />
-        {/* Title field — taller after art redistribute; shrink-to-fit */}
+        {/* Title — red-box annotation: below effort pips → just above TARGET */}
         <div style={{
-          position: "absolute", left: "11%", right: "11%", top: "21.5%", height: "18%",
+          position: "absolute", left: "11%", right: "11%", top: "20%", height: "16%",
           color: "#1A1008", textAlign: "left", overflow: "hidden",
           display: "flex", alignItems: "center",
           fontFamily: LB.fontFamily, fontWeight: 700,
@@ -309,20 +309,20 @@ export function VerticalTaskCard({
         </div>
         {!compact && (
           <>
-            {/* Dates shifted down with TARGET/LATEST art */}
+            {/* Left-justified to underline start */}
             <div style={{
-              position: "absolute", left: "34%", top: "41.3%", width: "58%",
+              position: "absolute", left: "34%", top: "36.8%", width: "58%",
               color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap",
               textAlign: "left", ...LB,
             }}>{fmtCardDate(task?.targetDate || task?.due)}</div>
             <div style={{
-              position: "absolute", left: "34%", top: "46.3%", width: "58%",
+              position: "absolute", left: "34%", top: "41.8%", width: "58%",
               color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap",
               textAlign: "left", ...LB,
             }}>{fmtCardDate(task?.latestDate)}</div>
             {(task?.notes || task?.detail) && (
               <div style={{
-                position: "absolute", left: "10%", right: "10%", top: "54%", height: "22%",
+                position: "absolute", left: "10%", right: "10%", top: "50%", height: "28%",
                 color: "#3A2018", fontSize: metaPx, lineHeight: 1.15, overflow: "hidden", textAlign: "left", ...LB,
               }}>{task.notes || task.detail}</div>
             )}
