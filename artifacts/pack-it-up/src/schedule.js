@@ -151,6 +151,7 @@ function effortOf(t) {
 
 /**
  * Bound today (Sol §5A) — scheduler-infeasibility (rule 4) comes from fumes floor.
+ * Self-imposed job targets stay urgent in the deck; they do not auto-flood the hand.
  */
 export function isBoundToday(task, today = new Date(), tasks = [], fumesIds = null) {
   const t = normalizeTask(task);
@@ -161,7 +162,13 @@ export function isBoundToday(task, today = new Date(), tasks = [], fumesIds = nu
     if (!(t.exactDate && todayK === t.exactDate)) return false;
   }
   if (t.exactDate && todayK === t.exactDate) return true;
-  if (t.latestDate && todayK >= t.latestDate) return true;
+  // Past-latest binds real deadlines only (crit ≥ 2, not self-target soft dates).
+  if (
+    t.latestDate
+    && todayK >= t.latestDate
+    && (t.criticality || 1) >= 2
+    && !t.selfTarget
+  ) return true;
   if (t.recurrence === "daily" && (t.criticality || 1) >= 3) return true;
   if (fumesIds && fumesIds.has(t.id)) return true;
   return false;
@@ -169,13 +176,17 @@ export function isBoundToday(task, today = new Date(), tasks = [], fumesIds = nu
 
 /**
  * Whole-card backward Fumes floor (Sol §5B).
- * Places crit ≥2 open tasks as late as possible; anything forced onto today = minimum.
+ *
+ * Reverse-calculate: place every required (crit ≥ 2) card as late as possible
+ * within the fumes capacity (3/day). Most-constrained deadlines claim capacity
+ * first. If a day is full, overbook that card's *latest* day — never dump the
+ * whole backlog onto today. Today's placements = the true fumes floor / bound hand.
  */
 export function buildMinimumSchedule(tasks, today = new Date(), horizon = MOVE_DATE) {
   const todayK = dateKey(today);
   const horizonK = dateKey(horizon) || MOVE_DATE;
   const list = normalizeTasks(tasks).filter(isOpen);
-  const capacity = {}; // day -> remaining effort
+  const capacity = {}; // day -> remaining effort (may go negative when overbooked)
   const placed = {}; // taskId -> day
 
   // Build day capacity table (guarded — never spin forever)
@@ -184,27 +195,37 @@ export function buildMinimumSchedule(tasks, today = new Date(), horizon = MOVE_D
     capacity[d] = ENERGY_BUDGET.fumes; // 3/day baseline
   }
 
-  // Reserve exact-date events on their day
+  // Reserve exact-date events on their day (these always land on that date)
   for (const t of list) {
     if (!t.exactDate || t.exactDate < todayK || t.exactDate > horizonK) continue;
     const e = effortOf(t);
-    capacity[t.exactDate] = Math.max(0, (capacity[t.exactDate] ?? 0) - e);
+    capacity[t.exactDate] = (capacity[t.exactDate] ?? 0) - e;
     placed[t.id] = t.exactDate;
   }
 
+  // Most-constrained first (soonest latestDate), so urgent windows keep capacity
+  // and flexible cards absorb overbook on later days.
   const required = list
     .filter((t) => (t.criticality || 1) >= 2 && !placed[t.id])
-    .filter((t) => !t.selfTarget || (t.criticality || 1) >= 2)
+    .filter((t) => {
+      // Self-target soft jobs only enter the floor at crit ≥ 2 (already filtered)
+      // and never solely because a fake due is past — see isBoundToday.
+      if (t.selfTarget && (t.criticality || 1) < 2) return false;
+      return true;
+    })
     .sort((a, b) => {
       const la = a.latestDate || a.targetDate || horizonK;
       const lb = b.latestDate || b.targetDate || horizonK;
-      return lb.localeCompare(la);
+      if (la !== lb) return la.localeCompare(lb); // soonest deadline first
+      return effortOf(b) - effortOf(a); // heavier first within a day
     });
 
   for (const task of required) {
     const earliest = [todayK, task.availableFrom].filter(Boolean).sort().pop();
     let latest = task.latestDate || task.targetDate || horizonK;
     if (latest < earliest) latest = earliest;
+    if (latest > horizonK) latest = horizonK;
+    if (latest < todayK) latest = todayK; // already late — competes for today
     const e = effortOf(task);
     let placedDay = null;
     // Walk latest → earliest; pick last day with room
@@ -216,8 +237,10 @@ export function buildMinimumSchedule(tasks, today = new Date(), horizon = MOVE_D
         break;
       }
     }
-    if (!placedDay) placedDay = todayK; // forced today
-    capacity[placedDay] = Math.max(0, (capacity[placedDay] ?? 0) - e);
+    // No room in the window: overbook the card's latest day (true reverse pressure),
+    // not today — unless latest is today / already past.
+    if (!placedDay) placedDay = latest;
+    capacity[placedDay] = (capacity[placedDay] ?? 0) - e;
     placed[task.id] = placedDay;
   }
 
@@ -225,21 +248,29 @@ export function buildMinimumSchedule(tasks, today = new Date(), horizon = MOVE_D
     .filter(([, day]) => day === todayK)
     .map(([id]) => id);
 
-  // Also bind exact-date-today and past-latest crit tasks even if not in required loop
+  // Past-latest real deadlines that weren't in the placement loop still belong today
   for (const t of list) {
     if (fumesIds.includes(t.id)) continue;
     if (t.exactDate === todayK) fumesIds.push(t.id);
-    else if (t.latestDate && todayK >= t.latestDate && (t.criticality || 1) >= 2) fumesIds.push(t.id);
+    else if (
+      t.latestDate
+      && todayK >= t.latestDate
+      && (t.criticality || 1) >= 2
+      && !t.selfTarget
+    ) {
+      fumesIds.push(t.id);
+    }
   }
 
   const fumesTasks = fumesIds
     .map((id) => list.find((t) => t.id === id))
-    .filter(Boolean);
+    .filter(Boolean)
+    .sort((a, b) => urgencyScore(b, today) - urgencyScore(a, today));
   const fumesEffort = fumesTasks.reduce((s, t) => s + effortOf(t), 0);
 
   return {
     placed,
-    fumesIds,
+    fumesIds: fumesTasks.map((t) => t.id),
     fumesTasks,
     fumesEffort,
     fixedDay: fumesEffort > ENERGY_BUDGET.fumes,
@@ -310,14 +341,15 @@ export const ENERGY_DRAW = {
 
 /**
  * Deal for the day (draft model):
- * - Bound cards are already in the hand (cannot discard).
- * - Energy sets how many MORE cards you must choose (Fumes = 0).
- * - Offer pile ≈ 2× chooseNeeded, urgency-ranked (Fumes still gets a small optional pile).
- * - selectedTaskIds starts as bound only until the player draws.
+ * - Bound hand = reverse-scheduled fumes floor (true minimum for today).
+ * - Energy sets how many MORE flexible cards you draw (Fumes = 0).
+ * - Offer pile ≈ 2× chooseNeeded, urgency-ranked.
+ * - Does not touch task data / localStorage saves — only reshapes today's deal.
  */
 export function dealDailyHand(tasks, energy = "steady", today = new Date()) {
   const full = buildFullSteamPlan(tasks, today);
   const fumesSet = new Set(full.fumesIds);
+  // Bound = fumes floor + any other isBoundToday (exact / past-latest real deadlines)
   const boundIds = [];
   for (const id of full.fumesIds) {
     if (!boundIds.includes(id)) boundIds.push(id);
@@ -329,7 +361,6 @@ export function dealDailyHand(tasks, energy = "steady", today = new Date()) {
   }
 
   const chooseNeeded = ENERGY_DRAW[energy] ?? ENERGY_DRAW.steady;
-  // Offer ~2× what you need to fill; fumes still gets a tiny optional deck
   const offerSize = chooseNeeded > 0
     ? Math.max(chooseNeeded * 2, chooseNeeded)
     : 2;
@@ -342,15 +373,16 @@ export function dealDailyHand(tasks, energy = "steady", today = new Date()) {
     day: todayKey(today),
     energy,
     boundTaskIds: boundIds,
+    boundTotal: boundIds.length,
     offerTaskIds,
-    selectedTaskIds: [...boundIds], // hand starts as bound only
+    selectedTaskIds: [...boundIds],
     fumesIds: full.fumesIds,
     chooseNeeded,
     minimumEffort: full.fumesEffort,
     steadyEffort: full.steadyEffort,
     fullEffort: full.fullEffort,
     fixedDay: full.fixedDay,
-    dealConfirmed: chooseNeeded === 0, // fumes can play immediately; others confirm after picks
+    dealConfirmed: chooseNeeded === 0,
   };
 }
 
@@ -389,18 +421,21 @@ export function dealProgress(dailyDeal) {
   };
 }
 
-/** Ensure session has today's deal for the chosen energy (persistent hand). */
+/** Ensure session has today's deal for the chosen energy (persistent hand).
+ *  Re-deals if a prior bloated hand was persisted (task data untouched). */
 export function ensureDailyDeal(session, tasks, energy, today = new Date()) {
   const day = todayKey(today);
   const e = energy || session?.energy;
   if (!e) return session;
   const prev = session?.dailyDeal;
+  const bloated = Array.isArray(prev?.boundTaskIds) && prev.boundTaskIds.length > 12;
   if (
     prev
     && prev.day === day
     && prev.energy === e
     && Array.isArray(prev.selectedTaskIds)
     && Array.isArray(prev.offerTaskIds)
+    && !bloated
   ) {
     return session;
   }

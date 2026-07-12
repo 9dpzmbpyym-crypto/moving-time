@@ -2482,7 +2482,13 @@ export default function PackItUp({ glowMode = "split" }) {
   const [coins, setCoins] = useState(() =>
     bootSave && typeof bootSave.coins === "number" ? clampCoins(bootSave.coins) : 125
   );
-  const [session, setSession] = useState(() => mergeSession(bootSave?.session));
+  // Task dates/status from save are kept; only re-deal if yesterday's hand was bloated.
+  const [session, setSession] = useState(() => {
+    const merged = mergeSession(bootSave?.session);
+    const bootTasks = refreshDailyHousingTasks(mergeTasks(INITIAL_TASKS, bootSave?.tasks));
+    if (merged?.energy) return ensureDailyDeal(merged, bootTasks, merged.energy);
+    return merged;
+  });
   const [appointments, setAppointments] = useState(() =>
     markMissed(sanitizeAppointments(bootSave?.appointments))
   );

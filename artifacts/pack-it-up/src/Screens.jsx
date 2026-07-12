@@ -882,7 +882,7 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
             </div>
             {deal?.fixedDay && (
               <div data-draw-note style={{ color: "#E8C4A8", fontSize: 9, marginBottom: 4, ...LB }}>
-                Fixed day — bound cards already spoken for.
+                Fixed day — these cards are already spoken for.
               </div>
             )}
             {offers.length === 0 ? (
@@ -1064,15 +1064,32 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
     const cat = TASK_CATEGORIES[editDraft.category] ? editDraft.category : lane;
     const dueDate = editDraft.dueDate.trim() || null;
     setTasks((ts) => refreshDailyHousingTasks(
-      ts.map((t) => (t.id === editId ? {
-        ...t,
-        title,
-        due: editDraft.due.trim(),
-        dueDate,
-        effort: Math.min(3, Math.max(1, Number(editDraft.effort) || 1)),
-        category: cat,
-        status: editDraft.status === "done" ? "done" : "pending",
-      } : t))
+      ts.map((t) => {
+        if (t.id !== editId) return t;
+        // Ledger dueDate is the player's date — keep schedule fields in sync so
+        // Vercel/local edits actually drive the binder (never wipe other save fields).
+        const next = {
+          ...t,
+          title,
+          due: editDraft.due.trim(),
+          dueDate,
+          effort: Math.min(3, Math.max(1, Number(editDraft.effort) || 1)),
+          category: cat,
+          status: editDraft.status === "done" ? "done" : "pending",
+        };
+        if (dueDate && /^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+          next.targetDate = dueDate;
+          const prevLatest = t.latestDate || t.dueEnd || null;
+          if (!prevLatest || prevLatest < dueDate) {
+            next.latestDate = dueDate;
+            next.dueEnd = dueDate;
+          } else {
+            next.latestDate = prevLatest;
+            if (t.dueEnd) next.dueEnd = t.dueEnd;
+          }
+        }
+        return next;
+      })
     ));
     if (cat !== lane) setLane(cat);
     setEditId(null);

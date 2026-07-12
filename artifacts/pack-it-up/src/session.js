@@ -57,6 +57,13 @@ export function mergeSession(savedSession) {
       day: fresh.day,
       energy: savedSession.dailyDeal.energy || energy,
       boundTaskIds: Array.isArray(savedSession.dailyDeal.boundTaskIds) ? savedSession.dailyDeal.boundTaskIds : [],
+      boundTotal: Math.max(
+        0,
+        Number(savedSession.dailyDeal.boundTotal)
+          || (Array.isArray(savedSession.dailyDeal.boundTaskIds)
+            ? savedSession.dailyDeal.boundTaskIds.length
+            : 0),
+      ),
       offerTaskIds: Array.isArray(savedSession.dailyDeal.offerTaskIds) ? savedSession.dailyDeal.offerTaskIds : [],
       selectedTaskIds: Array.isArray(savedSession.dailyDeal.selectedTaskIds) ? savedSession.dailyDeal.selectedTaskIds : [],
       fumesIds: Array.isArray(savedSession.dailyDeal.fumesIds) ? savedSession.dailyDeal.fumesIds : [],
