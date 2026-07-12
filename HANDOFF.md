@@ -2,7 +2,7 @@
 
 → **`docs/sessions/2026-07-12-codex-body-board-apartment-text-2.md`** (Codex — second screenshot pass for Body Board, Overview, and apartment text)
 
-**Second correction is ready:** Psychiatry/Dentist are smaller, the paper covers the feet, Overview fits a 390×844 viewport without scrolling, pressure/section copy is repositioned, and apartment HUD text is refined. Selected OB/GYN remains fully interactive. `/?ui=1` now opens a live editor for Body Board, apartment HUD, and Overview layout values. Full build passes.
+**Second correction is ready:** Psychiatry/Dentist are smaller, the paper covers the feet, Overview fits a 390×844 viewport without scrolling, pressure/section copy is repositioned, and apartment HUD text is refined. Selected OB/GYN remains fully interactive. `/?ui=1` opens a live editor with paper-content X control; nav arrows use Bath/Dining/Living. Full build passes.
 
 **Next up:** review the GitHub-triggered Vercel deploy, then continue the remaining UI reskins.
 

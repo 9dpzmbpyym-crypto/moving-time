@@ -11,7 +11,7 @@ Covers **July 5–10, 2026**. Combines:
 
 ## 2026-07-12 — [Codex / GPT-5]
 - Second screenshot pass: smaller Psychiatry/Dentist markers, paper lowered over the feet, Overview made viewport-filling without scroll, and Overview/apartment text placement refined.
-- Added `/?ui=1` live layout editor with Body Board, Apartment, and Overview tabs plus persisted drafts, reset, and JSON export.
+- Added `/?ui=1` live layout editor with Body Board, Apartment, and Overview tabs plus persisted drafts, reset, JSON export, and paper-content X control; shortened nav labels to Bath/Dining/Living.
 - Verified at 390×844 and 509×939; selected OB/GYN remains clickable and full typecheck/build pass.
 - Session: `docs/sessions/2026-07-12-codex-body-board-apartment-text-2.md`
 - Corrected Body Board zone coordinates for the enlarged figure; OB/GYN is visible and selectable above the raised detail paper.
