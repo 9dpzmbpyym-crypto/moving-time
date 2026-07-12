@@ -4194,14 +4194,14 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
             <img src={HUD_CLOCK_BG} alt="" style={chromeImgFill} />
             <div style={{
               ...chromeContent, position: "absolute", left: `${uiLayout.apartment.clock.left}%`, right: `${uiLayout.apartment.clock.right}%`, top: `${uiLayout.apartment.clock.top}%`, bottom: `${uiLayout.apartment.clock.bottom}%`,
-              display: "flex", flexDirection: "column", justifyContent: "space-between", height: "auto",
+              display: "flex", flexDirection: "column", justifyContent: "flex-start", gap: 3, height: "auto",
             }}>
               <div style={{ color: INK.strong, fontSize: 11, lineHeight: 1, whiteSpace: "nowrap", overflow: "hidden", transform: `translateY(${uiLayout.apartment.clock.timeY}px)`, ...ui.label }}>{clock}</div>
               <div style={{ color: INK.mid, fontSize: 9, lineHeight: 1, whiteSpace: "nowrap", overflow: "hidden", transform: `translateY(${uiLayout.apartment.clock.dateY}px)`, ...ui.label }}>
                 {dateLabel}
               </div>
               <div style={{ color: INK.soft, fontSize: 8, lineHeight: 1, whiteSpace: "nowrap", marginLeft: `${uiLayout.apartment.clock.daysLeft}%`, textAlign: "center", transform: `translateY(${uiLayout.apartment.clock.daysY}px)`, ...ui.label }}>
-                {daysLeft === 0 ? "Move day" : `${daysLeft}d left`}
+                {daysLeft === 0 ? "MOVE DAY" : `${daysLeft} DAYS LEFT`}
               </div>
             </div>
           </div>

@@ -2850,13 +2850,7 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
               : "later";
             return (
               <>
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-                  <div style={{ color: "#2A1808", fontSize: 16, ...LB }}>{sel.label}</div>
-                  <span aria-hidden style={{
-                    flex: "0 0 auto", width: 22, height: 22, borderRadius: "50%", border: "2px solid #A3252C",
-                    color: "#A3252C", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12,
-                  }}>+</span>
-                </div>
+                <div style={{ color: "#2A1808", fontSize: 16, ...LB }}>{sel.label}</div>
                 <div style={{ borderTop: "1px dashed #B89A6A", margin: "4px 0 6px" }} />
                 <div style={{ color: "#4A3420", fontSize: 11, ...LB }}>
                   {sel.note} · {statusText}
