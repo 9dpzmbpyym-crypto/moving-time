@@ -754,18 +754,16 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
     : "Draw (optional)";
   const focus = picks.find((t) => t.id === focusId) || null;
 
-  /** Hand fan: layout art at designer width (220), CSS-scaled to fit the board. */
-  const designFullW = CARD_OVERLAY.full.refW;
-  const handSlotW = 128;
-  const handScale = handSlotW / designFullW;
-  const handCardH = Math.round(designFullW * (490 / 286) * handScale);
+  /** Casino-dealer hand — same overlay % as /?cards=1; width fits the board. */
+  const handCardW = 120;
+  const handCardH = Math.round(handCardW * (490 / 286));
   const fanLayout = (n, i, width) => {
-    const cardW = handSlotW;
-    const pad = 18;
+    const cardW = handCardW;
+    const pad = 16;
     const avail = Math.max(width - pad * 2, cardW);
     if (n <= 1) return { left: pad, rot: -2, lift: 0 };
     const maxTravel = avail - cardW;
-    const step = Math.max(28, Math.min(58, maxTravel / (n - 1)));
+    const step = Math.max(26, Math.min(52, maxTravel / (n - 1)));
     const left = pad + i * step;
     const t = i / (n - 1);
     const rot = -6 + t * 12;
@@ -897,32 +895,22 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
                 const pos = fanLayout(picks.length, i, handW);
                 const on = focusId === t.id;
                 return (
-                  <div
+                  <VerticalTaskCard
                     key={t.id}
+                    task={t}
+                    width={handCardW}
+                    bound={!!t.bound}
+                    selected={on}
+                    onClick={() => setFocusId(on ? null : t.id)}
                     style={{
                       position: "absolute",
                       left: pos.left,
                       bottom: pos.lift,
                       zIndex: on ? 40 : 10 + i,
-                      width: handSlotW,
-                      height: handCardH,
-                      overflow: "visible",
+                      transform: `rotate(${pos.rot}deg)`,
+                      transformOrigin: "50% 100%",
                     }}
-                  >
-                    <div style={{
-                      width: designFullW,
-                      transform: `scale(${handScale}) rotate(${pos.rot}deg)`,
-                      transformOrigin: "bottom left",
-                    }}>
-                      <VerticalTaskCard
-                        task={t}
-                        width={designFullW}
-                        bound={!!t.bound}
-                        selected={on}
-                        onClick={() => setFocusId(on ? null : t.id)}
-                      />
-                    </div>
-                  </div>
+                  />
                 );
               })}
             </div>

@@ -257,11 +257,9 @@ function OverlayBox({
         }}>{label}</div>
       )}
       {children}
-      {selected && (
+      {selected && showOutlines && (
         <>
-          {handle("e", { right: -4, top: "30%", width: 8, height: "40%", cursor: "ew-resize" })}
-          {handle("s", { bottom: -4, left: "30%", width: "40%", height: 8, cursor: "ns-resize" })}
-          {handle("se", { right: -5, bottom: -5, width: 10, height: 10, cursor: "nwse-resize", borderRadius: 2 })}
+          {handle("se", { right: -4, bottom: -4, width: 8, height: 8, cursor: "nwse-resize", borderRadius: 1 })}
         </>
       )}
     </div>
