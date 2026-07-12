@@ -26,6 +26,22 @@ import {
 } from "./gameAudio.js";
 // Stretchy the cat: PNG sprite sheet. Guitar hard case is canvas-drawn.
 import CAT_SHEET from "./assets/Cat-Sheet.png";
+// Apartment-screen HUD chrome: ornate wood/brass frame pieces sliced from the
+// mockup sheet (artifacts/pack-it-up/src/assets/items/packitup_cropped_assets/
+// ui_mockups/Apartment screen ui assets.png). Chrome-only — no gameplay art.
+import HUD_CLOCK_BG from "./assets/ui_chrome/hud_clock.png";
+import HUD_COINS_BG from "./assets/ui_chrome/hud_coins.png";
+import HUD_ROOM_BG from "./assets/ui_chrome/hud_room.png";
+import HUD_BOXES_BG from "./assets/ui_chrome/hud_boxes.png";
+import HUD_UNDO_BG from "./assets/ui_chrome/hud_undo.png";
+import NAV_ARROW_LEFT_BG from "./assets/ui_chrome/nav_arrow_left.png";
+import NAV_ARROW_RIGHT_BG from "./assets/ui_chrome/nav_arrow_right.png";
+import ACTION_CHECK_BG from "./assets/ui_chrome/action_check.png";
+import ACTION_PACK_BG from "./assets/ui_chrome/action_pack.png";
+import ACTION_SELL_BG from "./assets/ui_chrome/action_sell.png";
+import ACTION_DONATE_BG from "./assets/ui_chrome/action_donate.png";
+import ACTION_MENU_BG from "./assets/ui_chrome/action_menu.png";
+import TASKS_BUTTON_BG from "./assets/ui_chrome/tasks_button.png";
 // Next-layer screens (Menu/Desk/Health/etc.) + the task/urgency scaffold.
 // The apartment stays the hub; these render as full-screen overlays above it.
 import ScreenLayer, { RewardToast, IncomingPhoneCue, VerticalTaskCard } from "./Screens.jsx";
@@ -62,6 +78,16 @@ import {
 export const CELL = 4; // 1 sprite pixel = 4 screen px
 const STAGE_W = 960;
 const STAGE_H = 720;
+
+// Bottom action-bar icon frames, keyed by the same `key` used in the
+// mobile `actions` array (check/pack/sell/donate/menu) — chrome only.
+const ACTION_CHROME_BG = {
+  check: ACTION_CHECK_BG,
+  pack: ACTION_PACK_BG,
+  sell: ACTION_SELL_BG,
+  donate: ACTION_DONATE_BG,
+  menu: ACTION_MENU_BG,
+};
 
 /** Real move target — drives the "days left" HUD chip. */
 const MOVE_DATE = new Date(2026, 6, 31); // Jul 31, 2026 (local)
@@ -3188,6 +3214,19 @@ export default function PackItUp({ glowMode = "split" }) {
     label: { fontFamily: "'Courier New', monospace", fontWeight: 700, letterSpacing: "0.5px" },
   };
 
+  // ---- Apartment-screen HUD chrome: ornate wood/brass frame pieces sliced
+  // from the mockup sheet (see imports above). Scoped to the top HUD row,
+  // the left/right room-nav arrows, the bottom action bar, and the Tasks
+  // chip only — everything else (sheets, overlays, toasts) keeps ui.frame.
+  const INK = { strong: "#2A1A0A", mid: "#5C4020", soft: "#8A6F45" };
+  // fills the panel behind live content; the source PNG is the real carved
+  // wood/brass art, stretched to the panel's actual (flexible) box.
+  const chromeImgFill = {
+    position: "absolute", inset: 0, width: "100%", height: "100%",
+    objectFit: "fill", imageRendering: "pixelated", pointerEvents: "none", zIndex: 0,
+  };
+  const chromeContent = { position: "relative", zIndex: 1, height: "100%", boxSizing: "border-box" };
+
   const styleTag = (
     <style>{`
       @keyframes packAway { to { transform: scale(0.05) translate(-40%, 60%); opacity: 0; } }
@@ -4048,15 +4087,19 @@ export default function PackItUp({ glowMode = "split" }) {
     const arrowBtn = (dir, target) => target && (
       <button
         onClick={() => { haptic(HAPTIC.room); playRoomSwitchSfx(); animateTo(0, -dir * viewSize.w, dir); }}
+        aria-label={dir < 0 ? `Previous room: ${target.name}` : `Next room: ${target.name}`}
         style={{
           position: "absolute", top: 12, [dir < 0 ? "left" : "right"]: 14, zIndex: 60,
-          width: 54, minHeight: 48, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          color: "#FFD97A", cursor: "pointer", padding: "3px 2px",
-          ...ui.frame, ...ui.label,
+          width: 58, height: 96, padding: 0, border: "none", background: "none", cursor: "pointer",
         }}
       >
-        <span style={{ fontSize: 20, lineHeight: 1 }}>{dir < 0 ? "←" : "→"}</span>
-        <span style={{ fontSize: 8, marginTop: 2, maxWidth: 48, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <img src={dir < 0 ? NAV_ARROW_LEFT_BG : NAV_ARROW_RIGHT_BG} alt="" style={chromeImgFill} />
+        <span style={{
+          position: "absolute", left: "10%", right: "10%", top: "68%", bottom: "8%",
+          display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center",
+          color: INK.strong, fontSize: 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          ...ui.label,
+        }}>
           {target.name}
         </span>
       </button>
@@ -4123,39 +4166,51 @@ export default function PackItUp({ glowMode = "split" }) {
           />
         )}
 
-        {/* ---- top HUD: native-sized chrome, never scales with the room ---- */}
+        {/* ---- top HUD: native-sized chrome, never scales with the room ----
+             Ornate wood/brass frames sliced from the apartment mockup sheet;
+             every value below is still the same live binding as before. */}
         <div style={{ flex: "0 0 auto", display: "flex", alignItems: "stretch", gap: 6, padding: "calc(env(safe-area-inset-top, 0px) + 10px) 10px 8px", zIndex: 130 }}>
-          <div style={{ padding: "7px 10px", flex: "1 1 auto", minWidth: 0, ...ui.frame }}>
-            <div style={{ color: "#F2E4C0", fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", ...ui.label }}>{clock}</div>
-            <div style={{ color: "#C9B896", fontSize: 10, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", ...ui.label }}>
-              {dateLabel}
-            </div>
-            <div style={{ color: "#8A7350", fontSize: 9, marginTop: 2, whiteSpace: "nowrap", ...ui.label }}>
-              {daysLeft === 0 ? "Move day" : `${daysLeft}d left`}
-            </div>
-          </div>
-          <div style={{ padding: "7px 10px", display: "flex", alignItems: "center", gap: 6, color: "#F2E4C0", fontSize: 14, ...ui.frame, ...ui.label }}>
-            <span style={{ width: 12, height: 12, background: P.gold, border: "2px solid #8A5E14", borderRadius: "50%", display: "inline-block" }} />
-            {coins}
-          </div>
-          <div style={{ padding: "6px 9px", textAlign: "center", minWidth: 56, ...ui.frame }}>
-            <div style={{ color: "#F2E4C0", fontSize: 11, whiteSpace: "nowrap", ...ui.label }}>{room.name}</div>
-            <div style={{ color: "#C9B896", fontSize: 10, marginTop: 2, whiteSpace: "nowrap", ...ui.label }}>
-              {total > 0 ? `${clearedCount}/${total}` : "—"}
-            </div>
-            {total > 0 && (
-              <div style={{ marginTop: 4, width: "100%", height: 6, background: "#120A04", border: "1px solid #4A2E17" }}>
-                <div style={{
-                  width: `${Math.round((clearedCount / total) * 100)}%`, height: "100%",
-                  background: "linear-gradient(#8FD14F,#5EA032)",
-                }} />
+          <div style={{ position: "relative", flex: "33 1 0%", minWidth: 0, height: 74 }}>
+            <img src={HUD_CLOCK_BG} alt="" style={chromeImgFill} />
+            <div style={{ ...chromeContent, padding: "21% 10px 0 32%" }}>
+              <div style={{ color: INK.strong, fontSize: 12, lineHeight: 1.05, whiteSpace: "nowrap", overflow: "hidden", ...ui.label }}>{clock}</div>
+              <div style={{ color: INK.mid, fontSize: 10, lineHeight: 1.05, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", ...ui.label }}>
+                {dateLabel}
               </div>
-            )}
+              <div style={{ color: INK.soft, fontSize: 9, lineHeight: 1.05, marginTop: 1, whiteSpace: "nowrap", ...ui.label }}>
+                {daysLeft === 0 ? "Move day" : `${daysLeft}d left`}
+              </div>
+            </div>
           </div>
-          <div style={{ padding: "6px 9px", textAlign: "center", ...ui.frame }} title="Furniture packed into boxes (apartment-wide)">
-            <div style={{ color: "#F2E4C0", fontSize: 11, whiteSpace: "nowrap", ...ui.label }}>📦</div>
-            <div style={{ color: "#C9B896", fontSize: 10, marginTop: 2, whiteSpace: "nowrap", ...ui.label }}>
-              {globalPacked}/{globalTotal}
+          <div style={{ position: "relative", flex: "17 1 0%", minWidth: 0, height: 74 }}>
+            <img src={HUD_COINS_BG} alt="" style={chromeImgFill} />
+            <div style={{ ...chromeContent, padding: "0 8px 0 30%", display: "flex", alignItems: "center", color: INK.strong, fontSize: 14, ...ui.label }}>
+              {coins}
+            </div>
+          </div>
+          <div style={{ position: "relative", flex: "24 1 0%", minWidth: 0, height: 74 }}>
+            <img src={HUD_ROOM_BG} alt="" style={chromeImgFill} />
+            <div style={{ ...chromeContent, padding: "19% 8px 0 26%", textAlign: "left" }}>
+              <div style={{ color: INK.strong, fontSize: 11, lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", ...ui.label }}>{room.name}</div>
+              <div style={{ color: INK.mid, fontSize: 9, lineHeight: 1.1, marginTop: 1, whiteSpace: "nowrap", ...ui.label }}>
+                {total > 0 ? `${clearedCount}/${total}` : "—"}
+              </div>
+              {total > 0 && (
+                <div style={{ position: "absolute", left: "9%", right: "9%", top: "58%", height: "15%", background: "#150B04" }}>
+                  <div style={{
+                    width: `${Math.round((clearedCount / total) * 100)}%`, height: "100%",
+                    background: "linear-gradient(#8FD14F,#5EA032)",
+                  }} />
+                </div>
+              )}
+            </div>
+          </div>
+          <div style={{ position: "relative", flex: "15 1 0%", minWidth: 0, height: 74 }} title="Furniture packed into boxes (apartment-wide)">
+            <img src={HUD_BOXES_BG} alt="" style={chromeImgFill} />
+            <div style={{ ...chromeContent, padding: "0 8px 0 34%", display: "flex", alignItems: "center" }}>
+              <div style={{ color: INK.strong, fontSize: 11, whiteSpace: "nowrap", ...ui.label }}>
+                {globalPacked}/{globalTotal}
+              </div>
             </div>
           </div>
           <button
@@ -4163,11 +4218,12 @@ export default function PackItUp({ glowMode = "split" }) {
             disabled={undoStack.length === 0}
             title={lastUndoObj ? `Undo: ${lastUndoObj.name}` : "Nothing to undo"}
             style={{
-              padding: "7px 12px", fontSize: 17, minWidth: 48, cursor: undoStack.length ? "pointer" : "default",
-              color: undoStack.length ? "#F2E4C0" : "#6B563B", ...ui.frame, ...ui.label,
+              position: "relative", flex: "12 1 0%", minWidth: 44, height: 74,
+              cursor: undoStack.length ? "pointer" : "default",
+              padding: 0, border: "none", background: "none",
             }}
           >
-            ↺
+            <img src={HUD_UNDO_BG} alt="" style={{ ...chromeImgFill, opacity: undoStack.length ? 1 : 0.45, filter: undoStack.length ? "none" : "grayscale(60%)" }} />
           </button>
         </div>
 
@@ -4264,10 +4320,12 @@ export default function PackItUp({ glowMode = "split" }) {
           )}
         </div>
 
-        {/* ---- bottom action bar: touch-sized, real gameplay verbs ---- */}
+        {/* ---- bottom action bar: touch-sized, real gameplay verbs ----
+             Each button is its own carved wood/brass icon frame, sliced
+             from the mockup sheet — same keys, labels, and onClick as before. */}
         <div style={{
-          flex: "0 0 auto", position: "relative", zIndex: 120, display: "flex", gap: 6,
-          padding: "8px 8px calc(env(safe-area-inset-bottom, 0px) + 8px)",
+          flex: "0 0 auto", position: "relative", zIndex: 120, display: "flex", gap: 0,
+          padding: "8px 0 calc(env(safe-area-inset-bottom, 0px) + 6px)",
           background: "#1D1006", borderTop: "3px solid #120A04", boxShadow: "inset 0 3px 0 #3A2410",
         }}>
           {actions.map((a) => (
@@ -4276,14 +4334,26 @@ export default function PackItUp({ glowMode = "split" }) {
               onClick={a.onClick}
               disabled={a.disabled}
               style={{
-                flex: 1, minHeight: 56, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
-                background: a.disabled ? "#241509" : "#3A2410", color: a.disabled ? "#6B563B" : "#F2E4C0",
-                border: "3px solid #120A04", boxShadow: a.disabled ? "none" : "inset 0 -3px 0 #1A0F06",
-                fontSize: 12, cursor: a.disabled ? "default" : "pointer", padding: 0, ...ui.label,
+                position: "relative", flex: 1, minHeight: 60, display: "flex", flexDirection: "column",
+                alignItems: "center", justifyContent: "flex-end", gap: 0,
+                background: "none", border: "none", padding: "2px 1px 4px",
+                cursor: a.disabled ? "default" : "pointer",
               }}
             >
-              <span style={{ fontSize: 16, lineHeight: 1 }}>{a.icon}</span>
-              {a.label}
+              <img
+                src={ACTION_CHROME_BG[a.key]}
+                alt=""
+                style={{
+                  width: "78%", maxWidth: 46, aspectRatio: "1 / 1", imageRendering: "pixelated",
+                  opacity: a.disabled ? 0.45 : 1, filter: a.disabled ? "grayscale(70%)" : "none",
+                }}
+              />
+              <span style={{
+                marginTop: 2, fontSize: 10, letterSpacing: "0.5px", textTransform: "uppercase",
+                color: a.disabled ? "#6B563B" : "#FFD97A", ...ui.label,
+              }}>
+                {a.label}
+              </span>
             </button>
           ))}
         </div>
@@ -4355,14 +4425,21 @@ export default function PackItUp({ glowMode = "split" }) {
         )}
 
         {/* ---- Tasks chip: shows live open-task count, opens the overview.
-             Full task system still to come — this is just the doorbell. ---- */}
+             Full task system still to come — this is just the doorbell.
+             Framed clipboard chrome sliced from the mockup sheet; the card
+             fan next to it is untouched. ---- */}
         <div style={{ position: "absolute", right: 10, bottom: "calc(env(safe-area-inset-bottom, 0px) + 84px)", zIndex: 105 }}>
-          <button onClick={() => setScreen("menu")} style={{ position: "relative", display: "flex", alignItems: "center", gap: 7, padding: "9px 13px", cursor: "pointer", ...ui.frame }}>
-            <span style={{ fontSize: 14 }}>📋</span>
-            <span style={{ color: "#F2E4C0", fontSize: 13, ...ui.label }}>Tasks</span>
-            <span style={{ fontSize: 11, color: "#C9B896", ...ui.label }}>{tasks.filter(isTaskOpen).length}</span>
+          <button
+            onClick={() => setScreen("menu")}
+            style={{ position: "relative", width: 150, height: 58, display: "flex", alignItems: "center", cursor: "pointer", border: "none", background: "none", padding: 0 }}
+          >
+            <img src={TASKS_BUTTON_BG} alt="" style={chromeImgFill} />
+            <span style={{ position: "relative", zIndex: 1, marginLeft: "34%", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ color: "#F2E4C0", fontSize: 13, ...ui.label }}>Tasks</span>
+              <span style={{ fontSize: 11, color: "#C9B896", ...ui.label }}>{tasks.filter(isTaskOpen).length}</span>
+            </span>
             {pressure > 0 && (
-              <span className={pressure >= 2 ? "redPulse" : undefined} style={{ position: "absolute", top: -5, right: -5, width: 12, height: 12, borderRadius: "50%", background: "#C43B34", border: "2px solid #120A04" }} />
+              <span className={pressure >= 2 ? "redPulse" : undefined} style={{ position: "absolute", top: -5, right: -5, width: 12, height: 12, borderRadius: "50%", background: "#C43B34", border: "2px solid #120A04", zIndex: 2 }} />
             )}
           </button>
         </div>
