@@ -1,7 +1,47 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import STRETCHY_ICON from "./assets/Stretchy Icon.png";
 import HEALTH_CLIPBOARD from "./assets/health-clipboard.png";
+import HEALTH_BODY_FIGURE from "./assets/items/packitup_cropped_assets/ui_mockups/health_slices/body_figure.png";
+import HEALTH_BACK_BUTTON from "./assets/items/packitup_cropped_assets/ui_mockups/health_slices/back_button.png";
+import HEALTH_ZONE_PSYCH from "./assets/items/packitup_cropped_assets/ui_mockups/health_slices/zone_psychiatry.png";
+import HEALTH_ZONE_DENTIST from "./assets/items/packitup_cropped_assets/ui_mockups/health_slices/zone_dentist.png";
+import HEALTH_ZONE_CARDIO from "./assets/items/packitup_cropped_assets/ui_mockups/health_slices/zone_cardiology.png";
+import HEALTH_ZONE_DERM from "./assets/items/packitup_cropped_assets/ui_mockups/health_slices/zone_dermatology.png";
+import HEALTH_ZONE_RHEUM from "./assets/items/packitup_cropped_assets/ui_mockups/health_slices/zone_rheumatology.png";
+import HEALTH_ZONE_OBGYN from "./assets/items/packitup_cropped_assets/ui_mockups/health_slices/zone_obgyn.png";
+import HEALTH_NOTE_PAPER from "./assets/items/packitup_cropped_assets/ui_mockups/health_slices/note_paper.png";
+import HEALTH_SHIRLEY_BTN from "./assets/items/packitup_cropped_assets/ui_mockups/health_slices/shirley_button.png";
+import HEALTH_CAREKIT_BTN from "./assets/items/packitup_cropped_assets/ui_mockups/health_slices/carekit_button.png";
+import HEALTH_RECORDS_BTN from "./assets/items/packitup_cropped_assets/ui_mockups/health_slices/records_button.png";
+import HEALTH_HEADER_BAR from "./assets/items/packitup_cropped_assets/ui_mockups/health_slices/header_bar.png";
+import HEALTH_LEGEND_BAR from "./assets/items/packitup_cropped_assets/ui_mockups/health_slices/legend_bar.png";
 import LANDLINE_PHONE from "./assets/landline-phone.png";
+import MENU_HEADER_FRAME from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/header_frame.png";
+import MENU_FOOTER_FRAME from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/footer_frame.png";
+import MENU_BACK_ARROW from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/back_arrow.png";
+import MENU_LIST_ICON from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/list_icon.png";
+import MENU_PRESSURE_FRAME from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/pressure_frame.png";
+import MENU_COMMAND_BANNER from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/command_board_banner.png";
+import MENU_TILE_FRAME from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/tile_frame.png";
+import MENU_ICON_FOLDER from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/folder_icon.png";
+import MENU_ICON_HEALTH from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/stethoscope_icon.png";
+import MENU_ICON_BOX from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/box_icon.png";
+import MENU_ICON_MONEYBAG from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/moneybag_icon.png";
+import MENU_ICON_CAT from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/cat_icon.png";
+import MENU_ICON_GEAR from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/gear_icon.png";
+import BOARD_HEADER_FRAME from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/header_command_board.png";
+import BOARD_BACK_BUTTON from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/back_button.png";
+import BOARD_ENERGY_LABEL from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/energy_label_chip.png";
+import BOARD_FIXED_DAY_CHIP from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/fixed_day_chip.png";
+import BOARD_FUMES_OFF from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/fumes_off.png";
+import BOARD_FUMES_ON from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/fumes_on.png";
+import BOARD_STEADY_OFF from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/steady_off.png";
+import BOARD_STEADY_ON from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/steady_on.png";
+import BOARD_FULL_OFF from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/full_off.png";
+import BOARD_FULL_ON from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/full_on.png";
+import BOARD_DRAW_BUTTON from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/draw_button.png";
+import BOARD_SCROLLBAR from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/scrollbar_track.png";
+import BOARD_LEDGER_BUTTON from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/ledger_button_frame.png";
 import MOVE_ROW from "./assets/items/task_card_assets/horizontal/move_row_card.png";
 import JOB_ROW from "./assets/items/task_card_assets/horizontal/job_row_card.png";
 import ADMIN_ROW from "./assets/items/task_card_assets/horizontal/admin_row_card.png";
@@ -21,7 +61,7 @@ import {
   tasksAfterBooking, tasksAfterAttend,
 } from "./tasks.js";
 import {
-  ensureDailyDeal, handTasks, offerTasks, dealProgress, toggleDealPick,
+  ensureDailyDeal, handTasks, offerTasks, dealProgress, toggleDealPick, taskStatus,
 } from "./schedule.js";
 import { PixelCanvas } from "./BedroomSlice.jsx";
 import {
@@ -68,6 +108,7 @@ import {
   priorityHealthTask,
   activeAppointments,
   daysUntilMove,
+  isBookableHealthTask,
 } from "./receptionist.js";
 import {
   loadShirleySettings,
@@ -674,6 +715,23 @@ function Screen({ title, icon, onBack, children, bg = "#1A1008", subtitle, progr
 const soonTag = <span style={{ fontSize: 9, color: "#8A7350", ...LB }}>(soon)</span>;
 
 /* ================= MENU / OVERVIEW ================= */
+/** Tile icon art, sliced from the Main-menu UI asset sheet (see menu_slices/). */
+const MENU_TILE_ICON = {
+  desk: MENU_ICON_FOLDER,
+  health: MENU_ICON_HEALTH,
+  inventory: MENU_ICON_BOX,
+  log: MENU_ICON_MONEYBAG,
+  stretchy: MENU_ICON_CAT,
+  settings: MENU_ICON_GEAR,
+};
+
+/**
+ * Dark inset track within pressure_frame.png, measured in source-image
+ * percentages (frame is 1091×191px; the empty track sits at x77–1006,
+ * y72–131). Used to align the dynamic fill bar over the static frame art.
+ */
+const PRESSURE_TRACK = { left: 7.06, right: 7.79, top: 37.7, bottom: 31.4 };
+
 function MenuScreen({ go, tasks }) {
   const pressure = taskPressure(tasks);
   const count = (cats) => tasks.filter((t) => isOpen(t) && cats.includes(t.category)).length;
@@ -683,51 +741,131 @@ function MenuScreen({ go, tasks }) {
     return t.slice().sort((a, b) => b.urgency - a.urgency)[0].due;
   };
   const tiles = [
-    { key: "board",     icon: "📋", label: "Command Board",  sub: "what matters today", badge: 0, due: null, wide: true },
-    { key: "desk",      icon: "🗂️", label: "Desk / Admin",    sub: "papers · housing · Shirley", badge: count(["job", "admin", "move", "housing"]), due: soonest(["job", "admin", "move", "housing"]) },
-    { key: "health",    icon: "🩺", label: "Health / Body",    sub: "use it while covered", badge: count(["health"]), due: soonest(["health"]) },
-    { key: "inventory", icon: "📦", label: "Inventory",        sub: "packed items", badge: 0, due: null },
-    { key: "log",       icon: "💰", label: "Sold / Donated",   sub: "the money log", badge: 0, due: null },
-    { key: "stretchy",  icon: "🐈", label: "Stretchy",         sub: "orange & fine", badge: count(["cat"]), due: soonest(["cat"]) },
-    { key: "settings",  icon: "⚙️", label: "Settings",         sub: "sound & such", badge: 0, due: null },
+    { key: "desk",      label: "Desk / Admin",   sub: "papers · housing · Shirley", badge: count(["job", "admin", "move", "housing"]), due: soonest(["job", "admin", "move", "housing"]) },
+    { key: "health",    label: "Health / Body",  sub: "use it while covered",        badge: count(["health"]), due: soonest(["health"]) },
+    { key: "inventory", label: "Inventory",      sub: "packed items",                badge: 0, due: null },
+    { key: "log",       label: "Sold / Donated", sub: "the money log",               badge: 0, due: null },
+    { key: "stretchy",  label: "Stretchy",       sub: "orange & fine",               badge: count(["cat"]), due: soonest(["cat"]) },
+    { key: "settings",  label: "Settings",       sub: "sound & such",                badge: 0, due: null },
   ];
   const pressurePct = pressure / 3;
+  const pressureColor = PRESSURE_COLORS[pressure] || PRESSURE_COLORS[0];
+
   return (
-    <Screen
-      title="Overview"
-      icon="☰"
-      onBack={() => go("apartment")}
-      subtitle="Pressure — how loud life is right now"
-      progress={pressurePct}
-      progressLabel={PRESSURE_LABELS[pressure]}
-    >
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        {tiles.map((t) => (
-          <button key={t.key} onClick={() => go(t.key)} style={{
-            position: "relative", minHeight: t.wide ? 72 : 96, display: "flex", flexDirection: "column",
-            alignItems: "flex-start", justifyContent: "flex-end", gap: 2, padding: "10px 12px",
-            cursor: "pointer", textAlign: "left", gridColumn: t.wide ? "1 / -1" : undefined, ...FR, ...LB,
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 250, background: "#1A1008", display: "flex", flexDirection: "column",
+      animation: "screenIn 200ms ease-out", overflow: "hidden",
+    }}>
+      {screenCss}
+      <div style={{
+        flex: 1, minHeight: 0, overflowY: "auto",
+        padding: "calc(env(safe-area-inset-top, 0px) + 8px) 10px calc(env(safe-area-inset-bottom, 0px) + 14px)",
+        display: "flex", flexDirection: "column", gap: 10,
+      }}>
+        {/* Header: back arrow + list icon + title, on the ornate wood rail */}
+        <div style={{
+          position: "relative", width: "100%", aspectRatio: "1135 / 190",
+          backgroundImage: `url(${MENU_HEADER_FRAME})`, backgroundSize: "100% 100%",
+          imageRendering: "pixelated", display: "flex", alignItems: "center", gap: "3%", padding: "0 4%",
+        }}>
+          <button onClick={() => go("apartment")} aria-label="Back" style={{
+            flex: "0 0 auto", width: "10%", aspectRatio: "1 / 1", background: "none", border: "none", padding: 0,
+            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
           }}>
-            <span style={{ fontSize: t.wide ? 20 : 24, marginBottom: 4 }}>{t.icon}</span>
-            <span style={{ color: "#F2E4C0", fontSize: 13 }}>{t.label}</span>
-            <span style={{ color: "#8A7350", fontSize: 10 }}>{t.sub}</span>
-            {t.due && (
-              <span style={{ color: "#C74B4F", fontSize: 10, marginTop: 2, ...LB }}>due: {t.due}</span>
-            )}
-            {t.badge > 0 && (
-              <span style={{
-                position: "absolute", top: 8, right: 8, minWidth: 20, height: 20, padding: "0 4px",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                background: "#C43B34", color: "#F3EDDD", fontSize: 11, border: "2px solid #120A04", ...LB,
-              }}>{t.badge}</span>
-            )}
+            <img src={MENU_BACK_ARROW} alt="" style={{ width: "100%", display: "block", imageRendering: "pixelated" }} />
           </button>
-        ))}
+          <img src={MENU_LIST_ICON} alt="" style={{ width: "8%", flex: "0 0 auto", imageRendering: "pixelated" }} />
+          <div style={{
+            flex: 1, textAlign: "center", color: "#FFD97A", fontSize: "clamp(16px, 6vw, 26px)",
+            letterSpacing: "2px", ...LB,
+          }}>
+            OVERVIEW
+          </div>
+          <div style={{ width: "10%", flex: "0 0 auto" }} aria-hidden />
+        </div>
+
+        {/* Pressure bar */}
+        <div style={{
+          position: "relative", width: "100%", aspectRatio: "1091 / 191",
+          backgroundImage: `url(${MENU_PRESSURE_FRAME})`, backgroundSize: "100% 100%", imageRendering: "pixelated",
+        }}>
+          <div style={{
+            position: "absolute", left: "4%", right: "4%", top: "8%",
+            display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 6,
+            color: "#3A2018", fontSize: "clamp(7px, 2.4vw, 10px)", ...LB,
+          }}>
+            <span>PRESSURE — HOW LOUD LIFE IS RIGHT NOW</span>
+            <span style={{ color: pressureColor, flex: "0 0 auto" }}>{(PRESSURE_LABELS[pressure] || "").toUpperCase()}</span>
+          </div>
+          <div style={{
+            position: "absolute",
+            left: `${PRESSURE_TRACK.left}%`, right: `${PRESSURE_TRACK.right}%`,
+            top: `${PRESSURE_TRACK.top}%`, bottom: `${PRESSURE_TRACK.bottom}%`,
+          }}>
+            <div style={{
+              width: `${Math.max(6, pressurePct * 100)}%`, height: "100%",
+              background: pressureColor, transition: "width 280ms ease-out",
+            }} />
+          </div>
+        </div>
+
+        {/* Command board banner */}
+        <button onClick={() => go("board")} style={{
+          position: "relative", width: "100%", aspectRatio: "991 / 211", background: "none", border: "none",
+          padding: 0, cursor: "pointer", textAlign: "left",
+          backgroundImage: `url(${MENU_COMMAND_BANNER})`, backgroundSize: "100% 100%", imageRendering: "pixelated",
+        }}>
+          <div style={{
+            position: "absolute", left: "20%", top: 0, right: "4%", bottom: 0,
+            display: "flex", flexDirection: "column", justifyContent: "center", gap: 4,
+          }}>
+            <span style={{ color: "#241509", fontSize: "clamp(14px, 4.4vw, 19px)", ...LB }}>COMMAND BOARD</span>
+            <span style={{ color: "#6B563B", fontSize: "clamp(9px, 2.8vw, 12px)", ...LB }}>what matters today</span>
+          </div>
+        </button>
+
+        {/* Tile grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {tiles.map((t) => (
+            <button key={t.key} onClick={() => go(t.key)} style={{
+              position: "relative", width: "100%", aspectRatio: "414 / 376", background: "none", border: "none",
+              padding: 0, cursor: "pointer", textAlign: "left",
+              backgroundImage: `url(${MENU_TILE_FRAME})`, backgroundSize: "100% 100%", imageRendering: "pixelated",
+            }}>
+              <div style={{
+                position: "absolute", inset: "10% 8%",
+                display: "flex", flexDirection: "column", alignItems: "flex-start",
+              }}>
+                <img src={MENU_TILE_ICON[t.key]} alt="" style={{ width: "28%", marginBottom: "6%", imageRendering: "pixelated" }} />
+                <span style={{ color: "#241509", fontSize: "clamp(11px, 3.6vw, 15px)", ...LB }}>{t.label.toUpperCase()}</span>
+                <span style={{ color: "#6B563B", fontSize: "clamp(8px, 2.5vw, 10px)", lineHeight: 1.2, marginTop: 3, ...LB }}>{t.sub}</span>
+                {t.due && (
+                  <span style={{ color: "#A3252C", fontSize: "clamp(8px, 2.5vw, 10px)", marginTop: "auto", ...LB }}>due: {t.due}</span>
+                )}
+              </div>
+              {t.badge > 0 && (
+                <span style={{
+                  position: "absolute", top: "6%", right: "6%", minWidth: 20, height: 20, padding: "0 5px",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "#C43B34", color: "#F3EDDD", fontSize: 12, border: "2px solid #120A04", ...LB,
+                }}>{t.badge}</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          position: "relative", width: "100%", aspectRatio: "1120 / 89",
+          backgroundImage: `url(${MENU_FOOTER_FRAME})`, backgroundSize: "100% 100%", imageRendering: "pixelated",
+          display: "flex", alignItems: "center", justifyContent: "center", padding: "0 6%",
+        }}>
+          <span style={{ color: "#C9A876", fontSize: "clamp(9px, 2.6vw, 11px)", textAlign: "center", ...LB }}>
+            The apartment is home base — everything here is a side table.
+          </span>
+        </div>
       </div>
-      <div style={{ marginTop: 14, color: "#6B563B", fontSize: 11, textAlign: "center", ...LB }}>
-        The apartment is home base — everything here is a side table.
-      </div>
-    </Screen>
+    </div>
   );
 }
 
@@ -766,6 +904,21 @@ function CriticalStrip() {
     </div>
   );
 }
+
+/** Command-board chrome: segmented energy row + custom scrollbar theming for the draw pile. */
+const BOARD_ENERGY_SEGMENTS = [
+  { id: "fumes", label: "FUMES", off: BOARD_FUMES_OFF, on: BOARD_FUMES_ON, sub: "bound must-dos only" },
+  { id: "steady", label: "STEADY", off: BOARD_STEADY_OFF, on: BOARD_STEADY_ON, sub: "bound + draw 2 more" },
+  { id: "full", label: "FULL", off: BOARD_FULL_OFF, on: BOARD_FULL_ON, sub: "bound + draw 4 more" },
+];
+const boardChromeCss = (
+  <style>{`
+    .board-draw-pane::-webkit-scrollbar { width: 10px; }
+    .board-draw-pane::-webkit-scrollbar-track { background: #120A04; }
+    .board-draw-pane::-webkit-scrollbar-thumb { background: #8A5A2E; border: 2px solid #120A04; }
+    .board-draw-pane { scrollbar-width: thin; scrollbar-color: #8A5A2E #120A04; }
+  `}</style>
+);
 
 function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast }) {
   const energy = session?.energy || null;
@@ -870,171 +1023,221 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
   };
 
   return (
-    <Screen
-      title="Command Board"
-      icon="📋"
-      onBack={() => go("menu")}
-      subtitle={energy ? "Draw · then play your hand" : "Running on — pick one"}
-      bg="#2A1A0C"
-      compact
-      headerPad={6}
-    >
-      <RewardToast text={rewardToast} />
-      {!energy ? (
-        <div style={{ ...FR, padding: 12, marginBottom: 10 }}>
-          <div style={{ color: "#FFD97A", fontSize: 12, marginBottom: 8, ...LB }}>Running on:</div>
-          {[
-            ["fumes", "Fumes", "bound must-dos only — optional draws if useful"],
-            ["steady", "Steady", "bound + draw 2 more from the offer deck"],
-            ["full", "Full steam", "bound + draw 4 more from the offer deck"],
-          ].map(([id, label, sub]) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => pickEnergy(id)}
-              style={{
-                width: "100%", textAlign: "left", marginBottom: 6, padding: "10px 12px",
-                background: "#3A2410", color: "#F2E4C0", border: "3px solid #120A04", cursor: "pointer", ...LB,
-              }}
-            >
-              <div style={{ fontSize: 13 }}>{label}</div>
-              <div style={{ color: "#8A7350", fontSize: 10, marginTop: 2 }}>{sub}</div>
-            </button>
-          ))}
-        </div>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", flex: "0 0 auto", gap: 8 }}>
-          <div style={{ color: "#C9B896", fontSize: 10, flex: "0 0 auto", ...LB }}>
-            Energy: {energy === "fumes" ? "Fumes" : energy === "full" ? "Full steam" : "Steady"}
-            {deal?.fixedDay ? " · fixed day" : ""}
-            {" · "}
-            <button type="button" onClick={() => { setFocusId(null); onSessionBump?.("energy", 0, null, { energy: null, clearDeal: true }); }}
-              style={{ background: "none", border: "none", color: "#8A7350", cursor: "pointer", padding: 0, ...LB }}>
-              change
-            </button>
-          </div>
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 250, background: "#1A1008", display: "flex", flexDirection: "column",
+      animation: "screenIn 200ms ease-out", overflow: "hidden",
+    }}>
+      {screenCss}
+      {boardChromeCss}
+      <div style={{
+        flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden",
+        padding: "calc(env(safe-area-inset-top, 0px) + 6px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px)",
+        gap: 6,
+      }}>
+        <RewardToast text={rewardToast} />
 
-          {/* TOP — offer deck sized to exactly 2 thin cards (scroll for the rest) */}
-          <div
-            ref={drawPaneRef}
-            style={{
-              ...FR, padding: "6px 8px", flex: "0 0 auto",
-              height: drawPaneH, overflowY: "auto",
-            }}
-          >
-            <div
-              data-draw-header
+        {/* Framed header: back + COMMAND BOARD banner + N IN HAND chip */}
+        <div style={{ display: "flex", alignItems: "stretch", gap: 6, flex: "0 0 auto" }}>
+          <button type="button" onClick={() => go("menu")} aria-label="Back" style={{
+            position: "relative", flex: "0 0 auto", width: 78, aspectRatio: "259 / 142",
+            backgroundImage: `url(${BOARD_BACK_BUTTON})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+            border: "none", padding: 0, cursor: "pointer", imageRendering: "pixelated",
+          }} />
+          <div style={{
+            position: "relative", flex: 1, minWidth: 0, aspectRatio: "569 / 144",
+            backgroundImage: `url(${BOARD_HEADER_FRAME})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+            imageRendering: "pixelated",
+          }} />
+          <div style={{
+            position: "relative", flex: "0 0 auto", display: "flex", alignItems: "center", gap: 6,
+            padding: "0 10px", background: "#241509", border: "3px solid #120A04",
+            boxShadow: "inset 0 0 0 2px #6B4423, 0 3px 0 #000",
+          }}>
+            <span style={{ position: "relative", width: 14, height: 14, flex: "0 0 auto" }} aria-hidden>
+              <span style={{ position: "absolute", left: 0, top: 2, width: 10, height: 12, background: "#8A5A2E", border: "1px solid #120A04", transform: "rotate(-10deg)" }} />
+              <span style={{ position: "absolute", left: 3, top: 0, width: 10, height: 12, background: "#E8C4A8", border: "1px solid #120A04" }} />
+            </span>
+            <span style={{ color: "#FFD97A", fontSize: 10, whiteSpace: "nowrap", ...LB }}>{picks.length} IN HAND</span>
+          </div>
+        </div>
+
+        {/* ENERGY segmented row + FIXED DAY indicator */}
+        <div style={{ display: "flex", alignItems: "center", gap: 5, flex: "0 0 auto", overflowX: "auto" }}>
+          <div style={{
+            position: "relative", flex: "0 0 auto", width: 62, aspectRatio: "274 / 103",
+            backgroundImage: `url(${BOARD_ENERGY_LABEL})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+            imageRendering: "pixelated",
+          }} />
+          {BOARD_ENERGY_SEGMENTS.map((seg) => (
+            <button
+              key={seg.id}
+              type="button"
+              onClick={() => pickEnergy(seg.id)}
+              aria-pressed={energy === seg.id}
               style={{
-                display: "flex", alignItems: "baseline", justifyContent: "space-between",
-                marginBottom: 4, gap: 8,
+                position: "relative", flex: "1 1 0", minWidth: 0, aspectRatio: "223 / 95",
+                backgroundImage: `url(${energy === seg.id ? seg.on : seg.off})`,
+                backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+                border: "none", padding: 0, cursor: "pointer", imageRendering: "pixelated",
+              }}
+            />
+          ))}
+          {deal?.fixedDay && (
+            <div style={{
+              position: "relative", flex: "0 0 auto", width: 74, aspectRatio: "237 / 103",
+              backgroundImage: `url(${BOARD_FIXED_DAY_CHIP})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+              imageRendering: "pixelated",
+            }} />
+          )}
+        </div>
+
+        {!energy ? (
+          <div style={{ ...FR, padding: "10px 12px", flex: "0 0 auto" }}>
+            <div style={{ color: "#F2E4C0", fontSize: 10, lineHeight: 1.5, ...LB }}>
+              Pick a pace above to start your day — Fumes: bound must-dos only ·
+              Steady: + 2 draws · Full: + 4 draws.
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, gap: 6 }}>
+            {/* OPTIONAL DRAW pane — same ref/measurement contract as before, restyled to the mockup frame */}
+            <div
+              ref={drawPaneRef}
+              className="board-draw-pane"
+              style={{
+                position: "relative", padding: "6px 8px", flex: "0 0 auto",
+                height: drawPaneH, overflowY: "auto",
+                background: "#1B1006", border: "3px solid #120A04",
+                boxShadow: "inset 0 0 0 2px #6B4423, 0 3px 0 #000",
               }}
             >
-              <div style={{ color: "#FFD97A", fontSize: 13, ...LB }}>{drawLabel}</div>
-              <div style={{ color: "#8A7350", fontSize: 9, ...LB }}>
-                {offers.length} in deck · urgency
+              <div
+                data-draw-header
+                style={{
+                  display: "flex", alignItems: "baseline", justifyContent: "space-between",
+                  marginBottom: 2, gap: 8,
+                }}
+              >
+                <div style={{ color: "#FFD97A", fontSize: 12, ...LB }}>OPTIONAL DRAW</div>
+                <div style={{ color: "#8A7350", fontSize: 9, ...LB }}>
+                  {offers.length} IN DECK
+                </div>
               </div>
-            </div>
-            {deal?.fixedDay && (
               <div data-draw-note style={{ color: "#E8C4A8", fontSize: 9, marginBottom: 4, ...LB }}>
-                Fixed day — these cards are already spoken for.
+                {drawLabel}
+                {deal?.fixedDay ? " · fixed day — these cards are already spoken for." : ""}
+              </div>
+              {offers.length === 0 ? (
+                <div style={{ color: "#8A7350", fontSize: 11, ...LB }}>No extras to draw right now.</div>
+              ) : offers.map((t) => (
+                <div key={t.id} style={{
+                  display: "flex", gap: 6, alignItems: "center", marginBottom: 4,
+                }}>
+                  <div data-draw-card style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+                    <HorizontalTaskCard task={t} dimmed={!!t.picked} />
+                  </div>
+                  {t.picked ? (
+                    <button type="button" onClick={() => toggleOffer(t.id)} style={{
+                      flex: "0 0 56px", alignSelf: "stretch",
+                      background: "#3A1810", color: "#F2E4C0", border: "2px solid #120A04",
+                      fontSize: 9, cursor: "pointer", ...LB,
+                    }}>Remove</button>
+                  ) : (
+                    <button type="button" onClick={() => toggleOffer(t.id)} aria-label="Draw" style={{
+                      position: "relative", flex: "0 0 auto", alignSelf: "center", width: 52,
+                      aspectRatio: "198 / 278",
+                      backgroundImage: `url(${BOARD_DRAW_BUTTON})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+                      border: "none", padding: 0, cursor: "pointer", imageRendering: "pixelated",
+                    }} />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Focused hand card actions */}
+            {focus && (
+              <div style={{
+                ...FR, padding: "8px 10px", flex: "0 0 auto",
+                display: "flex", gap: 6, alignItems: "center",
+              }}>
+                <div style={{ flex: 1, minWidth: 0, color: "#F2E4C0", fontSize: 11, ...LB }}>
+                  {focus.bound ? "BOUND · " : ""}{focus.title}
+                </div>
+                <button type="button" onClick={() => go(doorForTask(focus))} style={{
+                  padding: "6px 8px", background: "#3A2410", color: "#FFD97A",
+                  border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB,
+                }}>Go</button>
+                <button type="button" onClick={() => markDone(focus.id)} style={{
+                  padding: "6px 8px", background: "#5D7C3B", color: "#F2E4C0",
+                  border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB,
+                }}>Done</button>
               </div>
             )}
-            {offers.length === 0 ? (
-              <div style={{ color: "#8A7350", fontSize: 11, ...LB }}>No extras to draw right now.</div>
-            ) : offers.map((t) => (
-              <div key={t.id} style={{
-                display: "flex", gap: 6, alignItems: "center", marginBottom: 4,
-              }}>
-                <div data-draw-card style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
-                  <HorizontalTaskCard task={t} dimmed={!!t.picked} />
-                </div>
-                <button type="button" onClick={() => toggleOffer(t.id)} style={{
-                  padding: "8px 8px", flex: "0 0 auto", alignSelf: "stretch",
-                  background: t.picked ? "#3A1810" : "#5D7C3B",
-                  color: "#F2E4C0", border: "2px solid #120A04",
-                  fontSize: 10, cursor: "pointer", ...LB,
-                }}>{t.picked ? "Remove" : "Draw"}</button>
-              </div>
-            ))}
-          </div>
 
-          {/* Focused hand card actions */}
-          {focus && (
+            {/* YOUR HAND · TAP A CARD — framed panel; hand sizing/geometry below is untouched */}
             <div style={{
-              ...FR, padding: "8px 10px", flex: "0 0 auto",
-              display: "flex", gap: 6, alignItems: "center",
+              flex: "0 0 auto", display: "flex", flexDirection: "column",
+              background: "#1B1006", border: "3px solid #120A04",
+              boxShadow: "inset 0 0 0 2px #6B4423, 0 3px 0 #000",
+              padding: "6px 8px",
             }}>
-              <div style={{ flex: 1, minWidth: 0, color: "#F2E4C0", fontSize: 11, ...LB }}>
-                {focus.bound ? "BOUND · " : ""}{focus.title}
+              <div style={{ color: "#FFD97A", fontSize: 10, textAlign: "center", marginBottom: 4, flex: "0 0 auto", ...LB }}>
+                YOUR HAND · TAP A CARD
               </div>
-              <button type="button" onClick={() => go(doorForTask(focus))} style={{
-                padding: "6px 8px", background: "#3A2410", color: "#FFD97A",
-                border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB,
-              }}>Go</button>
-              <button type="button" onClick={() => markDone(focus.id)} style={{
-                padding: "6px 8px", background: "#5D7C3B", color: "#F2E4C0",
-                border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB,
-              }}>Done</button>
-            </div>
-          )}
-
-          {/* BOTTOM — hand is sized to the capped card size, not a flex-filled void */}
-          <div style={{ flex: "0 0 auto", display: "flex", flexDirection: "column" }}>
-            <div style={{ color: "#FFD97A", fontSize: 10, marginBottom: 4, flex: "0 0 auto", ...LB }}>
-              Your hand · tap a card
-            </div>
-            <div
-              ref={handRef}
-              style={{
-                position: "relative",
-                width: "100%",
-                height: handAreaHeight,
-                flex: "0 0 auto",
-                marginBottom: 4,
-                overflow: "hidden",
-              }}
-            >
-              {picks.length === 0 ? (
-                <div style={{
-                  color: "#8A7350", fontSize: 11, ...LB,
-                  position: "absolute", inset: 0,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  Empty hand — draw from the deck above.
-                </div>
-              ) : picks.map((t, i) => {
-                const pos = fanLayout(picks.length, i, handW);
-                const on = focusId === t.id;
-                return (
-                  <VerticalTaskCard
-                    key={t.id}
-                    task={t}
-                    width={handCardW}
-                    bound={!!t.bound}
-                    selected={on}
-                    onClick={() => setFocusId(on ? null : t.id)}
-                    style={{
-                      position: "absolute",
-                      left: pos.left,
-                      bottom: pos.lift,
-                      zIndex: on ? 40 : 10 + i,
-                      transform: `rotate(${pos.rot}deg)`,
-                      transformOrigin: "50% 100%",
-                    }}
-                  />
-                );
-              })}
+              <div
+                ref={handRef}
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  height: handAreaHeight,
+                  flex: "0 0 auto",
+                  marginBottom: 4,
+                  overflow: "hidden",
+                }}
+              >
+                {picks.length === 0 ? (
+                  <div style={{
+                    color: "#8A7350", fontSize: 11, ...LB,
+                    position: "absolute", inset: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    Empty hand — draw from the deck above.
+                  </div>
+                ) : picks.map((t, i) => {
+                  const pos = fanLayout(picks.length, i, handW);
+                  const on = focusId === t.id;
+                  return (
+                    <VerticalTaskCard
+                      key={t.id}
+                      task={t}
+                      width={handCardW}
+                      bound={!!t.bound}
+                      selected={on}
+                      onClick={() => setFocusId(on ? null : t.id)}
+                      style={{
+                        position: "absolute",
+                        left: pos.left,
+                        bottom: pos.lift,
+                        zIndex: on ? 40 : 10 + i,
+                        transform: `rotate(${pos.rot}deg)`,
+                        transformOrigin: "50% 100%",
+                      }}
+                    />
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
-      )}
-      <button type="button" onClick={() => go("ledger")} style={{
-        width: "100%", marginTop: 6, padding: "10px", background: "#241509", color: "#FFD97A",
-        border: "3px solid #120A04", fontSize: 12, cursor: "pointer", flex: "0 0 auto", ...LB,
-      }}>
-        Flip page — full ledger
-      </button>
-    </Screen>
+        )}
+
+        {/* FULL LEDGER · FLIP PAGE */}
+        <button type="button" onClick={() => go("ledger")} aria-label="Full ledger — flip page" style={{
+          position: "relative", width: "100%", aspectRatio: "1016 / 269", flex: "0 0 auto",
+          backgroundImage: `url(${BOARD_LEDGER_BUTTON})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+          border: "none", padding: 0, cursor: "pointer", imageRendering: "pixelated",
+        }} />
+      </div>
+    </div>
   );
 }
 
@@ -2304,13 +2507,20 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
 }
 
 /* ================= HEALTH / BODY ================= */
+/**
+ * x/y = center of the octagon icon, in percent of the BODY FIGURE's own
+ * bounding box (measured off body_board_health_mockup.png — figure spans
+ * roughly x:225-705 / y:285-995 in that 941x1672 render). zone ids are the
+ * real task.zone values from tasks.js — do not rename, Shirley/schedule.js
+ * key off them directly.
+ */
 const HEALTH_ZONES = [
-  { id: "brain",   label: "Brain",   note: "Psychiatry + med renewals", x: "50%", y: "7%",  care: "herbal" },
-  { id: "teeth",   label: "Teeth",   note: "Dentist visit",             x: "50%", y: "17%", care: "balm" },
-  { id: "heart",   label: "Heart",   note: "Cardiology appointment",    x: "42%", y: "32%", care: "patch" },
-  { id: "lymph",   label: "Lymph",   note: "Rheumatology appointment",  x: "63%", y: "36%", care: "balm" },
-  { id: "obgyn",   label: "OB/GYN",  note: "IUD replacement",           x: "50%", y: "47%", care: "herbal" },
-  { id: "skin",    label: "Skin",    note: "Dermatology appointment",   x: "22%", y: "42%", care: "balm" },
+  { id: "brain",  label: "PSYCHIATRY",   note: "Psychiatry + med renewals", icon: HEALTH_ZONE_PSYCH,  x: 50,   y: 5,  care: "herbal" },
+  { id: "teeth",  label: "DENTIST",      note: "Dentist visit",             icon: HEALTH_ZONE_DENTIST, x: 50,  y: 22, care: "balm" },
+  { id: "heart",  label: "CARDIOLOGY",   note: "Cardiology appointment",    icon: HEALTH_ZONE_CARDIO,  x: 50,  y: 46, care: "patch" },
+  { id: "skin",   label: "DERMATOLOGY",  note: "Dermatology appointment",   icon: HEALTH_ZONE_DERM,    x: 16,  y: 57, care: "balm" },
+  { id: "lymph",  label: "RHEUMATOLOGY", note: "Rheumatology appointment",  icon: HEALTH_ZONE_RHEUM,   x: 81,  y: 57, care: "balm" },
+  { id: "obgyn",  label: "OB/GYN",       note: "IUD replacement",           icon: HEALTH_ZONE_OBGYN,   x: 50,  y: 81, care: "herbal" },
 ];
 
 const CARE_ITEMS = [
@@ -2319,12 +2529,23 @@ const CARE_ITEMS = [
   { id: "balm",   label: "Soothe Balm", icon: "🧴" },
 ];
 
+/** need-booking / scheduled / later — same palette as the legend dots. */
+const ZONE_STATE_COLOR = { ready: "#C24F2A", scheduled: "#4A7CAE", later: "#D9A33C", done: "#8FD14F" };
+
+const healthCallBtnStyle = {
+  width: "100%", marginTop: 8, padding: "10px 8px", textAlign: "center",
+  background: "linear-gradient(#3B577A, #22344C)", border: "3px solid #120A04",
+  boxShadow: "inset 0 0 0 2px #17233350, 0 3px 0 #000",
+  color: "#F2E4C0", fontSize: 13, cursor: "pointer", ...LB,
+};
+
 function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast,
   appointments, setAppointments }) {
   const [zone, setZone] = useState(null);
+  const [panel, setPanel] = useState(null); // null | "care" | "records"
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const sel = HEALTH_ZONES.find((z) => z.id === zone) || null;
-  // Tan silhouette so the figure reads on the clipboard parchment (not cream-on-cream).
-  const part = (st) => <div style={{ position: "absolute", background: "#C4A882", border: "3px solid #2A180C", ...st }} />;
+
   const leave = () => {
     playContainerSfx("mirror_cabinet", "close");
     go("apartment");
@@ -2336,15 +2557,28 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
     return t ? t.status === "done" : false;
   };
   const stabilized = HEALTH_ZONES.filter((z) => zoneDone(z.id)).length;
+  const openCount = HEALTH_ZONES.length - stabilized;
   const prog = sessionProgress(session, HEALTH_SESSION_GOALS);
-  const openHealth = tasks.filter((t) => isOpen(t) && t.category === "health");
-  const diag = [
-    openHealth.length >= 4 ? { c: "#C43B34", t: "Stress high" } : { c: "#5D7C3B", t: "Stress ok" },
-    zoneDone("brain") ? { c: "#5D7C3B", t: "Sleep ok" } : { c: "#B9CEDC", t: "Sleep low" },
-    zoneDone("obgyn") ? { c: "#5D7C3B", t: "OB/GYN booked" } : { c: "#C9942E", t: "OB/GYN open" },
-  ];
-
   const booked = activeAppointments(appointments);
+
+  const zoneBookTask = (zid) => tasks.find((t) => t.zone === zid && t.kind === "book");
+  const zoneAppt = (zid) => booked.find((a) => a.zone === zid) || null;
+  /** ready = callable now · scheduled = booked/reminded · later = deferred or already handled elsewhere · done = stabilized. */
+  const zoneState = (z) => {
+    if (zoneDone(z.id)) return "done";
+    if (zoneAppt(z.id)) return "scheduled";
+    const bt = zoneBookTask(z.id);
+    if (bt && isBookableHealthTask(bt)) return "ready";
+    return "later";
+  };
+  const stateCounts = HEALTH_ZONES.reduce((acc, z) => {
+    const s = zoneState(z);
+    if (s !== "done") acc[s] = (acc[s] || 0) + 1;
+    return acc;
+  }, {});
+  const needBooking = stateCounts.ready || 0;
+  const scheduledCount = stateCounts.scheduled || 0;
+  const laterCount = stateCounts.later || 0;
 
   const stabilizeZone = (zid) => {
     if (zoneDone(zid)) return;
@@ -2371,169 +2605,305 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
     onSessionBump?.("appt", 1, "Appointment ✓");
   };
 
+  // Same nav Shirley/booking already lives behind — Health never forks the
+  // appointment FSM, it just routes to the Desk landline that owns it.
+  const callOffice = () => go("desk");
+
+  const selectZone = (zid) => {
+    setZone(zid);
+    setPanel(null);
+    setDetailsOpen(false);
+  };
+  const togglePanel = (name) => setPanel((p) => (p === name ? null : name));
+
+  const laterExplain = (bt) => {
+    if (bt?.dependsNote) return bt.dependsNote;
+    if (bt?.availableFrom) return `Opens ${formatApptDay(bt.availableFrom)}`;
+    return "Nothing to do here yet.";
+  };
+
   return (
-    <Screen
-      compact
-      flush
-      title="Body Board"
-      icon="🩺"
-      onBack={leave}
-      progress={stabilized / HEALTH_ZONES.length}
-      progressLabel={`${stabilized}/${HEALTH_ZONES.length}`}
-    >
-      <RewardToast text={rewardToast} />
-
-      {/* Top band — only when there are bookings (no empty placeholder) */}
-      {booked.length > 0 && (
-        <div style={{
-          flex: "0 0 auto",
-          padding: "2px 6px 4px",
-          display: "flex", gap: 4, overflowX: "auto",
-        }}>
-          {booked.map((a) => {
-            const due = canAttendZone(appointments, a.zone)?.id === a.id;
-            const task = tasks.find((t) => t.id === a.taskId);
-            return (
-              <button
-                key={a.id}
-                type="button"
-                onClick={() => due && finishAppt(a)}
-                disabled={!due}
-                style={{
-                  flex: "0 0 auto", width: 96, padding: "3px 5px", textAlign: "left",
-                  cursor: due ? "pointer" : "default",
-                  background: due ? "#EFE7D2" : "#2A1709",
-                  border: "2px solid #120A04", ...LB,
-                }}
-              >
-                <div style={{ fontSize: 8, color: "#8A7350" }}>{due ? "ATTEND" : "BOOKED"}</div>
-                <div style={{ fontSize: 9, color: due ? "#3A2018" : "#C9B896", marginTop: 1 }}>
-                  {visitLabel(task || a.zone)}
-                </div>
-                <div style={{ fontSize: 8, color: "#5A381F", marginTop: 1 }}>
-                  {formatApptDay(a.dueAt)}{a.time ? ` · ${a.time}` : ""}
-                  {!due ? " · wait" : " · today"}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Full-width clipboard — flush L/R; short screens clip top/bottom evenly */}
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 250, background: "#1A1008", display: "flex", flexDirection: "column",
+      animation: "screenIn 200ms ease-out", overflow: "hidden",
+    }}>
+      {screenCss}
       <div style={{
-        position: "relative",
-        flex: 1,
-        minHeight: 0,
-        width: "100%",
-        overflow: "hidden",
+        flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden",
+        padding: "calc(env(safe-area-inset-top, 0px) + 6px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px)",
+        gap: 6,
       }}>
-        <div style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: "50%",
-          transform: "translateY(-50%)",
-          width: "100%",
-          aspectRatio: "682 / 1024",
-        }}>
-          <img
-            src={HEALTH_CLIPBOARD}
-            alt=""
-            draggable={false}
-            style={{
-              display: "block",
-              width: "100%",
-              height: "100%",
-              objectFit: "fill",
-              imageRendering: "pixelated",
-              pointerEvents: "none",
-              userSelect: "none",
-            }}
-          />
+        <RewardToast text={rewardToast} />
+
+        {/* Framed header: back arrow + BODY BOARD banner + N OPEN chip */}
+        <div style={{ display: "flex", alignItems: "stretch", gap: 6, flex: "0 0 auto" }}>
+          <button type="button" onClick={leave} aria-label="Back" style={{
+            position: "relative", flex: "0 0 auto", width: 66, aspectRatio: "213 / 92",
+            backgroundImage: `url(${HEALTH_BACK_BUTTON})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+            border: "none", padding: 0, cursor: "pointer", imageRendering: "pixelated",
+          }} />
           <div style={{
-            position: "absolute",
-            left: "14%",
-            top: "12%",
-            width: "72%",
-            height: "78%",
+            position: "relative", flex: 1, minWidth: 0, aspectRatio: "1778 / 263",
+            backgroundImage: `url(${HEALTH_HEADER_BAR})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+            imageRendering: "pixelated", display: "flex", alignItems: "center", justifyContent: "center",
           }}>
-            {part({ left: "35%", top: "0%", width: "30%", height: "18%", borderRadius: 14 })}
-            {part({ left: "42%", top: "17%", width: "16%", height: "5%" })}
-            {part({ left: "25%", top: "21%", width: "50%", height: "36%", borderRadius: 10 })}
-            {part({ left: "10%", top: "23%", width: "12%", height: "30%", borderRadius: 9 })}
-            {part({ left: "78%", top: "23%", width: "12%", height: "30%", borderRadius: 9 })}
-            {part({ left: "28%", top: "58%", width: "16%", height: "34%", borderRadius: 9 })}
-            {part({ left: "56%", top: "58%", width: "16%", height: "34%", borderRadius: 9 })}
-            {HEALTH_ZONES.map((z) => {
-              const ok = zoneDone(z.id);
-              return (
-                <button key={z.id} onClick={() => setZone(z.id)} style={{
-                  position: "absolute", left: z.x, top: z.y, transform: "translate(-50%, -50%)",
-                  width: 32, height: 32, borderRadius: "50%", cursor: "pointer",
-                  background: "#221306", border: `3px solid ${ok ? "#8FD14F" : zone === z.id ? "#FFD97A" : "#C74B4F"}`,
-                  animation: ok ? "zoneCalm 900ms ease-out" : "zonePulse 1.8s ease-in-out infinite",
-                  color: ok ? "#8FD14F" : "#C74B4F", fontSize: 12, padding: 0, ...LB,
-                }}>{ok ? "✓" : "!"}</button>
-              );
-            })}
+            <span style={{ color: "#F2E4C0", fontSize: "clamp(13px, 4.2vw, 18px)", ...LB }}>BODY BOARD</span>
+          </div>
+          <div style={{
+            position: "relative", flex: "0 0 auto", display: "flex", alignItems: "center",
+            padding: "0 9px", ...FR,
+          }}>
+            <span style={{ color: "#FFD97A", fontSize: 10, whiteSpace: "nowrap", ...LB }}>{openCount} OPEN</span>
           </div>
         </div>
-      </div>
 
-      {/* Bottom band — zone detail only when selected; thin care + notes */}
-      <div style={{ flex: "0 0 auto", padding: "2px 6px 0" }}>
-        {sel && (
+        {/* Clipboard — body figure with zone octagons pinned on it */}
+        <div style={{ position: "relative", flex: 1, minHeight: 0, width: "100%", overflow: "hidden" }}>
           <div style={{
-            display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap",
-            padding: "2px 0 2px",
+            position: "absolute", left: 0, right: 0, top: "50%", transform: "translateY(-50%)",
+            width: "100%", aspectRatio: "682 / 1024",
           }}>
-            <span style={{ color: "#F2E4C0", fontSize: 12, ...LB }}>{sel.label}</span>
-            <span style={{ color: zoneDone(sel.id) ? "#8FD14F" : "#C74B4F", fontSize: 9, ...LB }}>
-              {zoneDone(sel.id) ? "stable" : "needs attention"}
-            </span>
-            <span style={{ color: "#C9B896", fontSize: 9, flex: 1, minWidth: 60, ...LB }}>{sel.note}</span>
-            {!zoneDone(sel.id) && (
-              <button
-                onClick={() => stabilizeZone(sel.id)}
-                style={{ padding: "4px 8px", background: "#3A2410", color: "#F2E4C0", border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB }}
-              >
-                Stabilize ✨
-              </button>
-            )}
+            <img
+              src={HEALTH_CLIPBOARD}
+              alt=""
+              draggable={false}
+              style={{
+                display: "block", width: "100%", height: "100%", objectFit: "fill",
+                imageRendering: "pixelated", pointerEvents: "none", userSelect: "none",
+              }}
+            />
+            <div style={{ position: "absolute", left: "14%", top: "10%", width: "72%", height: "72%" }}>
+              <div style={{
+                position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)",
+                width: "62%", aspectRatio: "406 / 903",
+              }}>
+                <img
+                  src={HEALTH_BODY_FIGURE}
+                  alt=""
+                  draggable={false}
+                  style={{
+                    width: "100%", height: "100%", objectFit: "contain",
+                    imageRendering: "pixelated", pointerEvents: "none", userSelect: "none",
+                  }}
+                />
+                {HEALTH_ZONES.map((z) => {
+                  const state = zoneState(z);
+                  const isSel = zone === z.id;
+                  return (
+                    <button
+                      key={z.id}
+                      type="button"
+                      onClick={() => selectZone(z.id)}
+                      aria-label={z.label}
+                      style={{
+                        position: "absolute", left: `${z.x}%`, top: `${z.y}%`,
+                        transform: "translate(-50%, -38%)",
+                        width: "26%", aspectRatio: "140 / 188",
+                        background: "transparent", border: "none", padding: 0, cursor: "pointer",
+                        outline: isSel ? "3px solid #FFD97A" : "none",
+                        boxShadow: isSel ? "0 0 10px 2px rgba(255,217,122,0.65)" : "none",
+                      }}
+                    >
+                      <img
+                        src={z.icon}
+                        alt=""
+                        draggable={false}
+                        style={{ width: "100%", height: "100%", objectFit: "contain", imageRendering: "pixelated" }}
+                      />
+                      <span
+                        aria-hidden
+                        style={{
+                          position: "absolute", top: "6%", right: "4%", width: 11, height: 11, borderRadius: "50%",
+                          border: "2px solid #120A04", background: ZONE_STATE_COLOR[state],
+                          animation: state === "ready" ? "zonePulse 1.8s ease-in-out infinite"
+                            : state === "done" ? "zoneCalm 900ms ease-out" : "none",
+                        }}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
-        )}
-
-        <div style={{ display: "flex", gap: 3, marginTop: sel ? 2 : 0 }}>
-          {CARE_ITEMS.map((c) => (
-            <button key={c.id} onClick={() => useCare(c.id)} style={{
-              flex: 1, padding: "4px 2px", background: "#3A2410", color: "#F2E4C0",
-              border: "2px solid #120A04", fontSize: 8, cursor: "pointer", lineHeight: 1.15, ...LB,
-            }}>
-              <div style={{ fontSize: 12 }}>{c.icon}</div>
-              {c.label}
-            </button>
-          ))}
         </div>
 
+        {/* Selected-zone / Care Kit / Records card — one clipboard-note slot */}
         <div style={{
-          marginTop: 2, padding: "1px 0", display: "flex",
-          gap: 8, alignItems: "center", flexWrap: "nowrap", overflow: "hidden",
+          position: "relative", flex: "0 0 auto", minHeight: 118,
+          backgroundImage: panel ? "none" : `url(${HEALTH_NOTE_PAPER})`,
+          backgroundColor: panel ? "#241509" : "transparent",
+          backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+          border: panel ? "3px solid #120A04" : "none",
+          boxShadow: panel ? "inset 0 0 0 2px #6B4423" : "none",
+          padding: panel ? "8px 10px" : "10px 14px 10px 30px",
+          imageRendering: "pixelated",
         }}>
-          {diag.map((d, i) => (
-            <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 3, ...LB }}>
-              <span style={{ width: 6, height: 6, background: d.c, border: "1px solid #120A04", flex: "0 0 auto" }} />
-              <span style={{ color: "#C9B896", fontSize: 9, whiteSpace: "nowrap" }}>{d.t}</span>
-            </span>
-          ))}
-          {prog.items?.length > 0 && (
-            <span style={{ marginLeft: "auto", color: "#8A7350", fontSize: 8, ...LB }}>
-              Care {prog.items.filter((it) => it.done).length}/{prog.items.length}
-            </span>
+          {panel === "care" && (
+            <>
+              <div style={{ color: "#FFD97A", fontSize: 12, marginBottom: 6, ...LB }}>Care Kit</div>
+              <div style={{ display: "flex", gap: 4 }}>
+                {CARE_ITEMS.map((c) => (
+                  <button key={c.id} onClick={() => useCare(c.id)} style={{
+                    flex: 1, padding: "6px 2px", background: "#3A2410", color: "#F2E4C0",
+                    border: "2px solid #120A04", fontSize: 9, cursor: "pointer", lineHeight: 1.2, ...LB,
+                  }}>
+                    <div style={{ fontSize: 14 }}>{c.icon}</div>
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+              <div style={{ marginTop: 6, color: "#8A7350", fontSize: 9, ...LB }}>
+                Uses the selected zone first, else the next open match. Care used {prog.items?.find((i) => i.id === "care")?.cur ?? 0}/3 today.
+              </div>
+            </>
           )}
+
+          {panel === "records" && (
+            <>
+              <div style={{ color: "#FFD97A", fontSize: 12, marginBottom: 6, ...LB }}>Records — booked appointments</div>
+              {booked.length === 0 && (
+                <div style={{ color: "#8A7350", fontSize: 10, ...LB }}>Nothing on the books yet.</div>
+              )}
+              <div style={{ display: "flex", gap: 4, overflowX: "auto" }}>
+                {booked.map((a) => {
+                  const due = canAttendZone(appointments, a.zone)?.id === a.id;
+                  const task = tasks.find((t) => t.id === a.taskId);
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => due && finishAppt(a)}
+                      disabled={!due}
+                      style={{
+                        flex: "0 0 auto", width: 100, padding: "4px 6px", textAlign: "left",
+                        cursor: due ? "pointer" : "default",
+                        background: due ? "#EFE7D2" : "#2A1709",
+                        border: "2px solid #120A04", ...LB,
+                      }}
+                    >
+                      <div style={{ fontSize: 8, color: "#8A7350" }}>{due ? "ATTEND" : "BOOKED"}</div>
+                      <div style={{ fontSize: 9, color: due ? "#3A2018" : "#C9B896", marginTop: 1 }}>
+                        {visitLabel(task || a.zone)}
+                      </div>
+                      <div style={{ fontSize: 8, color: "#5A381F", marginTop: 1 }}>
+                        {formatApptDay(a.dueAt)}{a.time ? ` · ${a.time}` : ""}
+                        {!due ? " · wait" : " · today"}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {!panel && !sel && (
+            <div style={{ color: "#6B563B", fontSize: 11, textAlign: "center", marginTop: 18, ...LB }}>
+              Tap a zone on the chart.
+            </div>
+          )}
+
+          {!panel && sel && (() => {
+            const state = zoneState(sel);
+            const bt = zoneBookTask(sel.id);
+            const appt = zoneAppt(sel.id);
+            const dueToday = appt && canAttendZone(appointments, sel.id)?.id === appt.id;
+            const statusText = state === "done" ? "stable"
+              : state === "scheduled" ? (dueToday ? "ready to attend" : `booked ${formatApptDay(appt.dueAt)}`)
+              : state === "ready" ? "needs scheduling"
+              : "later";
+            return (
+              <>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                  <div style={{ color: "#2A1808", fontSize: 16, ...LB }}>{sel.label}</div>
+                  <span aria-hidden style={{
+                    flex: "0 0 auto", width: 22, height: 22, borderRadius: "50%", border: "2px solid #A3252C",
+                    color: "#A3252C", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12,
+                  }}>+</span>
+                </div>
+                <div style={{ borderTop: "1px dashed #B89A6A", margin: "4px 0 6px" }} />
+                <div style={{ color: "#4A3420", fontSize: 11, ...LB }}>
+                  {sel.note} · {statusText}
+                </div>
+                {bt && state !== "done" && (
+                  <div style={{ marginTop: 3, color: "#8A6B3E", fontSize: 9, ...LB }}>{taskStatus(bt)}</div>
+                )}
+
+                {state === "ready" && (
+                  <button onClick={callOffice} style={healthCallBtnStyle}>CALL OFFICE</button>
+                )}
+                {state === "scheduled" && dueToday && (
+                  <button onClick={() => finishAppt(appt)} style={{ ...healthCallBtnStyle, background: "linear-gradient(#3E7A52, #245234)" }}>
+                    ATTEND APPOINTMENT
+                  </button>
+                )}
+                {state === "scheduled" && !dueToday && (
+                  <div style={{ marginTop: 8, color: "#5A4526", fontSize: 10, ...LB }}>Come back on the day of the visit.</div>
+                )}
+                {state === "later" && (
+                  <div style={{ marginTop: 8, color: "#5A4526", fontSize: 10, ...LB }}>Not callable yet — {laterExplain(bt)}</div>
+                )}
+                {state === "done" && (
+                  <div style={{ marginTop: 8, color: "#3B6B2E", fontSize: 10, ...LB }}>Handled. Nice.</div>
+                )}
+
+                <div style={{ textAlign: "center", marginTop: 6 }}>
+                  <button
+                    onClick={() => setDetailsOpen((v) => !v)}
+                    style={{ background: "none", border: "none", color: "#2C4F7A", fontSize: 10, textDecoration: "underline", cursor: "pointer", ...LB }}
+                  >
+                    {detailsOpen ? "Hide details" : "View details"}
+                  </button>
+                  {detailsOpen && (
+                    <div style={{ marginTop: 4, color: "#5A4526", fontSize: 9, textAlign: "left", ...LB }}>
+                      {bt ? bt.title : "No open task for this zone."}
+                      {bt?.due ? ` · ${bt.due}` : ""}
+                    </div>
+                  )}
+                </div>
+              </>
+            );
+          })()}
+        </div>
+
+        {/* Status legend strip */}
+        <div style={{
+          position: "relative", flex: "0 0 auto", minHeight: 26,
+          backgroundImage: `url(${HEALTH_LEGEND_BAR})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+          imageRendering: "pixelated", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+          padding: "4px 8px", flexWrap: "nowrap", overflow: "hidden",
+        }}>
+          <span style={{ width: 8, height: 8, borderRadius: "50%", background: ZONE_STATE_COLOR.ready, border: "1px solid #120A04", flex: "0 0 auto" }} />
+          <span style={{ color: "#E4917A", fontSize: 10, whiteSpace: "nowrap", ...LB }}>{needBooking} need booking</span>
+          <span style={{ color: "#6B563B" }}>·</span>
+          <span style={{ width: 8, height: 8, borderRadius: "50%", background: ZONE_STATE_COLOR.scheduled, border: "1px solid #120A04", flex: "0 0 auto" }} />
+          <span style={{ color: "#8FB4D9", fontSize: 10, whiteSpace: "nowrap", ...LB }}>{scheduledCount} scheduled</span>
+          <span style={{ color: "#6B563B" }}>·</span>
+          <span style={{ width: 8, height: 8, borderRadius: "50%", background: ZONE_STATE_COLOR.later, border: "1px solid #120A04", flex: "0 0 auto" }} />
+          <span style={{ color: "#E8C98A", fontSize: 10, whiteSpace: "nowrap", ...LB }}>{laterCount} later</span>
+        </div>
+
+        {/* SHIRLEY / CARE KIT / RECORDS */}
+        <div style={{ display: "flex", gap: 6, flex: "0 0 auto" }}>
+          <button type="button" onClick={callOffice} aria-label="Shirley" style={{
+            flex: 1, position: "relative", aspectRatio: "323 / 142",
+            backgroundImage: `url(${HEALTH_SHIRLEY_BTN})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+            border: "none", padding: 0, cursor: "pointer", imageRendering: "pixelated",
+          }} />
+          <button type="button" onClick={() => togglePanel("care")} aria-label="Care Kit" style={{
+            flex: 1, position: "relative", aspectRatio: "339 / 142",
+            backgroundImage: `url(${HEALTH_CAREKIT_BTN})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+            border: "none", padding: 0, cursor: "pointer", imageRendering: "pixelated",
+            outline: panel === "care" ? "3px solid #FFD97A" : "none",
+          }} />
+          <button type="button" onClick={() => togglePanel("records")} aria-label="Records" style={{
+            flex: 1, position: "relative", aspectRatio: "340 / 142",
+            backgroundImage: `url(${HEALTH_RECORDS_BTN})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+            border: "none", padding: 0, cursor: "pointer", imageRendering: "pixelated",
+            outline: panel === "records" ? "3px solid #FFD97A" : "none",
+          }} />
         </div>
       </div>
-    </Screen>
+    </div>
   );
 }
 
