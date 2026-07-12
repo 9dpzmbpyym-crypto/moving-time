@@ -1,19 +1,19 @@
 # Latest handoff
 
-→ **`docs/sessions/2026-07-11-cursor-command-board.md`** (Cursor Grok — Command Board, ledger + quick-add, Desk housing + 10+5, Shirley key harden)
+→ **`docs/sessions/2026-07-11-cursor-task-card-overlays.md`** (Cursor Grok — task card PNGs + `/？cards=1` designer + overlay apply; subtle Board↔designer mismatch left for Codex)
 
-**Nag:** sublet lock **Jul 15** · Hunter **Jul 14**. Use Board/Ledger/Housing tray on phone today.
+**Codex next:** paste the prompt in that session file — calibrate live Board overlays to match `/？cards=1`. Pull `main` into `codex` first. Do not rebuild Board.
 
-**Codex resume (~6:03 PM):** board/ledger/housing already on `main` — do **not** rebuild. Next: kitchen calendar portal · HUD pinned chips · job-tracker sync. Pull `main` into `codex` first.
+**Nag:** sublet lock **Jul 15** · Hunter **Jul 14**.
 
-→ `docs/sessions/2026-07-11-cursor-perf-shirley-queue.md` (earlier Cursor — perf + Shirley Pass 1)
-→ `docs/sessions/2026-07-11-codex-productivity-core.md` (Codex — data layer / Pressure v2)
+→ `docs/sessions/2026-07-11-cursor-command-board.md` (earlier — Board/ledger/Desk housing)
+→ `docs/sessions/2026-07-11-codex-productivity-core.md`
 
-**Also open:** phone smoke · Shirley stall · Stretchy meows · Fable glow judgment.
+**Also open:** phone smoke · kitchen calendar portal · HUD chips · Shirley stall · Stretchy meows.
 
-**Branches:** `main` / `cursor` / `codex`. Grok shipping this cut then IDLE.
+**Branches:** `main` / `cursor` / `codex`. Grok closing this cut then IDLE.
 
-**Vercel:** https://moving-time.vercel.app — phone saves must migrate, never wipe.
+**Vercel:** https://moving-time.vercel.app — do not push until Eloisa says so.
 
 ---
 *Session reports live in `docs/sessions/`; see `docs/ai-team/end-here.md`.*

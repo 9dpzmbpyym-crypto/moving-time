@@ -9,6 +9,12 @@ Covers **July 5–10, 2026**. Combines:
 
 ---
 
+## 2026-07-11 — [Cursor / Grok 4.5] Task card overlays + layout designer
+- Wired thin/full task-card PNGs into Board draw + hand (+ apt fan); built `/？cards=1` overlay designer (drag/resize, bound B, outline toggle, copy)
+- Applied Eloisa `CARD_OVERLAY` layout; taller full title frame without moving footer; clamped card minWidth; fixed clipped-hand CSS-scale mistake
+- Session `docs/sessions/2026-07-11-cursor-task-card-overlays.md` — Codex owns remaining Board↔designer pixel match
+- Left for Codex: subtle live vs designer drift (prompt in session file)
+
 ## 2026-07-11 — [Cursor / Grok 4.5] Command Board + ledger (Jul 15 nag)
 - Menu → Command Board: energy check-in, ≤3 picks, critical-path strip, Go/Done
 - Ledger page-flip + quick-add sticky; Desk Housing tray + Messages 10 / Backups 5
