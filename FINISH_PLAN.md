@@ -24,9 +24,11 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 
 ## Open next (Jul 11 — after Grok env/storage session)
 
-### Task card overlay pixel-match — [codex] (from Cursor close-out)
-- [x] **[codex]** Make live Command Board thin + full cards match `/？cards=1` (outlines hidden). Shared source of truth: `CARD_OVERLAY` in `Screens.jsx`. Prompt in `docs/sessions/2026-07-11-cursor-task-card-overlays.md`. Pitfalls: no broken CSS-scale clip; keep VerticalTaskCard minWidth clamp; don’t touch full-card footer art.
-- Acceptance: Eloisa side-by-side can’t spot obvious drift; apartment fan stays ~56px.
+### Task card overlay — one component / one scale — [codex] (Claude root cause, Jul 11 eve)
+- [x] **[codex]** First pass: fold pips into `CARD_OVERLAY`, share FitText/scaleOverlayPx with designer (credits ran out; designer briefly broke on undefined titleMax — Grok fixed)
+- [x] **[cursor]** Apply Eloisa’s latest `/？cards=1` nudge into `CARD_OVERLAY` (thin title/dates + full date nudge). See `HANDOFF.md`.
+- [ ] **[codex]** Real fix (Claude): designer + Board must render the **same** card component and only change outer width. Everything (position, font, pips) relative to card width; **one scale factor**; no independent per-element px fonts. Stop micro-nudging two paths. Pitfalls already burned: CSS-scale clip, VerticalTaskCard minWidth blow-up, full-card footer art.
+- Acceptance: `/？cards=1` (outlines hidden) vs Board draw + hand — same component, scaled; apartment fan ~56px.
 
 ### Branch swap at Grok session close — [cursor] (this close-out)
 - [x] Merge `cursor/storage-glow-7a01` → `main` (session file + signed DEVLOG)

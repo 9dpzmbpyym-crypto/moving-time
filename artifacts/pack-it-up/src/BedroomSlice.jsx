@@ -2488,6 +2488,29 @@ export default function PackItUp({ glowMode = "split" }) {
   );
   const [phoneNudge, setPhoneNudge] = useState(null);
   const phoneNudgeShownRef = useRef(false);
+  /** Apartment hand fan — drag to place/resize; badge offset from rightmost card (draggable). */
+  const [fanLayout, setFanLayout] = useState(() => {
+    const defaults = { left: 18, bottom: 18, cardW: Math.round(56 * 1.3), badgeOx: -10, badgeOy: -8 };
+    try {
+      const raw = localStorage.getItem("packitup-apt-fan-layout")
+        || localStorage.getItem("packitup-apt-fan-pos");
+      if (!raw) return defaults;
+      const p = JSON.parse(raw);
+      return {
+        left: typeof p.left === "number" ? p.left : defaults.left,
+        bottom: typeof p.bottom === "number" ? p.bottom : defaults.bottom,
+        cardW: typeof p.cardW === "number" ? p.cardW : defaults.cardW,
+        badgeOx: typeof p.badgeOx === "number" ? p.badgeOx
+          : (typeof p.badgeLeft === "number" ? 0 : defaults.badgeOx),
+        badgeOy: typeof p.badgeOy === "number" ? p.badgeOy
+          : (typeof p.badgeTop === "number" ? 0 : defaults.badgeOy),
+      };
+    } catch { return defaults; }
+  });
+  const fanDrag = useRef(null);
+  useEffect(() => {
+    localStorage.setItem("packitup-apt-fan-layout", JSON.stringify(fanLayout));
+  }, [fanLayout]);
 
   // Re-open "Send 5–10 sublet inquiries" each local day until h_lock is done.
   useEffect(() => {
@@ -2985,24 +3008,85 @@ export default function PackItUp({ glowMode = "split" }) {
 
   /* urgency scaffold: overall pressure drives fan peek / twitch */
   const pressure = taskPressure(tasks);
-  /* apartment corner fan = Command Board hand, vertical card art */
+  /* apartment corner fan = Command Board hand, same VerticalTaskCard, smaller */
   const hand = session?.energy && session?.dailyDeal
     ? handTasks(tasks, session.dailyDeal)
     : [];
   const fanCards = hand;
-  const fanCardW = 56;
-  const fanCardH = Math.round(fanCardW * (487 / 290));
-  const fanW = Math.min(220, fanCardW + 8 + Math.max(0, fanCards.length - 1) * 26);
-  const fanLayoutApt = (n, i, width) => {
+  const fanPreferredW = Math.max(40, Math.min(160, fanLayout.cardW || Math.round(56 * 1.3)));
+  // Same idea as Command Board hand: keep the fan inside a max span; shrink cards as n grows.
+  const fanMaxSpan = Math.min(
+    Math.max(fanPreferredW + 8, (viewSize.w || 360) - fanLayout.left - 24),
+    Math.round((viewSize.w || 360) * 0.62),
+  );
+  const fanStepRatio = 0.34;
+  const fanCardW = (() => {
+    const n = Math.max(1, fanCards.length);
+    const fit = Math.floor(fanMaxSpan / (1 + (n - 1) * fanStepRatio));
+    return Math.max(40, Math.min(fanPreferredW, fit));
+  })();
+  const fanCardH = Math.round(fanCardW * (487 / 284));
+  const fanStep = Math.max(14, Math.round(fanCardW * fanStepRatio));
+  const fanW = fanCardW + Math.max(0, fanCards.length - 1) * fanStep;
+  const fanLayoutApt = (n, i) => {
     if (n <= 1) return { left: 0, rot: -6, lift: 0 };
-    const maxTravel = Math.max(width - fanCardW, 1);
-    const step = Math.max(16, Math.min(30, maxTravel / (n - 1)));
     const t = i / (n - 1);
     return {
-      left: i * step,
+      left: i * fanStep,
       rot: -10 + t * 18,
-      lift: Math.sin(t * Math.PI) * 4,
+      lift: Math.sin(t * Math.PI) * Math.max(3, Math.round(fanCardH * 0.03)),
     };
+  };
+  const fanRightmost = fanLayoutApt(Math.max(1, fanCards.length), Math.max(0, fanCards.length - 1));
+  const badgeLeft = fanRightmost.left + fanCardW + (fanLayout.badgeOx ?? -10);
+  const badgeTop = -fanRightmost.lift + (fanLayout.badgeOy ?? -8);
+  const onFanPointerDown = (e, mode = "move") => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    fanDrag.current = {
+      mode,
+      startX: e.clientX,
+      startY: e.clientY,
+      origLeft: fanLayout.left,
+      origBottom: fanLayout.bottom,
+      origCardW: fanPreferredW,
+      origBadgeOx: fanLayout.badgeOx ?? -10,
+      origBadgeOy: fanLayout.badgeOy ?? -8,
+      moved: false,
+    };
+  };
+  const onFanPointerMove = (e) => {
+    const d = fanDrag.current;
+    if (!d) return;
+    const dx = e.clientX - d.startX;
+    const dy = e.clientY - d.startY;
+    if (!d.moved && Math.abs(dx) + Math.abs(dy) > 6) d.moved = true;
+    if (!d.moved) return;
+    if (d.mode === "move") {
+      setFanLayout((prev) => ({
+        ...prev,
+        left: Math.round(d.origLeft + dx),
+        bottom: Math.round(d.origBottom - dy),
+      }));
+    } else if (d.mode === "resize") {
+      const delta = Math.max(dx, -dy);
+      setFanLayout((prev) => ({
+        ...prev,
+        cardW: Math.round(Math.max(40, Math.min(160, d.origCardW + delta))),
+      }));
+    } else if (d.mode === "badge") {
+      setFanLayout((prev) => ({
+        ...prev,
+        badgeOx: Math.round(d.origBadgeOx + dx),
+        badgeOy: Math.round(d.origBadgeOy + dy),
+      }));
+    }
+  };
+  const onFanPointerUp = () => {
+    const d = fanDrag.current;
+    fanDrag.current = null;
+    if (d && d.mode === "move" && !d.moved) setScreen("board");
   };
 
   /* everything handled across ALL rooms — feeds Inventory + Log screens.
@@ -4148,26 +4232,29 @@ export default function PackItUp({ glowMode = "split" }) {
           ))}
         </div>
 
-        {/* ---- paper fan: Command Board hand as vertical task-card art ---- */}
+        {/* ---- paper fan: drag body · corner resize · drag badge (anchored to rightmost card) ---- */}
         {fanCards.length > 0 && (
         <div
           className={pressure >= 3 ? "fanNudge3" : pressure === 2 ? "fanNudge2" : undefined}
-          onClick={() => setScreen("board")}
+          onPointerDown={(e) => onFanPointerDown(e, "move")}
+          onPointerMove={onFanPointerMove}
+          onPointerUp={onFanPointerUp}
+          onPointerCancel={onFanPointerUp}
           style={{
-            position: "absolute", left: 18, zIndex: 110, width: fanW, height: fanCardH, cursor: "pointer",
-            bottom: `calc(env(safe-area-inset-bottom, 0px) + ${18 + pressure * 5}px)`,
-            transition: "bottom 400ms ease",
+            position: "absolute", left: fanLayout.left, zIndex: 110, width: fanW, height: fanCardH,
+            bottom: `calc(env(safe-area-inset-bottom, 0px) + ${fanLayout.bottom}px)`,
+            cursor: "grab", touchAction: "none", overflow: "visible",
           }}
+          title="Drag fan · corner resize · drag badge · tap opens Board"
         >
           {fanCards.map((t, i) => {
-            const pos = fanLayoutApt(fanCards.length, i, fanW);
+            const pos = fanLayoutApt(fanCards.length, i);
             return (
               <VerticalTaskCard
                 key={t.id}
                 task={t}
                 width={fanCardW}
                 bound={!!t.bound}
-                compact
                 style={{
                   position: "absolute",
                   left: pos.left,
@@ -4180,11 +4267,34 @@ export default function PackItUp({ glowMode = "split" }) {
               />
             );
           })}
-          <span style={{
-            position: "absolute", top: -8, right: -14, zIndex: 50, minWidth: 20, height: 20, padding: "0 4px",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            background: "#C43B34", color: "#F3EDDD", fontSize: 11, border: "2px solid #120A04", ...ui.label,
-          }}>{fanCards.length}</span>
+          <span
+            onPointerDown={(e) => onFanPointerDown(e, "badge")}
+            onPointerMove={onFanPointerMove}
+            onPointerUp={onFanPointerUp}
+            onPointerCancel={onFanPointerUp}
+            style={{
+              position: "absolute",
+              left: badgeLeft,
+              top: badgeTop,
+              zIndex: 50, minWidth: 20, height: 20, padding: "0 4px",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: "#C43B34", color: "#F3EDDD", fontSize: 11, border: "2px solid #120A04",
+              cursor: "move", touchAction: "none", ...ui.label,
+            }}
+          >{fanCards.length}</span>
+          <div
+            onPointerDown={(e) => onFanPointerDown(e, "resize")}
+            onPointerMove={onFanPointerMove}
+            onPointerUp={onFanPointerUp}
+            onPointerCancel={onFanPointerUp}
+            title="Resize cards"
+            style={{
+              position: "absolute", right: -6, bottom: -6, width: 16, height: 16, zIndex: 60,
+              background: "#FFD97A", border: "2px solid #120A04", borderRadius: 2,
+              cursor: "nwse-resize", touchAction: "none",
+              boxShadow: "0 1px 0 #000",
+            }}
+          />
         </div>
         )}
 

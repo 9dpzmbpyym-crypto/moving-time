@@ -124,20 +124,20 @@ function clampPips(n) {
 export const CARD_OVERLAY = {
   thin: {
     refW: 420,
-    title: { left: "2.4%", right: "3.2%", top: "30.1%", height: "26.5%" },
-    target: { left: "18.5%", top: "67.9%", width: "14%" },
-    latest: { left: "47.6%", top: "67.8%", width: "14%" },
+    title: { left: "3.3%", right: "2.3%", top: "28.3%", height: "26.5%" },
+    target: { left: "18.5%", top: "70%", width: "12.2%" },
+    latest: { left: "47.5%", top: "70.4%", width: "12.3%" },
     titleMaxPx: 13,
     datePx: 9,
     pips: { effort: [[66.7, 74.8], [70.5, 74.8], [74.4, 74.8]], importance: [[87.85, 74.8], [91.7, 74.8], [95.2, 74.8]], size: 2.15 },
   },
   full: {
     refW: 220,
-    title: { left: "8.2%", right: "9.2%", top: "21.7%", height: "16.9%" },
-    target: { left: "36.3%", top: "41.3%", width: "58%" },
-    latest: { left: "36.5%", top: "46.5%", width: "58%" },
+    title: { left: "8.2%", right: "7.4%", top: "21.5%", height: "17.9%" },
+    target: { left: "36.1%", top: "41.7%", width: "58%" },
+    latest: { left: "36.7%", top: "47.1%", width: "58%" },
     bound: { left: "3.9%", top: "1.1%", width: "9.8%", height: "8.4%" },
-    titleMaxPx: 12.5,
+    titleMaxPx: 18,
     datePx: 10.5,
     pips: { effort: [[20.55, 16.6], [28.22, 16.65], [36.13, 16.61]], importance: [[20.77, 86.88], [28.55, 86.93], [36.27, 86.97]], size: 5.2 },
   },
@@ -286,19 +286,20 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
  * Natural PNG aspect (no stretch) so % overlays stay locked to art.
  */
 export function VerticalTaskCard({
-  task, width = 106, bound = false, selected = false, compact = false, onClick, style,
+  task, width = 106, bound = false, selected = false, compact = false, textScale = 1, onClick, style,
 }) {
   const src = CARD_FULL[task?.category] || CARD_FULL.admin;
   const effort = clampPips(task?.effort || 1) || 1;
   const importance = clampPips(task?.criticality || 1) || 1;
   const L = CARD_OVERLAY.full;
+  const fontW = width * (textScale || 1);
   const titlePx = compact
-    ? Math.max(5, Math.round(width * 0.085))
-    : scaleOverlayPx(L.titleMaxPx, width, L.refW);
+    ? Math.max(5, Math.round(fontW * 0.085))
+    : scaleOverlayPx(L.titleMaxPx, fontW, L.refW);
   const metaPx = compact
-    ? Math.max(4, Math.round(width * 0.07))
-    : scaleOverlayPx(L.datePx, width, L.refW);
-  const boundPx = Math.max(5, scaleOverlayPx(10, width, L.refW));
+    ? Math.max(4, Math.round(fontW * 0.07))
+    : scaleOverlayPx(L.datePx, fontW, L.refW);
+  const boundPx = Math.max(5, scaleOverlayPx(10, fontW, L.refW));
   const Tag = onClick ? "button" : "div";
   return (
     <Tag
@@ -681,6 +682,12 @@ function MenuScreen({ go, tasks }) {
 
 /* ================= COMMAND BOARD + LEDGER ================= */
 const EFFORT_DOT = (n) => "●".repeat(Math.min(3, Math.max(1, n || 1))) + "○".repeat(Math.max(0, 3 - Math.min(3, Math.max(1, n || 1))));
+/** Horizontal task-card PNG aspect (job_row_card.png is 711×219). */
+const THIN_CARD_H_OVER_W = 219 / 711;
+/** Vertical full-card PNG aspect (job_full_card.png is 284×487). */
+const FULL_CARD_H_OVER_W = 487 / 284;
+/** Approx Draw/Remove button + row gap when estimating empty-deck height. */
+const DRAW_ROW_SIDE_W = 64;
 
 function CriticalStrip() {
   const today = new Date();
@@ -717,17 +724,49 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
   const progress = dealProgress(deal);
   const [focusId, setFocusId] = useState(null);
   const handRef = useRef(null);
+  const drawPaneRef = useRef(null);
   const [handW, setHandW] = useState(300);
+  const [handAreaH, setHandAreaH] = useState(160);
+  const [drawPaneH, setDrawPaneH] = useState(220);
 
   useEffect(() => {
     const el = handRef.current;
     if (!el || typeof ResizeObserver === "undefined") return undefined;
-    const measure = () => setHandW(Math.max(180, el.clientWidth || 300));
+    const measure = () => {
+      setHandW(Math.max(180, el.clientWidth || 300));
+      setHandAreaH(Math.max(0, el.clientHeight || 0));
+    };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [energy, picks.length]);
+  }, [energy, picks.length, focusId, drawPaneH]);
+
+  // Draw window height = chrome + exactly 2 thin-card rows (scroll for more).
+  useLayoutEffect(() => {
+    if (!energy) return undefined;
+    const pane = drawPaneRef.current;
+    if (!pane || typeof ResizeObserver === "undefined") return undefined;
+    const measure = () => {
+      const cardWrap = pane.querySelector("[data-draw-card]");
+      const cardW = Math.max(100, pane.clientWidth - 16 - DRAW_ROW_SIDE_W);
+      const measured = cardWrap ? cardWrap.getBoundingClientRect().height : 0;
+      const cardH = measured > 1 ? measured : cardW * THIN_CARD_H_OVER_W;
+      const header = pane.querySelector("[data-draw-header]");
+      const note = pane.querySelector("[data-draw-note]");
+      const headerH = header ? header.getBoundingClientRect().height : 18;
+      const noteH = note ? note.getBoundingClientRect().height + 4 : 0;
+      const padY = 12;
+      const rowGap = 4;
+      setDrawPaneH(Math.round(padY + headerH + noteH + 2 * cardH + rowGap));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(pane);
+    const cardWrap = pane.querySelector("[data-draw-card]");
+    if (cardWrap) ro.observe(cardWrap);
+    return () => ro.disconnect();
+  }, [energy, offers.length, deal?.fixedDay]);
 
   const markDone = (id) => {
     setTasks((ts) => refreshDailyHousingTasks(
@@ -748,21 +787,33 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
     : "Draw (optional)";
   const focus = picks.find((t) => t.id === focusId) || null;
 
-  /** Casino-dealer hand — same overlay % as /?cards=1; width fits the board. */
-  const handCardW = 120;
-  const handCardH = Math.round(handCardW * (490 / 286));
+  /** Hand fills leftover height; shrinks with count so the fan always fits handW. */
+  const HAND_PAD = 12;
+  const HAND_MIN_STEP = 14;
+  const HAND_STEP_RATIO = 0.38;
+  const handCardW = (() => {
+    const n = Math.max(1, picks.length);
+    const byH = (Math.max(48, handAreaH - 8)) / FULL_CARD_H_OVER_W;
+    const avail = Math.max(80, handW - HAND_PAD * 2);
+    const byRatio = n <= 1 ? avail : avail / (1 + (n - 1) * HAND_STEP_RATIO);
+    const byMinStep = n <= 1 ? avail : avail - (n - 1) * HAND_MIN_STEP;
+    const fitW = Math.min(byRatio, Math.max(48, byMinStep));
+    return Math.round(Math.max(48, Math.min(byH, fitW, 220)));
+  })();
+  const handCardH = Math.round(handCardW * FULL_CARD_H_OVER_W);
   const fanLayout = (n, i, width) => {
     const cardW = handCardW;
-    const pad = 16;
-    const avail = Math.max(width - pad * 2, cardW);
-    if (n <= 1) return { left: pad, rot: -2, lift: 0 };
-    const maxTravel = avail - cardW;
-    const step = Math.max(26, Math.min(52, maxTravel / (n - 1)));
-    const left = pad + i * step;
+    const avail = Math.max(width - HAND_PAD * 2, cardW);
+    if (n <= 1) return { left: Math.max(HAND_PAD, (width - cardW) / 2), rot: -2, lift: 0 };
+    const maxTravel = Math.max(0, avail - cardW);
+    const ideal = maxTravel / Math.max(1, n - 1);
+    const step = Math.max(8, Math.min(cardW * HAND_STEP_RATIO, ideal));
+    const span = cardW + (n - 1) * step;
+    const start = HAND_PAD + Math.max(0, (avail - span) / 2);
     const t = i / (n - 1);
     const rot = -6 + t * 12;
-    const lift = Math.sin(t * Math.PI) * 4;
-    return { left, rot, lift };
+    const lift = Math.sin(t * Math.PI) * Math.min(10, handCardH * 0.03);
+    return { left: start + i * step, rot, lift };
   };
 
   return (
@@ -809,21 +860,28 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
             </button>
           </div>
 
-          {/* TOP — offer deck tall enough for ~2 full thin cards */}
-          <div style={{
-            ...FR, padding: "6px 8px", flex: "0 1 auto", minHeight: 220, maxHeight: "48%", overflowY: "auto",
-          }}>
-            <div style={{
-              display: "flex", alignItems: "baseline", justifyContent: "space-between",
-              marginBottom: 4, gap: 8,
-            }}>
+          {/* TOP — offer deck sized to exactly 2 thin cards (scroll for the rest) */}
+          <div
+            ref={drawPaneRef}
+            style={{
+              ...FR, padding: "6px 8px", flex: "0 0 auto",
+              height: drawPaneH, overflowY: "auto",
+            }}
+          >
+            <div
+              data-draw-header
+              style={{
+                display: "flex", alignItems: "baseline", justifyContent: "space-between",
+                marginBottom: 4, gap: 8,
+              }}
+            >
               <div style={{ color: "#FFD97A", fontSize: 13, ...LB }}>{drawLabel}</div>
               <div style={{ color: "#8A7350", fontSize: 9, ...LB }}>
                 {offers.length} in deck · urgency
               </div>
             </div>
             {deal?.fixedDay && (
-              <div style={{ color: "#E8C4A8", fontSize: 9, marginBottom: 4, ...LB }}>
+              <div data-draw-note style={{ color: "#E8C4A8", fontSize: 9, marginBottom: 4, ...LB }}>
                 Fixed day — bound cards already spoken for.
               </div>
             )}
@@ -833,7 +891,7 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
               <div key={t.id} style={{
                 display: "flex", gap: 6, alignItems: "center", marginBottom: 4,
               }}>
-                <div style={{ flex: 1, minWidth: 0, displayAlign: "left" }}>
+                <div data-draw-card style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
                   <HorizontalTaskCard task={t} dimmed={!!t.picked} />
                 </div>
                 <button type="button" onClick={() => toggleOffer(t.id)} style={{
@@ -866,8 +924,8 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
             </div>
           )}
 
-          {/* BOTTOM — dealer spread gets the freed vertical room */}
-          <div style={{ flex: "1 1 auto", minHeight: 0, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+          {/* BOTTOM — hand fills remaining vertical space; cards scale to fit width */}
+          <div style={{ flex: "1 1 auto", minHeight: 0, display: "flex", flexDirection: "column" }}>
             <div style={{ color: "#FFD97A", fontSize: 10, marginBottom: 4, flex: "0 0 auto", ...LB }}>
               Your hand · tap a card
             </div>
@@ -876,13 +934,18 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
               style={{
                 position: "relative",
                 width: "100%",
-                height: picks.length ? handCardH + 10 : 48,
+                flex: "1 1 auto",
+                minHeight: picks.length ? 72 : 48,
                 marginBottom: 4,
-                overflow: "visible",
+                overflow: "hidden",
               }}
             >
               {picks.length === 0 ? (
-                <div style={{ color: "#8A7350", fontSize: 11, paddingTop: 12, ...LB }}>
+                <div style={{
+                  color: "#8A7350", fontSize: 11, ...LB,
+                  position: "absolute", inset: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
                   Empty hand — draw from the deck above.
                 </div>
               ) : picks.map((t, i) => {

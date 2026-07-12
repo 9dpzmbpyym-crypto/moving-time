@@ -128,40 +128,6 @@ CARD_OVERLAY.full.pips.size: ${f.pips.size}
 `;
 }
 
-function FitPreview({ text, maxPx, minPx = 5, style }) {
-  const ref = useRef(null);
-  const [size, setSize] = useState(maxPx);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el?.parentElement) return undefined;
-    const parent = el.parentElement;
-    const fit = () => {
-      let s = maxPx;
-      el.style.fontSize = `${s}px`;
-      let guard = 40;
-      while (
-        guard-- > 0
-        && s > minPx
-        && (el.scrollHeight > parent.clientHeight + 1 || el.scrollWidth > parent.clientWidth + 1)
-      ) {
-        s -= 0.5;
-        el.style.fontSize = `${s}px`;
-      }
-      setSize(s);
-    };
-    fit();
-    if (typeof ResizeObserver === "undefined") return undefined;
-    const ro = new ResizeObserver(fit);
-    ro.observe(parent);
-    return () => ro.disconnect();
-  }, [text, maxPx, minPx]);
-  return (
-    <span ref={ref} style={{ display: "block", width: "100%", fontSize: size, lineHeight: 1.1, overflow: "hidden", ...style }}>
-      {text}
-    </span>
-  );
-}
-
 function OverlayBox({
   id, box, color, selected, label, children, onSelect, onMove, onResize, showOutlines = true,
 }) {
@@ -221,7 +187,7 @@ function OverlayBox({
     />
   );
 
-  const showChrome = showOutlines;
+  const showChrome = showOutlines || selected;
 
   return (
     <div
@@ -231,7 +197,7 @@ function OverlayBox({
       style={{
         position: "absolute", ...boxToCss(box),
         border: showChrome ? `2px solid ${color}` : "none",
-        background: showOutlines ? (selected ? `${color}22` : `${color}11`) : "transparent",
+        background: showOutlines ? (selected ? `${color}22` : `${color}11`) : (selected ? `${color}18` : "transparent"),
         boxSizing: "border-box",
         cursor: "move",
         zIndex: selected ? 4 : 2,
@@ -247,7 +213,7 @@ function OverlayBox({
         }}>{label}</div>
       )}
       {children}
-      {selected && showOutlines && (
+      {selected && (
         <>
           {handle("se", { right: -4, bottom: -4, width: 8, height: 8, cursor: "nwse-resize", borderRadius: 1 })}
         </>
@@ -288,7 +254,7 @@ function PipDot({ x, y, sizePct, selected, onSelect, onMove, label, showOutlines
         background: "#120A04",
         transform: "translate(-50%, -50%)",
         cursor: "grab",
-        outline: showOutlines ? (selected ? "2px solid #FFD97A" : "1px solid rgba(255,255,255,0.35)") : "none",
+        outline: selected ? "2px solid #FFD97A" : (showOutlines ? "1px solid rgba(255,255,255,0.35)" : "none"),
         zIndex: 6,
         touchAction: "none",
       }}
@@ -300,6 +266,9 @@ function CardStage({
   kind, src, displayW, layout, selected, onSelect, setLayoutBox, setPip, sampleTitle, showOutlines,
 }) {
   const L = layout[kind];
+  const refW = CARD_OVERLAY[kind].refW;
+  const titleMax = scaleOverlayPx(L.titleMaxPx, displayW, refW);
+  const titleMin = Math.max(4, titleMax * (kind === "thin" ? 0.45 : 0.4));
   return (
     <div style={{ position: "relative", width: displayW, lineHeight: 0, userSelect: "none" }}>
       <img
@@ -358,7 +327,7 @@ function CardStage({
           onMove={(_, p) => setLayoutBox(kind, "target", p)}
           onResize={(_, p) => setLayoutBox(kind, "target", p)}
         >
-          <span style={{ color: "#1A1008", fontSize: scaleOverlayPx(L.datePx, displayW, CARD_OVERLAY[kind].refW), lineHeight: 1, whiteSpace: "nowrap", ...LB }}>{SAMPLE.target}</span>
+          <span style={{ color: "#1A1008", fontSize: scaleOverlayPx(L.datePx, displayW, refW), lineHeight: 1, whiteSpace: "nowrap", ...LB }}>{SAMPLE.target}</span>
         </OverlayBox>
         <OverlayBox
           id={`${kind}:latest`}
@@ -371,7 +340,7 @@ function CardStage({
           onMove={(_, p) => setLayoutBox(kind, "latest", p)}
           onResize={(_, p) => setLayoutBox(kind, "latest", p)}
         >
-          <span style={{ color: "#1A1008", fontSize: scaleOverlayPx(L.datePx, displayW, CARD_OVERLAY[kind].refW), lineHeight: 1, whiteSpace: "nowrap", ...LB }}>{SAMPLE.latest}</span>
+          <span style={{ color: "#1A1008", fontSize: scaleOverlayPx(L.datePx, displayW, refW), lineHeight: 1, whiteSpace: "nowrap", ...LB }}>{SAMPLE.latest}</span>
         </OverlayBox>
         {L.pips.effort.map(([x, y], i) => (
           <PipDot
