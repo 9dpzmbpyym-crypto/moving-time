@@ -119,14 +119,15 @@ function clampPips(n) {
 
 /** Absolute pip centers as % of card — measured from the PNGs. */
 const H_PIP = {
-  effort: [[66.7, 74.7], [70.5, 74.7], [74.4, 74.7]],
-  importance: [[87.8, 74.7], [91.7, 74.7], [95.2, 74.7]],
-  size: 1.85, // % of card width
+  // footer hollow circles (job/admin/move average)
+  effort: [[66.7, 74.8], [70.5, 74.8], [74.4, 74.8]],
+  importance: [[87.8, 74.8], [91.7, 74.8], [95.2, 74.8]],
+  size: 1.45, // slightly inside the ring so fill reads centered
 };
 const V_PIP = {
-  effort: [[19.8, 16.7], [27.6, 16.7], [35.4, 16.7]],
-  importance: [[20.2, 86.6], [28.0, 86.6], [35.6, 86.6]],
-  size: 4.4,
+  effort: [[20.2, 16.7], [27.6, 16.7], [35.3, 16.7]],
+  importance: [[20.1, 86.8], [27.8, 86.8], [35.4, 86.8]],
+  size: 3.55,
 };
 
 /** Fill hollow circles baked into the art — centers are % of card box. */
@@ -143,11 +144,13 @@ function BubblePips({ filled, centers, sizePct }) {
               left: `${x}%`,
               top: `${y}%`,
               width: `${sizePct}%`,
-              aspectRatio: "1",
+              height: 0,
+              paddingBottom: `${sizePct}%`,
               borderRadius: "50%",
               background: "#1A1008",
               transform: "translate(-50%, -50%)",
               pointerEvents: "none",
+              boxSizing: "border-box",
             }}
           />
         ) : null
@@ -180,13 +183,13 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
         }}>
           {task?.title || ""}
         </div>
-        {/* Date values sit on the TARGET / LATEST underlines — keep clear of the dashed rail */}
+        {/* Date values: same row as TARGET / LATEST labels (not down on the underline) */}
         <div style={{
-          position: "absolute", left: "19%", top: "75.5%", width: "10%",
+          position: "absolute", left: "19%", top: "71%", width: "10%",
           color: "#1A1008", fontSize: 9, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
         }}>{fmtCardDate(task?.targetDate || task?.due)}</div>
         <div style={{
-          position: "absolute", left: "48%", top: "75.5%", width: "10%",
+          position: "absolute", left: "48%", top: "71%", width: "10%",
           color: "#1A1008", fontSize: 9, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
         }}>{fmtCardDate(task?.latestDate)}</div>
         <BubblePips filled={effort} centers={H_PIP.effort} sizePct={H_PIP.size} />
@@ -206,8 +209,8 @@ export function VerticalTaskCard({
   const src = CARD_FULL[task?.category] || CARD_FULL.admin;
   const effort = clampPips(task?.effort || 1) || 1;
   const importance = clampPips(task?.criticality || 1) || 1;
-  const titlePx = compact ? Math.max(5, Math.round(width * 0.10)) : Math.max(9, Math.round(width * 0.105));
-  const metaPx = compact ? Math.max(4, Math.round(width * 0.075)) : Math.max(8, Math.round(width * 0.08));
+  const titlePx = compact ? Math.max(5, Math.round(width * 0.09)) : Math.max(7, Math.round(width * 0.082));
+  const metaPx = compact ? Math.max(4, Math.round(width * 0.07)) : Math.max(7, Math.round(width * 0.072));
   const Tag = onClick ? "button" : "div";
   return (
     <Tag
@@ -232,27 +235,27 @@ export function VerticalTaskCard({
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
         {bound && (
           <div style={{
-            position: "absolute", top: "2%", right: "4%", padding: "1px 3px",
+            position: "absolute", top: "2%", left: "4%", padding: "1px 3px",
             border: "1px solid #A3252C", color: "#A3252C", fontSize: Math.max(5, metaPx),
             background: "rgba(255,248,235,0.85)", lineHeight: 1, ...LB,
           }}>B</div>
         )}
         <BubblePips filled={effort} centers={V_PIP.effort} sizePct={V_PIP.size} />
-        {/* Title field box ~21–35% — inset inside the frame */}
+        {/* Title field box ~21–35% — smaller type so it stays inside the frame */}
         <div style={{
-          position: "absolute", left: "10%", right: "10%", top: "23.5%", height: compact ? "12%" : "11%",
-          color: "#1A1008", fontSize: titlePx, lineHeight: 1.15, overflow: "hidden", textAlign: "left", ...LB,
+          position: "absolute", left: "11%", right: "11%", top: "24%", height: compact ? "11%" : "9.5%",
+          color: "#1A1008", fontSize: titlePx, lineHeight: 1.12, overflow: "hidden", textAlign: "left", ...LB,
         }}>
           {task?.title || ""}
         </div>
         {!compact && (
           <>
             <div style={{
-              position: "absolute", left: "48%", top: "36.5%", width: "42%",
+              position: "absolute", left: "38%", top: "36.5%", width: "50%",
               color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
             }}>{fmtCardDate(task?.targetDate || task?.due)}</div>
             <div style={{
-              position: "absolute", left: "48%", top: "41.5%", width: "42%",
+              position: "absolute", left: "38%", top: "41.5%", width: "50%",
               color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
             }}>{fmtCardDate(task?.latestDate)}</div>
             {(task?.notes || task?.detail) && (
