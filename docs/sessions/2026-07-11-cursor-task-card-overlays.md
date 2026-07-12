@@ -1,7 +1,7 @@
 # Task card overlay calibration — session summary
 **Date:** 2026-07-11
 **Harness / model:** [Cursor / Grok 4.5]
-**Branch:** `cursor` (merged to main: pending this close-out)
+**Branch:** `cursor` (merged to main: yes — `a41724e`)
 
 ### Done
 - Wired horizontal (thin) + vertical (full) task-card PNGs into Command Board draw pile + hand fan (+ apartment corner fan)
