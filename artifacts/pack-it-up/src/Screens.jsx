@@ -117,21 +117,42 @@ function clampPips(n) {
   return Math.min(3, Math.max(0, Number(n) || 0));
 }
 
-/** Fill left→right over hollow circles baked into the PNG. */
-function BubbleFill({ filled, style, size = 7 }) {
+/** Absolute pip centers as % of card — measured from the PNGs. */
+const H_PIP = {
+  effort: [[66.7, 74.7], [70.5, 74.7], [74.4, 74.7]],
+  importance: [[87.8, 74.7], [91.7, 74.7], [95.2, 74.7]],
+  size: 1.85, // % of card width
+};
+const V_PIP = {
+  effort: [[19.8, 16.7], [27.6, 16.7], [35.4, 16.7]],
+  importance: [[20.2, 86.6], [28.0, 86.6], [35.6, 86.6]],
+  size: 4.4,
+};
+
+/** Fill hollow circles baked into the art — centers are % of card box. */
+function BubblePips({ filled, centers, sizePct }) {
   const n = clampPips(filled);
   return (
-    <div style={{
-      position: "absolute", display: "flex", alignItems: "center", justifyContent: "space-between",
-      pointerEvents: "none", ...style,
-    }}>
-      {[0, 1, 2].map((i) => (
-        <span key={i} style={{
-          width: size, height: size, borderRadius: "50%", flex: "0 0 auto",
-          background: i < n ? "#1A1008" : "transparent",
-        }} />
+    <>
+      {centers.map(([x, y], i) => (
+        i < n ? (
+          <span
+            key={i}
+            style={{
+              position: "absolute",
+              left: `${x}%`,
+              top: `${y}%`,
+              width: `${sizePct}%`,
+              aspectRatio: "1",
+              borderRadius: "50%",
+              background: "#1A1008",
+              transform: "translate(-50%, -50%)",
+              pointerEvents: "none",
+            }}
+          />
+        ) : null
       ))}
-    </div>
+    </>
   );
 }
 
@@ -154,21 +175,22 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
       />
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
         <div style={{
-          position: "absolute", left: "3.8%", right: "3.8%", top: "26%", height: "36%",
+          position: "absolute", left: "4%", right: "4%", top: "24%", height: "30%",
           color: "#1A1008", fontSize: 12, lineHeight: 1.15, overflow: "hidden", textAlign: "left", ...LB,
         }}>
           {task?.title || ""}
         </div>
+        {/* Date values sit on the TARGET / LATEST underlines in the footer */}
         <div style={{
-          position: "absolute", left: "11%", bottom: "6.5%", width: "17%",
+          position: "absolute", left: "19%", top: "71%", width: "10%",
           color: "#1A1008", fontSize: 9, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
         }}>{fmtCardDate(task?.targetDate || task?.due)}</div>
         <div style={{
-          position: "absolute", left: "36%", bottom: "6.5%", width: "17%",
+          position: "absolute", left: "48%", top: "71%", width: "10%",
           color: "#1A1008", fontSize: 9, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
         }}>{fmtCardDate(task?.latestDate)}</div>
-        <BubbleFill filled={effort} size={8} style={{ left: "63.5%", bottom: "8%", width: "12%" }} />
-        <BubbleFill filled={importance} size={8} style={{ left: "83%", bottom: "8%", width: "12%" }} />
+        <BubblePips filled={effort} centers={H_PIP.effort} sizePct={H_PIP.size} />
+        <BubblePips filled={importance} centers={H_PIP.importance} sizePct={H_PIP.size} />
       </div>
     </div>
   );
@@ -176,36 +198,36 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
 
 /**
  * Vertical “real card” — hand fan / detail peek.
- * width drives height via sheet aspect (~290×487).
+ * Natural PNG aspect (no stretch) so % overlays stay locked to art.
  */
 export function VerticalTaskCard({
   task, width = 76, bound = false, selected = false, compact = false, onClick, style,
 }) {
   const src = CARD_FULL[task?.category] || CARD_FULL.admin;
-  const h = Math.round(width * (487 / 290));
   const effort = clampPips(task?.effort || 1) || 1;
   const importance = clampPips(task?.criticality || 1) || 1;
-  const titlePx = compact ? Math.max(5, Math.round(width * 0.11)) : Math.max(8, Math.round(width * 0.12));
-  const metaPx = compact ? Math.max(4, Math.round(width * 0.08)) : Math.max(7, Math.round(width * 0.09));
-  const pip = compact ? Math.max(3, Math.round(width * 0.07)) : Math.max(5, Math.round(width * 0.08));
+  const titlePx = compact ? Math.max(5, Math.round(width * 0.10)) : Math.max(8, Math.round(width * 0.11));
+  const metaPx = compact ? Math.max(4, Math.round(width * 0.075)) : Math.max(7, Math.round(width * 0.085));
   const Tag = onClick ? "button" : "div";
   return (
     <Tag
       type={onClick ? "button" : undefined}
       onClick={onClick}
       style={{
-        position: "relative", width, height: h, padding: 0, margin: 0,
-        border: selected ? "3px solid #FFD97A" : "none",
+        position: "relative", width, height: "auto", padding: 0, margin: 0,
+        border: "none",
+        outline: selected ? "3px solid #FFD97A" : "none",
+        outlineOffset: "-2px",
         background: "transparent", cursor: onClick ? "pointer" : "default",
         boxShadow: selected ? "0 0 0 1px #120A04" : "2px 2px 0 rgba(0,0,0,0.4)",
-        overflow: "hidden", lineHeight: 0, ...style,
+        overflow: "hidden", lineHeight: 0, displayAlign: "left", ...style,
       }}
     >
       <img
         src={src}
         alt=""
         draggable={false}
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", imageRendering: "pixelated", pointerEvents: "none" }}
+        style={{ width: "100%", height: "auto", display: "block", imageRendering: "pixelated", pointerEvents: "none" }}
       />
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
         {bound && (
@@ -215,13 +237,10 @@ export function VerticalTaskCard({
             background: "rgba(255,248,235,0.85)", lineHeight: 1, ...LB,
           }}>B</div>
         )}
-        <BubbleFill
-          filled={effort}
-          size={pip}
-          style={{ left: "18%", top: "11.5%", width: compact ? "28%" : "32%" }}
-        />
+        <BubblePips filled={effort} centers={V_PIP.effort} sizePct={V_PIP.size} />
+        {/* Title field box ~21–35% */}
         <div style={{
-          position: "absolute", left: "9%", right: "9%", top: "19%", height: compact ? "22%" : "16%",
+          position: "absolute", left: "9%", right: "9%", top: "22%", height: compact ? "14%" : "12%",
           color: "#1A1008", fontSize: titlePx, lineHeight: 1.1, overflow: "hidden", textAlign: "left", ...LB,
         }}>
           {task?.title || ""}
@@ -229,16 +248,16 @@ export function VerticalTaskCard({
         {!compact && (
           <>
             <div style={{
-              position: "absolute", left: "34%", top: "38%", width: "55%",
+              position: "absolute", left: "40%", top: "37%", width: "48%",
               color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
             }}>{fmtCardDate(task?.targetDate || task?.due)}</div>
             <div style={{
-              position: "absolute", left: "34%", top: "43.5%", width: "55%",
+              position: "absolute", left: "40%", top: "42%", width: "48%",
               color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
             }}>{fmtCardDate(task?.latestDate)}</div>
             {(task?.notes || task?.detail) && (
               <div style={{
-                position: "absolute", left: "10%", right: "10%", top: "52%", height: "26%",
+                position: "absolute", left: "10%", right: "10%", top: "50%", height: "28%",
                 color: "#3A2018", fontSize: metaPx, lineHeight: 1.15, overflow: "hidden", textAlign: "left", ...LB,
               }}>{task.notes || task.detail}</div>
             )}
@@ -246,15 +265,11 @@ export function VerticalTaskCard({
         )}
         {compact && (
           <div style={{
-            position: "absolute", left: "8%", right: "8%", bottom: "14%",
+            position: "absolute", left: "10%", right: "10%", top: "38%",
             color: "#3A2018", fontSize: metaPx, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
           }}>{fmtCardDate(task?.targetDate || task?.due) || "—"}</div>
         )}
-        <BubbleFill
-          filled={importance}
-          size={pip}
-          style={{ left: "18%", bottom: "9%", width: compact ? "28%" : "32%" }}
-        />
+        <BubblePips filled={importance} centers={V_PIP.importance} sizePct={V_PIP.size} />
       </div>
     </Tag>
   );
