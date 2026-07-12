@@ -119,17 +119,43 @@ function clampPips(n) {
 
 /** Absolute pip centers as % of card — measured from the PNGs. */
 const H_PIP = {
-  // outer diameter of hollow rings ≈ 2.2% of card width
   effort: [[66.7, 74.8], [70.5, 74.8], [74.4, 74.8]],
   importance: [[87.85, 74.8], [91.7, 74.8], [95.2, 74.8]],
   size: 2.15,
 };
 const V_PIP = {
-  // outer diameter ≈ 5.4% of card width
   effort: [[20.55, 16.6], [28.22, 16.65], [36.13, 16.61]],
   importance: [[20.77, 86.88], [28.55, 86.93], [36.27, 86.97]],
   size: 5.2,
 };
+
+/**
+ * Overlay layout from /?cards=1 (Eloisa 2026-07-11).
+ * refW = designer preview width so px fonts scale with live card size.
+ */
+const CARD_OVERLAY = {
+  thin: {
+    refW: 420,
+    title: { left: "2.4%", right: "3.2%", top: "30.1%", height: "26.5%" },
+    target: { left: "18.5%", top: "67.9%", width: "14%" },
+    latest: { left: "47.6%", top: "67.8%", width: "14%" },
+    titleMaxPx: 13,
+    datePx: 9,
+  },
+  full: {
+    refW: 220,
+    title: { left: "8.2%", right: "9.2%", top: "21.7%", height: "16.9%" },
+    target: { left: "36.3%", top: "41.3%", width: "58%" },
+    latest: { left: "36.5%", top: "46.5%", width: "58%" },
+    bound: { left: "3.9%", top: "1.1%", width: "9.8%", height: "8.4%" },
+    titleMaxPx: 12.5,
+    datePx: 10.5,
+  },
+};
+
+function scaleOverlayPx(px, width, refW) {
+  return Math.max(4, Math.round((px * (width / refW)) * 10) / 10);
+}
 
 /** Shrink font until text fits the parent box (no clip). */
 function FitText({ text, maxPx, minPx = 5, style }) {
@@ -214,8 +240,24 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
   const src = CARD_ROW[task?.category] || CARD_ROW.admin;
   const effort = clampPips(task?.effort || 1) || 1;
   const importance = clampPips(task?.criticality || 1) || 1;
+  const wrapRef = useRef(null);
+  const [cardW, setCardW] = useState(CARD_OVERLAY.thin.refW);
+  useLayoutEffect(() => {
+    const el = wrapRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return undefined;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect?.width;
+      if (w) setCardW(w);
+    });
+    ro.observe(el);
+    setCardW(el.getBoundingClientRect().width || CARD_OVERLAY.thin.refW);
+    return () => ro.disconnect();
+  }, []);
+  const L = CARD_OVERLAY.thin;
+  const titleMax = scaleOverlayPx(L.titleMaxPx, cardW, L.refW);
+  const datePx = scaleOverlayPx(L.datePx, cardW, L.refW);
   return (
-    <div style={{
+    <div ref={wrapRef} style={{
       position: "relative", width: "100%", lineHeight: 0,
       opacity: dimmed ? 0.42 : 1, filter: dimmed ? "grayscale(0.35)" : "none",
       ...style,
@@ -227,21 +269,20 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
         style={{ width: "100%", height: "auto", display: "block", imageRendering: "pixelated" }}
       />
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-        {/* Title — from /?cards=1 layout */}
         <div style={{
-          position: "absolute", left: "2.4%", right: "3.2%", top: "30.1%", height: "26.5%",
+          position: "absolute", ...L.title,
           color: "#1A1008", textAlign: "left", overflow: "hidden",
           display: "flex", alignItems: "center", ...LB,
         }}>
-          <FitText text={task?.title || ""} maxPx={13} minPx={6} style={{ fontWeight: 700, letterSpacing: "0.5px", lineHeight: 1.1 }} />
+          <FitText text={task?.title || ""} maxPx={titleMax} minPx={Math.max(5, titleMax * 0.45)} style={{ fontWeight: 700, letterSpacing: "0.5px", lineHeight: 1.1 }} />
         </div>
         <div style={{
-          position: "absolute", left: "18.5%", top: "67.9%", width: "14%",
-          color: "#1A1008", fontSize: 9, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap", ...LB,
+          position: "absolute", ...L.target,
+          color: "#1A1008", fontSize: datePx, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap", ...LB,
         }}>{fmtCardDate(task?.targetDate || task?.due)}</div>
         <div style={{
-          position: "absolute", left: "47.6%", top: "67.8%", width: "14%",
-          color: "#1A1008", fontSize: 9, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap", ...LB,
+          position: "absolute", ...L.latest,
+          color: "#1A1008", fontSize: datePx, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap", ...LB,
         }}>{fmtCardDate(task?.latestDate)}</div>
         <BubblePips filled={effort} centers={H_PIP.effort} sizePct={H_PIP.size} />
         <BubblePips filled={importance} centers={H_PIP.importance} sizePct={H_PIP.size} />
@@ -260,8 +301,14 @@ export function VerticalTaskCard({
   const src = CARD_FULL[task?.category] || CARD_FULL.admin;
   const effort = clampPips(task?.effort || 1) || 1;
   const importance = clampPips(task?.criticality || 1) || 1;
-  const titlePx = compact ? Math.max(5, Math.round(width * 0.085)) : 12.5;
-  const metaPx = compact ? Math.max(4, Math.round(width * 0.07)) : 10.5;
+  const L = CARD_OVERLAY.full;
+  const titlePx = compact
+    ? Math.max(5, Math.round(width * 0.085))
+    : scaleOverlayPx(L.titleMaxPx, width, L.refW);
+  const metaPx = compact
+    ? Math.max(4, Math.round(width * 0.07))
+    : scaleOverlayPx(L.datePx, width, L.refW);
+  const boundPx = Math.max(5, scaleOverlayPx(10, width, L.refW));
   const Tag = onClick ? "button" : "div";
   return (
     <Tag
@@ -274,7 +321,7 @@ export function VerticalTaskCard({
         outlineOffset: "-2px",
         background: "transparent", cursor: onClick ? "pointer" : "default",
         boxShadow: selected ? "0 0 0 1px #120A04" : "2px 2px 0 rgba(0,0,0,0.4)",
-        overflow: "hidden", lineHeight: 0, displayAlign: "left", ...style,
+        overflow: "hidden", lineHeight: 0, textAlign: "left", ...style,
       }}
     >
       <img
@@ -286,20 +333,19 @@ export function VerticalTaskCard({
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
         {bound && (
           <div style={{
-            position: "absolute", left: "3.9%", top: "1.1%", width: "9.8%", height: "8.4%",
+            position: "absolute", ...L.bound,
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             <span style={{
               border: "1px solid #A3252C", color: "#A3252C",
-              fontSize: Math.max(5, Math.round(width * 0.055)),
+              fontSize: boundPx,
               background: "rgba(255,248,235,0.85)", padding: "1px 3px", lineHeight: 1, ...LB,
             }}>B</span>
           </div>
         )}
         <BubblePips filled={effort} centers={V_PIP.effort} sizePct={V_PIP.size} />
-        {/* Title — from /?cards=1 layout */}
         <div style={{
-          position: "absolute", left: "8.2%", right: "9.2%", top: "21.7%", height: "16.9%",
+          position: "absolute", ...L.title,
           color: "#1A1008", textAlign: "left", overflow: "hidden",
           display: "flex", alignItems: "center",
           fontFamily: LB.fontFamily, fontWeight: 700,
@@ -307,26 +353,26 @@ export function VerticalTaskCard({
           <FitText
             text={task?.title || ""}
             maxPx={titlePx}
-            minPx={Math.max(4, Math.round(width * 0.045))}
+            minPx={Math.max(4, titlePx * 0.4)}
             style={{ letterSpacing: "0.2px", fontWeight: 700 }}
           />
         </div>
         {!compact && (
           <>
             <div style={{
-              position: "absolute", left: "36.3%", top: "41.3%", width: "58%",
+              position: "absolute", ...L.target,
               color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap",
               textAlign: "left", ...LB,
             }}>{fmtCardDate(task?.targetDate || task?.due)}</div>
             <div style={{
-              position: "absolute", left: "36.5%", top: "46.5%", width: "58%",
+              position: "absolute", ...L.latest,
               color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap",
               textAlign: "left", ...LB,
             }}>{fmtCardDate(task?.latestDate)}</div>
             {(task?.notes || task?.detail) && (
               <div style={{
                 position: "absolute", left: "10%", right: "10%", top: "54%", height: "23%",
-                color: "#3A2018", fontSize: metaPx, lineHeight: 1.15, overflow: "hidden", textAlign: "left", ...LB,
+                color: "#3A2018", fontSize: Math.max(5, metaPx - 1), lineHeight: 1.15, overflow: "hidden", textAlign: "left", ...LB,
               }}>{task.notes || task.detail}</div>
             )}
           </>
@@ -342,6 +388,7 @@ export function VerticalTaskCard({
     </Tag>
   );
 }
+
 
 const GOLD_PLATE = {
   background: "linear-gradient(#3A2A12, #2A1C0C)",
@@ -696,7 +743,7 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
   const focus = picks.find((t) => t.id === focusId) || null;
 
   /** Casino-dealer spread: fill left→right, mild arc, stay on-screen. */
-  const handCardW = 128;
+  const handCardW = CARD_OVERLAY.full.refW; // match /?cards=1 full preview (220)
   const fanLayout = (n, i, width) => {
     const cardW = handCardW;
     const pad = 22; // keep leftmost card fully in frame when rotated
