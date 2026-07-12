@@ -2,6 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import STRETCHY_ICON from "./assets/Stretchy Icon.png";
 import HEALTH_CLIPBOARD from "./assets/health-clipboard.png";
 import LANDLINE_PHONE from "./assets/landline-phone.png";
+import MOVE_ROW from "./assets/items/task_card_assets/horizontal/move_row_card.png";
+import JOB_ROW from "./assets/items/task_card_assets/horizontal/job_row_card.png";
+import ADMIN_ROW from "./assets/items/task_card_assets/horizontal/admin_row_card.png";
+import HEALTH_ROW from "./assets/items/task_card_assets/horizontal/health_row_card.png";
+import STRETCHY_ROW from "./assets/items/task_card_assets/horizontal/stretchy_row_card.png";
+import HOUSING_ROW from "./assets/items/task_card_assets/horizontal/housing_row_card.png";
+import MOVE_FULL from "./assets/items/task_card_assets/vertical/move_full_card.png";
+import JOB_FULL from "./assets/items/task_card_assets/vertical/job_full_card.png";
+import ADMIN_FULL from "./assets/items/task_card_assets/vertical/admin_full_card.png";
+import HEALTH_FULL from "./assets/items/task_card_assets/vertical/health_full_card.png";
+import STRETCHY_FULL from "./assets/items/task_card_assets/vertical/stretchy_full_card.png";
+import HOUSING_FULL from "./assets/items/task_card_assets/vertical/housing_full_card.png";
 import {
   TASK_CATEGORIES, SAMPLE_JOBS, isOpen, taskPressure, isHardOverdue,
   PRESSURE_LABELS, PRESSURE_COLORS,
@@ -9,7 +21,7 @@ import {
   tasksAfterBooking, tasksAfterAttend,
 } from "./tasks.js";
 import {
-  ensureDailyDeal, handTasks, offerTasks, dealProgress, toggleDealPick, urgencyBadge,
+  ensureDailyDeal, handTasks, offerTasks, dealProgress, toggleDealPick,
 } from "./schedule.js";
 import { PixelCanvas } from "./BedroomSlice.jsx";
 import {
@@ -78,6 +90,176 @@ export const FR = {
 };
 export const LB = { fontFamily: "'Courier New', monospace", fontWeight: 700, letterSpacing: "0.5px" };
 const PAPER = { job: "#E9BFB2", admin: "#B9CEDC", move: "#EBDDBA", health: "#CBDCC2", cat: "#EBD2A8", housing: "#E8C9A0" };
+
+/** Pixel task-card art — cat maps to Stretchy sheet. */
+export const CARD_ROW = {
+  move: MOVE_ROW, job: JOB_ROW, admin: ADMIN_ROW, health: HEALTH_ROW,
+  stretchy: STRETCHY_ROW, cat: STRETCHY_ROW, housing: HOUSING_ROW,
+};
+export const CARD_FULL = {
+  move: MOVE_FULL, job: JOB_FULL, admin: ADMIN_FULL, health: HEALTH_FULL,
+  stretchy: STRETCHY_FULL, cat: STRETCHY_FULL, housing: HOUSING_FULL,
+};
+
+const CARD_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+export function fmtCardDate(v) {
+  if (!v) return "";
+  const s = String(v).trim();
+  if (/^(Today|Tomorrow)$/i.test(s)) return s;
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${CARD_MONTHS[+iso[2] - 1]} ${+iso[3]}`;
+  const mon = s.match(/^([A-Za-z]{3})\s+(\d{1,2})/);
+  if (mon) return `${mon[1]} ${mon[2]}`;
+  return s.slice(0, 8);
+}
+
+function clampPips(n) {
+  return Math.min(3, Math.max(0, Number(n) || 0));
+}
+
+/** Fill left→right over hollow circles baked into the PNG. */
+function BubbleFill({ filled, style, size = 7 }) {
+  const n = clampPips(filled);
+  return (
+    <div style={{
+      position: "absolute", display: "flex", alignItems: "center", justifyContent: "space-between",
+      pointerEvents: "none", ...style,
+    }}>
+      {[0, 1, 2].map((i) => (
+        <span key={i} style={{
+          width: size, height: size, borderRadius: "50%", flex: "0 0 auto",
+          background: i < n ? "#1A1008" : "transparent",
+        }} />
+      ))}
+    </div>
+  );
+}
+
+/** Board / draw-pile row — PNG chrome + title / dates / pips overlaid. */
+export function HorizontalTaskCard({ task, dimmed = false, style }) {
+  const src = CARD_ROW[task?.category] || CARD_ROW.admin;
+  const effort = clampPips(task?.effort || 1) || 1;
+  const importance = clampPips(task?.criticality || 1) || 1;
+  return (
+    <div style={{
+      position: "relative", width: "100%", lineHeight: 0,
+      opacity: dimmed ? 0.42 : 1, filter: dimmed ? "grayscale(0.35)" : "none",
+      ...style,
+    }}>
+      <img
+        src={src}
+        alt=""
+        draggable={false}
+        style={{ width: "100%", height: "auto", display: "block", imageRendering: "pixelated" }}
+      />
+      <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+        <div style={{
+          position: "absolute", left: "3.8%", right: "3.8%", top: "26%", height: "36%",
+          color: "#1A1008", fontSize: 12, lineHeight: 1.15, overflow: "hidden", textAlign: "left", ...LB,
+        }}>
+          {task?.title || ""}
+        </div>
+        <div style={{
+          position: "absolute", left: "11%", bottom: "6.5%", width: "17%",
+          color: "#1A1008", fontSize: 9, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
+        }}>{fmtCardDate(task?.targetDate || task?.due)}</div>
+        <div style={{
+          position: "absolute", left: "36%", bottom: "6.5%", width: "17%",
+          color: "#1A1008", fontSize: 9, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
+        }}>{fmtCardDate(task?.latestDate)}</div>
+        <BubbleFill filled={effort} size={8} style={{ left: "63.5%", bottom: "8%", width: "12%" }} />
+        <BubbleFill filled={importance} size={8} style={{ left: "83%", bottom: "8%", width: "12%" }} />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Vertical “real card” — hand fan / detail peek.
+ * width drives height via sheet aspect (~290×487).
+ */
+export function VerticalTaskCard({
+  task, width = 76, bound = false, selected = false, compact = false, onClick, style,
+}) {
+  const src = CARD_FULL[task?.category] || CARD_FULL.admin;
+  const h = Math.round(width * (487 / 290));
+  const effort = clampPips(task?.effort || 1) || 1;
+  const importance = clampPips(task?.criticality || 1) || 1;
+  const titlePx = compact ? Math.max(5, Math.round(width * 0.11)) : Math.max(8, Math.round(width * 0.12));
+  const metaPx = compact ? Math.max(4, Math.round(width * 0.08)) : Math.max(7, Math.round(width * 0.09));
+  const pip = compact ? Math.max(3, Math.round(width * 0.07)) : Math.max(5, Math.round(width * 0.08));
+  const Tag = onClick ? "button" : "div";
+  return (
+    <Tag
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      style={{
+        position: "relative", width, height: h, padding: 0, margin: 0,
+        border: selected ? "3px solid #FFD97A" : "none",
+        background: "transparent", cursor: onClick ? "pointer" : "default",
+        boxShadow: selected ? "0 0 0 1px #120A04" : "2px 2px 0 rgba(0,0,0,0.4)",
+        overflow: "hidden", lineHeight: 0, ...style,
+      }}
+    >
+      <img
+        src={src}
+        alt=""
+        draggable={false}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", imageRendering: "pixelated", pointerEvents: "none" }}
+      />
+      <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+        {bound && (
+          <div style={{
+            position: "absolute", top: "2%", right: "4%", padding: "1px 3px",
+            border: "1px solid #A3252C", color: "#A3252C", fontSize: Math.max(5, metaPx),
+            background: "rgba(255,248,235,0.85)", lineHeight: 1, ...LB,
+          }}>B</div>
+        )}
+        <BubbleFill
+          filled={effort}
+          size={pip}
+          style={{ left: "18%", top: "11.5%", width: compact ? "28%" : "32%" }}
+        />
+        <div style={{
+          position: "absolute", left: "9%", right: "9%", top: "19%", height: compact ? "22%" : "16%",
+          color: "#1A1008", fontSize: titlePx, lineHeight: 1.1, overflow: "hidden", textAlign: "left", ...LB,
+        }}>
+          {task?.title || ""}
+        </div>
+        {!compact && (
+          <>
+            <div style={{
+              position: "absolute", left: "34%", top: "38%", width: "55%",
+              color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
+            }}>{fmtCardDate(task?.targetDate || task?.due)}</div>
+            <div style={{
+              position: "absolute", left: "34%", top: "43.5%", width: "55%",
+              color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
+            }}>{fmtCardDate(task?.latestDate)}</div>
+            {(task?.notes || task?.detail) && (
+              <div style={{
+                position: "absolute", left: "10%", right: "10%", top: "52%", height: "26%",
+                color: "#3A2018", fontSize: metaPx, lineHeight: 1.15, overflow: "hidden", textAlign: "left", ...LB,
+              }}>{task.notes || task.detail}</div>
+            )}
+          </>
+        )}
+        {compact && (
+          <div style={{
+            position: "absolute", left: "8%", right: "8%", bottom: "14%",
+            color: "#3A2018", fontSize: metaPx, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
+          }}>{fmtCardDate(task?.targetDate || task?.due) || "—"}</div>
+        )}
+        <BubbleFill
+          filled={importance}
+          size={pip}
+          style={{ left: "18%", bottom: "9%", width: compact ? "28%" : "32%" }}
+        />
+      </div>
+    </Tag>
+  );
+}
+
 const GOLD_PLATE = {
   background: "linear-gradient(#3A2A12, #2A1C0C)",
   border: "3px solid #120A04",
@@ -425,7 +607,6 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
   const toggleOffer = (id) => {
     onSessionBump?.("dealPick", 0, null, { toggleDealId: id });
   };
-  const stakes = (c) => (c >= 3 ? "Must" : c >= 2 ? "Need" : "Nice");
   const drawLabel = progress.chooseNeeded > 0
     ? `Draw (${progress.remaining})`
     : "Draw (optional)";
@@ -433,19 +614,19 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
 
   /** Casino-dealer spread: fill left→right, mild arc, stay on-screen. */
   const fanLayout = (n, i, width) => {
-    const cardW = 68;
+    const cardW = 78;
     const pad = 4;
     const avail = Math.max(width - pad * 2, cardW);
     if (n <= 1) return { left: pad, rot: -3, lift: 0 };
     const maxTravel = avail - cardW;
-    // Dealer step: roomy with few cards, tighter as the hand grows — always L→R from pad
-    const step = Math.max(26, Math.min(58, maxTravel / (n - 1)));
+    const step = Math.max(28, Math.min(62, maxTravel / (n - 1)));
     const left = pad + i * step;
     const t = i / (n - 1);
-    const rot = -8 + t * 16; // gentle −8° … +8°
-    const lift = Math.sin(t * Math.PI) * 6; // slight rainbow arc
+    const rot = -8 + t * 16;
+    const lift = Math.sin(t * Math.PI) * 6;
     return { left, rot, lift };
   };
+  const handCardH = Math.round(78 * (487 / 290));
 
   return (
     <Screen
@@ -512,35 +693,21 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
             )}
             {offers.length === 0 ? (
               <div style={{ color: "#8A7350", fontSize: 11, ...LB }}>No extras to draw right now.</div>
-            ) : offers.map((t) => {
-              const cat = TASK_CATEGORIES[t.category] || {};
-              const badge = urgencyBadge(t, new Date(), tasks);
-              return (
-                <div key={t.id} style={{
-                  display: "flex", gap: 8, alignItems: "center", marginBottom: 6,
-                  padding: "8px 10px",
-                  background: t.picked ? "#3A2A1A" : (PAPER[t.category] || "#EBDDBA"),
-                  border: "2px solid #120A04",
-                  color: t.picked ? "#8A7350" : "#3A2018",
-                }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 9, ...LB }}>
-                      {cat.icon} {stakes(t.criticality || 1)}{badge ? ` · ${badge}` : ""}
-                    </div>
-                    <div style={{ fontSize: 12, ...LB }}>{t.title}</div>
-                    <div style={{ fontSize: 9, marginTop: 2, ...LB }}>
-                      {t.targetDate || t.due || "—"} · {EFFORT_DOT(t.effort)}
-                    </div>
-                  </div>
-                  <button type="button" onClick={() => toggleOffer(t.id)} style={{
-                    padding: "8px 10px", flex: "0 0 auto",
-                    background: t.picked ? "#3A1810" : "#5D7C3B",
-                    color: "#F2E4C0", border: "2px solid #120A04",
-                    fontSize: 11, cursor: "pointer", ...LB,
-                  }}>{t.picked ? "Remove" : "Draw"}</button>
+            ) : offers.map((t) => (
+              <div key={t.id} style={{
+                display: "flex", gap: 8, alignItems: "center", marginBottom: 8,
+              }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <HorizontalTaskCard task={t} dimmed={!!t.picked} />
                 </div>
-              );
-            })}
+                <button type="button" onClick={() => toggleOffer(t.id)} style={{
+                  padding: "10px 10px", flex: "0 0 auto", alignSelf: "stretch",
+                  background: t.picked ? "#3A1810" : "#5D7C3B",
+                  color: "#F2E4C0", border: "2px solid #120A04",
+                  fontSize: 11, cursor: "pointer", ...LB,
+                }}>{t.picked ? "Remove" : "Draw"}</button>
+              </div>
+            ))}
           </div>
 
           {/* Focused hand card actions */}
@@ -573,7 +740,7 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
               style={{
                 position: "relative",
                 width: "100%",
-                height: picks.length ? 124 : 48,
+                height: picks.length ? handCardH + 10 : 48,
                 marginBottom: 4,
                 overflow: "visible",
               }}
@@ -583,50 +750,25 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
                   Empty hand — draw from the deck above.
                 </div>
               ) : picks.map((t, i) => {
-                const cat = TASK_CATEGORIES[t.category] || {};
                 const pos = fanLayout(picks.length, i, handW);
                 const on = focusId === t.id;
                 return (
-                  <button
+                  <VerticalTaskCard
                     key={t.id}
-                    type="button"
+                    task={t}
+                    width={78}
+                    bound={!!t.bound}
+                    selected={on}
                     onClick={() => setFocusId(on ? null : t.id)}
                     style={{
                       position: "absolute",
                       left: pos.left,
                       bottom: pos.lift,
-                      width: 68,
-                      height: 104,
-                      background: PAPER[t.category] || "#EBDDBA",
-                      border: on ? "3px solid #FFD97A" : "2px solid #120A04",
-                      boxShadow: "3px 3px 0 rgba(0,0,0,0.45)",
+                      zIndex: on ? 40 : 10 + i,
                       transform: `rotate(${pos.rot}deg)`,
                       transformOrigin: "50% 100%",
-                      padding: "6px 5px 0",
-                      zIndex: on ? 40 : 10 + i,
-                      overflow: "hidden",
-                      cursor: "pointer",
-                      color: "#3A2018",
-                      textAlign: "left",
                     }}
-                  >
-                    {t.bound && (
-                      <div style={{
-                        position: "absolute", top: 3, right: 3, padding: "1px 3px",
-                        border: "1px solid #A3252C", color: "#A3252C", fontSize: 7,
-                        background: "rgba(255,255,255,0.55)", ...LB,
-                      }}>B</div>
-                    )}
-                    <div style={{ fontSize: 12, marginBottom: 2 }}>{cat.icon}</div>
-                    <div style={{
-                      fontSize: 8, lineHeight: 1.15, fontWeight: 700,
-                      maxHeight: 44, overflow: "hidden", ...LB,
-                    }}>{t.title}</div>
-                    <div style={{
-                      position: "absolute", left: 5, right: 5, bottom: 5,
-                      fontSize: 7, color: "#5A4636", ...LB,
-                    }}>{EFFORT_DOT(t.effort)}</div>
-                  </button>
+                  />
                 );
               })}
             </div>
