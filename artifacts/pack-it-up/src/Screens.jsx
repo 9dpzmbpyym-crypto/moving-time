@@ -3195,6 +3195,7 @@ function SettingsScreen({ go }) {
   const [model, setModel] = useState(shirleyBoot.model);
   const [improv, setImprov] = useState(shirleyBoot.improv);
   const [t, setT] = useState({ haptics: true, motion: false, bigText: false });
+  const [exportState, setExportState] = useState("idle");
   const flip = (k) => setT((s) => ({ ...s, [k]: !s[k] }));
   const soonRows = [
     ["haptics", "Haptics"],
@@ -3206,6 +3207,49 @@ function SettingsScreen({ go }) {
     setApiKey(next.apiKey);
     setModel(next.model);
     setImprov(next.improv);
+  };
+  const copyCanonicalSave = async () => {
+    try {
+      const raw = localStorage.getItem("pack-it-up-save");
+      if (!raw) throw new Error("No save found on this device");
+      const save = JSON.parse(raw);
+      const tasks = Array.isArray(save.tasks) ? save.tasks : [];
+      const payload = JSON.stringify({
+        exportedAt: new Date().toISOString(),
+        source: window.location.origin,
+        saveVersion: save.v,
+        savedAt: save.savedAt,
+        activeTasks: tasks.filter((task) => task && (task.status === "pending" || task.status === "active")),
+        allTaskStatuses: tasks.map((task) => ({
+          id: task.id, status: task.status, title: task.title,
+          due: task.due, dueDate: task.dueDate, targetDate: task.targetDate,
+          latestDate: task.latestDate, category: task.category,
+          urgency: task.urgency, effort: task.effort,
+        })),
+        appointments: save.appointments || [],
+        session: save.session || null,
+        objState: save.objState || {},
+        contentsState: save.contentsState || {},
+      }, null, 2);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(payload);
+      } else {
+        const area = document.createElement("textarea");
+        area.value = payload;
+        area.style.position = "fixed";
+        area.style.opacity = "0";
+        document.body.appendChild(area);
+        area.focus();
+        area.select();
+        const copied = document.execCommand("copy");
+        area.remove();
+        if (!copied) throw new Error("Copy was blocked");
+      }
+      setExportState("copied");
+      setTimeout(() => setExportState("idle"), 3000);
+    } catch (error) {
+      setExportState(error?.message || "Could not copy save");
+    }
   };
   return (
     <Screen title="Settings" icon="⚙️" onBack={() => go("apartment")} subtitle="Sound & such">
@@ -3316,12 +3360,19 @@ function SettingsScreen({ go }) {
           </div>
         </div>
       ))}
-      {["Export save", "Import save"].map((label) => (
-        <button key={label} disabled style={{
-          width: "100%", marginTop: 8, padding: "12px", background: "#241509", color: "#6B563B",
-          border: "3px solid #120A04", fontSize: 12, textAlign: "left", ...LB,
-        }}>{label} — (soon)</button>
-      ))}
+      <button type="button" onClick={copyCanonicalSave} style={{
+        width: "100%", marginTop: 8, padding: "12px", background: "#3A2410", color: "#FFD97A",
+        border: "3px solid #120A04", fontSize: 12, textAlign: "left", cursor: "pointer", ...LB,
+      }}>
+        {exportState === "copied" ? "✓ Canonical mobile save copied" : "Copy canonical mobile save"}
+      </button>
+      {exportState !== "idle" && exportState !== "copied" && (
+        <div role="alert" style={{ marginTop: 4, color: "#E8A080", fontSize: 10, ...LB }}>{exportState}</div>
+      )}
+      <button disabled style={{
+        width: "100%", marginTop: 8, padding: "12px", background: "#241509", color: "#6B563B",
+        border: "3px solid #120A04", fontSize: 12, textAlign: "left", ...LB,
+      }}>Import save — (soon)</button>
       <button
         type="button"
         onClick={() => {
