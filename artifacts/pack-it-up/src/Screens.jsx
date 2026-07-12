@@ -2,6 +2,19 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import STRETCHY_ICON from "./assets/Stretchy Icon.png";
 import HEALTH_CLIPBOARD from "./assets/health-clipboard.png";
 import LANDLINE_PHONE from "./assets/landline-phone.png";
+import MENU_HEADER_FRAME from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/header_frame.png";
+import MENU_FOOTER_FRAME from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/footer_frame.png";
+import MENU_BACK_ARROW from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/back_arrow.png";
+import MENU_LIST_ICON from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/list_icon.png";
+import MENU_PRESSURE_FRAME from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/pressure_frame.png";
+import MENU_COMMAND_BANNER from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/command_board_banner.png";
+import MENU_TILE_FRAME from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/tile_frame.png";
+import MENU_ICON_FOLDER from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/folder_icon.png";
+import MENU_ICON_HEALTH from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/stethoscope_icon.png";
+import MENU_ICON_BOX from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/box_icon.png";
+import MENU_ICON_MONEYBAG from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/moneybag_icon.png";
+import MENU_ICON_CAT from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/cat_icon.png";
+import MENU_ICON_GEAR from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/gear_icon.png";
 import MOVE_ROW from "./assets/items/task_card_assets/horizontal/move_row_card.png";
 import JOB_ROW from "./assets/items/task_card_assets/horizontal/job_row_card.png";
 import ADMIN_ROW from "./assets/items/task_card_assets/horizontal/admin_row_card.png";
@@ -674,6 +687,23 @@ function Screen({ title, icon, onBack, children, bg = "#1A1008", subtitle, progr
 const soonTag = <span style={{ fontSize: 9, color: "#8A7350", ...LB }}>(soon)</span>;
 
 /* ================= MENU / OVERVIEW ================= */
+/** Tile icon art, sliced from the Main-menu UI asset sheet (see menu_slices/). */
+const MENU_TILE_ICON = {
+  desk: MENU_ICON_FOLDER,
+  health: MENU_ICON_HEALTH,
+  inventory: MENU_ICON_BOX,
+  log: MENU_ICON_MONEYBAG,
+  stretchy: MENU_ICON_CAT,
+  settings: MENU_ICON_GEAR,
+};
+
+/**
+ * Dark inset track within pressure_frame.png, measured in source-image
+ * percentages (frame is 1091×191px; the empty track sits at x77–1006,
+ * y72–131). Used to align the dynamic fill bar over the static frame art.
+ */
+const PRESSURE_TRACK = { left: 7.06, right: 7.79, top: 37.7, bottom: 31.4 };
+
 function MenuScreen({ go, tasks }) {
   const pressure = taskPressure(tasks);
   const count = (cats) => tasks.filter((t) => isOpen(t) && cats.includes(t.category)).length;
@@ -683,51 +713,131 @@ function MenuScreen({ go, tasks }) {
     return t.slice().sort((a, b) => b.urgency - a.urgency)[0].due;
   };
   const tiles = [
-    { key: "board",     icon: "📋", label: "Command Board",  sub: "what matters today", badge: 0, due: null, wide: true },
-    { key: "desk",      icon: "🗂️", label: "Desk / Admin",    sub: "papers · housing · Shirley", badge: count(["job", "admin", "move", "housing"]), due: soonest(["job", "admin", "move", "housing"]) },
-    { key: "health",    icon: "🩺", label: "Health / Body",    sub: "use it while covered", badge: count(["health"]), due: soonest(["health"]) },
-    { key: "inventory", icon: "📦", label: "Inventory",        sub: "packed items", badge: 0, due: null },
-    { key: "log",       icon: "💰", label: "Sold / Donated",   sub: "the money log", badge: 0, due: null },
-    { key: "stretchy",  icon: "🐈", label: "Stretchy",         sub: "orange & fine", badge: count(["cat"]), due: soonest(["cat"]) },
-    { key: "settings",  icon: "⚙️", label: "Settings",         sub: "sound & such", badge: 0, due: null },
+    { key: "desk",      label: "Desk / Admin",   sub: "papers · housing · Shirley", badge: count(["job", "admin", "move", "housing"]), due: soonest(["job", "admin", "move", "housing"]) },
+    { key: "health",    label: "Health / Body",  sub: "use it while covered",        badge: count(["health"]), due: soonest(["health"]) },
+    { key: "inventory", label: "Inventory",      sub: "packed items",                badge: 0, due: null },
+    { key: "log",       label: "Sold / Donated", sub: "the money log",               badge: 0, due: null },
+    { key: "stretchy",  label: "Stretchy",       sub: "orange & fine",               badge: count(["cat"]), due: soonest(["cat"]) },
+    { key: "settings",  label: "Settings",       sub: "sound & such",                badge: 0, due: null },
   ];
   const pressurePct = pressure / 3;
+  const pressureColor = PRESSURE_COLORS[pressure] || PRESSURE_COLORS[0];
+
   return (
-    <Screen
-      title="Overview"
-      icon="☰"
-      onBack={() => go("apartment")}
-      subtitle="Pressure — how loud life is right now"
-      progress={pressurePct}
-      progressLabel={PRESSURE_LABELS[pressure]}
-    >
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        {tiles.map((t) => (
-          <button key={t.key} onClick={() => go(t.key)} style={{
-            position: "relative", minHeight: t.wide ? 72 : 96, display: "flex", flexDirection: "column",
-            alignItems: "flex-start", justifyContent: "flex-end", gap: 2, padding: "10px 12px",
-            cursor: "pointer", textAlign: "left", gridColumn: t.wide ? "1 / -1" : undefined, ...FR, ...LB,
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 250, background: "#1A1008", display: "flex", flexDirection: "column",
+      animation: "screenIn 200ms ease-out", overflow: "hidden",
+    }}>
+      {screenCss}
+      <div style={{
+        flex: 1, minHeight: 0, overflowY: "auto",
+        padding: "calc(env(safe-area-inset-top, 0px) + 8px) 10px calc(env(safe-area-inset-bottom, 0px) + 14px)",
+        display: "flex", flexDirection: "column", gap: 10,
+      }}>
+        {/* Header: back arrow + list icon + title, on the ornate wood rail */}
+        <div style={{
+          position: "relative", width: "100%", aspectRatio: "1135 / 190",
+          backgroundImage: `url(${MENU_HEADER_FRAME})`, backgroundSize: "100% 100%",
+          imageRendering: "pixelated", display: "flex", alignItems: "center", gap: "3%", padding: "0 4%",
+        }}>
+          <button onClick={() => go("apartment")} aria-label="Back" style={{
+            flex: "0 0 auto", width: "10%", aspectRatio: "1 / 1", background: "none", border: "none", padding: 0,
+            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
           }}>
-            <span style={{ fontSize: t.wide ? 20 : 24, marginBottom: 4 }}>{t.icon}</span>
-            <span style={{ color: "#F2E4C0", fontSize: 13 }}>{t.label}</span>
-            <span style={{ color: "#8A7350", fontSize: 10 }}>{t.sub}</span>
-            {t.due && (
-              <span style={{ color: "#C74B4F", fontSize: 10, marginTop: 2, ...LB }}>due: {t.due}</span>
-            )}
-            {t.badge > 0 && (
-              <span style={{
-                position: "absolute", top: 8, right: 8, minWidth: 20, height: 20, padding: "0 4px",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                background: "#C43B34", color: "#F3EDDD", fontSize: 11, border: "2px solid #120A04", ...LB,
-              }}>{t.badge}</span>
-            )}
+            <img src={MENU_BACK_ARROW} alt="" style={{ width: "100%", display: "block", imageRendering: "pixelated" }} />
           </button>
-        ))}
+          <img src={MENU_LIST_ICON} alt="" style={{ width: "8%", flex: "0 0 auto", imageRendering: "pixelated" }} />
+          <div style={{
+            flex: 1, textAlign: "center", color: "#FFD97A", fontSize: "clamp(16px, 6vw, 26px)",
+            letterSpacing: "2px", ...LB,
+          }}>
+            OVERVIEW
+          </div>
+          <div style={{ width: "10%", flex: "0 0 auto" }} aria-hidden />
+        </div>
+
+        {/* Pressure bar */}
+        <div style={{
+          position: "relative", width: "100%", aspectRatio: "1091 / 191",
+          backgroundImage: `url(${MENU_PRESSURE_FRAME})`, backgroundSize: "100% 100%", imageRendering: "pixelated",
+        }}>
+          <div style={{
+            position: "absolute", left: "4%", right: "4%", top: "8%",
+            display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 6,
+            color: "#3A2018", fontSize: "clamp(7px, 2.4vw, 10px)", ...LB,
+          }}>
+            <span>PRESSURE — HOW LOUD LIFE IS RIGHT NOW</span>
+            <span style={{ color: pressureColor, flex: "0 0 auto" }}>{(PRESSURE_LABELS[pressure] || "").toUpperCase()}</span>
+          </div>
+          <div style={{
+            position: "absolute",
+            left: `${PRESSURE_TRACK.left}%`, right: `${PRESSURE_TRACK.right}%`,
+            top: `${PRESSURE_TRACK.top}%`, bottom: `${PRESSURE_TRACK.bottom}%`,
+          }}>
+            <div style={{
+              width: `${Math.max(6, pressurePct * 100)}%`, height: "100%",
+              background: pressureColor, transition: "width 280ms ease-out",
+            }} />
+          </div>
+        </div>
+
+        {/* Command board banner */}
+        <button onClick={() => go("board")} style={{
+          position: "relative", width: "100%", aspectRatio: "991 / 211", background: "none", border: "none",
+          padding: 0, cursor: "pointer", textAlign: "left",
+          backgroundImage: `url(${MENU_COMMAND_BANNER})`, backgroundSize: "100% 100%", imageRendering: "pixelated",
+        }}>
+          <div style={{
+            position: "absolute", left: "20%", top: 0, right: "4%", bottom: 0,
+            display: "flex", flexDirection: "column", justifyContent: "center", gap: 4,
+          }}>
+            <span style={{ color: "#241509", fontSize: "clamp(14px, 4.4vw, 19px)", ...LB }}>COMMAND BOARD</span>
+            <span style={{ color: "#6B563B", fontSize: "clamp(9px, 2.8vw, 12px)", ...LB }}>what matters today</span>
+          </div>
+        </button>
+
+        {/* Tile grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {tiles.map((t) => (
+            <button key={t.key} onClick={() => go(t.key)} style={{
+              position: "relative", width: "100%", aspectRatio: "414 / 376", background: "none", border: "none",
+              padding: 0, cursor: "pointer", textAlign: "left",
+              backgroundImage: `url(${MENU_TILE_FRAME})`, backgroundSize: "100% 100%", imageRendering: "pixelated",
+            }}>
+              <div style={{
+                position: "absolute", inset: "10% 8%",
+                display: "flex", flexDirection: "column", alignItems: "flex-start",
+              }}>
+                <img src={MENU_TILE_ICON[t.key]} alt="" style={{ width: "28%", marginBottom: "6%", imageRendering: "pixelated" }} />
+                <span style={{ color: "#241509", fontSize: "clamp(11px, 3.6vw, 15px)", ...LB }}>{t.label.toUpperCase()}</span>
+                <span style={{ color: "#6B563B", fontSize: "clamp(8px, 2.5vw, 10px)", lineHeight: 1.2, marginTop: 3, ...LB }}>{t.sub}</span>
+                {t.due && (
+                  <span style={{ color: "#A3252C", fontSize: "clamp(8px, 2.5vw, 10px)", marginTop: "auto", ...LB }}>due: {t.due}</span>
+                )}
+              </div>
+              {t.badge > 0 && (
+                <span style={{
+                  position: "absolute", top: "6%", right: "6%", minWidth: 20, height: 20, padding: "0 5px",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "#C43B34", color: "#F3EDDD", fontSize: 12, border: "2px solid #120A04", ...LB,
+                }}>{t.badge}</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          position: "relative", width: "100%", aspectRatio: "1120 / 89",
+          backgroundImage: `url(${MENU_FOOTER_FRAME})`, backgroundSize: "100% 100%", imageRendering: "pixelated",
+          display: "flex", alignItems: "center", justifyContent: "center", padding: "0 6%",
+        }}>
+          <span style={{ color: "#C9A876", fontSize: "clamp(9px, 2.6vw, 11px)", textAlign: "center", ...LB }}>
+            The apartment is home base — everything here is a side table.
+          </span>
+        </div>
       </div>
-      <div style={{ marginTop: 14, color: "#6B563B", fontSize: 11, textAlign: "center", ...LB }}>
-        The apartment is home base — everything here is a side table.
-      </div>
-    </Screen>
+    </div>
   );
 }
 
