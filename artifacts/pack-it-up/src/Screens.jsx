@@ -13,7 +13,6 @@ import HEALTH_NOTE_PAPER from "./assets/items/packitup_cropped_assets/ui_mockups
 import HEALTH_SHIRLEY_BTN from "./assets/items/packitup_cropped_assets/ui_mockups/health_slices/shirley_button.png";
 import HEALTH_CAREKIT_BTN from "./assets/items/packitup_cropped_assets/ui_mockups/health_slices/carekit_button.png";
 import HEALTH_RECORDS_BTN from "./assets/items/packitup_cropped_assets/ui_mockups/health_slices/records_button.png";
-import HEALTH_HEADER_BAR from "./assets/items/packitup_cropped_assets/ui_mockups/health_slices/header_bar.png";
 import HEALTH_LEGEND_BAR from "./assets/items/packitup_cropped_assets/ui_mockups/health_slices/legend_bar.png";
 import LANDLINE_PHONE from "./assets/landline-phone.png";
 import MENU_HEADER_FRAME from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/header_frame.png";
@@ -790,12 +789,12 @@ function MenuScreen({ go, tasks }) {
           backgroundImage: `url(${MENU_PRESSURE_FRAME})`, backgroundSize: "100% 100%", imageRendering: "pixelated",
         }}>
           <div style={{
-            position: "absolute", left: "4%", right: "4%", top: "8%",
+            position: "absolute", left: "5%", right: "7%", top: "8%",
             display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 6,
-            color: "#3A2018", fontSize: "clamp(7px, 2.4vw, 10px)", ...LB,
+            color: "#3A2018", fontSize: "clamp(7px, 2.2vw, 9px)", ...LB,
           }}>
-            <span>PRESSURE — HOW LOUD LIFE IS RIGHT NOW</span>
-            <span style={{ color: pressureColor, flex: "0 0 auto" }}>{(PRESSURE_LABELS[pressure] || "").toUpperCase()}</span>
+            <span style={{ flex: "1 1 auto", minWidth: 0 }}>PRESSURE — HOW LOUD LIFE IS RIGHT NOW</span>
+            <span style={{ color: pressureColor, flex: "0 0 auto", fontSize: "clamp(6px, 2vw, 8px)", whiteSpace: "nowrap", paddingLeft: 2 }}>{(PRESSURE_LABELS[pressure] || "").toUpperCase()}</span>
           </div>
           <div style={{
             position: "absolute",
@@ -840,7 +839,7 @@ function MenuScreen({ go, tasks }) {
                 <span style={{ color: "#241509", fontSize: "clamp(11px, 3.6vw, 15px)", ...LB }}>{t.label.toUpperCase()}</span>
                 <span style={{ color: "#6B563B", fontSize: "clamp(8px, 2.5vw, 10px)", lineHeight: 1.2, marginTop: 3, ...LB }}>{t.sub}</span>
                 {t.due && (
-                  <span style={{ color: "#A3252C", fontSize: "clamp(8px, 2.5vw, 10px)", marginTop: "auto", ...LB }}>due: {t.due}</span>
+                  <span style={{ color: "#A3252C", fontSize: "clamp(8px, 2.5vw, 10px)", marginTop: "auto", marginBottom: "6%", ...LB }}>due: {t.due}</span>
                 )}
               </div>
               {t.badge > 0 && (
@@ -854,15 +853,24 @@ function MenuScreen({ go, tasks }) {
           ))}
         </div>
 
-        {/* Footer */}
+        {/* Footer — tall enough for the line to wrap to 2 lines inside the frame.
+            Inset (not padding-on-100%-width) keeps this consistent with the other
+            frames and avoids a content-box width+padding overflow. */}
         <div style={{
-          position: "relative", width: "100%", aspectRatio: "1120 / 89",
+          position: "relative", width: "100%", aspectRatio: "1120 / 190",
           backgroundImage: `url(${MENU_FOOTER_FRAME})`, backgroundSize: "100% 100%", imageRendering: "pixelated",
-          display: "flex", alignItems: "center", justifyContent: "center", padding: "0 6%",
         }}>
-          <span style={{ color: "#C9A876", fontSize: "clamp(9px, 2.6vw, 11px)", textAlign: "center", ...LB }}>
-            The apartment is home base — everything here is a side table.
-          </span>
+          <div style={{
+            position: "absolute", inset: "0 9%",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <span style={{
+              display: "block", width: "100%", color: "#C9A876", fontSize: "clamp(9px, 2.6vw, 11px)", lineHeight: 1.35,
+              textAlign: "center", whiteSpace: "normal", ...LB,
+            }}>
+              The apartment is home base — everything here is a side table.
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -1041,6 +1049,7 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
           <button type="button" onClick={() => go("menu")} aria-label="Back" style={{
             position: "relative", flex: "0 0 auto", width: 78, aspectRatio: "259 / 142",
             backgroundImage: `url(${BOARD_BACK_BUTTON})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+            backgroundColor: "transparent", appearance: "none", WebkitAppearance: "none",
             border: "none", padding: 0, cursor: "pointer", imageRendering: "pixelated",
           }} />
           <div style={{
@@ -1078,6 +1087,7 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
                 position: "relative", flex: "1 1 0", minWidth: 0, aspectRatio: "223 / 95",
                 backgroundImage: `url(${energy === seg.id ? seg.on : seg.off})`,
                 backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+                backgroundColor: "transparent", appearance: "none", WebkitAppearance: "none",
                 border: "none", padding: 0, cursor: "pointer", imageRendering: "pixelated",
               }}
             />
@@ -1147,6 +1157,7 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
                       position: "relative", flex: "0 0 auto", alignSelf: "center", width: 52,
                       aspectRatio: "198 / 278",
                       backgroundImage: `url(${BOARD_DRAW_BUTTON})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+                      backgroundColor: "transparent", appearance: "none", WebkitAppearance: "none",
                       border: "none", padding: 0, cursor: "pointer", imageRendering: "pixelated",
                     }} />
                   )}
@@ -1234,6 +1245,7 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
         <button type="button" onClick={() => go("ledger")} aria-label="Full ledger — flip page" style={{
           position: "relative", width: "100%", aspectRatio: "1016 / 269", flex: "0 0 auto",
           backgroundImage: `url(${BOARD_LEDGER_BUTTON})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+          backgroundColor: "transparent", appearance: "none", WebkitAppearance: "none",
           border: "none", padding: 0, cursor: "pointer", imageRendering: "pixelated",
         }} />
       </div>
@@ -2635,19 +2647,22 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
       }}>
         <RewardToast text={rewardToast} />
 
-        {/* Framed header: back arrow + BODY BOARD banner + N OPEN chip */}
+        {/* Framed header: back arrow + BODY BOARD banner + N OPEN chip — the
+            title segment reuses the ornate wood/brass menu-header frame so it
+            reads as a framed banner instead of a flat bar. */}
         <div style={{ display: "flex", alignItems: "stretch", gap: 6, flex: "0 0 auto" }}>
           <button type="button" onClick={leave} aria-label="Back" style={{
             position: "relative", flex: "0 0 auto", width: 66, aspectRatio: "213 / 92",
             backgroundImage: `url(${HEALTH_BACK_BUTTON})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+            backgroundColor: "transparent", appearance: "none", WebkitAppearance: "none",
             border: "none", padding: 0, cursor: "pointer", imageRendering: "pixelated",
           }} />
           <div style={{
-            position: "relative", flex: 1, minWidth: 0, aspectRatio: "1778 / 263",
-            backgroundImage: `url(${HEALTH_HEADER_BAR})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+            position: "relative", flex: 1, minWidth: 0, aspectRatio: "1135 / 190",
+            backgroundImage: `url(${MENU_HEADER_FRAME})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
             imageRendering: "pixelated", display: "flex", alignItems: "center", justifyContent: "center",
           }}>
-            <span style={{ color: "#F2E4C0", fontSize: "clamp(13px, 4.2vw, 18px)", ...LB }}>BODY BOARD</span>
+            <span style={{ color: "#FFD97A", fontSize: "clamp(13px, 4.2vw, 18px)", ...LB }}>BODY BOARD</span>
           </div>
           <div style={{
             position: "relative", flex: "0 0 auto", display: "flex", alignItems: "center",
@@ -2657,11 +2672,18 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
           </div>
         </div>
 
-        {/* Clipboard — body figure with zone octagons pinned on it */}
-        <div style={{ position: "relative", flex: 1, minHeight: 0, width: "100%", overflow: "hidden" }}>
+        {/* Clipboard — body figure with zone octagons pinned on it, plus the
+            selected-zone note pinned near the bottom so it overlaps the legs
+            like the mockup (not a separate panel below the board). The
+            clipboard box is sized by BOTH width and height (never just
+            width), so the top clasp/badge is never cropped. */}
+        <div style={{
+          position: "relative", flex: 1, minHeight: 0, width: "100%", overflow: "hidden",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
           <div style={{
-            position: "absolute", left: 0, right: 0, top: "50%", transform: "translateY(-50%)",
-            width: "100%", aspectRatio: "682 / 1024",
+            position: "relative", height: "100%", width: "auto", maxWidth: "100%",
+            aspectRatio: "682 / 1024",
           }}>
             <img
               src={HEALTH_CLIPBOARD}
@@ -2672,73 +2694,73 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
                 imageRendering: "pixelated", pointerEvents: "none", userSelect: "none",
               }}
             />
-            <div style={{ position: "absolute", left: "14%", top: "10%", width: "72%", height: "72%" }}>
-              <div style={{
-                position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)",
-                width: "62%", aspectRatio: "406 / 903",
-              }}>
-                <img
-                  src={HEALTH_BODY_FIGURE}
-                  alt=""
-                  draggable={false}
-                  style={{
-                    width: "100%", height: "100%", objectFit: "contain",
-                    imageRendering: "pixelated", pointerEvents: "none", userSelect: "none",
-                  }}
-                />
-                {HEALTH_ZONES.map((z) => {
-                  const state = zoneState(z);
-                  const isSel = zone === z.id;
-                  return (
-                    <button
-                      key={z.id}
-                      type="button"
-                      onClick={() => selectZone(z.id)}
-                      aria-label={z.label}
+            {/* body figure — sized to fill most of the parchment (height-driven,
+                so it stays true to the sprite's tall aspect ratio) */}
+            <div style={{
+              position: "absolute", left: "50%", top: "6%", height: "72%",
+              transform: "translateX(-50%)", aspectRatio: "406 / 903",
+            }}>
+              <img
+                src={HEALTH_BODY_FIGURE}
+                alt=""
+                draggable={false}
+                style={{
+                  width: "100%", height: "100%", objectFit: "contain",
+                  imageRendering: "pixelated", pointerEvents: "none", userSelect: "none",
+                }}
+              />
+              {HEALTH_ZONES.map((z) => {
+                const state = zoneState(z);
+                const isSel = zone === z.id;
+                return (
+                  <button
+                    key={z.id}
+                    type="button"
+                    onClick={() => selectZone(z.id)}
+                    aria-label={z.label}
+                    style={{
+                      position: "absolute", left: `${z.x}%`, top: `${z.y}%`,
+                      transform: "translate(-50%, -38%)",
+                      width: "26%", aspectRatio: "140 / 188",
+                      background: "transparent", appearance: "none", WebkitAppearance: "none",
+                      border: "none", padding: 0, cursor: "pointer",
+                      outline: isSel ? "3px solid #FFD97A" : "none",
+                      boxShadow: isSel ? "0 0 10px 2px rgba(255,217,122,0.65)" : "none",
+                    }}
+                  >
+                    <img
+                      src={z.icon}
+                      alt=""
+                      draggable={false}
+                      style={{ width: "100%", height: "100%", objectFit: "contain", imageRendering: "pixelated" }}
+                    />
+                    <span
+                      aria-hidden
                       style={{
-                        position: "absolute", left: `${z.x}%`, top: `${z.y}%`,
-                        transform: "translate(-50%, -38%)",
-                        width: "26%", aspectRatio: "140 / 188",
-                        background: "transparent", border: "none", padding: 0, cursor: "pointer",
-                        outline: isSel ? "3px solid #FFD97A" : "none",
-                        boxShadow: isSel ? "0 0 10px 2px rgba(255,217,122,0.65)" : "none",
+                        position: "absolute", top: "6%", right: "4%", width: 11, height: 11, borderRadius: "50%",
+                        border: "2px solid #120A04", background: ZONE_STATE_COLOR[state],
+                        animation: state === "ready" ? "zonePulse 1.8s ease-in-out infinite"
+                          : state === "done" ? "zoneCalm 900ms ease-out" : "none",
                       }}
-                    >
-                      <img
-                        src={z.icon}
-                        alt=""
-                        draggable={false}
-                        style={{ width: "100%", height: "100%", objectFit: "contain", imageRendering: "pixelated" }}
-                      />
-                      <span
-                        aria-hidden
-                        style={{
-                          position: "absolute", top: "6%", right: "4%", width: 11, height: 11, borderRadius: "50%",
-                          border: "2px solid #120A04", background: ZONE_STATE_COLOR[state],
-                          animation: state === "ready" ? "zonePulse 1.8s ease-in-out infinite"
-                            : state === "done" ? "zoneCalm 900ms ease-out" : "none",
-                        }}
-                      />
-                    </button>
-                  );
-                })}
-              </div>
+                    />
+                  </button>
+                );
+              })}
             </div>
-          </div>
-        </div>
 
-        {/* Selected-zone / Care Kit / Records card — one clipboard-note slot */}
-        <div style={{
-          position: "relative", flex: "0 0 auto", minHeight: 118,
-          backgroundImage: panel ? "none" : `url(${HEALTH_NOTE_PAPER})`,
-          backgroundColor: panel ? "#241509" : "transparent",
-          backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
-          border: panel ? "3px solid #120A04" : "none",
-          boxShadow: panel ? "inset 0 0 0 2px #6B4423" : "none",
-          padding: panel ? "8px 10px" : "10px 14px 10px 30px",
-          imageRendering: "pixelated",
-        }}>
-          {panel === "care" && (
+            {/* Selected-zone / Care Kit / Records note — pinned near the
+                clipboard's bottom edge so it overlaps the figure's legs. */}
+            <div style={{
+              position: "absolute", left: "6%", right: "9%", top: "74%", bottom: "2%",
+              backgroundImage: panel ? "none" : `url(${HEALTH_NOTE_PAPER})`,
+              backgroundColor: panel ? "#241509" : "transparent",
+              backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+              border: panel ? "3px solid #120A04" : "none",
+              boxShadow: panel ? "inset 0 0 0 2px #6B4423" : "none",
+              padding: panel ? "8px 10px" : "8px 12px 8px 17%",
+              imageRendering: "pixelated", overflow: "auto",
+            }}>
+              {panel === "care" && (
             <>
               <div style={{ color: "#FFD97A", fontSize: 12, marginBottom: 6, ...LB }}>Care Kit</div>
               <div style={{ display: "flex", gap: 4 }}>
@@ -2863,6 +2885,8 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
               </>
             );
           })()}
+            </div>
+          </div>
         </div>
 
         {/* Status legend strip */}
@@ -2887,17 +2911,20 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
           <button type="button" onClick={callOffice} aria-label="Shirley" style={{
             flex: 1, position: "relative", aspectRatio: "323 / 142",
             backgroundImage: `url(${HEALTH_SHIRLEY_BTN})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+            backgroundColor: "transparent", appearance: "none", WebkitAppearance: "none",
             border: "none", padding: 0, cursor: "pointer", imageRendering: "pixelated",
           }} />
           <button type="button" onClick={() => togglePanel("care")} aria-label="Care Kit" style={{
             flex: 1, position: "relative", aspectRatio: "339 / 142",
             backgroundImage: `url(${HEALTH_CAREKIT_BTN})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+            backgroundColor: "transparent", appearance: "none", WebkitAppearance: "none",
             border: "none", padding: 0, cursor: "pointer", imageRendering: "pixelated",
             outline: panel === "care" ? "3px solid #FFD97A" : "none",
           }} />
           <button type="button" onClick={() => togglePanel("records")} aria-label="Records" style={{
             flex: 1, position: "relative", aspectRatio: "340 / 142",
             backgroundImage: `url(${HEALTH_RECORDS_BTN})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+            backgroundColor: "transparent", appearance: "none", WebkitAppearance: "none",
             border: "none", padding: 0, cursor: "pointer", imageRendering: "pixelated",
             outline: panel === "records" ? "3px solid #FFD97A" : "none",
           }} />

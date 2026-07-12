@@ -4140,6 +4140,12 @@ export default function PackItUp({ glowMode = "split" }) {
       </div>
     );
 
+    // Room-name panel is narrow (mockup wood chip) — fit long room names by
+    // shrinking the font with length rather than hard-truncating with an
+    // ellipsis. Tuned against the actual panel's usable text width.
+    const roomNameLen = room.name.length;
+    const roomNameFontSize = roomNameLen <= 7 ? 11 : roomNameLen <= 9 ? 9.5 : roomNameLen <= 11 ? 7 : 6.2;
+
     return (
       <div
         style={{
@@ -4172,26 +4178,29 @@ export default function PackItUp({ glowMode = "split" }) {
         <div style={{ flex: "0 0 auto", display: "flex", alignItems: "stretch", gap: 6, padding: "calc(env(safe-area-inset-top, 0px) + 10px) 10px 8px", zIndex: 130 }}>
           <div style={{ position: "relative", flex: "33 1 0%", minWidth: 0, height: 74 }}>
             <img src={HUD_CLOCK_BG} alt="" style={chromeImgFill} />
-            <div style={{ ...chromeContent, padding: "21% 10px 0 32%" }}>
-              <div style={{ color: INK.strong, fontSize: 12, lineHeight: 1.05, whiteSpace: "nowrap", overflow: "hidden", ...ui.label }}>{clock}</div>
-              <div style={{ color: INK.mid, fontSize: 10, lineHeight: 1.05, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", ...ui.label }}>
+            <div style={{
+              ...chromeContent, position: "absolute", left: "32%", right: "8%", top: "20%", bottom: "24%",
+              display: "flex", flexDirection: "column", justifyContent: "space-between", height: "auto",
+            }}>
+              <div style={{ color: INK.strong, fontSize: 11, lineHeight: 1, whiteSpace: "nowrap", overflow: "hidden", ...ui.label }}>{clock}</div>
+              <div style={{ color: INK.mid, fontSize: 9, lineHeight: 1, whiteSpace: "nowrap", overflow: "hidden", ...ui.label }}>
                 {dateLabel}
               </div>
-              <div style={{ color: INK.soft, fontSize: 9, lineHeight: 1.05, marginTop: 1, whiteSpace: "nowrap", ...ui.label }}>
+              <div style={{ color: INK.soft, fontSize: 8, lineHeight: 1, whiteSpace: "nowrap", ...ui.label }}>
                 {daysLeft === 0 ? "Move day" : `${daysLeft}d left`}
               </div>
             </div>
           </div>
           <div style={{ position: "relative", flex: "17 1 0%", minWidth: 0, height: 74 }}>
             <img src={HUD_COINS_BG} alt="" style={chromeImgFill} />
-            <div style={{ ...chromeContent, padding: "0 8px 0 30%", display: "flex", alignItems: "center", color: INK.strong, fontSize: 14, ...ui.label }}>
+            <div style={{ ...chromeContent, padding: "0 8px 0 44%", display: "flex", alignItems: "center", color: INK.strong, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", ...ui.label }}>
               {coins}
             </div>
           </div>
           <div style={{ position: "relative", flex: "24 1 0%", minWidth: 0, height: 74 }}>
             <img src={HUD_ROOM_BG} alt="" style={chromeImgFill} />
             <div style={{ ...chromeContent, padding: "19% 8px 0 26%", textAlign: "left" }}>
-              <div style={{ color: INK.strong, fontSize: 11, lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", ...ui.label }}>{room.name}</div>
+              <div style={{ color: INK.strong, fontSize: roomNameFontSize, lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", ...ui.label }}>{room.name}</div>
               <div style={{ color: INK.mid, fontSize: 9, lineHeight: 1.1, marginTop: 1, whiteSpace: "nowrap", ...ui.label }}>
                 {total > 0 ? `${clearedCount}/${total}` : "—"}
               </div>
