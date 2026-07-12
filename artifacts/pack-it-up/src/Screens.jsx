@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import STRETCHY_ICON from "./assets/Stretchy Icon.png";
 import HEALTH_CLIPBOARD from "./assets/health-clipboard.png";
 import LANDLINE_PHONE from "./assets/landline-phone.png";
@@ -131,7 +131,56 @@ const V_PIP = {
   size: 5.2,
 };
 
-/** Fill hollow circles baked into the art — centers are % of card box. */
+/** Shrink font until text fits the parent box (no clip). */
+function FitText({ text, maxPx, minPx = 5, style }) {
+  const ref = useRef(null);
+  const [size, setSize] = useState(maxPx);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const parent = el.parentElement;
+    if (!parent) return undefined;
+    let s = maxPx;
+    el.style.fontSize = `${s}px`;
+    // Binary-ish shrink: also re-run on resize
+    const fit = () => {
+      s = maxPx;
+      el.style.fontSize = `${s}px`;
+      let guard = 40;
+      while (
+        guard-- > 0
+        && s > minPx
+        && (el.scrollHeight > parent.clientHeight + 1 || el.scrollWidth > parent.clientWidth + 1)
+      ) {
+        s -= 0.5;
+        el.style.fontSize = `${s}px`;
+      }
+      setSize(s);
+    };
+    fit();
+    if (typeof ResizeObserver === "undefined") return undefined;
+    const ro = new ResizeObserver(fit);
+    ro.observe(parent);
+    return () => ro.disconnect();
+  }, [text, maxPx, minPx]);
+  return (
+    <span
+      ref={ref}
+      style={{
+        display: "block",
+        width: "100%",
+        fontSize: size,
+        lineHeight: 1.15,
+        overflow: "hidden",
+        ...style,
+      }}
+    >
+      {text}
+    </span>
+  );
+}
+
+/** Fill hollow circles baked into the art — solid discs centered on rings. */
 function BubblePips({ filled, centers, sizePct }) {
   const n = clampPips(filled);
   return (
@@ -178,13 +227,13 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
         style={{ width: "100%", height: "auto", display: "block", imageRendering: "pixelated" }}
       />
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-        {/* Title vertically centered between header and dashed rail */}
+        {/* Title vertically centered between header and dashed rail — shrink to fit */}
         <div style={{
           position: "absolute", left: "3.5%", right: "3.5%", top: "22%", height: "34%",
-          color: "#1A1008", fontSize: 12, lineHeight: 1.2, overflow: "hidden", textAlign: "left",
+          color: "#1A1008", textAlign: "left",
           display: "flex", alignItems: "center", ...LB,
         }}>
-          <span style={{ display: "block", width: "100%" }}>{task?.title || ""}</span>
+          <FitText text={task?.title || ""} maxPx={13} minPx={7} style={{ fontWeight: 700, letterSpacing: "0.5px" }} />
         </div>
         {/* Date values — wide enough not to clip "Jul 11" */}
         <div style={{
