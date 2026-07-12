@@ -183,13 +183,13 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
         }}>
           {task?.title || ""}
         </div>
-        {/* Date values: same row as TARGET / LATEST labels (not down on the underline) */}
+        {/* Date values: align with TARGET/LATEST row; air above the underline */}
         <div style={{
-          position: "absolute", left: "19%", top: "71%", width: "10%",
+          position: "absolute", left: "19%", top: "69.5%", width: "10%",
           color: "#1A1008", fontSize: 9, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
         }}>{fmtCardDate(task?.targetDate || task?.due)}</div>
         <div style={{
-          position: "absolute", left: "48%", top: "71%", width: "10%",
+          position: "absolute", left: "48%", top: "69.5%", width: "10%",
           color: "#1A1008", fontSize: 9, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
         }}>{fmtCardDate(task?.latestDate)}</div>
         <BubblePips filled={effort} centers={H_PIP.effort} sizePct={H_PIP.size} />
@@ -204,13 +204,13 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
  * Natural PNG aspect (no stretch) so % overlays stay locked to art.
  */
 export function VerticalTaskCard({
-  task, width = 110, bound = false, selected = false, compact = false, onClick, style,
+  task, width = 88, bound = false, selected = false, compact = false, onClick, style,
 }) {
   const src = CARD_FULL[task?.category] || CARD_FULL.admin;
   const effort = clampPips(task?.effort || 1) || 1;
   const importance = clampPips(task?.criticality || 1) || 1;
-  const titlePx = compact ? Math.max(5, Math.round(width * 0.09)) : Math.max(7, Math.round(width * 0.082));
-  const metaPx = compact ? Math.max(4, Math.round(width * 0.07)) : Math.max(7, Math.round(width * 0.072));
+  const titlePx = compact ? Math.max(5, Math.round(width * 0.085)) : Math.max(6, Math.round(width * 0.068));
+  const metaPx = compact ? Math.max(4, Math.round(width * 0.07)) : Math.max(6, Math.round(width * 0.065));
   const Tag = onClick ? "button" : "div";
   return (
     <Tag
@@ -241,21 +241,22 @@ export function VerticalTaskCard({
           }}>B</div>
         )}
         <BubblePips filled={effort} centers={V_PIP.effort} sizePct={V_PIP.size} />
-        {/* Title field box ~21–35% — smaller type so it stays inside the frame */}
+        {/* Title field box ~21–35% — tight type so 1–2 lines stay inside the frame */}
         <div style={{
-          position: "absolute", left: "11%", right: "11%", top: "24%", height: compact ? "11%" : "9.5%",
-          color: "#1A1008", fontSize: titlePx, lineHeight: 1.12, overflow: "hidden", textAlign: "left", ...LB,
+          position: "absolute", left: "11%", right: "11%", top: "23%", height: compact ? "11%" : "11%",
+          color: "#1A1008", fontSize: titlePx, lineHeight: 1.05, overflow: "hidden", textAlign: "left",
+          letterSpacing: "0.2px", fontFamily: LB.fontFamily, fontWeight: 700,
         }}>
           {task?.title || ""}
         </div>
         {!compact && (
           <>
             <div style={{
-              position: "absolute", left: "38%", top: "36.5%", width: "50%",
+              position: "absolute", left: "33%", top: "36.2%", width: "55%",
               color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
             }}>{fmtCardDate(task?.targetDate || task?.due)}</div>
             <div style={{
-              position: "absolute", left: "38%", top: "41.5%", width: "50%",
+              position: "absolute", left: "33%", top: "41.2%", width: "55%",
               color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
             }}>{fmtCardDate(task?.latestDate)}</div>
             {(task?.notes || task?.detail) && (
@@ -631,21 +632,21 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
   const focus = picks.find((t) => t.id === focusId) || null;
 
   /** Casino-dealer spread: fill left→right, mild arc, stay on-screen. */
-  const handCardW = 112;
+  const handCardW = 88;
   const fanLayout = (n, i, width) => {
     const cardW = handCardW;
     const pad = 4;
     const avail = Math.max(width - pad * 2, cardW);
     if (n <= 1) return { left: pad, rot: -3, lift: 0 };
     const maxTravel = avail - cardW;
-    const step = Math.max(32, Math.min(72, maxTravel / (n - 1)));
+    const step = Math.max(28, Math.min(58, maxTravel / (n - 1)));
     const left = pad + i * step;
     const t = i / (n - 1);
     const rot = -8 + t * 16;
-    const lift = Math.sin(t * Math.PI) * 6;
+    const lift = Math.sin(t * Math.PI) * 5;
     return { left, rot, lift };
   };
-  const handCardH = Math.round(handCardW * (491 / 287));
+  const handCardH = Math.round(handCardW * (490 / 286));
 
   return (
     <Screen
