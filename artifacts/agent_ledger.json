@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-11T21:26:01.459Z",
+  "last_updated": "2026-07-12T01:48:33.904Z",
   "rules": {
     "read_before_work": true,
     "write_before_editing": true,
@@ -62,7 +62,7 @@
       "rate_limited": false,
       "cooldown_until": null,
       "handoff_needed": null,
-      "last_seen": "2026-07-11T21:04:10.481Z",
+      "last_seen": "2026-07-12T01:48:33.904Z",
       "expires_at": null,
       "notes": "Installing machine-readable coordination layer without changing game code."
     },

@@ -25,7 +25,7 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 ## Open next (Jul 11 — after Grok env/storage session)
 
 ### Task card overlay pixel-match — [codex] (from Cursor close-out)
-- [ ] **[codex]** Make live Command Board thin + full cards match `/？cards=1` (outlines hidden). Shared source of truth: `CARD_OVERLAY` in `Screens.jsx`. Prompt in `docs/sessions/2026-07-11-cursor-task-card-overlays.md`. Pitfalls: no broken CSS-scale clip; keep VerticalTaskCard minWidth clamp; don’t touch full-card footer art.
+- [x] **[codex]** Make live Command Board thin + full cards match `/？cards=1` (outlines hidden). Shared source of truth: `CARD_OVERLAY` in `Screens.jsx`. Prompt in `docs/sessions/2026-07-11-cursor-task-card-overlays.md`. Pitfalls: no broken CSS-scale clip; keep VerticalTaskCard minWidth clamp; don’t touch full-card footer art.
 - Acceptance: Eloisa side-by-side can’t spot obvious drift; apartment fan stays ~56px.
 
 ### Branch swap at Grok session close — [cursor] (this close-out)
