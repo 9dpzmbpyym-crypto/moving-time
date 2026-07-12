@@ -2772,7 +2772,7 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
               backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
               border: panel ? "3px solid #120A04" : "none",
               boxShadow: panel ? "inset 0 0 0 2px #6B4423" : "none",
-              padding: panel ? "8px 10px" : `${uiLayout.body.paper.paddingTop}% 12px 8px 17%`,
+              padding: panel ? "8px 10px" : `${uiLayout.body.paper.paddingTop}% 12px 8px ${uiLayout.body.paper.contentX}%`,
               imageRendering: "pixelated", overflow: "auto",
             }}>
               {panel === "care" && (

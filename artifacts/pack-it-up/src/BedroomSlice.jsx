@@ -4086,6 +4086,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
       animateTo(dragX, -delta * viewSize.w, delta);
     };
 
+    const navRoomLabel = (target) => ({ bathroom: "Bath", dining: "Dining", living: "Living" }[target.id] || target.name);
     const arrowBtn = (dir, target) => target && (
       <button
         onClick={() => { haptic(HAPTIC.room); playRoomSwitchSfx(); animateTo(0, -dir * viewSize.w, dir); }}
@@ -4108,11 +4109,11 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
               ("Living Room") still fit centered inside the plate. */}
           <span style={{
             display: "block", width: "100%", textAlign: "center",
-            color: INK.strong, fontSize: target.name.length <= 8 ? 7 : target.name.length <= 10 ? 6 : 4.5,
+            color: INK.strong, fontSize: navRoomLabel(target).length <= 8 ? 7 : navRoomLabel(target).length <= 10 ? 6 : 4.5,
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             ...ui.label,
           }}>
-            {target.name}
+            {navRoomLabel(target)}
           </span>
         </span>
       </button>

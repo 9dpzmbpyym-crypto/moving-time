@@ -12,7 +12,7 @@ export const UI_LAYOUT_DEFAULTS = {
       lymph: { x: 79, y: 36, size: 19 },
       obgyn: { x: 50, y: 56, size: 19 },
     },
-    paper: { top: 64, bottom: 5, paddingTop: 6 },
+    paper: { top: 64, bottom: 5, paddingTop: 6, contentX: 17 },
   },
   apartment: {
     nav: { top: 64, bottom: 12 },
