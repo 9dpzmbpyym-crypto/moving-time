@@ -6,6 +6,7 @@ import { isOpen } from "./tasks.js";
 import { ENERGY_BUDGET, todayKey } from "./session.js";
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
+const FALLBACK_LEAD_DAYS = 7;
 
 export function daysBetween(a, b) {
   const A = dayNumber(a);
@@ -106,10 +107,21 @@ export function urgencyScore(task, today = new Date()) {
   if (t.exactDate && todayK < t.exactDate) {
     const delta = daysBetween(todayK, t.exactDate);
     timePressure = delta <= 1 ? 45 : delta <= 3 ? 25 : 5;
+  } else if (!t.targetDate && t.latestDate) {
+    if (todayK >= t.latestDate) {
+      const past = daysBetween(t.latestDate, todayK) || 0;
+      timePressure = 95 + Math.min(5, past * 2);
+    } else {
+      const start = t.availableFrom || addDaysISO(t.latestDate, -FALLBACK_LEAD_DAYS);
+      const totalLead = Math.max(1, daysBetween(start, t.latestDate) || 1);
+      const elapsed = Math.max(0, daysBetween(start, todayK) || 0);
+      const progress = Math.min(1, elapsed / totalLead);
+      timePressure = 10 + 25 * progress;
+    }
   } else if (!t.targetDate) {
     timePressure = 10;
   } else if (todayK < t.targetDate) {
-    const start = t.availableFrom || todayK;
+    const start = t.availableFrom || addDaysISO(t.targetDate, -FALLBACK_LEAD_DAYS);
     const totalLead = Math.max(1, daysBetween(start, t.targetDate) || 1);
     const elapsed = Math.max(0, daysBetween(start, todayK) || 0);
     const progress = Math.min(1, elapsed / totalLead);
@@ -220,6 +232,10 @@ export function buildMinimumSchedule(tasks, today = new Date(), horizon = MOVE_D
   const todayK = dateKey(today);
   const horizonK = dateKey(horizon) || MOVE_DATE;
   const list = normalizeTasks(tasks).filter(isOpen);
+  const schedulable = list.filter((t) => {
+    const status = taskScheduleStatus(t, today, list);
+    return status !== "blocked" && status !== "not-available" && status !== "scheduled";
+  });
   const capacity = {}; // day -> remaining effort (may go negative when overbooked)
   const placed = {}; // taskId -> day
 
@@ -230,7 +246,7 @@ export function buildMinimumSchedule(tasks, today = new Date(), horizon = MOVE_D
   }
 
   // Reserve exact-date events on their day (these always land on that date)
-  for (const t of list) {
+  for (const t of schedulable) {
     if (!t.exactDate || t.exactDate < todayK || t.exactDate > horizonK) continue;
     const e = effortOf(t);
     capacity[t.exactDate] = (capacity[t.exactDate] ?? 0) - e;
@@ -239,7 +255,7 @@ export function buildMinimumSchedule(tasks, today = new Date(), horizon = MOVE_D
 
   // Most-constrained first (soonest latestDate), so urgent windows keep capacity
   // and flexible cards absorb overbook on later days.
-  const required = list
+  const required = schedulable
     .filter((t) => (t.criticality || 1) >= 2 && !placed[t.id])
     .filter((t) => {
       // Self-target soft jobs only enter the floor at crit ≥ 2 (already filtered)
@@ -283,7 +299,7 @@ export function buildMinimumSchedule(tasks, today = new Date(), horizon = MOVE_D
     .map(([id]) => id);
 
   // Past-latest real deadlines that weren't in the placement loop still belong today
-  for (const t of list) {
+  for (const t of schedulable) {
     if (fumesIds.includes(t.id)) continue;
     if (t.exactDate === todayK) fumesIds.push(t.id);
     else if (
@@ -297,7 +313,7 @@ export function buildMinimumSchedule(tasks, today = new Date(), horizon = MOVE_D
   }
 
   const fumesTasks = fumesIds
-    .map((id) => list.find((t) => t.id === id))
+    .map((id) => schedulable.find((t) => t.id === id))
     .filter(Boolean)
     .sort((a, b) => urgencyScore(b, today) - urgencyScore(a, today));
   const fumesEffort = fumesTasks.reduce((s, t) => s + effortOf(t), 0);

@@ -8,7 +8,9 @@
 import assert from "node:assert/strict";
 import {
   taskStatus,
+  urgencyScore,
   isBoundToday,
+  buildMinimumSchedule,
   dealDailyHand,
   toggleDealPick,
   dealProgress,
@@ -147,6 +149,54 @@ test("blocked task is excluded from the offer pile", () => {
   const deal = dealDailyHand(tasks, "full", d("2026-07-11"));
   assert.ok(!deal.offerTaskIds.includes("blockedA"), "blocked task leaked into offer pile");
   assert.ok(!deal.boundTaskIds.includes("blockedA"), "blocked task leaked into bound pile");
+});
+
+test("blocked, unavailable, and future exact-date tasks cannot consume minimum-schedule capacity or leak Bound", () => {
+  const dep = mkTask({ id: "depFloor", status: "pending", criticality: 1 });
+  const blocked = mkTask({
+    id: "blockedFloor", criticality: 3, effort: 3,
+    targetDate: "2026-07-11", latestDate: "2026-07-11", dependencies: ["depFloor"],
+  });
+  const unavailable = mkTask({
+    id: "unavailableFloor", criticality: 3, effort: 3, availableFrom: "2026-07-20",
+    targetDate: "2026-07-20", latestDate: "2026-07-20",
+  });
+  const scheduled = mkTask({
+    id: "scheduledFloor", criticality: 3, effort: 3, exactDate: "2026-07-20",
+    targetDate: "2026-07-20", latestDate: "2026-07-20",
+  });
+  const actionable = mkTask({
+    id: "actionableFloor", criticality: 3, effort: 3,
+    targetDate: "2026-07-11", latestDate: "2026-07-11",
+  });
+  const tasks = [dep, blocked, unavailable, scheduled, actionable];
+  const minimum = buildMinimumSchedule(tasks, d("2026-07-11"));
+  assert.deepEqual(minimum.fumesIds, ["actionableFloor"]);
+  assert.equal(minimum.placed.blockedFloor, undefined);
+  assert.equal(minimum.placed.unavailableFloor, undefined);
+  assert.equal(minimum.placed.scheduledFloor, undefined);
+  const deal = dealDailyHand(tasks, "fumes", d("2026-07-11"));
+  assert.ok(!deal.boundTaskIds.includes("blockedFloor"));
+  assert.ok(!deal.boundTaskIds.includes("unavailableFloor"));
+  assert.ok(!deal.boundTaskIds.includes("scheduledFloor"));
+});
+
+test("latest-only deadline ramps before cutoff and reaches final-call urgency", () => {
+  const t = mkTask({ id: "latestOnly", criticality: 1, targetDate: null, latestDate: "2026-07-20" });
+  const early = urgencyScore(t, d("2026-07-13"));
+  const closing = urgencyScore(t, d("2026-07-19"));
+  const finalCall = urgencyScore(t, d("2026-07-20"));
+  assert.ok(closing > early, `${closing} should exceed ${early}`);
+  assert.ok(finalCall >= 95, `expected final-call urgency >=95, got ${finalCall}`);
+  assert.equal(taskStatus(t, d("2026-07-20"), [t]), "FINAL CALL");
+});
+
+test("missing availableFrom uses a stable fallback lead window", () => {
+  const t = mkTask({ id: "fallbackLead", criticality: 1, targetDate: "2026-07-20", latestDate: "2026-07-24" });
+  const early = urgencyScore(t, d("2026-07-13"));
+  const later = urgencyScore(t, d("2026-07-19"));
+  assert.ok(later > early, `${later} should exceed ${early}`);
+  assert.equal(early, urgencyScore(t, d("2026-07-13")), "same date must produce the same score");
 });
 
 /* ---------------- Part D: effort-based dealing (the key change) ---------------- */
