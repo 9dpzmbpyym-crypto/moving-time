@@ -117,23 +117,11 @@ function clampPips(n) {
   return Math.min(3, Math.max(0, Number(n) || 0));
 }
 
-/** Absolute pip centers as % of card — measured from the PNGs. */
-const H_PIP = {
-  effort: [[66.7, 74.8], [70.5, 74.8], [74.4, 74.8]],
-  importance: [[87.85, 74.8], [91.7, 74.8], [95.2, 74.8]],
-  size: 2.15,
-};
-const V_PIP = {
-  effort: [[20.55, 16.6], [28.22, 16.65], [36.13, 16.61]],
-  importance: [[20.77, 86.88], [28.55, 86.93], [36.27, 86.97]],
-  size: 5.2,
-};
-
 /**
  * Overlay layout from /?cards=1 (Eloisa 2026-07-11).
  * refW = designer preview width so px fonts scale with live card size.
  */
-const CARD_OVERLAY = {
+export const CARD_OVERLAY = {
   thin: {
     refW: 420,
     title: { left: "2.4%", right: "3.2%", top: "30.1%", height: "26.5%" },
@@ -141,6 +129,7 @@ const CARD_OVERLAY = {
     latest: { left: "47.6%", top: "67.8%", width: "14%" },
     titleMaxPx: 13,
     datePx: 9,
+    pips: { effort: [[66.7, 74.8], [70.5, 74.8], [74.4, 74.8]], importance: [[87.85, 74.8], [91.7, 74.8], [95.2, 74.8]], size: 2.15 },
   },
   full: {
     refW: 220,
@@ -150,15 +139,16 @@ const CARD_OVERLAY = {
     bound: { left: "3.9%", top: "1.1%", width: "9.8%", height: "8.4%" },
     titleMaxPx: 12.5,
     datePx: 10.5,
+    pips: { effort: [[20.55, 16.6], [28.22, 16.65], [36.13, 16.61]], importance: [[20.77, 86.88], [28.55, 86.93], [36.27, 86.97]], size: 5.2 },
   },
 };
 
-function scaleOverlayPx(px, width, refW) {
-  return Math.max(4, Math.round((px * (width / refW)) * 10) / 10);
+export function scaleOverlayPx(px, width, refW) {
+  return Math.max(3, px * (width / refW));
 }
 
 /** Shrink font until text fits the parent box (no clip). */
-function FitText({ text, maxPx, minPx = 5, style }) {
+export function FitText({ text, maxPx, minPx = 5, style }) {
   const ref = useRef(null);
   const [size, setSize] = useState(maxPx);
   useLayoutEffect(() => {
@@ -284,8 +274,8 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
           position: "absolute", ...L.latest,
           color: "#1A1008", fontSize: datePx, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap", ...LB,
         }}>{fmtCardDate(task?.latestDate)}</div>
-        <BubblePips filled={effort} centers={H_PIP.effort} sizePct={H_PIP.size} />
-        <BubblePips filled={importance} centers={H_PIP.importance} sizePct={H_PIP.size} />
+        <BubblePips filled={effort} centers={L.pips.effort} sizePct={L.pips.size} />
+        <BubblePips filled={importance} centers={L.pips.importance} sizePct={L.pips.size} />
       </div>
     </div>
   );
@@ -322,6 +312,10 @@ export function VerticalTaskCard({
         height: "auto",
         padding: 0,
         margin: 0,
+        appearance: "none",
+        WebkitAppearance: "none",
+        font: "inherit",
+        color: "inherit",
         border: "none",
         outline: selected ? "3px solid #FFD97A" : "none",
         outlineOffset: "-2px",
@@ -355,7 +349,7 @@ export function VerticalTaskCard({
             }}>B</span>
           </div>
         )}
-        <BubblePips filled={effort} centers={V_PIP.effort} sizePct={V_PIP.size} />
+        <BubblePips filled={effort} centers={L.pips.effort} sizePct={L.pips.size} />
         <div style={{
           position: "absolute", ...L.title,
           color: "#1A1008", textAlign: "left", overflow: "hidden",
@@ -395,7 +389,7 @@ export function VerticalTaskCard({
             color: "#3A2018", fontSize: metaPx, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
           }}>{fmtCardDate(task?.targetDate || task?.due) || "—"}</div>
         )}
-        <BubblePips filled={importance} centers={V_PIP.importance} sizePct={V_PIP.size} />
+        <BubblePips filled={importance} centers={L.pips.importance} sizePct={L.pips.size} />
       </div>
     </Tag>
   );

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CARD_OVERLAY, FitText, scaleOverlayPx } from "../Screens.jsx";
 import JOB_ROW from "../assets/items/task_card_assets/horizontal/job_row_card.png";
 import HOUSING_ROW from "../assets/items/task_card_assets/horizontal/housing_row_card.png";
 import MOVE_ROW from "../assets/items/task_card_assets/horizontal/move_row_card.png";
@@ -42,32 +43,21 @@ const SAMPLE = {
   importance: 2,
 };
 
-/** Defaults match current Screens.jsx (full title eased from the too-tight inset). */
+/** Designer defaults derive from the live renderer's single paste target. */
+const pct = (v) => Number.parseFloat(v);
+const toBox = (box, height) => ({
+  left: pct(box.left), top: pct(box.top),
+  width: box.width ? pct(box.width) : 100 - pct(box.left) - pct(box.right),
+  height: box.height ? pct(box.height) : height,
+});
 const DEFAULTS = {
   thin: {
-    title: { left: 2.4, top: 30.1, width: 94.4, height: 26.5 },
-    target: { left: 18.5, top: 67.9, width: 14, height: 6 },
-    latest: { left: 47.6, top: 67.8, width: 14, height: 6 },
-    titleMaxPx: 13,
-    datePx: 9,
-    pips: {
-      effort: [[66.7, 74.8], [70.5, 74.8], [74.4, 74.8]],
-      importance: [[87.85, 74.8], [91.7, 74.8], [95.2, 74.8]],
-      size: 2.15,
-    },
+    title: toBox(CARD_OVERLAY.thin.title), target: toBox(CARD_OVERLAY.thin.target, 6), latest: toBox(CARD_OVERLAY.thin.latest, 6),
+    titleMaxPx: CARD_OVERLAY.thin.titleMaxPx, datePx: CARD_OVERLAY.thin.datePx, pips: structuredClone(CARD_OVERLAY.thin.pips),
   },
   full: {
-    title: { left: 8.2, top: 21.7, width: 82.6, height: 16.9 },
-    target: { left: 36.3, top: 41.3, width: 58, height: 4 },
-    latest: { left: 36.5, top: 46.5, width: 58, height: 4 },
-    bound: { left: 3.9, top: 1.1, width: 9.8, height: 8.4 },
-    titleMaxPx: 12.5,
-    datePx: 10.5,
-    pips: {
-      effort: [[20.55, 16.6], [28.22, 16.65], [36.13, 16.61]],
-      importance: [[20.77, 86.88], [28.55, 86.93], [36.27, 86.97]],
-      size: 5.2,
-    },
+    title: toBox(CARD_OVERLAY.full.title), target: toBox(CARD_OVERLAY.full.target, 4), latest: toBox(CARD_OVERLAY.full.latest, 4), bound: toBox(CARD_OVERLAY.full.bound),
+    titleMaxPx: CARD_OVERLAY.full.titleMaxPx, datePx: CARD_OVERLAY.full.datePx, pips: structuredClone(CARD_OVERLAY.full.pips),
   },
 };
 
@@ -121,9 +111,9 @@ title: left ${t.title.left}% / top ${t.title.top}% / width ${t.title.width}% / h
 target: left ${t.target.left}% top ${t.target.top}% width ${t.target.width}%
 latest: left ${t.latest.left}% top ${t.latest.top}% width ${t.latest.width}%
 titleMaxPx ${t.titleMaxPx}  datePx ${t.datePx}
-H_PIP.effort: [${fmtPips(t.pips.effort)}]
-H_PIP.importance: [${fmtPips(t.pips.importance)}]
-H_PIP.size: ${t.pips.size}
+CARD_OVERLAY.thin.pips.effort: [${fmtPips(t.pips.effort)}]
+CARD_OVERLAY.thin.pips.importance: [${fmtPips(t.pips.importance)}]
+CARD_OVERLAY.thin.pips.size: ${t.pips.size}
 
 // full (VerticalTaskCard)
 title: left ${f.title.left}% / top ${f.title.top}% / width ${f.title.width}% / height ${f.title.height}%
@@ -132,9 +122,9 @@ target: left ${f.target.left}% top ${f.target.top}% width ${f.target.width}%
 latest: left ${f.latest.left}% top ${f.latest.top}% width ${f.latest.width}%
 bound B: left ${f.bound.left}% top ${f.bound.top}% width ${f.bound.width}% height ${f.bound.height}%
 titleMaxPx ${f.titleMaxPx}  datePx ${f.datePx}
-V_PIP.effort: [${fmtPips(f.pips.effort)}]
-V_PIP.importance: [${fmtPips(f.pips.importance)}]
-V_PIP.size: ${f.pips.size}
+CARD_OVERLAY.full.pips.effort: [${fmtPips(f.pips.effort)}]
+CARD_OVERLAY.full.pips.importance: [${fmtPips(f.pips.importance)}]
+CARD_OVERLAY.full.pips.size: ${f.pips.size}
 `;
 }
 
@@ -231,7 +221,7 @@ function OverlayBox({
     />
   );
 
-  const showChrome = showOutlines || selected;
+  const showChrome = showOutlines;
 
   return (
     <div
@@ -240,12 +230,12 @@ function OverlayBox({
       onPointerUp={onPointerUp}
       style={{
         position: "absolute", ...boxToCss(box),
-        border: showChrome ? `2px solid ${color}` : "2px solid transparent",
-        background: showOutlines ? (selected ? `${color}22` : `${color}11`) : (selected ? `${color}18` : "transparent"),
+        border: showChrome ? `2px solid ${color}` : "none",
+        background: showOutlines ? (selected ? `${color}22` : `${color}11`) : "transparent",
         boxSizing: "border-box",
         cursor: "move",
         zIndex: selected ? 4 : 2,
-        display: "flex", alignItems: "center", justifyContent: label === "bound" ? "center" : "flex-start",
+        display: "flex", alignItems: (label === "title" || label === "bound") ? "center" : "flex-start", justifyContent: label === "bound" ? "center" : "flex-start",
         overflow: "hidden",
         touchAction: "none",
       }}
@@ -266,7 +256,7 @@ function OverlayBox({
   );
 }
 
-function PipDot({ x, y, sizePct, selected, onSelect, onMove, label }) {
+function PipDot({ x, y, sizePct, selected, onSelect, onMove, label, showOutlines }) {
   const drag = useRef(null);
   const onPointerDown = (e) => {
     e.stopPropagation();
@@ -298,7 +288,7 @@ function PipDot({ x, y, sizePct, selected, onSelect, onMove, label }) {
         background: "#120A04",
         transform: "translate(-50%, -50%)",
         cursor: "grab",
-        outline: selected ? "2px solid #FFD97A" : "1px solid rgba(255,255,255,0.35)",
+        outline: showOutlines ? (selected ? "2px solid #FFD97A" : "1px solid rgba(255,255,255,0.35)") : "none",
         zIndex: 6,
         touchAction: "none",
       }}
@@ -333,7 +323,7 @@ function CardStage({
             onResize={(_, p) => setLayoutBox("full", "bound", p)}
           >
             <span style={{
-              color: "#A3252C", fontSize: Math.max(8, Math.round(displayW * 0.045)),
+              color: "#A3252C", fontSize: Math.max(5, scaleOverlayPx(10, displayW, CARD_OVERLAY.full.refW)),
               border: "1px solid #A3252C", background: "rgba(255,248,235,0.9)",
               padding: "1px 3px", lineHeight: 1, ...LB,
             }}>B</span>
@@ -350,10 +340,11 @@ function CardStage({
           onMove={(_, p) => setLayoutBox(kind, "title", p)}
           onResize={(_, p) => setLayoutBox(kind, "title", p)}
         >
-          <FitPreview
+          <FitText
             text={sampleTitle}
-            maxPx={L.titleMaxPx}
-            style={{ color: "#1A1008", fontWeight: 700, padding: "0 2px", ...LB }}
+            maxPx={titleMax}
+            minPx={titleMin}
+            style={{ color: "#1A1008", fontWeight: 700, letterSpacing: kind === "thin" ? "0.5px" : "0.2px", lineHeight: kind === "thin" ? 1.1 : 1.15 }}
           />
         </OverlayBox>
         <OverlayBox
@@ -367,7 +358,7 @@ function CardStage({
           onMove={(_, p) => setLayoutBox(kind, "target", p)}
           onResize={(_, p) => setLayoutBox(kind, "target", p)}
         >
-          <span style={{ color: "#1A1008", fontSize: L.datePx, ...LB }}>{SAMPLE.target}</span>
+          <span style={{ color: "#1A1008", fontSize: scaleOverlayPx(L.datePx, displayW, CARD_OVERLAY[kind].refW), lineHeight: 1, whiteSpace: "nowrap", ...LB }}>{SAMPLE.target}</span>
         </OverlayBox>
         <OverlayBox
           id={`${kind}:latest`}
@@ -380,14 +371,14 @@ function CardStage({
           onMove={(_, p) => setLayoutBox(kind, "latest", p)}
           onResize={(_, p) => setLayoutBox(kind, "latest", p)}
         >
-          <span style={{ color: "#1A1008", fontSize: L.datePx, ...LB }}>{SAMPLE.latest}</span>
+          <span style={{ color: "#1A1008", fontSize: scaleOverlayPx(L.datePx, displayW, CARD_OVERLAY[kind].refW), lineHeight: 1, whiteSpace: "nowrap", ...LB }}>{SAMPLE.latest}</span>
         </OverlayBox>
         {L.pips.effort.map(([x, y], i) => (
           <PipDot
             key={`e${i}`}
-            x={x} y={y} sizePct={Math.max(L.pips.size, kind === "thin" ? 2.5 : 4)}
+            x={x} y={y} sizePct={L.pips.size}
             selected={selected === `${kind}:effort:${i}`}
-            label={`effort ${i + 1}`}
+            label={`effort ${i + 1}`} showOutlines={showOutlines}
             onSelect={() => onSelect(`${kind}:effort:${i}`)}
             onMove={(nx, ny) => setPip(kind, "effort", i, nx, ny)}
           />
@@ -395,9 +386,9 @@ function CardStage({
         {L.pips.importance.map(([x, y], i) => (
           <PipDot
             key={`i${i}`}
-            x={x} y={y} sizePct={Math.max(L.pips.size, kind === "thin" ? 2.5 : 4)}
+            x={x} y={y} sizePct={L.pips.size}
             selected={selected === `${kind}:importance:${i}`}
-            label={`importance ${i + 1}`}
+            label={`importance ${i + 1}`} showOutlines={showOutlines}
             onSelect={() => onSelect(`${kind}:importance:${i}`)}
             onMove={(nx, ny) => setPip(kind, "importance", i, nx, ny)}
           />
