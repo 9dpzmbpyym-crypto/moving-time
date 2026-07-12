@@ -761,26 +761,34 @@ function MenuScreen({ go, tasks }) {
         padding: "calc(env(safe-area-inset-top, 0px) + 8px) 10px calc(env(safe-area-inset-bottom, 0px) + 14px)",
         display: "flex", flexDirection: "column", gap: 10,
       }}>
-        {/* Header: back arrow + list icon + title, on the ornate wood rail */}
+        {/* Header: back arrow + list icon + title, on the ornate wood rail.
+            Inset (not padding-on-100%-width) keeps this within the viewport —
+            padding on top of an already-100%-wide box pushed the right edge
+            past the screen edge. */}
         <div style={{
           position: "relative", width: "100%", aspectRatio: "1135 / 190",
           backgroundImage: `url(${MENU_HEADER_FRAME})`, backgroundSize: "100% 100%",
-          imageRendering: "pixelated", display: "flex", alignItems: "center", gap: "3%", padding: "0 4%",
+          imageRendering: "pixelated",
         }}>
-          <button onClick={() => go("apartment")} aria-label="Back" style={{
-            flex: "0 0 auto", width: "10%", aspectRatio: "1 / 1", background: "none", border: "none", padding: 0,
-            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <img src={MENU_BACK_ARROW} alt="" style={{ width: "100%", display: "block", imageRendering: "pixelated" }} />
-          </button>
-          <img src={MENU_LIST_ICON} alt="" style={{ width: "8%", flex: "0 0 auto", imageRendering: "pixelated" }} />
           <div style={{
-            flex: 1, textAlign: "center", color: "#FFD97A", fontSize: "clamp(16px, 6vw, 26px)",
-            letterSpacing: "2px", ...LB,
+            position: "absolute", inset: "0 4%",
+            display: "flex", alignItems: "center", gap: "3%",
           }}>
-            OVERVIEW
+            <button onClick={() => go("apartment")} aria-label="Back" style={{
+              flex: "0 0 auto", width: "10%", aspectRatio: "1 / 1", background: "none", border: "none", padding: 0,
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <img src={MENU_BACK_ARROW} alt="" style={{ width: "100%", display: "block", imageRendering: "pixelated" }} />
+            </button>
+            <img src={MENU_LIST_ICON} alt="" style={{ width: "8%", flex: "0 0 auto", imageRendering: "pixelated" }} />
+            <div style={{
+              flex: 1, textAlign: "center", color: "#FFD97A", fontSize: "clamp(16px, 6vw, 26px)",
+              letterSpacing: "2px", ...LB,
+            }}>
+              OVERVIEW
+            </div>
+            <div style={{ width: "10%", flex: "0 0 auto" }} aria-hidden />
           </div>
-          <div style={{ width: "10%", flex: "0 0 auto" }} aria-hidden />
         </div>
 
         {/* Pressure bar */}
@@ -2694,10 +2702,12 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
                 imageRendering: "pixelated", pointerEvents: "none", userSelect: "none",
               }}
             />
-            {/* body figure — sized to fill most of the parchment (height-driven,
-                so it stays true to the sprite's tall aspect ratio) */}
+            {/* body figure — sized to fill the parchment top-to-bottom
+                (height-driven, so it stays true to the sprite's tall aspect
+                ratio); pushed low enough that the lower legs run behind the
+                note paper pinned below, matching the mockup. */}
             <div style={{
-              position: "absolute", left: "50%", top: "6%", height: "72%",
+              position: "absolute", left: "50%", top: "9%", height: "84%",
               transform: "translateX(-50%)", aspectRatio: "406 / 903",
             }}>
               <img
@@ -2719,9 +2729,9 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
                     onClick={() => selectZone(z.id)}
                     aria-label={z.label}
                     style={{
-                      position: "absolute", left: `${z.x}%`, top: `${z.y}%`,
+                      position: "absolute", left: `${z.x}%`, top: `${z.y}%`, zIndex: 2,
                       transform: "translate(-50%, -38%)",
-                      width: "26%", aspectRatio: "140 / 188",
+                      width: "19%", aspectRatio: "140 / 188",
                       background: "transparent", appearance: "none", WebkitAppearance: "none",
                       border: "none", padding: 0, cursor: "pointer",
                       outline: isSel ? "3px solid #FFD97A" : "none",
@@ -2749,9 +2759,10 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
             </div>
 
             {/* Selected-zone / Care Kit / Records note — pinned near the
-                clipboard's bottom edge so it overlaps the figure's legs. */}
+                clipboard's bottom edge so it overlaps the figure's legs,
+                sized to ~30% of the parchment height like the mockup. */}
             <div style={{
-              position: "absolute", left: "6%", right: "9%", top: "74%", bottom: "2%",
+              position: "absolute", left: "6%", right: "9%", top: "67%", bottom: "2%",
               backgroundImage: panel ? "none" : `url(${HEALTH_NOTE_PAPER})`,
               backgroundColor: panel ? "#241509" : "transparent",
               backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",

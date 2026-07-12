@@ -4095,12 +4095,23 @@ export default function PackItUp({ glowMode = "split" }) {
       >
         <img src={dir < 0 ? NAV_ARROW_LEFT_BG : NAV_ARROW_RIGHT_BG} alt="" style={chromeImgFill} />
         <span style={{
-          position: "absolute", left: "10%", right: "10%", top: "68%", bottom: "8%",
-          display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center",
-          color: INK.strong, fontSize: 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-          ...ui.label,
+          position: "absolute", left: "15%", right: "15%", top: "68%", bottom: "8%",
+          display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-          {target.name}
+          {/* block + textAlign (not flex-centered raw text) so long room names
+              truncate with an ellipsis instead of overflowing past the plate
+              and reading as off-center; box is inset to the plate's actual
+              visible width (not the whole card), and font shrinks with name
+              length so short names ("Office") stay full-size and long ones
+              ("Living Room") still fit centered inside the plate. */}
+          <span style={{
+            display: "block", width: "100%", textAlign: "center",
+            color: INK.strong, fontSize: target.name.length <= 8 ? 7 : target.name.length <= 10 ? 6 : 4.5,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            ...ui.label,
+          }}>
+            {target.name}
+          </span>
         </span>
       </button>
     );
