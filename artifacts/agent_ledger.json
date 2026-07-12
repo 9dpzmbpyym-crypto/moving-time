@@ -60,7 +60,7 @@
       "risk_level": null,
       "commit_authority": true,
       "rate_limited": true,
-      "cooldown_until": "2026-07-17 weekly reset (or sooner 5h window)",
+      "cooldown_until": "5h window rollover tonight",
       "handoff_needed": null,
       "last_seen": "2026-07-12T01:48:33.904Z",
       "expires_at": null,
@@ -193,14 +193,14 @@
       "note": "Heavy Jul 11 design/review day. Route verifies to Sonnet sub-agents; keep Fable/Opus passes short and scoped."
     },
     "codex": {
-      "status": "OUT_OF_USAGE",
-      "spent": "exhausted Jul 11 evening (Eloisa)",
-      "reset": "2026-07-17",
+      "status": "WINDOW_EXHAUSTED",
+      "spent": "100% of 5-hour window (Jul 11 eve) \u2014 mostly context catch-up + card pixel-match; weekly unknown/stale",
+      "reset": "5h window rolls over tonight; weekly 2026-07-17",
       "models": [
         "GPT-5.6 Sol",
         "GPT-5.6 Luna"
       ],
-      "note": "Out for the night. Scheduler build retargeted to Grok: docs/inbox/handoff-grok-scheduler.md"
+      "note": "Back tonight when window rolls. Lesson: catch-up context tax is huge \u2014 one focused task per window, prompt files not chat archaeology."
     },
     "chatgpt": {
       "status": "AVAILABLE",
