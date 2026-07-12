@@ -14,7 +14,7 @@ const FIELDS = {
     ]),
     { label: "Paper top", path: ["body", "paper", "top"], min: 45, max: 75, step: 0.5 },
     { label: "Paper bottom", path: ["body", "paper", "bottom"], min: 0, max: 20, step: 0.5 },
-    { label: "Paper content top", path: ["body", "paper", "paddingTop"], min: 0, max: 15, step: 0.5 },
+    { label: "Paper content top", path: ["body", "paper", "paddingTop"], min: 0, max: 45, step: 0.5 },
     { label: "Paper content X", path: ["body", "paper", "contentX"], min: 5, max: 30, step: 0.5 },
   ],
   apartment: [
