@@ -15,6 +15,19 @@ import MENU_ICON_BOX from "./assets/items/packitup_cropped_assets/ui_mockups/men
 import MENU_ICON_MONEYBAG from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/moneybag_icon.png";
 import MENU_ICON_CAT from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/cat_icon.png";
 import MENU_ICON_GEAR from "./assets/items/packitup_cropped_assets/ui_mockups/menu_slices/gear_icon.png";
+import BOARD_HEADER_FRAME from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/header_command_board.png";
+import BOARD_BACK_BUTTON from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/back_button.png";
+import BOARD_ENERGY_LABEL from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/energy_label_chip.png";
+import BOARD_FIXED_DAY_CHIP from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/fixed_day_chip.png";
+import BOARD_FUMES_OFF from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/fumes_off.png";
+import BOARD_FUMES_ON from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/fumes_on.png";
+import BOARD_STEADY_OFF from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/steady_off.png";
+import BOARD_STEADY_ON from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/steady_on.png";
+import BOARD_FULL_OFF from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/full_off.png";
+import BOARD_FULL_ON from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/full_on.png";
+import BOARD_DRAW_BUTTON from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/draw_button.png";
+import BOARD_SCROLLBAR from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/scrollbar_track.png";
+import BOARD_LEDGER_BUTTON from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/ledger_button_frame.png";
 import MOVE_ROW from "./assets/items/task_card_assets/horizontal/move_row_card.png";
 import JOB_ROW from "./assets/items/task_card_assets/horizontal/job_row_card.png";
 import ADMIN_ROW from "./assets/items/task_card_assets/horizontal/admin_row_card.png";
@@ -877,6 +890,21 @@ function CriticalStrip() {
   );
 }
 
+/** Command-board chrome: segmented energy row + custom scrollbar theming for the draw pile. */
+const BOARD_ENERGY_SEGMENTS = [
+  { id: "fumes", label: "FUMES", off: BOARD_FUMES_OFF, on: BOARD_FUMES_ON, sub: "bound must-dos only" },
+  { id: "steady", label: "STEADY", off: BOARD_STEADY_OFF, on: BOARD_STEADY_ON, sub: "bound + draw 2 more" },
+  { id: "full", label: "FULL", off: BOARD_FULL_OFF, on: BOARD_FULL_ON, sub: "bound + draw 4 more" },
+];
+const boardChromeCss = (
+  <style>{`
+    .board-draw-pane::-webkit-scrollbar { width: 10px; }
+    .board-draw-pane::-webkit-scrollbar-track { background: #120A04; }
+    .board-draw-pane::-webkit-scrollbar-thumb { background: #8A5A2E; border: 2px solid #120A04; }
+    .board-draw-pane { scrollbar-width: thin; scrollbar-color: #8A5A2E #120A04; }
+  `}</style>
+);
+
 function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast }) {
   const energy = session?.energy || null;
   const deal = session?.dailyDeal;
@@ -980,171 +1008,221 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
   };
 
   return (
-    <Screen
-      title="Command Board"
-      icon="📋"
-      onBack={() => go("menu")}
-      subtitle={energy ? "Draw · then play your hand" : "Running on — pick one"}
-      bg="#2A1A0C"
-      compact
-      headerPad={6}
-    >
-      <RewardToast text={rewardToast} />
-      {!energy ? (
-        <div style={{ ...FR, padding: 12, marginBottom: 10 }}>
-          <div style={{ color: "#FFD97A", fontSize: 12, marginBottom: 8, ...LB }}>Running on:</div>
-          {[
-            ["fumes", "Fumes", "bound must-dos only — optional draws if useful"],
-            ["steady", "Steady", "bound + draw 2 more from the offer deck"],
-            ["full", "Full steam", "bound + draw 4 more from the offer deck"],
-          ].map(([id, label, sub]) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => pickEnergy(id)}
-              style={{
-                width: "100%", textAlign: "left", marginBottom: 6, padding: "10px 12px",
-                background: "#3A2410", color: "#F2E4C0", border: "3px solid #120A04", cursor: "pointer", ...LB,
-              }}
-            >
-              <div style={{ fontSize: 13 }}>{label}</div>
-              <div style={{ color: "#8A7350", fontSize: 10, marginTop: 2 }}>{sub}</div>
-            </button>
-          ))}
-        </div>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", flex: "0 0 auto", gap: 8 }}>
-          <div style={{ color: "#C9B896", fontSize: 10, flex: "0 0 auto", ...LB }}>
-            Energy: {energy === "fumes" ? "Fumes" : energy === "full" ? "Full steam" : "Steady"}
-            {deal?.fixedDay ? " · fixed day" : ""}
-            {" · "}
-            <button type="button" onClick={() => { setFocusId(null); onSessionBump?.("energy", 0, null, { energy: null, clearDeal: true }); }}
-              style={{ background: "none", border: "none", color: "#8A7350", cursor: "pointer", padding: 0, ...LB }}>
-              change
-            </button>
-          </div>
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 250, background: "#1A1008", display: "flex", flexDirection: "column",
+      animation: "screenIn 200ms ease-out", overflow: "hidden",
+    }}>
+      {screenCss}
+      {boardChromeCss}
+      <div style={{
+        flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden",
+        padding: "calc(env(safe-area-inset-top, 0px) + 6px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px)",
+        gap: 6,
+      }}>
+        <RewardToast text={rewardToast} />
 
-          {/* TOP — offer deck sized to exactly 2 thin cards (scroll for the rest) */}
-          <div
-            ref={drawPaneRef}
-            style={{
-              ...FR, padding: "6px 8px", flex: "0 0 auto",
-              height: drawPaneH, overflowY: "auto",
-            }}
-          >
-            <div
-              data-draw-header
+        {/* Framed header: back + COMMAND BOARD banner + N IN HAND chip */}
+        <div style={{ display: "flex", alignItems: "stretch", gap: 6, flex: "0 0 auto" }}>
+          <button type="button" onClick={() => go("menu")} aria-label="Back" style={{
+            position: "relative", flex: "0 0 auto", width: 78, aspectRatio: "259 / 142",
+            backgroundImage: `url(${BOARD_BACK_BUTTON})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+            border: "none", padding: 0, cursor: "pointer", imageRendering: "pixelated",
+          }} />
+          <div style={{
+            position: "relative", flex: 1, minWidth: 0, aspectRatio: "569 / 144",
+            backgroundImage: `url(${BOARD_HEADER_FRAME})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+            imageRendering: "pixelated",
+          }} />
+          <div style={{
+            position: "relative", flex: "0 0 auto", display: "flex", alignItems: "center", gap: 6,
+            padding: "0 10px", background: "#241509", border: "3px solid #120A04",
+            boxShadow: "inset 0 0 0 2px #6B4423, 0 3px 0 #000",
+          }}>
+            <span style={{ position: "relative", width: 14, height: 14, flex: "0 0 auto" }} aria-hidden>
+              <span style={{ position: "absolute", left: 0, top: 2, width: 10, height: 12, background: "#8A5A2E", border: "1px solid #120A04", transform: "rotate(-10deg)" }} />
+              <span style={{ position: "absolute", left: 3, top: 0, width: 10, height: 12, background: "#E8C4A8", border: "1px solid #120A04" }} />
+            </span>
+            <span style={{ color: "#FFD97A", fontSize: 10, whiteSpace: "nowrap", ...LB }}>{picks.length} IN HAND</span>
+          </div>
+        </div>
+
+        {/* ENERGY segmented row + FIXED DAY indicator */}
+        <div style={{ display: "flex", alignItems: "center", gap: 5, flex: "0 0 auto", overflowX: "auto" }}>
+          <div style={{
+            position: "relative", flex: "0 0 auto", width: 62, aspectRatio: "274 / 103",
+            backgroundImage: `url(${BOARD_ENERGY_LABEL})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+            imageRendering: "pixelated",
+          }} />
+          {BOARD_ENERGY_SEGMENTS.map((seg) => (
+            <button
+              key={seg.id}
+              type="button"
+              onClick={() => pickEnergy(seg.id)}
+              aria-pressed={energy === seg.id}
               style={{
-                display: "flex", alignItems: "baseline", justifyContent: "space-between",
-                marginBottom: 4, gap: 8,
+                position: "relative", flex: "1 1 0", minWidth: 0, aspectRatio: "223 / 95",
+                backgroundImage: `url(${energy === seg.id ? seg.on : seg.off})`,
+                backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+                border: "none", padding: 0, cursor: "pointer", imageRendering: "pixelated",
+              }}
+            />
+          ))}
+          {deal?.fixedDay && (
+            <div style={{
+              position: "relative", flex: "0 0 auto", width: 74, aspectRatio: "237 / 103",
+              backgroundImage: `url(${BOARD_FIXED_DAY_CHIP})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+              imageRendering: "pixelated",
+            }} />
+          )}
+        </div>
+
+        {!energy ? (
+          <div style={{ ...FR, padding: "10px 12px", flex: "0 0 auto" }}>
+            <div style={{ color: "#F2E4C0", fontSize: 10, lineHeight: 1.5, ...LB }}>
+              Pick a pace above to start your day — Fumes: bound must-dos only ·
+              Steady: + 2 draws · Full: + 4 draws.
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, gap: 6 }}>
+            {/* OPTIONAL DRAW pane — same ref/measurement contract as before, restyled to the mockup frame */}
+            <div
+              ref={drawPaneRef}
+              className="board-draw-pane"
+              style={{
+                position: "relative", padding: "6px 8px", flex: "0 0 auto",
+                height: drawPaneH, overflowY: "auto",
+                background: "#1B1006", border: "3px solid #120A04",
+                boxShadow: "inset 0 0 0 2px #6B4423, 0 3px 0 #000",
               }}
             >
-              <div style={{ color: "#FFD97A", fontSize: 13, ...LB }}>{drawLabel}</div>
-              <div style={{ color: "#8A7350", fontSize: 9, ...LB }}>
-                {offers.length} in deck · urgency
+              <div
+                data-draw-header
+                style={{
+                  display: "flex", alignItems: "baseline", justifyContent: "space-between",
+                  marginBottom: 2, gap: 8,
+                }}
+              >
+                <div style={{ color: "#FFD97A", fontSize: 12, ...LB }}>OPTIONAL DRAW</div>
+                <div style={{ color: "#8A7350", fontSize: 9, ...LB }}>
+                  {offers.length} IN DECK
+                </div>
               </div>
-            </div>
-            {deal?.fixedDay && (
               <div data-draw-note style={{ color: "#E8C4A8", fontSize: 9, marginBottom: 4, ...LB }}>
-                Fixed day — these cards are already spoken for.
+                {drawLabel}
+                {deal?.fixedDay ? " · fixed day — these cards are already spoken for." : ""}
+              </div>
+              {offers.length === 0 ? (
+                <div style={{ color: "#8A7350", fontSize: 11, ...LB }}>No extras to draw right now.</div>
+              ) : offers.map((t) => (
+                <div key={t.id} style={{
+                  display: "flex", gap: 6, alignItems: "center", marginBottom: 4,
+                }}>
+                  <div data-draw-card style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+                    <HorizontalTaskCard task={t} dimmed={!!t.picked} />
+                  </div>
+                  {t.picked ? (
+                    <button type="button" onClick={() => toggleOffer(t.id)} style={{
+                      flex: "0 0 56px", alignSelf: "stretch",
+                      background: "#3A1810", color: "#F2E4C0", border: "2px solid #120A04",
+                      fontSize: 9, cursor: "pointer", ...LB,
+                    }}>Remove</button>
+                  ) : (
+                    <button type="button" onClick={() => toggleOffer(t.id)} aria-label="Draw" style={{
+                      position: "relative", flex: "0 0 auto", alignSelf: "center", width: 52,
+                      aspectRatio: "198 / 278",
+                      backgroundImage: `url(${BOARD_DRAW_BUTTON})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+                      border: "none", padding: 0, cursor: "pointer", imageRendering: "pixelated",
+                    }} />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Focused hand card actions */}
+            {focus && (
+              <div style={{
+                ...FR, padding: "8px 10px", flex: "0 0 auto",
+                display: "flex", gap: 6, alignItems: "center",
+              }}>
+                <div style={{ flex: 1, minWidth: 0, color: "#F2E4C0", fontSize: 11, ...LB }}>
+                  {focus.bound ? "BOUND · " : ""}{focus.title}
+                </div>
+                <button type="button" onClick={() => go(doorForTask(focus))} style={{
+                  padding: "6px 8px", background: "#3A2410", color: "#FFD97A",
+                  border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB,
+                }}>Go</button>
+                <button type="button" onClick={() => markDone(focus.id)} style={{
+                  padding: "6px 8px", background: "#5D7C3B", color: "#F2E4C0",
+                  border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB,
+                }}>Done</button>
               </div>
             )}
-            {offers.length === 0 ? (
-              <div style={{ color: "#8A7350", fontSize: 11, ...LB }}>No extras to draw right now.</div>
-            ) : offers.map((t) => (
-              <div key={t.id} style={{
-                display: "flex", gap: 6, alignItems: "center", marginBottom: 4,
-              }}>
-                <div data-draw-card style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
-                  <HorizontalTaskCard task={t} dimmed={!!t.picked} />
-                </div>
-                <button type="button" onClick={() => toggleOffer(t.id)} style={{
-                  padding: "8px 8px", flex: "0 0 auto", alignSelf: "stretch",
-                  background: t.picked ? "#3A1810" : "#5D7C3B",
-                  color: "#F2E4C0", border: "2px solid #120A04",
-                  fontSize: 10, cursor: "pointer", ...LB,
-                }}>{t.picked ? "Remove" : "Draw"}</button>
-              </div>
-            ))}
-          </div>
 
-          {/* Focused hand card actions */}
-          {focus && (
+            {/* YOUR HAND · TAP A CARD — framed panel; hand sizing/geometry below is untouched */}
             <div style={{
-              ...FR, padding: "8px 10px", flex: "0 0 auto",
-              display: "flex", gap: 6, alignItems: "center",
+              flex: "0 0 auto", display: "flex", flexDirection: "column",
+              background: "#1B1006", border: "3px solid #120A04",
+              boxShadow: "inset 0 0 0 2px #6B4423, 0 3px 0 #000",
+              padding: "6px 8px",
             }}>
-              <div style={{ flex: 1, minWidth: 0, color: "#F2E4C0", fontSize: 11, ...LB }}>
-                {focus.bound ? "BOUND · " : ""}{focus.title}
+              <div style={{ color: "#FFD97A", fontSize: 10, textAlign: "center", marginBottom: 4, flex: "0 0 auto", ...LB }}>
+                YOUR HAND · TAP A CARD
               </div>
-              <button type="button" onClick={() => go(doorForTask(focus))} style={{
-                padding: "6px 8px", background: "#3A2410", color: "#FFD97A",
-                border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB,
-              }}>Go</button>
-              <button type="button" onClick={() => markDone(focus.id)} style={{
-                padding: "6px 8px", background: "#5D7C3B", color: "#F2E4C0",
-                border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB,
-              }}>Done</button>
-            </div>
-          )}
-
-          {/* BOTTOM — hand is sized to the capped card size, not a flex-filled void */}
-          <div style={{ flex: "0 0 auto", display: "flex", flexDirection: "column" }}>
-            <div style={{ color: "#FFD97A", fontSize: 10, marginBottom: 4, flex: "0 0 auto", ...LB }}>
-              Your hand · tap a card
-            </div>
-            <div
-              ref={handRef}
-              style={{
-                position: "relative",
-                width: "100%",
-                height: handAreaHeight,
-                flex: "0 0 auto",
-                marginBottom: 4,
-                overflow: "hidden",
-              }}
-            >
-              {picks.length === 0 ? (
-                <div style={{
-                  color: "#8A7350", fontSize: 11, ...LB,
-                  position: "absolute", inset: 0,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  Empty hand — draw from the deck above.
-                </div>
-              ) : picks.map((t, i) => {
-                const pos = fanLayout(picks.length, i, handW);
-                const on = focusId === t.id;
-                return (
-                  <VerticalTaskCard
-                    key={t.id}
-                    task={t}
-                    width={handCardW}
-                    bound={!!t.bound}
-                    selected={on}
-                    onClick={() => setFocusId(on ? null : t.id)}
-                    style={{
-                      position: "absolute",
-                      left: pos.left,
-                      bottom: pos.lift,
-                      zIndex: on ? 40 : 10 + i,
-                      transform: `rotate(${pos.rot}deg)`,
-                      transformOrigin: "50% 100%",
-                    }}
-                  />
-                );
-              })}
+              <div
+                ref={handRef}
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  height: handAreaHeight,
+                  flex: "0 0 auto",
+                  marginBottom: 4,
+                  overflow: "hidden",
+                }}
+              >
+                {picks.length === 0 ? (
+                  <div style={{
+                    color: "#8A7350", fontSize: 11, ...LB,
+                    position: "absolute", inset: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    Empty hand — draw from the deck above.
+                  </div>
+                ) : picks.map((t, i) => {
+                  const pos = fanLayout(picks.length, i, handW);
+                  const on = focusId === t.id;
+                  return (
+                    <VerticalTaskCard
+                      key={t.id}
+                      task={t}
+                      width={handCardW}
+                      bound={!!t.bound}
+                      selected={on}
+                      onClick={() => setFocusId(on ? null : t.id)}
+                      style={{
+                        position: "absolute",
+                        left: pos.left,
+                        bottom: pos.lift,
+                        zIndex: on ? 40 : 10 + i,
+                        transform: `rotate(${pos.rot}deg)`,
+                        transformOrigin: "50% 100%",
+                      }}
+                    />
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
-      )}
-      <button type="button" onClick={() => go("ledger")} style={{
-        width: "100%", marginTop: 6, padding: "10px", background: "#241509", color: "#FFD97A",
-        border: "3px solid #120A04", fontSize: 12, cursor: "pointer", flex: "0 0 auto", ...LB,
-      }}>
-        Flip page — full ledger
-      </button>
-    </Screen>
+        )}
+
+        {/* FULL LEDGER · FLIP PAGE */}
+        <button type="button" onClick={() => go("ledger")} aria-label="Full ledger — flip page" style={{
+          position: "relative", width: "100%", aspectRatio: "1016 / 269", flex: "0 0 auto",
+          backgroundImage: `url(${BOARD_LEDGER_BUTTON})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
+          border: "none", padding: 0, cursor: "pointer", imageRendering: "pixelated",
+        }} />
+      </div>
+    </div>
   );
 }
 
