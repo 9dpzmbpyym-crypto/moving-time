@@ -945,24 +945,19 @@ const KITCHEN_SPRITES = {
     r(ctx, P.out, 1, 38, 28, 1);
     r(ctx, P.whiteLo, 1, 39, 28, 4);
   }},
-  wall_calendar: { w: 14, h: 17, draw(ctx) {
-    // hanger nail + string
-    r(ctx, P.out, 6, 0, 2, 1);
-    r(ctx, P.out, 3, 1, 1, 1); r(ctx, P.out, 10, 1, 1, 1);
-    // paper + frame
-    r(ctx, P.out, 1, 2, 12, 15);
-    r(ctx, P.cream, 2, 3, 10, 13);
-    // red month header ("JUL")
-    r(ctx, "#C4463A", 2, 3, 10, 4);
-    r(ctx, "#D65A4C", 2, 3, 10, 1);
-    r(ctx, P.cream, 3, 4, 1, 2); r(ctx, P.cream, 5, 4, 1, 2); r(ctx, P.cream, 5, 5, 1, 1); r(ctx, P.cream, 6, 5, 1, 1);
-    r(ctx, P.cream, 8, 4, 1, 2); r(ctx, P.cream, 9, 5, 2, 1); r(ctx, P.cream, 10, 4, 1, 1);
-    // day grid (4×4 dots)
-    for (let gy = 0; gy < 4; gy++) for (let gx = 0; gx < 4; gx++) r(ctx, "#B9AE93", 3 + gx * 2, 8 + gy * 2, 1, 1);
-    // days already crossed off (top row, darker)
-    r(ctx, P.out, 3, 8, 1, 1); r(ctx, P.out, 5, 8, 1, 1); r(ctx, P.out, 7, 8, 1, 1);
-    // today, ringed in red
-    outlineRect(ctx, "#C4463A", 4, 9, 3, 3);
+  wall_calendar: { w: 16, h: 18, draw(ctx) {
+    // two binder clips at top
+    r(ctx, P.out, 4, 0, 2, 4); r(ctx, "#55504A", 4, 1, 2, 2); r(ctx, "#6E685F", 4, 1, 1, 1);
+    r(ctx, P.out, 10, 0, 2, 4); r(ctx, "#55504A", 10, 1, 2, 2); r(ctx, "#6E685F", 10, 1, 1, 1);
+    // black frame + red header + white body
+    r(ctx, P.out, 1, 3, 14, 14);
+    r(ctx, "#C4463A", 2, 4, 12, 3);
+    r(ctx, "#D65A4C", 2, 4, 12, 1);
+    r(ctx, P.white, 2, 7, 12, 9);
+    // 4×3 day grid; today in red
+    for (let gy = 0; gy < 3; gy++) for (let gx = 0; gx < 4; gx++) {
+      r(ctx, (gx === 2 && gy === 1) ? "#C4463A" : "#4A463F", 3 + gx * 3, 8 + gy * 3, 2, 2);
+    }
   }},
   counter_sink: { w: 80, h: 44,
     glowRegions: [
