@@ -541,7 +541,7 @@ export function RewardToast({ text }) {
   );
 }
 
-function Screen({ title, icon, onBack, children, bg = "#1A1008", subtitle, progress, progressLabel, checklist, compact = false, flush = false }) {
+function Screen({ title, icon, onBack, children, bg = "#1A1008", subtitle, progress, progressLabel, checklist, compact = false, flush = false, headerPad = 0 }) {
   const slim = compact || flush;
   return (
     <div style={{
@@ -552,7 +552,7 @@ function Screen({ title, icon, onBack, children, bg = "#1A1008", subtitle, progr
       <div style={{
         flex: "0 0 auto",
         padding: slim
-          ? "calc(env(safe-area-inset-top, 0px) + 2px) 6px 2px"
+          ? `calc(env(safe-area-inset-top, 0px) + ${2 + headerPad}px) 6px ${2 + headerPad}px`
           : "calc(env(safe-area-inset-top, 0px) + 10px) 10px 8px",
         display: "flex", gap: slim ? 4 : 8, alignItems: "center",
       }}>
@@ -726,7 +726,6 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
   const handRef = useRef(null);
   const drawPaneRef = useRef(null);
   const [handW, setHandW] = useState(300);
-  const [handAreaH, setHandAreaH] = useState(160);
   const [drawPaneH, setDrawPaneH] = useState(220);
 
   useEffect(() => {
@@ -734,7 +733,6 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
     if (!el || typeof ResizeObserver === "undefined") return undefined;
     const measure = () => {
       setHandW(Math.max(180, el.clientWidth || 300));
-      setHandAreaH(Math.max(0, el.clientHeight || 0));
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -787,20 +785,24 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
     : "Draw (optional)";
   const focus = picks.find((t) => t.id === focusId) || null;
 
-  /** Hand fills leftover height; shrinks with count so the fan always fits handW. */
+  /** Hand card size is derived from WIDTH only (stable cap) — never inflated by leftover vertical space. */
   const HAND_PAD = 12;
   const HAND_MIN_STEP = 14;
   const HAND_STEP_RATIO = 0.38;
+  const HAND_LIFT_ALLOWANCE = 16;
+  /** Responsive cap: lands ~155 CSS px on a typical 390-414px-wide hand, never above 160. */
+  const HAND_CARD_CAP = Math.round(Math.min(160, Math.max(120, handW * 0.42)));
   const handCardW = (() => {
     const n = Math.max(1, picks.length);
-    const byH = (Math.max(48, handAreaH - 8)) / FULL_CARD_H_OVER_W;
     const avail = Math.max(80, handW - HAND_PAD * 2);
     const byRatio = n <= 1 ? avail : avail / (1 + (n - 1) * HAND_STEP_RATIO);
     const byMinStep = n <= 1 ? avail : avail - (n - 1) * HAND_MIN_STEP;
     const fitW = Math.min(byRatio, Math.max(48, byMinStep));
-    return Math.round(Math.max(48, Math.min(byH, fitW, 220)));
+    return Math.round(Math.max(48, Math.min(fitW, HAND_CARD_CAP)));
   })();
   const handCardH = Math.round(handCardW * FULL_CARD_H_OVER_W);
+  /** Hand region hugs the card size — a small rotation/lift allowance, not a flex-filled void. */
+  const handAreaHeight = handCardH + HAND_LIFT_ALLOWANCE;
   const fanLayout = (n, i, width) => {
     const cardW = handCardW;
     const avail = Math.max(width - HAND_PAD * 2, cardW);
@@ -824,6 +826,7 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
       subtitle={energy ? "Draw · then play your hand" : "Running on — pick one"}
       bg="#2A1A0C"
       compact
+      headerPad={6}
     >
       <RewardToast text={rewardToast} />
       {!energy ? (
@@ -849,7 +852,7 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
           ))}
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, gap: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", flex: "0 0 auto", gap: 8 }}>
           <div style={{ color: "#C9B896", fontSize: 10, flex: "0 0 auto", ...LB }}>
             Energy: {energy === "fumes" ? "Fumes" : energy === "full" ? "Full steam" : "Steady"}
             {deal?.fixedDay ? " · fixed day" : ""}
@@ -924,8 +927,8 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
             </div>
           )}
 
-          {/* BOTTOM — hand fills remaining vertical space; cards scale to fit width */}
-          <div style={{ flex: "1 1 auto", minHeight: 0, display: "flex", flexDirection: "column" }}>
+          {/* BOTTOM — hand is sized to the capped card size, not a flex-filled void */}
+          <div style={{ flex: "0 0 auto", display: "flex", flexDirection: "column" }}>
             <div style={{ color: "#FFD97A", fontSize: 10, marginBottom: 4, flex: "0 0 auto", ...LB }}>
               Your hand · tap a card
             </div>
@@ -934,8 +937,8 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
               style={{
                 position: "relative",
                 width: "100%",
-                flex: "1 1 auto",
-                minHeight: picks.length ? 72 : 48,
+                height: handAreaHeight,
+                flex: "0 0 auto",
                 marginBottom: 4,
                 overflow: "hidden",
               }}
