@@ -233,7 +233,7 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
           color: "#1A1008", textAlign: "left", overflow: "hidden",
           display: "flex", alignItems: "center", ...LB,
         }}>
-          <FitText text={task?.title || ""} maxPx={12} minPx={6} style={{ fontWeight: 700, letterSpacing: "0.5px", lineHeight: 1.1 }} />
+          <FitText text={task?.title || ""} maxPx={11} minPx={6} style={{ fontWeight: 700, letterSpacing: "0.5px", lineHeight: 1.1 }} />
         </div>
         {/* Date values — wide enough not to clip "Jul 11" */}
         <div style={{
@@ -293,10 +293,10 @@ export function VerticalTaskCard({
           }}>B</div>
         )}
         <BubblePips filled={effort} centers={V_PIP.effort} sizePct={V_PIP.size} />
-        {/* Title field — shrink-to-fit, vertically centered in the framed box */}
+        {/* Title field — taller after art redistribute; shrink-to-fit */}
         <div style={{
-          position: "absolute", left: "11%", right: "11%", top: "21.5%", height: "13%",
-          color: "#1A1008", textAlign: "left",
+          position: "absolute", left: "11%", right: "11%", top: "21.5%", height: "18%",
+          color: "#1A1008", textAlign: "left", overflow: "hidden",
           display: "flex", alignItems: "center",
           fontFamily: LB.fontFamily, fontWeight: 700,
         }}>
@@ -309,20 +309,20 @@ export function VerticalTaskCard({
         </div>
         {!compact && (
           <>
-            {/* Left-justified to underline start (annotation) */}
+            {/* Dates shifted down with TARGET/LATEST art */}
             <div style={{
-              position: "absolute", left: "34%", top: "36.8%", width: "58%",
+              position: "absolute", left: "34%", top: "41.3%", width: "58%",
               color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap",
               textAlign: "left", ...LB,
             }}>{fmtCardDate(task?.targetDate || task?.due)}</div>
             <div style={{
-              position: "absolute", left: "34%", top: "41.8%", width: "58%",
+              position: "absolute", left: "34%", top: "46.3%", width: "58%",
               color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap",
               textAlign: "left", ...LB,
             }}>{fmtCardDate(task?.latestDate)}</div>
             {(task?.notes || task?.detail) && (
               <div style={{
-                position: "absolute", left: "10%", right: "10%", top: "50%", height: "28%",
+                position: "absolute", left: "10%", right: "10%", top: "54%", height: "22%",
                 color: "#3A2018", fontSize: metaPx, lineHeight: 1.15, overflow: "hidden", textAlign: "left", ...LB,
               }}>{task.notes || task.detail}</div>
             )}
