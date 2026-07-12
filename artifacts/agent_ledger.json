@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-12T20:13:03.863Z",
+  "last_updated": "2026-07-12T21:12:00.000Z",
   "rules": {
     "read_before_work": true,
     "write_before_editing": true,
@@ -53,16 +53,16 @@
       "role": "Codex Team Lead / Senior Agentic Engineer",
       "thinking": "high",
       "status": "IDLE",
-      "branch": "codex",
+      "branch": "codex-ui-fix",
       "working_on": null,
       "files_locked": [],
       "systems_locked": [],
       "risk_level": null,
       "commit_authority": true,
-      "rate_limited": true,
-      "cooldown_until": "5h window rollover tonight",
+      "rate_limited": false,
+      "cooldown_until": null,
       "handoff_needed": null,
-      "last_seen": "2026-07-12T01:48:33.904Z",
+      "last_seen": "2026-07-12T21:12:00.000Z",
       "expires_at": null,
       "notes": "Installing machine-readable coordination layer without changing game code."
     },

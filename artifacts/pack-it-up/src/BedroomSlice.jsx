@@ -4095,7 +4095,7 @@ export default function PackItUp({ glowMode = "split" }) {
       >
         <img src={dir < 0 ? NAV_ARROW_LEFT_BG : NAV_ARROW_RIGHT_BG} alt="" style={chromeImgFill} />
         <span style={{
-          position: "absolute", left: "15%", right: "15%", top: "68%", bottom: "8%",
+          position: "absolute", left: "15%", right: "15%", top: "64%", bottom: "12%",
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
           {/* block + textAlign (not flex-centered raw text) so long room names
@@ -4190,27 +4190,27 @@ export default function PackItUp({ glowMode = "split" }) {
           <div style={{ position: "relative", flex: "33 1 0%", minWidth: 0, height: 74 }}>
             <img src={HUD_CLOCK_BG} alt="" style={chromeImgFill} />
             <div style={{
-              ...chromeContent, position: "absolute", left: "32%", right: "8%", top: "20%", bottom: "24%",
+              ...chromeContent, position: "absolute", left: "30%", right: "8%", top: "14%", bottom: "18%",
               display: "flex", flexDirection: "column", justifyContent: "space-between", height: "auto",
             }}>
               <div style={{ color: INK.strong, fontSize: 11, lineHeight: 1, whiteSpace: "nowrap", overflow: "hidden", ...ui.label }}>{clock}</div>
               <div style={{ color: INK.mid, fontSize: 9, lineHeight: 1, whiteSpace: "nowrap", overflow: "hidden", ...ui.label }}>
                 {dateLabel}
               </div>
-              <div style={{ color: INK.soft, fontSize: 8, lineHeight: 1, whiteSpace: "nowrap", ...ui.label }}>
+              <div style={{ color: INK.soft, fontSize: 8, lineHeight: 1, whiteSpace: "nowrap", marginLeft: "-18%", textAlign: "center", ...ui.label }}>
                 {daysLeft === 0 ? "Move day" : `${daysLeft}d left`}
               </div>
             </div>
           </div>
           <div style={{ position: "relative", flex: "17 1 0%", minWidth: 0, height: 74 }}>
             <img src={HUD_COINS_BG} alt="" style={chromeImgFill} />
-            <div style={{ ...chromeContent, padding: "0 8px 0 44%", display: "flex", alignItems: "center", color: INK.strong, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", ...ui.label }}>
+            <div style={{ ...chromeContent, padding: "0 8px 0 40%", transform: "translateY(-3px)", display: "flex", alignItems: "center", color: INK.strong, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", ...ui.label }}>
               {coins}
             </div>
           </div>
           <div style={{ position: "relative", flex: "24 1 0%", minWidth: 0, height: 74 }}>
             <img src={HUD_ROOM_BG} alt="" style={chromeImgFill} />
-            <div style={{ ...chromeContent, padding: "19% 8px 0 26%", textAlign: "left" }}>
+            <div style={{ ...chromeContent, padding: "16% 8px 0 26%", textAlign: "left" }}>
               <div style={{ color: INK.strong, fontSize: roomNameFontSize, lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", ...ui.label }}>{room.name}</div>
               <div style={{ color: INK.mid, fontSize: 9, lineHeight: 1.1, marginTop: 1, whiteSpace: "nowrap", ...ui.label }}>
                 {total > 0 ? `${clearedCount}/${total}` : "—"}
@@ -4227,7 +4227,7 @@ export default function PackItUp({ glowMode = "split" }) {
           </div>
           <div style={{ position: "relative", flex: "15 1 0%", minWidth: 0, height: 74 }} title="Furniture packed into boxes (apartment-wide)">
             <img src={HUD_BOXES_BG} alt="" style={chromeImgFill} />
-            <div style={{ ...chromeContent, padding: "0 8px 0 34%", display: "flex", alignItems: "center" }}>
+            <div style={{ ...chromeContent, padding: "0 8px 0 30%", transform: "translateY(-3px)", display: "flex", alignItems: "center" }}>
               <div style={{ color: INK.strong, fontSize: 11, whiteSpace: "nowrap", ...ui.label }}>
                 {globalPacked}/{globalTotal}
               </div>
