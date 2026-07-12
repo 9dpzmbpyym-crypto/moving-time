@@ -14,6 +14,10 @@ Covers **July 5–10, 2026**. Combines:
 - Re-cut to Eloisa's bar (usable tonight/tomorrow): engine on existing board first, presentation after; ticket atop FINISH_PLAN; paste-ready Codex prompt in `docs/inbox/handoff-codex-scheduler.md`
 - Session: `docs/sessions/2026-07-11-claude-scheduler-adoption.md`
 
+## 2026-07-11 — [Codex / GPT-5.6 Sol] Task-card overlay pixel match
+- Made `CARD_OVERLAY` the live/designer source of truth; removed hidden editor geometry and pip/type rendering drift
+- Preserved 120px Board hand, 56px apartment fan, card width clamps, and PNG footer art; typecheck/build pass
+- Session: `docs/sessions/2026-07-11-codex-task-card-pixel-match.md`
 ## 2026-07-11 — [Cursor / Grok 4.5] Task card overlays + layout designer
 - Wired thin/full task-card PNGs into Board draw + hand (+ apt fan); built `/？cards=1` overlay designer (drag/resize, bound B, outline toggle, copy)
 - Applied Eloisa `CARD_OVERLAY` layout; taller full title frame without moving footer; clamped card minWidth; fixed clipped-hand CSS-scale mistake
