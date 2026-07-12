@@ -201,13 +201,13 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
  * Natural PNG aspect (no stretch) so % overlays stay locked to art.
  */
 export function VerticalTaskCard({
-  task, width = 76, bound = false, selected = false, compact = false, onClick, style,
+  task, width = 110, bound = false, selected = false, compact = false, onClick, style,
 }) {
   const src = CARD_FULL[task?.category] || CARD_FULL.admin;
   const effort = clampPips(task?.effort || 1) || 1;
   const importance = clampPips(task?.criticality || 1) || 1;
-  const titlePx = compact ? Math.max(5, Math.round(width * 0.10)) : Math.max(8, Math.round(width * 0.11));
-  const metaPx = compact ? Math.max(4, Math.round(width * 0.075)) : Math.max(7, Math.round(width * 0.085));
+  const titlePx = compact ? Math.max(5, Math.round(width * 0.10)) : Math.max(9, Math.round(width * 0.105));
+  const metaPx = compact ? Math.max(4, Math.round(width * 0.075)) : Math.max(8, Math.round(width * 0.08));
   const Tag = onClick ? "button" : "div";
   return (
     <Tag
@@ -238,21 +238,21 @@ export function VerticalTaskCard({
           }}>B</div>
         )}
         <BubblePips filled={effort} centers={V_PIP.effort} sizePct={V_PIP.size} />
-        {/* Title field box ~21–35% */}
+        {/* Title field box ~21–35% — inset inside the frame */}
         <div style={{
-          position: "absolute", left: "9%", right: "9%", top: "22%", height: compact ? "14%" : "12%",
-          color: "#1A1008", fontSize: titlePx, lineHeight: 1.1, overflow: "hidden", textAlign: "left", ...LB,
+          position: "absolute", left: "10%", right: "10%", top: "23.5%", height: compact ? "12%" : "11%",
+          color: "#1A1008", fontSize: titlePx, lineHeight: 1.15, overflow: "hidden", textAlign: "left", ...LB,
         }}>
           {task?.title || ""}
         </div>
         {!compact && (
           <>
             <div style={{
-              position: "absolute", left: "40%", top: "37%", width: "48%",
+              position: "absolute", left: "48%", top: "36.5%", width: "42%",
               color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
             }}>{fmtCardDate(task?.targetDate || task?.due)}</div>
             <div style={{
-              position: "absolute", left: "40%", top: "42%", width: "48%",
+              position: "absolute", left: "48%", top: "41.5%", width: "42%",
               color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
             }}>{fmtCardDate(task?.latestDate)}</div>
             {(task?.notes || task?.detail) && (
