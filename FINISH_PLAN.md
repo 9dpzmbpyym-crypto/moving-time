@@ -24,6 +24,10 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 
 ## Open next (Jul 11 — after Grok env/storage session)
 
+### Jul 12 screenshot correction pass — [codex]
+- [x] Match Body Board zone markers to the enlarged figure, keep OB/GYN fully selectable, and raise/inset the selected-zone paper.
+- [x] Re-center apartment HUD and room-navigation text inside the existing mockup chrome; no room-art or layout redesign.
+
 ### Scheduler engine — [codex] ADOPTED, SHIP BAR: usable tonight/tomorrow
 - Ruling: **`docs/design/scheduler-adoption.md`** · spec: `docs/inbox/chatgpt-productivity-structure-for-claude-7-11.md` · paste-ready prompt: **`docs/inbox/handoff-codex-scheduler.md`**
 - [ ] **[codex]** Commits 1–3 (schema+migration+real dated data → urgency/status/deps → backward scheduler + persisted deal) wired minimally into the EXISTING board = usable bar. Bound cards preselected + explained ("why" one-liner); "minimum today: N pts"; OVERDUE badges; Ledger editor extended to target/latest

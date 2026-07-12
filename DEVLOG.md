@@ -9,6 +9,12 @@ Covers **July 5–10, 2026**. Combines:
 
 ---
 
+## 2026-07-12 — [Codex / GPT-5]
+- Corrected Body Board zone coordinates for the enlarged figure; OB/GYN is visible and selectable above the raised detail paper.
+- Raised the selected-zone sheet and added the mockup-matched content inset; selected-state interaction verified at 509×939.
+- Repositioned apartment HUD values and room-navigation labels within existing chrome only; typecheck and production build pass.
+- Session: `docs/sessions/2026-07-12-codex-body-board-apartment-text.md`
+
 ## 2026-07-12 — [Claude / Opus 4.8 + Fable 5] UI redesign from mockups + fixes
 - 4 screens recreated from Eloisa's mockups (sliced UI sheets): Overview/Main menu, Command Board chrome (segmented energy control), Apartment HUD (wood/brass), Body Board — merged to main
 - Fix pass: white boxes (de-matte + button-default-bg → backgroundColor:transparent), text overflow (apartment HUD room names/coins/days-left, Overview footer+header box-sizing bug), Body Board (bigger figure, legs behind note, note over legs, OB/GYN z-index), centered nav room names

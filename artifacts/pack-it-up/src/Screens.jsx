@@ -2536,11 +2536,11 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
  */
 const HEALTH_ZONES = [
   { id: "brain",  label: "PSYCHIATRY",   note: "Psychiatry + med renewals", icon: HEALTH_ZONE_PSYCH,  x: 50,   y: 5,  care: "herbal" },
-  { id: "teeth",  label: "DENTIST",      note: "Dentist visit",             icon: HEALTH_ZONE_DENTIST, x: 50,  y: 22, care: "balm" },
-  { id: "heart",  label: "CARDIOLOGY",   note: "Cardiology appointment",    icon: HEALTH_ZONE_CARDIO,  x: 50,  y: 46, care: "patch" },
-  { id: "skin",   label: "DERMATOLOGY",  note: "Dermatology appointment",   icon: HEALTH_ZONE_DERM,    x: 16,  y: 57, care: "balm" },
-  { id: "lymph",  label: "RHEUMATOLOGY", note: "Rheumatology appointment",  icon: HEALTH_ZONE_RHEUM,   x: 81,  y: 57, care: "balm" },
-  { id: "obgyn",  label: "OB/GYN",       note: "IUD replacement",           icon: HEALTH_ZONE_OBGYN,   x: 50,  y: 81, care: "herbal" },
+  { id: "teeth",  label: "DENTIST",      note: "Dentist visit",             icon: HEALTH_ZONE_DENTIST, x: 50,  y: 17, care: "balm" },
+  { id: "heart",  label: "CARDIOLOGY",   note: "Cardiology appointment",    icon: HEALTH_ZONE_CARDIO,  x: 50,  y: 29, care: "patch" },
+  { id: "skin",   label: "DERMATOLOGY",  note: "Dermatology appointment",   icon: HEALTH_ZONE_DERM,    x: 20,  y: 36, care: "balm" },
+  { id: "lymph",  label: "RHEUMATOLOGY", note: "Rheumatology appointment",  icon: HEALTH_ZONE_RHEUM,   x: 79,  y: 36, care: "balm" },
+  { id: "obgyn",  label: "OB/GYN",       note: "IUD replacement",           icon: HEALTH_ZONE_OBGYN,   x: 50,  y: 56, care: "herbal" },
 ];
 
 const CARE_ITEMS = [
@@ -2762,13 +2762,13 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
                 clipboard's bottom edge so it overlaps the figure's legs,
                 sized to ~30% of the parchment height like the mockup. */}
             <div style={{
-              position: "absolute", left: "6%", right: "9%", top: "67%", bottom: "2%",
+              position: "absolute", left: "6%", right: "9%", top: "61%", bottom: "8%",
               backgroundImage: panel ? "none" : `url(${HEALTH_NOTE_PAPER})`,
               backgroundColor: panel ? "#241509" : "transparent",
               backgroundSize: "100% 100%", backgroundRepeat: "no-repeat",
               border: panel ? "3px solid #120A04" : "none",
               boxShadow: panel ? "inset 0 0 0 2px #6B4423" : "none",
-              padding: panel ? "8px 10px" : "8px 12px 8px 17%",
+              padding: panel ? "8px 10px" : "6% 12px 8px 17%",
               imageRendering: "pixelated", overflow: "auto",
             }}>
               {panel === "care" && (
