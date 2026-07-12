@@ -227,13 +227,13 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
         style={{ width: "100%", height: "auto", display: "block", imageRendering: "pixelated" }}
       />
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-        {/* Title band — annotated cream body (header → dashed rail), shrink to fit */}
+        {/* Title — exact red-box annotation (tight wrap on 2-line title band) */}
         <div style={{
-          position: "absolute", left: "3.5%", right: "3.5%", top: "22%", height: "34%",
+          position: "absolute", left: "3%", right: "2.6%", top: "28.2%", height: "24%",
           color: "#1A1008", textAlign: "left", overflow: "hidden",
           display: "flex", alignItems: "center", ...LB,
         }}>
-          <FitText text={task?.title || ""} maxPx={13} minPx={7} style={{ fontWeight: 700, letterSpacing: "0.5px" }} />
+          <FitText text={task?.title || ""} maxPx={13} minPx={6} style={{ fontWeight: 700, letterSpacing: "0.5px", lineHeight: 1.1 }} />
         </div>
         {/* Date values — wide enough not to clip "Jul 11" */}
         <div style={{
