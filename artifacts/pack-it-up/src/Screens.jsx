@@ -258,7 +258,7 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
   const datePx = scaleOverlayPx(L.datePx, cardW, L.refW);
   return (
     <div ref={wrapRef} style={{
-      position: "relative", width: "100%", lineHeight: 0,
+      position: "relative", width: "100%", minWidth: 0, lineHeight: 0,
       opacity: dimmed ? 0.42 : 1, filter: dimmed ? "grayscale(0.35)" : "none",
       ...style,
     }}>
@@ -315,13 +315,25 @@ export function VerticalTaskCard({
       type={onClick ? "button" : undefined}
       onClick={onClick}
       style={{
-        position: "relative", width, height: "auto", padding: 0, margin: 0,
+        position: "relative",
+        width,
+        minWidth: width,
+        maxWidth: width,
+        height: "auto",
+        padding: 0,
+        margin: 0,
         border: "none",
         outline: selected ? "3px solid #FFD97A" : "none",
         outlineOffset: "-2px",
-        background: "transparent", cursor: onClick ? "pointer" : "default",
+        background: "transparent",
+        cursor: onClick ? "pointer" : "default",
         boxShadow: selected ? "0 0 0 1px #120A04" : "2px 2px 0 rgba(0,0,0,0.4)",
-        overflow: "hidden", lineHeight: 0, textAlign: "left", ...style,
+        overflow: "hidden",
+        lineHeight: 0,
+        textAlign: "left",
+        boxSizing: "border-box",
+        flex: "0 0 auto",
+        ...style,
       }}
     >
       <img
@@ -742,22 +754,24 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
     : "Draw (optional)";
   const focus = picks.find((t) => t.id === focusId) || null;
 
-  /** Casino-dealer spread: fill left→right, mild arc, stay on-screen. */
-  const handCardW = CARD_OVERLAY.full.refW; // match /?cards=1 full preview (220)
+  /** Hand fan: layout art at designer width (220), CSS-scaled to fit the board. */
+  const designFullW = CARD_OVERLAY.full.refW;
+  const handSlotW = 128;
+  const handScale = handSlotW / designFullW;
+  const handCardH = Math.round(designFullW * (490 / 286) * handScale);
   const fanLayout = (n, i, width) => {
-    const cardW = handCardW;
-    const pad = 22; // keep leftmost card fully in frame when rotated
+    const cardW = handSlotW;
+    const pad = 18;
     const avail = Math.max(width - pad * 2, cardW);
     if (n <= 1) return { left: pad, rot: -2, lift: 0 };
     const maxTravel = avail - cardW;
-    const step = Math.max(32, Math.min(68, maxTravel / (n - 1)));
+    const step = Math.max(28, Math.min(58, maxTravel / (n - 1)));
     const left = pad + i * step;
     const t = i / (n - 1);
     const rot = -6 + t * 12;
     const lift = Math.sin(t * Math.PI) * 4;
     return { left, rot, lift };
   };
-  const handCardH = Math.round(handCardW * (490 / 286));
 
   return (
     <Screen
@@ -883,22 +897,32 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
                 const pos = fanLayout(picks.length, i, handW);
                 const on = focusId === t.id;
                 return (
-                  <VerticalTaskCard
+                  <div
                     key={t.id}
-                    task={t}
-                    width={handCardW}
-                    bound={!!t.bound}
-                    selected={on}
-                    onClick={() => setFocusId(on ? null : t.id)}
                     style={{
                       position: "absolute",
                       left: pos.left,
                       bottom: pos.lift,
                       zIndex: on ? 40 : 10 + i,
-                      transform: `rotate(${pos.rot}deg)`,
-                      transformOrigin: "50% 100%",
+                      width: handSlotW,
+                      height: handCardH,
+                      overflow: "visible",
                     }}
-                  />
+                  >
+                    <div style={{
+                      width: designFullW,
+                      transform: `scale(${handScale}) rotate(${pos.rot}deg)`,
+                      transformOrigin: "bottom left",
+                    }}>
+                      <VerticalTaskCard
+                        task={t}
+                        width={designFullW}
+                        bound={!!t.bound}
+                        selected={on}
+                        onClick={() => setFocusId(on ? null : t.id)}
+                      />
+                    </div>
+                  </div>
                 );
               })}
             </div>
