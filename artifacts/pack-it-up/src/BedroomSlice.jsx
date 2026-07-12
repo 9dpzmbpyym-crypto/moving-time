@@ -60,6 +60,10 @@ import {
 import { mergeSession, bumpSession } from "./session.js";
 import { ensureDailyDeal, toggleDealPick, handTasks } from "./schedule.js";
 import {
+  completeTaskFromEvent,
+  reconcileTasksFromWorldState,
+} from "./taskBindings.js";
+import {
   sanitizeAppointments,
   markMissed,
   getNudge,
@@ -2522,6 +2526,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
   /* next-layer navigation: apartment is the hub, everything else is an
      overlay screen (menu/desk/health/inventory/log/stretchy/settings) */
   const [screen, setScreen] = useState(initialScreen);
+  const [taskFocus, setTaskFocus] = useState(null);
   // which storage object's contents are open in the StorageScreen overlay.
   // Set when a storage object (cabinet/drawer/closet) is tapped.
   const [storageId, setStorageId] = useState(null);
@@ -2553,6 +2558,26 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
   const [appointments, setAppointments] = useState(() =>
     markMissed(sanitizeAppointments(bootSave?.appointments))
   );
+  const navigateTo = useCallback((nextScreen, destination = null) => {
+    setTaskFocus(destination);
+    if (nextScreen === "apartment" && destination?.roomId) {
+      const index = ROOMS_ORDER.indexOf(destination.roomId);
+      if (index >= 0) setRoomIndex(index);
+      if (destination.objectId) {
+        setSelectedId(destination.objectId);
+        setSheetOpen(isMobile);
+      }
+    }
+    setScreen(nextScreen);
+  }, [isMobile]);
+  const didReconcileBootRef = useRef(false);
+  useEffect(() => {
+    if (didReconcileBootRef.current) return;
+    didReconcileBootRef.current = true;
+    setTasks((current) => reconcileTasksFromWorldState(current, {
+      objState, appointments, calmedZones: session.calmedZones,
+    }));
+  }, [objState, appointments, session.calmedZones]);
   const [phoneNudge, setPhoneNudge] = useState(null);
   const phoneNudgeShownRef = useRef(false);
   /** Apartment hand fan — drag to place/resize; badge offset from rightmost card (draggable). */
@@ -2830,6 +2855,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     setPackingId(id);
     schedule(() => {
       setObjState((s) => ({ ...s, [k]: { ...s[k], packed: true } }));
+      setTasks((current) => completeTaskFromEvent(current, { feature: "apartment_item", target: k, trigger: "packed" }));
       setUndoStack((stack) => [...stack, undoEntry(id, prev, 0, 10)]);
       setPackingId(null);
       setSelectedId(null);
@@ -2855,6 +2881,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     playSellSound();
     schedule(() => {
       setObjState((s) => ({ ...s, [k]: { ...s[k], sold: true, soldFor: credit } }));
+      setTasks((current) => completeTaskFromEvent(current, { feature: "apartment_item", target: k, trigger: "sold" }));
       setCoins((c) => c + credit);
       setUndoStack((stack) => [...stack, undoEntry(id, prev, credit, 5)]);
       setSellingId(null);
@@ -2874,6 +2901,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     setDonatingId(id);
     schedule(() => {
       setObjState((s) => ({ ...s, [k]: { ...s[k], donated: true } }));
+      setTasks((current) => completeTaskFromEvent(current, { feature: "apartment_item", target: k, trigger: "donated" }));
       setUndoStack((stack) => [...stack, undoEntry(id, prev, 0, 5)]);
       setDonatingId(null);
       setSelectedId(null);
@@ -2904,7 +2932,9 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
       candidate.id === binding.taskId && isTaskOpen(candidate)
         ? { ...candidate, status: "done" }
         : candidate
-    ));
+    ).map((candidate) => completeTaskFromEvent([candidate], {
+      feature: "apartment_item", target: sk(room.id, id), trigger: "buyerFound",
+    })[0]));
     setUndoStack((stack) => [...stack, {
       kind: "buyerFound",
       roomId: room.id,
@@ -3051,7 +3081,11 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     const k = sk(room.id, id);
     const prev = objState[k];
     setUndoStack((stack) => [...stack, undoEntry(id, prev, 0, 0)]);
-    setObjState((s) => ({ ...s, [k]: { ...s[k], packed: false } }));
+    const nextState = { ...objState, [k]: { ...objState[k], packed: false } };
+    setObjState(nextState);
+    setTasks((current) => reconcileTasksFromWorldState(current, {
+      objState: nextState, appointments, calmedZones: session.calmedZones,
+    }));
   };
 
   const unsellObject = (id) => {
@@ -3059,20 +3093,30 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     const prev = objState[k];
     setCoins((c) => c - (prev.soldFor || 0));
     setUndoStack((stack) => [...stack, undoEntry(id, prev, -(prev.soldFor || 0), 0)]);
-    setObjState((s) => ({ ...s, [k]: { ...s[k], sold: false, soldFor: 0 } }));
+    const nextState = { ...objState, [k]: { ...objState[k], sold: false, soldFor: 0 } };
+    setObjState(nextState);
+    setTasks((current) => reconcileTasksFromWorldState(current, {
+      objState: nextState, appointments, calmedZones: session.calmedZones,
+    }));
   };
 
   const undonateObject = (id) => {
     const k = sk(room.id, id);
     const prev = objState[k];
     setUndoStack((stack) => [...stack, undoEntry(id, prev, 0, 0)]);
-    setObjState((s) => ({ ...s, [k]: { ...s[k], donated: false } }));
+    const nextState = { ...objState, [k]: { ...objState[k], donated: false } };
+    setObjState(nextState);
+    setTasks((current) => reconcileTasksFromWorldState(current, {
+      objState: nextState, appointments, calmedZones: session.calmedZones,
+    }));
   };
 
   const undoLast = () => {
     if (undoStack.length === 0) return;
     const entry = undoStack[undoStack.length - 1];
     if (entry.kind === "buyerFound") {
+      const restored = { ...objState };
+      for (const key of entry.objectKeys) restored[key] = { ...entry.prevStates[key] };
       setObjState((state) => {
         const next = { ...state };
         for (const key of entry.objectKeys) next[key] = { ...entry.prevStates[key] };
@@ -3080,7 +3124,9 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
       });
       setTasks((current) => current.map((task) =>
         task.id === entry.taskId ? { ...task, status: entry.prevTaskStatus } : task
-      ));
+      ).map((task) => reconcileTasksFromWorldState([task], {
+        objState: restored, appointments, calmedZones: session.calmedZones,
+      })[0]));
       setUndoStack((stack) => stack.slice(0, -1));
       return;
     }
@@ -3092,7 +3138,11 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     } else {
       // object undo: restore objState at ${roomId}:${id}
       const k = sk(roomId, id);
+      const restored = { ...objState, [k]: { ...objState[k], packed: prevPacked, sold: prevSold, soldFor: prevSoldFor, donated: prevDonated, buyerFound: !!prevBuyerFound } };
       setObjState((s) => ({ ...s, [k]: { ...s[k], packed: prevPacked, sold: prevSold, soldFor: prevSoldFor, donated: prevDonated, buyerFound: !!prevBuyerFound } }));
+      setTasks((current) => reconcileTasksFromWorldState(current, {
+        objState: restored, appointments, calmedZones: session.calmedZones,
+      }));
     }
     setCoins((c) => c - coinsDelta);
     setMinutes((m) => m - minutesDelta);
@@ -4718,7 +4768,8 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
              The apartment stays mounted underneath, state intact. ---- */}
         <ScreenLayer
           screen={screen}
-          go={setScreen}
+          go={navigateTo}
+          taskFocus={taskFocus}
           tasks={tasks}
           setTasks={setTasks}
           handled={handled}
@@ -5064,7 +5115,8 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
       )}
       <ScreenLayer
         screen={screen}
-        go={setScreen}
+        go={navigateTo}
+        taskFocus={taskFocus}
         tasks={tasks}
         setTasks={setTasks}
         handled={handled}

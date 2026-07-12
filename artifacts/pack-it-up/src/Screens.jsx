@@ -86,6 +86,15 @@ import {
 } from "./gameAudio.js";
 import { clearSave } from "./save.js";
 import {
+  GAME_FEATURE_OPTIONS,
+  targetOptionsForFeature,
+  COMPLETION_TRIGGER_OPTIONS,
+  TASK_RESULT_OPTIONS,
+  completeTaskFromEvent,
+  resolveTaskDestination,
+  isWorldBoundTask,
+} from "./taskBindings.js";
+import {
   SESSION_GOALS,
   HEALTH_SESSION_GOALS,
   HOUSING_SESSION_GOALS,
@@ -1184,14 +1193,17 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
                 <div style={{ flex: 1, minWidth: 0, color: "#F2E4C0", fontSize: 11, ...LB }}>
                   {focus.bound ? "BOUND · " : ""}{focus.title}
                 </div>
-                <button type="button" onClick={() => go(doorForTask(focus))} style={{
+                <button type="button" onClick={() => {
+                  const destination = resolveTaskDestination(focus);
+                  go(destination?.screen || doorForTask(focus), destination);
+                }} style={{
                   padding: "6px 8px", background: "#3A2410", color: "#FFD97A",
                   border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB,
                 }}>Go</button>
-                <button type="button" onClick={() => markDone(focus.id)} style={{
+                {!isWorldBoundTask(focus) && <button type="button" onClick={() => markDone(focus.id)} style={{
                   padding: "6px 8px", background: "#5D7C3B", color: "#F2E4C0",
                   border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB,
-                }}>Done</button>
+                }}>Done</button>}
               </div>
             )}
 
@@ -1283,15 +1295,96 @@ function ledgerDueKey(t) {
   return "9999-99-99";
 }
 
+const EMPTY_TASK_BINDING = { feature: "", target: "", trigger: "", resultStatus: "" };
+const optionValue = (option) => typeof option === "string" ? option : option.value;
+const optionLabel = (option) => typeof option === "string" ? option : option.label;
+
+function TaskBindingFields({ value, onChange, fieldStyle }) {
+  const binding = value || EMPTY_TASK_BINDING;
+  const targets = binding.feature ? targetOptionsForFeature(binding.feature) : [];
+  const triggers = binding.feature ? (COMPLETION_TRIGGER_OPTIONS[binding.feature] || []) : [];
+  const update = (patch) => onChange({ ...binding, ...patch });
+  const selectStyle = { ...fieldStyle, marginBottom: 0, minWidth: 0 };
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ color: "#8A7350", fontSize: 9, marginBottom: 4, ...LB }}>Game link (optional)</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 5 }}>
+        <select
+          aria-label="Game feature"
+          value={binding.feature}
+          onChange={(e) => {
+            const feature = e.target.value;
+            const featureTriggers = COMPLETION_TRIGGER_OPTIONS[feature] || [];
+            update({
+              feature,
+              target: "",
+              trigger: optionValue(featureTriggers[0] || ""),
+              resultStatus: feature ? "done" : "",
+            });
+          }}
+          style={selectStyle}
+        >
+          <option value="">Feature</option>
+          {GAME_FEATURE_OPTIONS.map((option) => (
+            <option key={optionValue(option)} value={optionValue(option)}>{optionLabel(option)}</option>
+          ))}
+        </select>
+        <div style={{ minWidth: 0 }}>
+        <input
+          aria-label="Game target"
+          list={`task-targets-${binding.feature || "none"}`}
+          value={binding.target}
+          disabled={!binding.feature}
+          placeholder={binding.feature === "apartment_item" ? "room:item ID" : "Target"}
+          onChange={(e) => update({ target: e.target.value })}
+          style={{ ...selectStyle, width: "100%", boxSizing: "border-box", opacity: binding.feature ? 1 : 0.55 }}
+        />
+        <datalist id={`task-targets-${binding.feature || "none"}`}>
+          {targets.map((option) => (
+            <option key={optionValue(option)} value={optionValue(option)}>{optionLabel(option)}</option>
+          ))}
+        </datalist>
+        </div>
+        <select
+          aria-label="Completion trigger"
+          value={binding.trigger}
+          disabled={!binding.feature}
+          onChange={(e) => update({ trigger: e.target.value })}
+          style={{ ...selectStyle, opacity: binding.feature ? 1 : 0.55 }}
+        >
+          <option value="">Completion trigger</option>
+          {triggers.map((option) => (
+            <option key={optionValue(option)} value={optionValue(option)}>{optionLabel(option)}</option>
+          ))}
+        </select>
+        <select
+          aria-label="Resulting task status"
+          value={binding.resultStatus}
+          disabled={!binding.feature}
+          onChange={(e) => update({ resultStatus: e.target.value })}
+          style={{ ...selectStyle, opacity: binding.feature ? 1 : 0.55 }}
+        >
+          <option value="">Result status</option>
+          {TASK_RESULT_OPTIONS.map((option) => (
+            <option key={optionValue(option)} value={optionValue(option)}>{optionLabel(option)}</option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
 function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
   const [lane, setLane] = useState("housing");
   const [sortBy, setSortBy] = useState("due");
   const [showArchived, setShowArchived] = useState(false);
   const [draft, setDraft] = useState("");
   const [effort, setEffort] = useState(1);
+  const [bindingDraft, setBindingDraft] = useState(EMPTY_TASK_BINDING);
   const [editId, setEditId] = useState(null);
   const [editDraft, setEditDraft] = useState({
     title: "", due: "", dueDate: "", effort: 1, category: "housing", status: "pending",
+    binding: EMPTY_TASK_BINDING,
   });
   const rows = tasks
     .filter((t) => {
@@ -1334,6 +1427,7 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
       effort: t.effort || 1,
       category: t.category || lane,
       status: t.status || "pending",
+      binding: { ...EMPTY_TASK_BINDING, ...(t.binding || {}) },
     });
   };
   const saveEdit = () => {
@@ -1355,7 +1449,15 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
           effort: Math.min(3, Math.max(1, Number(editDraft.effort) || 1)),
           category: cat,
           status: editDraft.status === "done" ? "done" : "pending",
+          binding: editDraft.binding?.feature ? { ...editDraft.binding } : null,
         };
+        if (next.binding?.feature === "health_zone" || next.binding?.feature === "health_appointment") {
+          next.zone = next.binding.target;
+        }
+        next.kind = next.binding?.feature === "health_appointment" && next.binding.trigger === "booked"
+          ? "book"
+          : (next.kind === "book" ? null : next.kind);
+        next.completionMode = next.binding ? "world" : "manual";
         if (dueDate && /^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
           next.targetDate = dueDate;
           const prevLatest = t.latestDate || t.dueEnd || null;
@@ -1384,9 +1486,11 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
   const addSticky = () => {
     const title = draft.trim();
     if (!title) return;
-    setTasks((ts) => [...ts, makeQuickTask({ title, category: lane, effort })]);
+    const binding = bindingDraft.feature ? { ...bindingDraft } : null;
+    setTasks((ts) => [...ts, makeQuickTask({ title, category: lane, effort, binding })]);
     setDraft("");
     setEffort(1);
+    setBindingDraft(EMPTY_TASK_BINDING);
   };
   const field = {
     width: "100%", boxSizing: "border-box", padding: "8px", marginBottom: 6,
@@ -1430,6 +1534,7 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
           placeholder="One line…"
           style={field}
         />
+        <TaskBindingFields value={bindingDraft} onChange={setBindingDraft} fieldStyle={field} />
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
           {[1, 2, 3].map((n) => (
             <button key={n} type="button" onClick={() => setEffort(n)} style={{
@@ -1459,6 +1564,11 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
               <input value={editDraft.title} onChange={(e) => setEditDraft((d) => ({ ...d, title: e.target.value }))} style={field} />
               <input value={editDraft.due} onChange={(e) => setEditDraft((d) => ({ ...d, due: e.target.value }))} placeholder="Due label (e.g. Jul 15)" style={field} />
               <input value={editDraft.dueDate} onChange={(e) => setEditDraft((d) => ({ ...d, dueDate: e.target.value }))} placeholder="dueDate YYYY-MM-DD" style={field} />
+              <TaskBindingFields
+                value={editDraft.binding}
+                onChange={(binding) => setEditDraft((d) => ({ ...d, binding }))}
+                fieldStyle={field}
+              />
               <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>
                 {LEDGER_LANES.map((l) => (
                   <button key={l.id} type="button" onClick={() => setEditDraft((d) => ({ ...d, category: l.id }))} style={{
@@ -1515,7 +1625,7 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
                   padding: "8px 8px", background: "#3A2410", color: "#FFD97A",
                   border: "2px solid #120A04", fontSize: 10, cursor: "pointer", flex: "0 0 auto", ...LB,
                 }}>Edit</button>
-                {open && (
+                {open && !isWorldBoundTask(t) && (
                   <button type="button" onClick={() => markDone(t.id)} style={{
                     padding: "8px 10px", background: "#5D7C3B", color: "#F2E4C0",
                     border: "2px solid #120A04", fontSize: 11, cursor: "pointer", flex: "0 0 auto", ...LB,
@@ -2141,7 +2251,10 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
     setAppointments(result.appointments);
     const bookTask = tasks.find((t) => t.id === result.appt?.taskId);
     if (bookTask) {
-      setTasks((ts) => refreshDailyHousingTasks(tasksAfterBooking(ts, result.appt, bookTask)));
+      setTasks((ts) => refreshDailyHousingTasks(completeTaskFromEvent(
+        tasksAfterBooking(ts, result.appt, bookTask),
+        { feature: "health_appointment", target: result.appt.zone, trigger: "booked" }
+      )));
     }
   };
 
@@ -2562,10 +2675,13 @@ const healthCallBtnStyle = {
 };
 
 function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast,
-  appointments, setAppointments }) {
+  appointments, setAppointments, taskFocus }) {
   const uiLayout = useUiLayout();
   const healthZones = HEALTH_ZONES.map((z) => ({ ...z, ...(uiLayout.body.zones[z.id] || {}) }));
   const [zone, setZone] = useState(null);
+  useEffect(() => {
+    if (taskFocus?.zone) setZone(taskFocus.zone);
+  }, [taskFocus?.zone]);
   const [panel, setPanel] = useState(null); // null | "care" | "records"
   const [detailsOpen, setDetailsOpen] = useState(false);
   const sel = healthZones.find((z) => z.id === zone) || null;
@@ -2606,7 +2722,7 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
 
   const stabilizeZone = (zid) => {
     if (zoneDone(zid)) return;
-    setTasks((ts) => ts.map((t) => (t.zone === zid ? { ...t, status: "done" } : t)));
+    setTasks((ts) => completeTaskFromEvent(ts, { feature: "health_zone", target: zid, trigger: "stabilized" }));
     onSessionBump?.("zones", 1, "Well Rested +1", { calmedZone: zid });
   };
 
@@ -2614,7 +2730,7 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
     const target = sel && !zoneDone(sel.id) ? sel
       : healthZones.find((z) => z.care === careId && !zoneDone(z.id));
     if (target && !zoneDone(target.id)) {
-      setTasks((ts) => ts.map((t) => (t.zone === target.id ? { ...t, status: "done" } : t)));
+      setTasks((ts) => completeTaskFromEvent(ts, { feature: "health_zone", target: target.id, trigger: "stabilized" }));
       onSessionBump?.("zones", 1, null, { calmedZone: target.id });
     }
     onSessionBump?.("care", 1, "Self-Care +1");
@@ -2624,7 +2740,9 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
     const gate = canAttendZone(appointments, appt.zone);
     if (!gate || gate.id !== appt.id) return;
     setAppointments((list) => attendAppointment(list, appt.id));
-    setTasks((ts) => tasksAfterAttend(ts, appt));
+    setTasks((ts) => completeTaskFromEvent(tasksAfterAttend(ts, appt), {
+      feature: "health_appointment", target: appt.zone, trigger: "attended",
+    }));
     stabilizeZone(appt.zone);
     onSessionBump?.("appt", 1, "Appointment ✓");
   };
@@ -3232,6 +3350,7 @@ export default function ScreenLayer({
   screen, go, tasks, setTasks, handled, openHandledSheet, busy, playSfx,
   session, onSessionBump, rewardToast,
   appointments, setAppointments, phoneNudge, clearPhoneNudge,
+  taskFocus,
 }) {
   if (screen === "apartment") return null;
   if (screen === "menu")      return <MenuScreen go={go} tasks={tasks} />;
@@ -3251,7 +3370,7 @@ export default function ScreenLayer({
   if (screen === "health")    return (
     <HealthScreen go={go} tasks={tasks} setTasks={setTasks}
       session={session} onSessionBump={onSessionBump} rewardToast={rewardToast}
-      appointments={appointments || []} setAppointments={setAppointments} />
+      appointments={appointments || []} setAppointments={setAppointments} taskFocus={taskFocus} />
   );
   if (screen === "inventory") return <InventoryScreen go={go} handled={handled} openHandledSheet={openHandledSheet} />;
   if (screen === "log")       return <LogScreen go={go} handled={handled} />;

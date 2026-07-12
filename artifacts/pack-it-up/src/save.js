@@ -149,11 +149,16 @@ export function mergeTasks(initial, savedTasks) {
       criticality: s.criticality !== undefined ? s.criticality : t.criticality,
       category,
       kind: s.kind || t.kind || null,
+      zone: s.zone !== undefined ? s.zone : (t.zone || null),
+      room: s.room !== undefined ? s.room : (t.room || null),
+      objectId: s.objectId !== undefined ? s.objectId : (t.objectId || null),
+      completionMode: s.completionMode || t.completionMode || "manual",
       bookTaskId: s.bookTaskId || t.bookTaskId || null,
       score: typeof s.score === "number" ? s.score : t.score,
       jobId: s.jobId !== undefined && s.jobId !== null ? s.jobId : t.jobId,
       selfTarget: !!t.selfTarget,
       estimatedLatest: s.estimatedLatest !== undefined ? !!s.estimatedLatest : !!t.estimatedLatest,
+      binding: s.binding !== undefined ? s.binding : (t.binding || null),
     });
   });
   for (const s of savedTasks) {
@@ -185,6 +190,7 @@ export function mergeTasks(initial, savedTasks) {
       score: typeof s.score === "number" ? s.score : null,
       selfTarget: !!s.selfTarget,
       estimatedLatest: !!s.estimatedLatest,
+      binding: s.binding || null,
     }));
   }
   return merged;
