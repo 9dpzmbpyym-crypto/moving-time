@@ -227,22 +227,22 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
         style={{ width: "100%", height: "auto", display: "block", imageRendering: "pixelated" }}
       />
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-        {/* Title band (cream body above dashed rail) — shrink to fit, no clip */}
+        {/* Title band — annotated cream body (header → dashed rail), shrink to fit */}
         <div style={{
-          position: "absolute", left: "4%", right: "4%", top: "24%", height: "28%",
+          position: "absolute", left: "3.5%", right: "3.5%", top: "22%", height: "34%",
           color: "#1A1008", textAlign: "left", overflow: "hidden",
           display: "flex", alignItems: "center", ...LB,
         }}>
-          <FitText text={task?.title || ""} maxPx={12} minPx={6} style={{ fontWeight: 700, letterSpacing: "0.5px", lineHeight: 1.1 }} />
+          <FitText text={task?.title || ""} maxPx={13} minPx={7} style={{ fontWeight: 700, letterSpacing: "0.5px" }} />
         </div>
         {/* Date values — wide enough not to clip "Jul 11" */}
         <div style={{
           position: "absolute", left: "18.5%", top: "69.5%", width: "14%",
-          color: "#1A1008", fontSize: 9, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap", ...LB,
+          color: "#1A1008", fontSize: 8, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap", ...LB,
         }}>{fmtCardDate(task?.targetDate || task?.due)}</div>
         <div style={{
           position: "absolute", left: "47.5%", top: "69.5%", width: "14%",
-          color: "#1A1008", fontSize: 9, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap", ...LB,
+          color: "#1A1008", fontSize: 8, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap", ...LB,
         }}>{fmtCardDate(task?.latestDate)}</div>
         <BubblePips filled={effort} centers={H_PIP.effort} sizePct={H_PIP.size} />
         <BubblePips filled={importance} centers={H_PIP.importance} sizePct={H_PIP.size} />
@@ -753,9 +753,9 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
             </button>
           </div>
 
-          {/* TOP — offer deck (compact — hand gets the freed critical-strip space) */}
+          {/* TOP — offer deck tall enough for ~2 full thin cards */}
           <div style={{
-            ...FR, padding: "6px 8px", flex: "0 1 auto", minHeight: 64, maxHeight: "34%", overflowY: "auto",
+            ...FR, padding: "6px 8px", flex: "0 1 auto", minHeight: 220, maxHeight: "48%", overflowY: "auto",
           }}>
             <div style={{
               display: "flex", alignItems: "baseline", justifyContent: "space-between",
