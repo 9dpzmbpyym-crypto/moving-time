@@ -184,13 +184,13 @@
     },
     "claude": {
       "status": "AVAILABLE",
-      "spent": "unknown; limit that paused the Jul 10-11 pass has reset (Fable active again Jul 11)",
-      "reset": "unknown; ask Eloisa for current meter",
+      "spent": "~44% since last reset (Eloisa, Jul 11 evening)",
+      "reset": "unknown; ask Eloisa",
       "models": [
         "Fable 5",
         "Opus 4.8"
       ],
-      "note": "Fable resumed Jul 11 on claude/team-onboarding-b0c4c9. Resume trail (fable-resume-note.md) largely reconciled in the Jul 11 review session."
+      "note": "Heavy Jul 11 design/review day. Route verifies to Sonnet sub-agents; keep Fable/Opus passes short and scoped."
     },
     "codex": {
       "status": "AVAILABLE",
