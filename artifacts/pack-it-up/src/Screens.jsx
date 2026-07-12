@@ -293,9 +293,9 @@ export function VerticalTaskCard({
           }}>B</div>
         )}
         <BubblePips filled={effort} centers={V_PIP.effort} sizePct={V_PIP.size} />
-        {/* Title — expanded frame (art +22px); fill painted box */}
+        {/* Title — inset from painted frame (annotation padding) */}
         <div style={{
-          position: "absolute", left: "11%", right: "11%", top: "21.5%", height: "18%",
+          position: "absolute", left: "14%", right: "14%", top: "24%", height: "13%",
           color: "#1A1008", textAlign: "left", overflow: "hidden",
           display: "flex", alignItems: "center",
           fontFamily: LB.fontFamily, fontWeight: 700,
