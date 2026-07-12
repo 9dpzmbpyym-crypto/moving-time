@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-12T22:14:29.571Z",
+  "last_updated": "2026-07-12T22:33:10.901Z",
   "rules": {
     "read_before_work": true,
     "write_before_editing": true,
@@ -72,7 +72,7 @@
       "role": "Codex Builder / Implementation Engineer",
       "thinking": "high/max",
       "status": "IDLE",
-      "branch": "codex-luna-paper-countdown",
+      "branch": "codex-luna-apply-layout",
       "working_on": null,
       "files_locked": [],
       "systems_locked": [],
@@ -81,7 +81,7 @@
       "rate_limited": false,
       "cooldown_until": null,
       "handoff_needed": null,
-      "last_seen": "2026-07-12T22:14:29.571Z",
+      "last_seen": "2026-07-12T22:33:10.901Z",
       "expires_at": null,
       "notes": "May work only from approved scoped implementation tickets. Never commits/merges unless explicitly allowed by the policy."
     },

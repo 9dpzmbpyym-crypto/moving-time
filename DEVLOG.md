@@ -10,6 +10,7 @@ Covers **July 5–10, 2026**. Combines:
 ---
 
 ## 2026-07-12 — [Codex / GPT-5]
+- [Luna] Promoted Eloisa's final `/?ui=1` JSON into the production Body Board, apartment HUD, and Overview defaults (`dateY: 0` from the final repeated copy).
 - [Luna] Expanded Body paper-content-top editing to 45%, removed the selected-paper plus badge, and restored an explicit `N DAYS LEFT` line beneath apartment time/date.
 - Second screenshot pass: smaller Psychiatry/Dentist markers, paper lowered over the feet, Overview made viewport-filling without scroll, and Overview/apartment text placement refined.
 - Added `/?ui=1` live layout editor with Body Board, Apartment, and Overview tabs plus persisted drafts, reset, JSON export, and paper-content X control; shortened nav labels to Bath/Dining/Living.
