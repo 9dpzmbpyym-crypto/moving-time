@@ -180,13 +180,13 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
         }}>
           {task?.title || ""}
         </div>
-        {/* Date values sit on the TARGET / LATEST underlines in the footer */}
+        {/* Date values sit on the TARGET / LATEST underlines — keep clear of the dashed rail */}
         <div style={{
-          position: "absolute", left: "19%", top: "71%", width: "10%",
+          position: "absolute", left: "19%", top: "75.5%", width: "10%",
           color: "#1A1008", fontSize: 9, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
         }}>{fmtCardDate(task?.targetDate || task?.due)}</div>
         <div style={{
-          position: "absolute", left: "48%", top: "71%", width: "10%",
+          position: "absolute", left: "48%", top: "75.5%", width: "10%",
           color: "#1A1008", fontSize: 9, lineHeight: 1, overflow: "hidden", whiteSpace: "nowrap", ...LB,
         }}>{fmtCardDate(task?.latestDate)}</div>
         <BubblePips filled={effort} centers={H_PIP.effort} sizePct={H_PIP.size} />
@@ -628,20 +628,21 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
   const focus = picks.find((t) => t.id === focusId) || null;
 
   /** Casino-dealer spread: fill left→right, mild arc, stay on-screen. */
+  const handCardW = 112;
   const fanLayout = (n, i, width) => {
-    const cardW = 78;
+    const cardW = handCardW;
     const pad = 4;
     const avail = Math.max(width - pad * 2, cardW);
     if (n <= 1) return { left: pad, rot: -3, lift: 0 };
     const maxTravel = avail - cardW;
-    const step = Math.max(28, Math.min(62, maxTravel / (n - 1)));
+    const step = Math.max(32, Math.min(72, maxTravel / (n - 1)));
     const left = pad + i * step;
     const t = i / (n - 1);
     const rot = -8 + t * 16;
     const lift = Math.sin(t * Math.PI) * 6;
     return { left, rot, lift };
   };
-  const handCardH = Math.round(78 * (487 / 290));
+  const handCardH = Math.round(handCardW * (491 / 287));
 
   return (
     <Screen
@@ -771,7 +772,7 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
                   <VerticalTaskCard
                     key={t.id}
                     task={t}
-                    width={78}
+                    width={handCardW}
                     bound={!!t.bound}
                     selected={on}
                     onClick={() => setFocusId(on ? null : t.id)}
