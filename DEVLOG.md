@@ -9,6 +9,13 @@ Covers **July 5–10, 2026**. Combines:
 
 ---
 
+## 2026-07-12 — [Claude / Opus 4.8 + Fable 5] UI redesign from mockups + fixes
+- 4 screens recreated from Eloisa's mockups (sliced UI sheets): Overview/Main menu, Command Board chrome (segmented energy control), Apartment HUD (wood/brass), Body Board — merged to main
+- Fix pass: white boxes (de-matte + button-default-bg → backgroundColor:transparent), text overflow (apartment HUD room names/coins/days-left, Overview footer+header box-sizing bug), Body Board (bigger figure, legs behind note, note over legs, OB/GYN z-index), centered nav room names
+- Same cycle earlier: Parts 1-5 (fan/board layout, perf patch, urgency engine + effort deal), procedural calendar, asset reorg, scheduler adoption
+- Deferred: Part 7 (task↔gameplay wiring — packing↔task, health↔Shirley) still stashed; needs a fresh run
+- Session: docs/sessions/2026-07-12-claude-ui-redesign-overnight.md
+
 ## 2026-07-11 — [Claude / Fable 5] Scheduler adoption ruling
 - Adopted ChatGPT's full scheduler spec with 4 binding amendments (editable dates via existing Ledger editor, explainable bindings, tone guard, absolute save protection) — `docs/design/scheduler-adoption.md`
 - Re-cut to Eloisa's bar (usable tonight/tomorrow): engine on existing board first, presentation after; ticket atop FINISH_PLAN; paste-ready Codex prompt in `docs/inbox/handoff-codex-scheduler.md`

@@ -1,10 +1,10 @@
 # Latest handoff
 
-→ **`docs/sessions/2026-07-12-claude-ui-redesign-overnight.md`** (Claude — overnight UI redesign on branch `claude/ui-redesign-overnight`; 4 screens from mockups, needs visual review; Part 7 wiring still queued)
+→ **`docs/sessions/2026-07-12-claude-ui-redesign-overnight.md`** (Claude — full UI redesign from mockups + fix passes; all merged to main)
 
-**main** = deployable (Parts 1-5 + calendar + asset reorg). **Branch** = 4 redesigned screens (Overview / Command Board chrome / Apartment HUD / Body Board), build-green, review before merge. Stretchy + task cards intentionally untouched.
+**main = live-ready.** Four screens rebuilt from mockups (Overview, Command Board chrome, Apartment HUD, Body Board) + all reported fixes (white boxes, text overflow, body-board proportions, centered room names). Stretchy + task cards intentionally untouched. Deploy is Eloisa's (`npx vercel --prod` / dashboard).
 
-**Next:** review + merge the UI branch, then Part 7 productivity wiring (packing↔task, health↔Shirley) — fresh run, after the branch merges. Account limit resets ~3:30pm UTC.
+**Next up:** **Part 7 — task↔gameplay wiring** (packing/selling auto-completes the bound task; health tasks drive the Health screen + share Shirley's flow). Spec: `docs/inbox/chat-gpt-connecting-tasks-to-gameplay-suggestions.md`. A partial attempt sits in `git stash` ("part7-wip-incomplete") — recommend a FRESH run. Plus any small Body-Board fine-tuning from a screenshot.
 
 ---
 *Session reports live in `docs/sessions/`; see `docs/ai-team/end-here.md`.*
