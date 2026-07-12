@@ -31,10 +31,7 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 - Binding: save protection absolute (never wipe, backup before migration, branch-only, report per spec §21 — prod push is Eloisa's) · tone guard (in-world stamps, fumes = quieter) · fallback = ship commits 1–2 alone
 - Call system from the pressure/calls note = LATER (Sal/Vivian trigger layer, after scheduler)
 
-### Task card overlay pixel-match — [codex] (from Cursor close-out)
-- [ ] **[codex]** Make live Command Board thin + full cards match `/？cards=1` (outlines hidden). Shared source of truth: `CARD_OVERLAY` in `Screens.jsx`. Prompt in `docs/sessions/2026-07-11-cursor-task-card-overlays.md`. Pitfalls: no broken CSS-scale clip; keep VerticalTaskCard minWidth clamp; don’t touch full-card footer art.
-
-### Task card overlay pixel-match — [codex] (from Cursor close-out)
+### Task card overlay pixel-match — [codex] (LANDED)
 - [x] **[codex]** Make live Command Board thin + full cards match `/？cards=1` (outlines hidden). Shared source of truth: `CARD_OVERLAY` in `Screens.jsx`. Prompt in `docs/sessions/2026-07-11-cursor-task-card-overlays.md`. Pitfalls: no broken CSS-scale clip; keep VerticalTaskCard minWidth clamp; don’t touch full-card footer art.
 - Acceptance: Eloisa side-by-side can’t spot obvious drift; apartment fan stays ~56px.
 
