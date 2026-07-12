@@ -233,7 +233,7 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
           color: "#1A1008", textAlign: "left", overflow: "hidden",
           display: "flex", alignItems: "center", ...LB,
         }}>
-          <FitText text={task?.title || ""} maxPx={13} minPx={6} style={{ fontWeight: 700, letterSpacing: "0.5px", lineHeight: 1.1 }} />
+          <FitText text={task?.title || ""} maxPx={12} minPx={6} style={{ fontWeight: 700, letterSpacing: "0.5px", lineHeight: 1.1 }} />
         </div>
         {/* Date values — wide enough not to clip "Jul 11" */}
         <div style={{
