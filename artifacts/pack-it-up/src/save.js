@@ -90,8 +90,9 @@ export function writeSave(partial) {
     const payload = {
       v: SAVE_VERSION,
       savedAt: Date.now(),
-      objState: partial.objState || {},
-      contentsState: partial.contentsState || {},
+      // Persist only touched flags — load re-expands via mergeFlagMap defaults.
+      objState: pruneFlagMap(partial.objState),
+      contentsState: pruneFlagMap(partial.contentsState),
       coins: Math.max(0, Number(partial.coins) || 0),
       minutes: Math.max(0, Number(partial.minutes) || 0),
       tasks: Array.isArray(partial.tasks) ? partial.tasks : [],
@@ -228,6 +229,25 @@ export function mergeTasks(initial, savedTasks) {
     }));
   }
   return merged;
+}
+
+/**
+ * Drop all-default (untouched) flag entries before persisting. Load rebuilds the
+ * full map with mergeFlagMap(defaults, saved) — every object/item key exists in
+ * the code-side defaults — so an absent entry restores as EMPTY_FLAGS. Her save
+ * carried a flag object for every object AND every inventory item (~400, ~90%
+ * all-false); this keeps only the ones she actually touched.
+ */
+export function pruneFlagMap(map) {
+  if (!map || typeof map !== "object") return {};
+  const out = {};
+  for (const [key, v] of Object.entries(map)) {
+    if (v && typeof v === "object" &&
+        (v.packed || v.sold || v.donated || v.buyerFound || (Number(v.soldFor) || 0) > 0)) {
+      out[key] = sanitizeFlags(v);
+    }
+  }
+  return out;
 }
 
 export function clampCoins(n) {
