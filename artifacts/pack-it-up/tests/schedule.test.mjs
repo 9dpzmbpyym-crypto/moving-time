@@ -318,13 +318,23 @@ test("dynamic quota reserves future unavailable work without offering it today",
   assert.ok(!deal.offerTaskIds.includes("future"));
 });
 
-test("Fumes binds whole C3 cards and permits quota overshoot", () => {
+test("Fumes does NOT force-bind future crit-3; it offers it instead", () => {
+  // A crit-3 whose deadline is days away must not be pulled into today's floor.
   const tasks = [mkTask({ id: "heavy", criticality: 3, effort: 3, latestDate: "2026-07-31" })];
   const deal = dealDailyHand(tasks, "fumes", d("2026-07-29"));
-  assert.equal(deal.dailyQuota, 1);
-  assert.deepEqual(deal.boundTaskIds, ["heavy"]);
-  assert.equal(deal.boundEffort, 3);
-  assert.deepEqual(deal.offerTaskIds, []);
+  assert.deepEqual(deal.boundTaskIds, []);        // not date-forced on Jul 29
+  assert.equal(deal.requiredOptionalEffort, 0);   // fumes floor requires no optional
+  assert.ok(deal.offerTaskIds.includes("heavy")); // but fumes still offers it to draw
+});
+
+test("Only date-forced tasks bind (exact-date-today / past-latest real deadline)", () => {
+  const exact = mkTask({ id: "exact", criticality: 2, effort: 1, exactDate: "2026-07-29" });
+  const past = mkTask({ id: "past", criticality: 3, effort: 1, latestDate: "2026-07-20" });
+  const softPast = mkTask({ id: "soft", criticality: 1, effort: 1, latestDate: "2026-07-20", selfTarget: true });
+  const deal = dealDailyHand([exact, past, softPast], "steady", d("2026-07-29"));
+  assert.ok(deal.boundTaskIds.includes("exact"));
+  assert.ok(deal.boundTaskIds.includes("past"));
+  assert.ok(!deal.boundTaskIds.includes("soft"));  // self-imposed past-latest never binds
 });
 
 test("Full Steam exposes optional work that Steady excludes", () => {

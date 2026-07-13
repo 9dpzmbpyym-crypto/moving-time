@@ -341,10 +341,19 @@ function isActionable(task, today, allTasks) {
     .includes(taskScheduleStatus(task, today, allTasks));
 }
 
+/** QUOTA eligibility — how much effort each tier's target represents.
+ *  fumes = crit-3 floor · steady = crit ≥ 2 · full = everything before the move. */
 function tierEligible(task, tier) {
   if (tier === "fumes") return task.criticality === 3;
-  if (tier === "steady") return task.criticality >= 2;
+  if (tier === "steady") return (task.criticality || 1) >= 2;
   return finalDeadline(task) <= MOVE_DATE;
+}
+
+/** OFFER-pool eligibility — what the player may draw/swap on a given energy.
+ *  Looser than the quota tier so a fumes day still has real near-term cards. */
+function offerEligible(task, tier) {
+  if (tier === "full") return finalDeadline(task) <= MOVE_DATE;
+  return (task.criticality || 1) >= 2; // fumes + steady both offer important work
 }
 
 function usableDays(todayK, deadline = MOVE_DATE) {
@@ -387,24 +396,26 @@ export function dealDailyHand(tasks, energy = "steady", today = new Date()) {
   const openTasks = normalizeTasks(tasks).filter(isOpen);
   const ranked = [...openTasks].sort((a, b) => compareTaskUrgency(a, b, today));
   const quotas = calculateTierQuotas(openTasks, today);
-  const bound = ranked.filter((t) => t.exactDate === todayK);
+  // Bound = date-forced ONLY (isBoundToday: exact-date today, past-latest real
+  // non-selfTarget deadlines, daily-recurrence). We no longer fill bound with
+  // ranked crit-3 until the fumes quota — that pulled future (Jul-27+) operational
+  // cards into today. The quota is a "how much to select" target, not a binder.
+  const bound = ranked.filter((t) => isBoundToday(t, today, openTasks));
   const boundSet = new Set(bound.map((t) => t.id));
-  let boundEffort = bound.reduce((sum, t) => sum + effortOf(t), 0);
-  for (const task of ranked) {
-    if (boundEffort >= quotas.fumes) break;
-    if (task.criticality !== 3 || boundSet.has(task.id) || !isActionable(task, today, openTasks)) continue;
-    bound.push(task);
-    boundSet.add(task.id);
-    boundEffort += effortOf(task);
-  }
-  const eligiblePool = energy === "fumes" ? [] : ranked.filter((t) => (
-    !boundSet.has(t.id) && isActionable(t, today, openTasks) && tierEligible(t, energy)
+  const boundEffort = bound.reduce((sum, t) => sum + effortOf(t), 0);
+  // Offer pile: ranked, actionable (isActionable already drops blocked-by-deps,
+  // unavailable, future-exactDate, done/archived), non-bound, tier-eligible.
+  // Every tier gets a pool now — including fumes (was hard-set to []).
+  const eligiblePool = ranked.filter((t) => (
+    !boundSet.has(t.id) && isActionable(t, today, openTasks) && offerEligible(t, energy)
   ));
-  const target = quotas[energy] ?? quotas.steady;
+  // fumes target = just the date-forced floor (require 0 optional; offers are
+  // voluntary). steady/full use their computed effort quotas.
+  const target = energy === "fumes" ? boundEffort : (quotas[energy] ?? quotas.steady);
   const requiredOptionalEffort = Math.max(0, target - boundEffort);
   const poolLimit = energy === "full"
     ? Math.max(8, requiredOptionalEffort * 3)
-    : Math.max(4, requiredOptionalEffort * 2);
+    : Math.max(6, requiredOptionalEffort * 2); // fumes/steady still get 6+ to draw/swap
   const offerList = eligiblePool.slice(0, poolLimit);
   const effortById = {};
   for (const t of [...bound, ...offerList]) effortById[t.id] = effortOf(t);
