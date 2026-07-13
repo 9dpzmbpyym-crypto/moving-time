@@ -5,7 +5,7 @@ import {
   resolveTaskDestination,
   taskBindingSatisfied,
 } from "../src/taskBindings.js";
-import { makeQuickTask } from "../src/tasks.js";
+import { makeQuickTask, isTaskDateLocked, scheduleDatesForLedger } from "../src/tasks.js";
 import { mergeTasks } from "../src/save.js";
 
 const itemTask = {
@@ -63,8 +63,24 @@ assert.deepEqual(canonical.map((task) => task.id), ["kept"], "source defaults ab
 assert.equal(canonical[0].title, "Mobile title", "mobile title remains canonical");
 assert.equal(canonical[0].category, "admin", "mobile lane remains canonical");
 assert.equal(canonical[0].targetDate, "2026-07-25", "mobile dueDate drives scheduler target");
-assert.equal(canonical[0].latestDate, "2026-07-25", "stale latestDate cannot precede mobile dueDate");
+assert.equal(canonical[0].latestDate, "2026-07-28", "pre-Jul-27 tasks receive a three-day latest window");
 assert.equal(canonical[0].availableFrom, "2026-07-25", "availability cannot open after the canonical due date");
 assert.equal(canonical[0].binding?.trigger, "removed", "code wiring enriches a saved task without replacing mobile edits");
+
+assert.deepEqual(scheduleDatesForLedger({ category: "move" }, "2026-07-20"), {
+  targetDate: "2026-07-20", latestDate: "2026-07-23", dueEnd: "2026-07-23",
+});
+assert.deepEqual(scheduleDatesForLedger({ category: "housing" }, "2026-07-27"), {
+  targetDate: "2026-07-27", latestDate: "2026-07-30", dueEnd: "2026-07-30",
+});
+assert.deepEqual(scheduleDatesForLedger({ category: "job", selfTarget: false }, "2026-07-20"), {
+  targetDate: "2026-07-15", latestDate: "2026-07-20", dueEnd: "2026-07-20",
+});
+assert.deepEqual(scheduleDatesForLedger({ category: "job", selfTarget: true }, "2026-07-20"), {
+  targetDate: "2026-07-20", latestDate: "2026-07-25", dueEnd: "2026-07-25",
+});
+assert.equal(isTaskDateLocked({ id: "w_flight" }), true, "flight dates are locked");
+assert.equal(isTaskDateLocked({ kind: "attend" }), true, "recorded appointment dates are locked");
+assert.equal(isTaskDateLocked({ id: "m_load_main" }), true, "U-Box operation dates are locked");
 
 console.log("task binding transitions passed");

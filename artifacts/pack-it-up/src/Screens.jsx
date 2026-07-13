@@ -59,6 +59,7 @@ import {
   PRESSURE_LABELS, PRESSURE_COLORS,
   doorForTask, makeQuickTask, refreshDailyHousingTasks,
   tasksAfterBooking, tasksAfterAttend,
+  isTaskDateLocked, scheduleDatesForLedger,
 } from "./tasks.js";
 import {
   ensureDailyDeal, handTasks, offerTasks, dealProgress, toggleDealPick, taskStatus,
@@ -93,6 +94,7 @@ import {
   completeTaskFromEvent,
   resolveTaskDestination,
   isWorldBoundTask,
+  normalizeTaskBinding,
 } from "./taskBindings.js";
 import {
   SESSION_GOALS,
@@ -1303,6 +1305,7 @@ function TaskBindingFields({ value, onChange, fieldStyle }) {
   const binding = value || EMPTY_TASK_BINDING;
   const targets = binding.feature ? targetOptionsForFeature(binding.feature) : [];
   const triggers = binding.feature ? (COMPLETION_TRIGGER_OPTIONS[binding.feature] || []) : [];
+  const targetIsKnown = targets.some((option) => optionValue(option) === binding.target);
   const update = (patch) => onChange({ ...binding, ...patch });
   const selectStyle = { ...fieldStyle, marginBottom: 0, minWidth: 0 };
   return (
@@ -1318,6 +1321,8 @@ function TaskBindingFields({ value, onChange, fieldStyle }) {
             update({
               feature,
               target: "",
+              targets: undefined,
+              aggregate: undefined,
               trigger: optionValue(featureTriggers[0] || ""),
               resultStatus: feature ? "done" : "",
             });
@@ -1329,22 +1334,19 @@ function TaskBindingFields({ value, onChange, fieldStyle }) {
             <option key={optionValue(option)} value={optionValue(option)}>{optionLabel(option)}</option>
           ))}
         </select>
-        <div style={{ minWidth: 0 }}>
-        <input
+        <select
           aria-label="Game target"
-          list={`task-targets-${binding.feature || "none"}`}
-          value={binding.target}
+          value={binding.target ? (targetIsKnown ? binding.target : "__custom__") : ""}
           disabled={!binding.feature}
-          placeholder={binding.feature === "apartment_item" ? "room:item ID" : "Target"}
-          onChange={(e) => update({ target: e.target.value })}
-          style={{ ...selectStyle, width: "100%", boxSizing: "border-box", opacity: binding.feature ? 1 : 0.55 }}
-        />
-        <datalist id={`task-targets-${binding.feature || "none"}`}>
+          onChange={(e) => update({ target: e.target.value === "__custom__" ? "custom:" : e.target.value, targets: undefined, aggregate: undefined })}
+          style={{ ...selectStyle, opacity: binding.feature ? 1 : 0.55 }}
+        >
+          <option value="">Target</option>
           {targets.map((option) => (
             <option key={optionValue(option)} value={optionValue(option)}>{optionLabel(option)}</option>
           ))}
-        </datalist>
-        </div>
+          <option value="__custom__">Custom ID…</option>
+        </select>
         <select
           aria-label="Completion trigger"
           value={binding.trigger}
@@ -1370,6 +1372,15 @@ function TaskBindingFields({ value, onChange, fieldStyle }) {
           ))}
         </select>
       </div>
+      {binding.feature && (binding.target?.startsWith("custom:") || (binding.target && !targetIsKnown)) && (
+        <input
+          aria-label="Custom game target ID"
+          value={binding.target.startsWith("custom:") ? binding.target.slice("custom:".length) : binding.target}
+          placeholder={binding.feature === "apartment_item" ? "room:item_id" : "Custom target ID"}
+          onChange={(e) => update({ target: `custom:${e.target.value}`, targets: undefined, aggregate: undefined })}
+          style={{ ...fieldStyle, marginTop: 5, marginBottom: 0 }}
+        />
+      )}
     </div>
   );
 }
@@ -1383,7 +1394,8 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
   const [bindingDraft, setBindingDraft] = useState(EMPTY_TASK_BINDING);
   const [editId, setEditId] = useState(null);
   const [editDraft, setEditDraft] = useState({
-    title: "", due: "", dueDate: "", effort: 1, category: "housing", status: "pending",
+    title: "", due: "", dueDate: "", targetDate: "", latestDate: "",
+    effort: 1, category: "housing", status: "pending", selfTarget: false, scheduleOverride: false,
     binding: EMPTY_TASK_BINDING,
   });
   const rows = tasks
@@ -1419,15 +1431,21 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
     if (editId === id) setEditId(null);
   };
   const beginEdit = (t) => {
+    const calculated = t.dueDate ? scheduleDatesForLedger(t, t.dueDate) : null;
+    const normalizedBinding = normalizeTaskBinding(t.binding);
     setEditId(t.id);
     setEditDraft({
       title: t.title || "",
       due: t.due || "",
       dueDate: t.dueDate || "",
+      targetDate: calculated?.targetDate || t.targetDate || "",
+      latestDate: calculated?.latestDate || t.latestDate || t.dueEnd || "",
+      scheduleOverride: !!t.scheduleOverride,
       effort: t.effort || 1,
       category: t.category || lane,
       status: t.status || "pending",
-      binding: { ...EMPTY_TASK_BINDING, ...(t.binding || {}) },
+      selfTarget: !!t.selfTarget,
+      binding: { ...EMPTY_TASK_BINDING, ...(t.binding || {}), ...(normalizedBinding || {}) },
     });
   };
   const saveEdit = () => {
@@ -1439,17 +1457,20 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
     setTasks((ts) => refreshDailyHousingTasks(
       ts.map((t) => {
         if (t.id !== editId) return t;
+        const dateLocked = isTaskDateLocked(t);
         // Ledger dueDate is the player's date — keep schedule fields in sync so
         // Vercel/local edits actually drive the binder (never wipe other save fields).
         const next = {
           ...t,
           title,
-          due: editDraft.due.trim(),
-          dueDate,
+          due: dateLocked ? t.due : editDraft.due.trim(),
+          dueDate: dateLocked ? t.dueDate : dueDate,
           effort: Math.min(3, Math.max(1, Number(editDraft.effort) || 1)),
           category: cat,
           status: editDraft.status === "done" ? "done" : "pending",
+          selfTarget: !!editDraft.selfTarget,
           binding: editDraft.binding?.feature ? { ...editDraft.binding } : null,
+          scheduleOverride: !!editDraft.scheduleOverride,
         };
         if (next.binding?.feature === "health_zone" || next.binding?.feature === "health_appointment") {
           next.zone = next.binding.target;
@@ -1458,16 +1479,12 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
           ? "book"
           : (next.kind === "book" ? null : next.kind);
         next.completionMode = next.binding ? "world" : "manual";
-        if (dueDate && /^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
-          next.targetDate = dueDate;
-          const prevLatest = t.latestDate || t.dueEnd || null;
-          if (!prevLatest || prevLatest < dueDate) {
-            next.latestDate = dueDate;
-            next.dueEnd = dueDate;
-          } else {
-            next.latestDate = prevLatest;
-            if (t.dueEnd) next.dueEnd = t.dueEnd;
-          }
+        if (!dateLocked && dueDate && /^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+          const calculated = scheduleDatesForLedger(next, dueDate);
+          const targetDate = /^\d{4}-\d{2}-\d{2}$/.test(editDraft.targetDate) ? editDraft.targetDate : calculated.targetDate;
+          const requestedLatest = /^\d{4}-\d{2}-\d{2}$/.test(editDraft.latestDate) ? editDraft.latestDate : calculated.latestDate;
+          const latestDate = requestedLatest < targetDate ? targetDate : requestedLatest;
+          Object.assign(next, { targetDate, latestDate, dueEnd: latestDate });
         }
         return next;
       })
@@ -1558,12 +1575,37 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
       {rows.map((t) => {
         const open = isOpen(t);
         if (editId === t.id) {
+          const dateLocked = isTaskDateLocked(t);
+          const datePreview = !dateLocked && /^\d{4}-\d{2}-\d{2}$/.test(editDraft.dueDate)
+            ? scheduleDatesForLedger({ ...t, category: editDraft.category, selfTarget: editDraft.selfTarget }, editDraft.dueDate)
+            : null;
           return (
             <div key={t.id} style={{ ...FR, padding: 10, marginBottom: 8 }}>
               <div style={{ color: "#FFD97A", fontSize: 10, marginBottom: 6, ...LB }}>Edit card</div>
               <input value={editDraft.title} onChange={(e) => setEditDraft((d) => ({ ...d, title: e.target.value }))} style={field} />
-              <input value={editDraft.due} onChange={(e) => setEditDraft((d) => ({ ...d, due: e.target.value }))} placeholder="Due label (e.g. Jul 15)" style={field} />
-              <input value={editDraft.dueDate} onChange={(e) => setEditDraft((d) => ({ ...d, dueDate: e.target.value }))} placeholder="dueDate YYYY-MM-DD" style={field} />
+              <input disabled={dateLocked} value={editDraft.due} onChange={(e) => setEditDraft((d) => ({ ...d, due: e.target.value }))} placeholder="Due label (e.g. Jul 15)" style={{ ...field, opacity: dateLocked ? 0.55 : 1 }} />
+              <input disabled={dateLocked} type="date" value={editDraft.dueDate} onChange={(e) => setEditDraft((d) => {
+                const dueDate = e.target.value;
+                const calculated = scheduleDatesForLedger({ ...t, category: d.category, selfTarget: d.selfTarget }, dueDate);
+                return { ...d, dueDate, targetDate: calculated.targetDate || "", latestDate: calculated.latestDate || "", scheduleOverride: false };
+              })} style={{ ...field, opacity: dateLocked ? 0.55 : 1 }} />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 5, marginBottom: 6 }}>
+                <label style={{ color: "#8A7350", fontSize: 8, ...LB }}>
+                  TARGET
+                  <input disabled={dateLocked} type="date" value={editDraft.targetDate} onChange={(e) => setEditDraft((d) => ({ ...d, targetDate: e.target.value, scheduleOverride: true }))} style={{ ...field, margin: "3px 0 0", opacity: dateLocked ? 0.55 : 1 }} />
+                </label>
+                <label style={{ color: "#8A7350", fontSize: 8, ...LB }}>
+                  LATEST
+                  <input disabled={dateLocked} type="date" value={editDraft.latestDate} onChange={(e) => setEditDraft((d) => ({ ...d, latestDate: e.target.value, scheduleOverride: true }))} style={{ ...field, margin: "3px 0 0", opacity: dateLocked ? 0.55 : 1 }} />
+                </label>
+              </div>
+              <div style={{ color: dateLocked ? "#D9A33C" : "#8A7350", fontSize: 9, margin: "-2px 0 7px", ...LB }}>
+                {dateLocked
+                  ? `Fixed schedule · target ${t.targetDate || t.dueDate || "—"} · latest ${t.latestDate || t.dueEnd || t.dueDate || "—"}`
+                  : datePreview
+                    ? `Default rule: target ${datePreview.targetDate} · latest ${datePreview.latestDate}. You can override either above.`
+                    : "Choose a date to calculate target and latest."}
+              </div>
               <TaskBindingFields
                 value={editDraft.binding}
                 onChange={(binding) => setEditDraft((d) => ({ ...d, binding }))}
@@ -1571,7 +1613,10 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
               />
               <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>
                 {LEDGER_LANES.map((l) => (
-                  <button key={l.id} type="button" onClick={() => setEditDraft((d) => ({ ...d, category: l.id }))} style={{
+                  <button key={l.id} type="button" onClick={() => setEditDraft((d) => {
+                    const calculated = scheduleDatesForLedger({ ...t, category: l.id, selfTarget: d.selfTarget }, d.dueDate);
+                    return { ...d, category: l.id, targetDate: calculated.targetDate || d.targetDate, latestDate: calculated.latestDate || d.latestDate, scheduleOverride: false };
+                  })} style={{
                     padding: "4px 6px", fontSize: 9, cursor: "pointer",
                     background: editDraft.category === l.id ? "#C9942E" : "#241509",
                     color: editDraft.category === l.id ? "#120A04" : "#C9B896",
@@ -1579,6 +1624,16 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
                   }}>{l.label}</button>
                 ))}
               </div>
+              {editDraft.category === "job" && (
+                <label style={{ display: "flex", alignItems: "center", gap: 7, color: "#C9B896", fontSize: 9, marginBottom: 7, ...LB }}>
+                  <input type="checkbox" checked={!!editDraft.selfTarget} onChange={(e) => setEditDraft((d) => {
+                    const selfTarget = e.target.checked;
+                    const calculated = scheduleDatesForLedger({ ...t, category: "job", selfTarget }, d.dueDate);
+                    return { ...d, selfTarget, targetDate: calculated.targetDate || d.targetDate, latestDate: calculated.latestDate || d.latestDate, scheduleOverride: false };
+                  })} />
+                  Self-imposed date (latest becomes +5 days)
+                </label>
+              )}
               <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
                 {[1, 2, 3].map((n) => (
                   <button key={n} type="button" onClick={() => setEditDraft((d) => ({ ...d, effort: n }))} style={{

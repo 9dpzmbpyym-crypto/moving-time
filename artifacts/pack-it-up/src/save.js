@@ -2,7 +2,7 @@
    bumps can wipe or migrate. Audio volumes live in gameAudio.js
    (`pack-it-up-audio`); this file is packing / coins / tasks / room. */
 
-import { REMOVED_TASK_IDS, FORCE_TASK_CATEGORY } from "./tasks.js";
+import { REMOVED_TASK_IDS, FORCE_TASK_CATEGORY, scheduleDatesForLedger } from "./tasks.js";
 import { normalizeTask } from "./schedule.js";
 
 const SAVE_KEY = "pack-it-up-save";
@@ -139,9 +139,14 @@ export function mergeTasks(initial, savedTasks) {
     // Ledger dueDate is the mobile player's edited date and therefore wins
     // over stale source target/latest fields. Never allow a deadline window
     // or availability gate to end after/before it nonsensically.
-    const targetDate = savedDueDate || s.targetDate || t.targetDate || t.dueDate || null;
-    const rawLatest = s.latestDate || s.dueEnd || t.latestDate || t.dueEnd || targetDate;
-    const latestDate = targetDate && (!rawLatest || rawLatest < targetDate) ? targetDate : rawLatest;
+    const scheduled = savedDueDate && !s.scheduleOverride
+      ? scheduleDatesForLedger({ ...t, ...s, category, selfTarget: !!(s.selfTarget ?? t.selfTarget) }, savedDueDate)
+      : {
+        targetDate: s.targetDate || t.targetDate || t.dueDate || null,
+        latestDate: s.latestDate || s.dueEnd || t.latestDate || t.dueEnd || null,
+        dueEnd: s.dueEnd || t.dueEnd || null,
+      };
+    const { targetDate, latestDate } = scheduled;
     const rawAvailable = s.availableFrom !== undefined ? s.availableFrom : t.availableFrom;
     const availableFrom = targetDate && rawAvailable && rawAvailable > targetDate ? targetDate : rawAvailable;
     return normalizeTask({
@@ -155,7 +160,7 @@ export function mergeTasks(initial, savedTasks) {
         : (typeof s.title === "string" && s.title.trim() ? s.title.trim() : t.title),
       due: t.selfTarget ? t.due : (typeof s.due === "string" ? s.due : t.due),
       dueDate: savedDueDate || (s.dueDate !== undefined ? s.dueDate : t.dueDate),
-      dueEnd: latestDate,
+      dueEnd: scheduled.dueEnd,
       targetDate,
       latestDate,
       exactDate: (s.exactDate || t.exactDate) && savedDueDate
@@ -172,9 +177,10 @@ export function mergeTasks(initial, savedTasks) {
       bookTaskId: s.bookTaskId || t.bookTaskId || null,
       score: typeof s.score === "number" ? s.score : t.score,
       jobId: s.jobId !== undefined && s.jobId !== null ? s.jobId : t.jobId,
-      selfTarget: !!t.selfTarget,
+      selfTarget: s.selfTarget !== undefined ? !!s.selfTarget : !!t.selfTarget,
       estimatedLatest: s.estimatedLatest !== undefined ? !!s.estimatedLatest : !!t.estimatedLatest,
       binding: s.binding || t.binding || null,
+      scheduleOverride: !!s.scheduleOverride,
     });
   });
   for (const s of savedTasks) {
@@ -207,6 +213,7 @@ export function mergeTasks(initial, savedTasks) {
       selfTarget: !!s.selfTarget,
       estimatedLatest: !!s.estimatedLatest,
       binding: s.binding || null,
+      scheduleOverride: !!s.scheduleOverride,
     }));
   }
   return merged;

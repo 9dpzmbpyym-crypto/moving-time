@@ -10,6 +10,56 @@ import { ENERGY_BUDGET } from "./session.js";
 import { taskStatus, urgencyScore } from "./schedule.js";
 
 export const SUBLET_OUTREACH_ID = "h_outreach_daily";
+const LATE_WINDOW_START = "2026-07-27";
+const MOVE_EVE = "2026-07-30";
+const LOCKED_DATE_TASK_IDS = new Set([
+  "w_flight", "c_departure", "h_walkthrough",
+  "m_load1", "m_load_main", "m_ubox_receive", "m_ubox_photo_empty",
+  "m_load_late_value", "m_load_complete", "m_photo_lock", "m_lock_final",
+  "c_vet_attend",
+]);
+
+function shiftISO(iso, days) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso || "")) return null;
+  const [y, m, d] = iso.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d + days));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
+}
+
+/** Dates tied to travel, U-Box operations, walkthroughs, or recorded appointments are fixed. */
+export function isTaskDateLocked(task) {
+  return !!(
+    task?.dateLocked
+    || task?.exactDate
+    || task?.kind === "attend"
+    || LOCKED_DATE_TASK_IDS.has(task?.id)
+  );
+}
+
+/** Convert the one Ledger date into the scheduler's target/latest window. */
+export function scheduleDatesForLedger(task, enteredDate) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(enteredDate || "")) {
+    return { targetDate: null, latestDate: null, dueEnd: null };
+  }
+  if (isTaskDateLocked(task)) {
+    return {
+      targetDate: task.targetDate || task.dueDate || enteredDate,
+      latestDate: task.latestDate || task.dueEnd || task.dueDate || enteredDate,
+      dueEnd: task.latestDate || task.dueEnd || task.dueDate || enteredDate,
+    };
+  }
+  if (task.category === "job") {
+    const targetDate = task.selfTarget ? enteredDate : shiftISO(enteredDate, -5);
+    const latestDate = task.selfTarget ? shiftISO(enteredDate, 5) : enteredDate;
+    return { targetDate, latestDate, dueEnd: latestDate };
+  }
+  if (["move", "admin", "health", "housing"].includes(task.category)) {
+    const proposedLatest = enteredDate < LATE_WINDOW_START ? shiftISO(enteredDate, 3) : MOVE_EVE;
+    const latestDate = proposedLatest < enteredDate ? enteredDate : proposedLatest;
+    return { targetDate: enteredDate, latestDate, dueEnd: latestDate };
+  }
+  return { targetDate: enteredDate, latestDate: enteredDate, dueEnd: enteredDate };
+}
 
 /** Dropped from the live list — prune on save merge so old localStorage can't revive them. */
 export const REMOVED_TASK_IDS = new Set([

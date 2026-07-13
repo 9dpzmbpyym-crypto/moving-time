@@ -74,7 +74,8 @@ export function normalizeTaskBinding(binding) {
   const targets = Array.isArray(binding.targets)
     ? binding.targets.map((target) => String(target || "").trim()).filter(Boolean)
     : [];
-  const target = String(binding.target || targets[0] || "").trim();
+  const rawTarget = String(binding.target || targets[0] || "").trim();
+  const target = rawTarget.startsWith("custom:") ? rawTarget.slice("custom:".length).trim() : rawTarget;
   if (!trigger || !target) return null;
   const resultStatus = TASK_RESULT_OPTIONS.some((option) => option.value === binding.resultStatus)
     ? binding.resultStatus
