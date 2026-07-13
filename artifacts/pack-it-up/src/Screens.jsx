@@ -114,7 +114,7 @@ import {
   PHONE_SFX_AFTER_DUCK_MS,
   onIncomingRingPulse,
 } from "./gameAudio.js";
-import { clearSave } from "./save.js";
+import { clearSave, SAVE_VERSION, suspendSaves } from "./save.js";
 import {
   GAME_FEATURE_OPTIONS,
   targetOptionsForFeature,
@@ -3417,7 +3417,51 @@ function SettingsScreen({ go }) {
   const [improv, setImprov] = useState(shirleyBoot.improv);
   const [t, setT] = useState({ haptics: true, motion: false, bigText: false });
   const [exportState, setExportState] = useState("idle");
+  const [importText, setImportText] = useState("");
+  const [importState, setImportState] = useState("idle");
+  const [importOpen, setImportOpen] = useState(false);
   const flip = (k) => setT((s) => ({ ...s, [k]: !s[k] }));
+
+  /** Restore a save from an exported "Copy canonical mobile save" blob.
+   *  Rebuilds the tasks array from activeTasks (full) + allTaskStatuses
+   *  (lightweight — mergeTasks overlays these onto the code definitions at
+   *  boot), backs up whatever is here now, writes the save, and reloads. */
+  const restoreFromText = () => {
+    try {
+      const data = JSON.parse(importText.trim());
+      const byId = new Map();
+      for (const s of (Array.isArray(data.allTaskStatuses) ? data.allTaskStatuses : [])) {
+        if (s && s.id) byId.set(s.id, { ...s });
+      }
+      for (const tk of (Array.isArray(data.activeTasks) ? data.activeTasks : [])) {
+        if (tk && tk.id) byId.set(tk.id, tk); // full objects win over the status stubs
+      }
+      const tasks = Array.from(byId.values());
+      if (tasks.length === 0) throw new Error("No tasks found in that text.");
+      // Freeze the running app's autosave/pagehide flush FIRST, or it clobbers
+      // the imported save before the reload finishes reading it.
+      suspendSaves();
+      const existing = localStorage.getItem("pack-it-up-save");
+      if (existing) localStorage.setItem("pack-it-up-save-pre-import", existing);
+      const payload = {
+        v: SAVE_VERSION,
+        savedAt: Date.now(),
+        objState: data.objState && typeof data.objState === "object" ? data.objState : {},
+        contentsState: data.contentsState && typeof data.contentsState === "object" ? data.contentsState : {},
+        coins: 0,
+        minutes: 0,
+        tasks,
+        roomIndex: 0,
+        session: data.session && typeof data.session === "object" ? data.session : undefined,
+        appointments: Array.isArray(data.appointments) ? data.appointments : [],
+      };
+      localStorage.setItem("pack-it-up-save", JSON.stringify(payload));
+      setImportState(`✓ Restored ${tasks.length} tasks — reloading…`);
+      setTimeout(() => window.location.reload(), 900);
+    } catch (error) {
+      setImportState(error?.message ? `Couldn't read that: ${error.message}` : "Couldn't read that save text.");
+    }
+  };
   const soonRows = [
     ["haptics", "Haptics"],
     ["motion", "Reduce motion"],
@@ -3572,10 +3616,48 @@ function SettingsScreen({ go }) {
       {exportState !== "idle" && exportState !== "copied" && (
         <div role="alert" style={{ marginTop: 4, color: "#E8A080", fontSize: 10, ...LB }}>{exportState}</div>
       )}
-      <button disabled style={{
-        width: "100%", marginTop: 8, padding: "12px", background: "#241509", color: "#6B563B",
-        border: "3px solid #120A04", fontSize: 12, textAlign: "left", ...LB,
-      }}>Import save — (soon)</button>
+      <button type="button" onClick={() => { setImportOpen((v) => !v); setImportState("idle"); }} style={{
+        width: "100%", marginTop: 8, padding: "12px", background: "#3A2410", color: "#FFD97A",
+        border: "3px solid #120A04", fontSize: 12, textAlign: "left", cursor: "pointer", ...LB,
+      }}>{importOpen ? "Close import" : "Import / restore save…"}</button>
+      {importOpen && (
+        <div style={{ marginTop: 8, padding: 12, ...FR }}>
+          <div style={{ color: "#C9B896", fontSize: 10, marginBottom: 8, lineHeight: 1.5, ...LB }}>
+            Paste a save you copied with “Copy canonical mobile save” (from any device), then Restore.
+            This replaces what’s on this device — the current save is backed up first.
+          </div>
+          <textarea
+            value={importText}
+            onChange={(e) => setImportText(e.target.value)}
+            placeholder="Paste your save JSON here…"
+            spellCheck={false}
+            autoCapitalize="off"
+            autoCorrect="off"
+            style={{
+              width: "100%", boxSizing: "border-box", minHeight: 120, padding: 10, marginBottom: 8,
+              background: "#1A0F06", color: "#F2E4C0", border: "2px solid #120A04", fontSize: 11,
+              fontFamily: "'Courier New', monospace", resize: "vertical",
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              if (!window.confirm("Restore this save? It replaces the tasks and progress on this device (a backup is kept).")) return;
+              restoreFromText();
+            }}
+            disabled={!importText.trim()}
+            style={{
+              width: "100%", padding: "12px", border: "3px solid #120A04", fontSize: 12, ...LB,
+              background: importText.trim() ? "#44695B" : "#241509",
+              color: importText.trim() ? "#F2E4C0" : "#6B563B",
+              cursor: importText.trim() ? "pointer" : "default",
+            }}
+          >Restore save</button>
+          {importState !== "idle" && (
+            <div role="status" style={{ marginTop: 6, color: importState.startsWith("✓") ? "#8FD14F" : "#E8A080", fontSize: 10, ...LB }}>{importState}</div>
+          )}
+        </div>
+      )}
       <button
         type="button"
         onClick={() => {

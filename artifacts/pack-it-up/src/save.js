@@ -13,6 +13,13 @@ export const SAVE_VERSION = 4;
  *  resurrect the wiped progress before reload finishes. */
 let saveSuspended = false;
 
+/** Freeze all future writes until reload. Used before importing a save so the
+ *  still-running app's autosave / pagehide flush cannot clobber what we just
+ *  wrote to localStorage. Irreversible for the session (caller reloads). */
+export function suspendSaves() {
+  saveSuspended = true;
+}
+
 const EMPTY_FLAGS = { packed: false, sold: false, soldFor: 0, donated: false, buyerFound: false };
 
 function sanitizeFlags(raw) {
