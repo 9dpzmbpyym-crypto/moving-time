@@ -1413,7 +1413,7 @@ const LEDGER_SORTS = [
   { id: "due", label: "Due" },
   { id: "crit", label: "Priority" },
   { id: "effort", label: "Effort" },
-  { id: "score", label: "Score" },
+  { id: "score", label: "Fit" },
 ];
 
 function ledgerDueKey(t) {
