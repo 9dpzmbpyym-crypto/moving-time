@@ -71,6 +71,7 @@ import DESK_COUNT_TAB from "./assets/ui_screen_chrome/desk_count_tab.png";
 import DESK_DAILY_PANEL from "./assets/ui_screen_chrome/desk_daily_panel.png";
 import DESK_INBOX_PANEL from "./assets/ui_screen_chrome/desk_inbox_panel.png";
 import DESK_PHYSICAL_STAMP from "./assets/ui_screen_chrome/desk_physical_stamp.png";
+import DESK_PLAQUE from "./assets/ui_screen_chrome/desk_plaque.png";
 import MOVE_ROW from "./assets/items/task_card_assets/horizontal/move_row_card.png";
 import JOB_ROW from "./assets/items/task_card_assets/horizontal/job_row_card.png";
 import ADMIN_ROW from "./assets/items/task_card_assets/horizontal/admin_row_card.png";
@@ -673,7 +674,7 @@ export function RewardToast({ text }) {
   );
 }
 
-function Screen({ title, icon, onBack, children, bg = "#1A1008", subtitle, progress, progressLabel, checklist, compact = false, flush = false, headerPad = 0 }) {
+function Screen({ title, icon, onBack, children, bg = "#1A1008", subtitle, progress, progressLabel, checklist, compact = false, flush = false, headerPad = 0, hideChrome = false, hideBack = false }) {
   const slim = compact || flush;
   return (
     <div style={{
@@ -681,7 +682,7 @@ function Screen({ title, icon, onBack, children, bg = "#1A1008", subtitle, progr
       animation: "screenIn 200ms ease-out", overflow: "hidden",
     }}>
       {screenCss}
-      <div style={{
+      {!hideChrome && <div style={{
         flex: "0 0 auto",
         padding: slim
           ? `calc(env(safe-area-inset-top, 0px) + ${2 + headerPad}px) 6px ${2 + headerPad}px`
@@ -734,11 +735,13 @@ function Screen({ title, icon, onBack, children, bg = "#1A1008", subtitle, progr
         {checklist && !slim && (
           <div style={{ flex: "0 0 auto" }}>{checklist}</div>
         )}
-      </div>
+      </div>}
       <div style={{
         flex: 1, minHeight: 0,
         overflowY: slim ? "hidden" : "auto",
-        padding: flush
+        padding: hideChrome
+          ? `calc(env(safe-area-inset-top, 0px) + 6px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px)`
+          : flush
           ? "0 0 calc(env(safe-area-inset-bottom, 0px) + 4px)"
           : compact
             ? "4px 8px calc(env(safe-area-inset-bottom, 0px) + 8px)"
@@ -746,6 +749,11 @@ function Screen({ title, icon, onBack, children, bg = "#1A1008", subtitle, progr
         display: slim ? "flex" : undefined,
         flexDirection: slim ? "column" : undefined,
       }}>
+        {hideChrome && !hideBack && <button type="button" onClick={onBack} aria-label={`Back from ${title}`} style={{
+          position: "absolute", top: `calc(env(safe-area-inset-top, 0px) + 10px)`, left: 10, zIndex: 20,
+          width: 42, height: 30, border: "2px solid #120A04", background: "#2A1709", color: "#FFD97A",
+          boxShadow: "inset 0 0 0 1px #8A5B24", fontSize: 10, cursor: "pointer", ...LB,
+        }}>â†</button>}
         {children}
       </div>
     </div>
@@ -1557,8 +1565,8 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
     background: "#1A0F06", color: "#F2E4C0", border: "2px solid #4A2E17", fontSize: 12, ...LB,
   };
   return (
-    <Screen title="Ledger" icon="📒" onBack={() => go("board")} subtitle="See-all · Edit · Archive" bg="#2A1A0C">
-      <div aria-hidden="true" style={{ height: 48, margin: "-4px auto 8px", maxWidth: 390, display: "grid", placeItems: "center", background: `url(${LEDGER_HEADER}) center/100% 100% no-repeat`, color: "#FFD97A", fontSize: 16, ...LB }}>LEDGER</div>
+    <Screen title="Ledger" icon="📒" onBack={() => go("board")} bg="#2A1A0C" hideChrome>
+      <div aria-hidden="true" style={{ height: 48, width: "calc(100% - 52px)", margin: "-4px 0 8px 52px", maxWidth: 390, display: "grid", placeItems: "center", background: `url(${LEDGER_HEADER}) center/100% 100% no-repeat`, color: "#FFD97A", fontSize: 16, ...LB }}>LEDGER</div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 }}>
         {LEDGER_LANES.map((l) => (
           <button key={l.id} type="button" onClick={() => { setLane(l.id); setEditId(null); }} style={{
@@ -2489,39 +2497,36 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
       icon="🗂️"
       onBack={() => go("apartment")}
       bg="#2E1D0E"
-      subtitle="Process & file documents"
-      progress={prog.pct}
-      progressLabel={`${prog.done}/${prog.total} goals`}
-      checklist={<ChecklistCard items={prog.items} title="Session" />}
+      hideChrome
+      hideBack
+      flush
     >
       <RewardToast text={rewardToast} />
-      <div style={{ display: "grid", gridTemplateColumns: "1.35fr 1fr", gap: 8, marginBottom: 8 }}>
-        <div style={{ minHeight: 90, padding: "28px 14px 10px", background: `url(${DESK_DAILY_PANEL}) center/100% 100% no-repeat`, color: "#3A2018" }}>
+      <div style={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column", gap: 5 }}>
+      <div style={{ height: 44, flex: "0 0 auto", display: "grid", gridTemplateColumns: "72px 1fr", gap: 8 }}>
+        <button type="button" onClick={() => go("apartment")} style={{ border: 0, background: `url(${LEDGER_CHIP_DARK}) center/100% 100% no-repeat`, color: "#FFD97A", fontSize: 11, ...LB }}>â† Back</button>
+        <div style={{ display: "grid", placeItems: "center", background: `url(${DESK_PLAQUE}) center/100% 100% no-repeat`, color: "#FFD97A", fontSize: 15, ...LB }}>📁 PAPERWORK DESK</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: 7, flex: "0 0 105px" }}>
+        <div style={{ minHeight: 0, padding: "27px 12px 8px", background: `url(${DESK_DAILY_PANEL}) center/100% 100% no-repeat`, color: "#3A2018" }}>
           {prog.items.slice(0, 3).map((it) => <div key={it.id} style={{ fontSize: 9, marginTop: 3, ...LB }}>{it.done ? "☑" : "☐"} {it.label} <span style={{ float: "right" }}>{it.cur}/{it.target}</span></div>)}
         </div>
-        <div style={{ minHeight: 90, padding: "28px 12px 10px", background: `url(${DESK_INBOX_PANEL}) center/100% 100% no-repeat`, color: "#3A2018" }}>
+        <div style={{ minHeight: 0, padding: "27px 11px 8px", background: `url(${DESK_INBOX_PANEL}) center/100% 100% no-repeat`, color: "#3A2018" }}>
           <div style={{ fontSize: 10, ...LB }}>{deskTasks.length} incoming</div>
           <div style={{ fontSize: 9, marginTop: 6, ...LB }}>{deskTasks.filter((task) => task.urgency >= 3).length} urgent · {housingProg.done}/{housingProg.total} contacts</div>
         </div>
       </div>
       <div style={{
         border: "3px solid #120A04", background: "repeating-linear-gradient(0deg, #5A381F 0 14px, #6E452A 14px 16px)",
-        padding: "10px 10px 12px", boxShadow: "inset 0 0 0 2px #3E2413",
+        padding: "5px 7px 7px", boxShadow: "inset 0 0 0 2px #3E2413", flex: 1, minHeight: 0,
+        display: "flex", flexDirection: "column",
       }}>
-        {/* trays */}
-        <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-          {trayBtn("housing", "HOUSING", "#E8C9A0", housingCount)}
-          {trayBtn("admin", "ADMIN", "#B9CEDC", adminCount)}
-          {trayBtn("job", "APPS", "#E9BFB2", jobCount)}
-          {trayBtn("all", "ALL", "#EBDDBA", deskTasks.length)}
-        </div>
-
         <div style={{ color: "#C9B896", fontSize: 10, textAlign: "center", margin: "2px 0 6px", ...LB }}>INCOMING</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 7, marginBottom: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 5, marginBottom: 5, flex: "1 1 190px", minHeight: 150 }}>
           {incomingByCategory.map(({ category, tasks: stack }) => {
             const top = stack[0];
-            return <button key={category} type="button" disabled={!top} onClick={() => top && setInspectId(top.id)} style={{ position: "relative", height: 100, overflow: "hidden", border: 0, padding: 0, background: "transparent", cursor: top ? "pointer" : "default" }}>
-              {top ? <div style={{ transform: "scale(.42)", transformOrigin: "top left", width: "238%" }}><VerticalTaskCard task={top} /></div> : <div style={{ height: 82, border: "2px dashed #5A381F" }} />}
+            return <button key={category} type="button" disabled={!top} onClick={() => top && setInspectId(top.id)} style={{ position: "relative", minHeight: 72, overflow: "hidden", border: 0, padding: 0, background: "transparent", cursor: top ? "pointer" : "default" }}>
+              {top ? <div style={{ transform: "scale(.36)", transformOrigin: "top left", width: "278%" }}><VerticalTaskCard task={top} /></div> : <div style={{ height: "90%", border: "2px dashed #5A381F" }} />}
               <img src={DESK_COUNT_TAB} alt="" style={{ position: "absolute", width: 30, height: 30, top: -2, right: 2 }} />
               <span style={{ position: "absolute", top: 6, right: 12, color: "#241509", fontSize: 9, ...LB }}>{stack.length}</span>
             </button>;
@@ -2529,14 +2534,14 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
         </div>
 
         <div style={{ color: "#C9B896", fontSize: 10, textAlign: "center", margin: "2px 0 6px", ...LB }}>FILED</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 4, marginBottom: 10 }}>
-          {filedByCategory.map(({ category, tasks: stack }, index) => <div key={category} style={{ position: "relative", height: 58, background: PAPER[category] || "#EBDDBA", border: "2px solid #120A04" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 4, marginBottom: 6, flex: "0 0 72px" }}>
+          {filedByCategory.map(({ category, tasks: stack }, index) => <div key={category} style={{ position: "relative", height: 68, background: PAPER[category] || "#EBDDBA", border: "2px solid #120A04" }}>
             <span style={{ position: "absolute", top: 4, left: 4, color: "#3A2018", fontSize: 7, ...LB }}>{TASK_CATEGORIES[category]?.label || category}</span>
             {stack.length > 0 && <img src={[DESK_STAMP_APPROVED, DESK_STAMP_FILED, DESK_STAMP_DONE][index % 3]} alt="" style={{ position: "absolute", width: "90%", left: "5%", bottom: 3 }} />}
           </div>)}
         </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 10 }}>
+        <div style={{ display: "none", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 10 }}>
           <div style={{ position: "relative", width: 64, height: 52, flex: "0 0 auto" }}>
             {[2, 1, 0].map((i) => (
               <div key={i} style={{
@@ -2633,7 +2638,7 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
         </div>
         <div style={{ height: 8 }} />
 
-        <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6 }}>
+        <div style={{ display: "none", gap: 8, overflowX: "auto", paddingBottom: 6 }}>
           {active.map((t, i) => (
             <div key={t.id} style={{ transform: `rotate(${[-2, 1, -1][i]}deg)`, outline: t.id === inspectId ? "3px solid #FFD97A" : "none" }}>
               <DeskCard task={t} small onClick={() => setInspectId(t.id)} />
@@ -2646,19 +2651,16 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
           )}
         </div>
 
-        <div style={{
-          marginTop: 8, minHeight: 210, border: 0, background: `url(${DESK_TRAY}) center/100% 100% no-repeat`,
-          boxShadow: "none", padding: 22,
-          display: "flex", alignItems: "center", justifyContent: "center", position: "relative",
-        }}>
-          {!phonePhase && (
-            <LandlineHotspot
-              onPickUp={pickUpPhone}
-              ringing={incomingRing}
-              rattling={phoneRattling || incomingPulse}
-              showArcs={incomingPulse}
-            />
-          )}
+        <div style={{ display: "grid", gridTemplateColumns: "68px minmax(0, 1fr) 74px", gap: 6, flex: "0 0 clamp(150px, 23dvh, 205px)", minHeight: 0 }}>
+          <div style={{ display: "grid", gridTemplateRows: "1fr 72px", gap: 5, minHeight: 0 }}>
+            <button type="button" onClick={() => resolve("stamp")} disabled={!inspected || !!resolving} aria-label="Stamp selected paper done" style={{ border: 0, opacity: inspected ? 1 : .55, background: `url(${DESK_PHYSICAL_STAMP}) center/contain no-repeat`, cursor: inspected ? "pointer" : "default" }} />
+            <div style={{ border: "2px solid #120A04", background: "#EFE7D2", textAlign: "center", padding: 3 }}>
+              <div style={{ background: "#A3252C", color: "#F2E4C0", fontSize: 7, ...LB }}>{["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"][deskNow.getMonth()]}</div>
+              <div style={{ color: "#221306", fontSize: 18, lineHeight: 1.15, ...LB }}>{deskNow.getDate()}</div>
+              <div style={{ color: "#5A381F", fontSize: 7, ...LB }}>{["SUN","MON","TUE","WED","THU","FRI","SAT"][deskNow.getDay()]}</div>
+            </div>
+          </div>
+          <div style={{ minHeight: 0, border: 0, background: `url(${DESK_TRAY}) center/100% 100% no-repeat`, boxShadow: "none", padding: 18, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
           {phonePhase && (
             <ShirleyCallOverlay
               phase={phonePhase}
@@ -2713,9 +2715,16 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
             }}>{relief}</div>
           )}
         </div>
+          <div style={{ display: "grid", gridTemplateRows: "1fr 64px", gap: 4, minHeight: 0 }}>
+            <div style={{ position: "relative", minHeight: 0 }}>
+              {!phonePhase && <LandlineHotspot onPickUp={pickUpPhone} ringing={incomingRing} rattling={phoneRattling || incomingPulse} showArcs={incomingPulse} />}
+            </div>
+            <button type="button" onClick={pickUpPhone} aria-label="Contacts" style={{ border: 0, cursor: "pointer", background: `url(${DESK_CONTACTS}) center/100% 100% no-repeat` }} />
+          </div>
+        </div>
       </div>
 
-      <div style={{ display: "flex", gap: 5, marginTop: 10 }}>
+      <div style={{ display: "none", gap: 5, marginTop: 10 }}>
         {stampBtn("Approved", "🟢", "stamp", "#F2E4C0")}
         {stampBtn("Needs Info", "🟡", "info", "#FFD97A")}
         {stampBtn("File it", "📁", "file", "#F2E4C0")}
@@ -2727,8 +2736,9 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
           <span style={{ fontSize: 14, lineHeight: 1 }}>↩</span>Back
         </button>
       </div>
-      <div style={{ marginTop: 10, color: "#6B563B", fontSize: 10, textAlign: "center", ...LB }}>
+      <div style={{ display: "none", marginTop: 10, color: "#6B563B", fontSize: 10, textAlign: "center", ...LB }}>
         Approved / File → outbox. Needs Info stays on the desk.
+      </div>
       </div>
     </Screen>
   );
@@ -3223,7 +3233,7 @@ function StretchyScreen({ go, tasks }) {
   const catTasks = tasks.filter((t) => isOpen(t) && t.category === "cat");
   const mood = hearts === 3 ? "loafing contentedly" : hearts === 2 ? "a little watchful" : "needs a quiet corner";
   return (
-    <Screen title="Stretchy" icon="🐈" onBack={() => go("apartment")} subtitle="Orange. Employed as a cat.">
+    <Screen title="Stretchy" icon="🐈" onBack={() => go("apartment")} hideChrome>
       <Panel style={{ display: "flex", gap: 14, alignItems: "center" }}>
         <div style={{
           width: 128, height: 128, flex: "0 0 auto", imageRendering: "pixelated",
@@ -3246,10 +3256,6 @@ function StretchyScreen({ go, tasks }) {
         {catTasks.length ? catTasks.map((task) => <HorizontalTaskCard key={task.id} task={task} style={{ width: "100%" }} />) : (
           <div style={{ color: "#8A7350", padding: 12, ...LB }}>Nothing pending for Stretchy.</div>
         )}
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 76px", gap: 8, alignItems: "center", marginTop: 8 }}>
-        <button type="button" onClick={pickUpPhone} aria-label="Contacts" style={{ height: 58, border: 0, cursor: "pointer", background: `url(${DESK_CONTACTS}) center/100% 100% no-repeat` }} />
-        <button type="button" onClick={() => resolve("stamp")} disabled={!inspected || !!resolving} aria-label="Use stamp" style={{ height: 58, border: 0, opacity: inspected ? 1 : .45, background: `url(${DESK_PHYSICAL_STAMP}) center/contain no-repeat` }} />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "64px 1fr", alignItems: "center", gap: 8, marginTop: 12 }}>
         <img src={SHIRLEY_PORTRAIT} alt="Shirley" style={{ width: 64, height: 58, objectFit: "contain", imageRendering: "pixelated" }} />
@@ -3343,8 +3349,8 @@ function SettingsScreen({ go }) {
     }
   };
   return (
-    <Screen title="Settings" icon="⚙️" onBack={() => go("apartment")} subtitle="Sound & such">
-      <div aria-hidden="true" style={{ height: 48, maxWidth: 390, margin: "-4px auto 6px", display: "grid", placeItems: "center", background: `url(${SETTINGS_HEADER}) center/100% 100% no-repeat`, color: "#FFD97A", fontSize: 16, ...LB }}>SETTINGS</div>
+    <Screen title="Settings" icon="⚙️" onBack={() => go("apartment")} hideChrome>
+      <div aria-hidden="true" style={{ height: 48, width: "calc(100% - 52px)", maxWidth: 390, margin: "-4px 0 6px 52px", display: "grid", placeItems: "center", background: `url(${SETTINGS_HEADER}) center/100% 100% no-repeat`, color: "#FFD97A", fontSize: 16, ...LB }}>SETTINGS</div>
       <VolSlider label="Music / ambience" value={musicVol} onChange={(v) => { setMusicVol(v); setMusicVolume(v); }} />
       <VolSlider label="Sound effects" value={sfxVol} onChange={(v) => { setSfxVolUi(v); setSfxVolume(v); }} />
 
