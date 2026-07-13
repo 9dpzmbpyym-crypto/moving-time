@@ -6,9 +6,12 @@
 
 Full operating model: `docs/ai-team/README.md`. Hierarchy runs by harness, not model IQ.
 
-Before editing, read the live coordination ledger at `artifacts/agent_ledger.json`.
-Claim your files/systems there, and stop if another agent's locks overlap. Workflow:
-`docs/ai-team/agent-ledger.md`.
+Before editing, read the live coordination ledger at `artifacts/agent_ledger.json`
+**and write your claim to it** — reading is not enough. Run
+`node scripts/update-agent-ledger.js <you> --status ACTIVE --working-on "…" --files … --systems … --risk …`
+before you touch code; if you don't claim, the rest of the team is blind to your
+work and will collide with it. Stop if another agent's locks overlap. Set your
+block to IDLE (`--clear-locks`) at close. Workflow: `docs/ai-team/agent-ledger.md`.
 
 1. **Identify yourself first**: harness, model, permissions, task risk, and
    budget state (check usage if your harness shows it, otherwise ask Eloisa).

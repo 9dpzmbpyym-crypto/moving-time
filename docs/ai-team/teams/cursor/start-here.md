@@ -46,8 +46,9 @@ Eloisa's local copy runs at `http://localhost:8091/` (the Projects repo — igno
 
 1. Identify yourself (harness, model, permissions, task risk, budget state — ask Eloisa where Cursor usage stands).
 2. Write your harness playbook: replace the stub at `docs/ai-team/teams/cursor/playbook.md`. Cover: what delegation mechanisms actually exist in Cursor today (don't invent features); when you delegate to Composer vs doing it yourself, with 2–3 concrete examples from `FINISH_PLAN.md`; how paid API enters Cursor and the confirm-spend rule; your known delegation failure modes; how you check usage state. Match the structure of `teams/claude/playbook.md`. Under a page. Commit as "Add Cursor harness playbook".
-3. Then take the top item from **Open next** in `FINISH_PLAN.md`.
-4. Work on the standing **`cursor`** branch — first act of every session: pull `main` into it. No new branches per session.
-5. Close the session per **`docs/ai-team/end-here.md`** — update FINISH_PLAN, new session file in `docs/sessions/`, signed DEVLOG entry, merge `cursor` → `main`, report.
+3. **Claim in the ledger BEFORE editing (do not skip — this is how the team sees you):** `node scripts/update-agent-ledger.js cursor_grok_4_5 --status ACTIVE --working-on "<what>" --branch cursor --files <paths> --systems <systems> --risk <level>`. Reading the ledger is not enough — if you don't *write* your claim, other agents (Claude/Codex) are blind to your work and will collide with it. Update it again when locks/status change; set `--status IDLE --clear-locks` at close.
+4. Then take the top item from **Open next** in `FINISH_PLAN.md`.
+5. Work on the standing **`cursor`** branch — first act of every session: pull `main` into it. No new branches per session.
+6. Close the session per **`docs/ai-team/end-here.md`** — set your ledger block to IDLE, update FINISH_PLAN, new session file in `docs/sessions/`, signed DEVLOG entry, merge `cursor` → `main`, report.
 
 Do not spend expensive intelligence on moving furniture. Do not let cheap labor redesign the house.
