@@ -42,6 +42,35 @@ import BOARD_FULL_ON from "./assets/items/packitup_cropped_assets/ui_mockups/boa
 import BOARD_DRAW_BUTTON from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/draw_button.png";
 import BOARD_SCROLLBAR from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/scrollbar_track.png";
 import BOARD_LEDGER_BUTTON from "./assets/items/packitup_cropped_assets/ui_mockups/board_slices/ledger_button_frame.png";
+import STRETCHY_HEART_FULL from "./assets/ui_screen_chrome/stretchy_heart_full.png";
+import STRETCHY_HEART_EMPTY from "./assets/ui_screen_chrome/stretchy_heart_empty.png";
+import SHIRLEY_PORTRAIT from "./assets/ui_screen_chrome/shirley_portrait.png";
+import CALL_SHIRLEY_BUTTON from "./assets/ui_screen_chrome/call_shirley_button.png";
+import SETTINGS_HEADER from "./assets/ui_screen_chrome/settings_header.png";
+import SETTINGS_SLIDER_TRACK from "./assets/ui_screen_chrome/settings_slider_track.png";
+import SETTINGS_SLIDER_KNOB from "./assets/ui_screen_chrome/settings_slider_knob.png";
+import SETTINGS_TOGGLE_ON from "./assets/ui_screen_chrome/settings_toggle_on.png";
+import SETTINGS_TOGGLE_OFF from "./assets/ui_screen_chrome/settings_toggle_off.png";
+import SETTINGS_INPUT from "./assets/ui_screen_chrome/settings_input.png";
+import SETTINGS_SAVE from "./assets/ui_screen_chrome/settings_save.png";
+import SETTINGS_CLEAR from "./assets/ui_screen_chrome/settings_clear.png";
+import SETTINGS_CHECK from "./assets/ui_screen_chrome/settings_check.png";
+import LEDGER_HEADER from "./assets/ui_screen_chrome/ledger_header.png";
+import LEDGER_EDIT from "./assets/ui_screen_chrome/ledger_edit.png";
+import LEDGER_DONE from "./assets/ui_screen_chrome/ledger_done.png";
+import LEDGER_CHIP_DARK from "./assets/ui_screen_chrome/ledger_chip_dark.png";
+import LEDGER_CHIP_PAPER from "./assets/ui_screen_chrome/ledger_chip_paper.png";
+import LEDGER_CHIP_ACTIVE from "./assets/ui_screen_chrome/ledger_chip_active.png";
+import LEDGER_QUICK_ADD from "./assets/ui_screen_chrome/ledger_quick_add.png";
+import DESK_TRAY from "./assets/ui_screen_chrome/desk_tray.png";
+import DESK_STAMP_FILED from "./assets/ui_screen_chrome/desk_stamp_filed.png";
+import DESK_STAMP_APPROVED from "./assets/ui_screen_chrome/desk_stamp_approved.png";
+import DESK_STAMP_DONE from "./assets/ui_screen_chrome/desk_stamp_done.png";
+import DESK_CONTACTS from "./assets/ui_screen_chrome/desk_contacts.png";
+import DESK_COUNT_TAB from "./assets/ui_screen_chrome/desk_count_tab.png";
+import DESK_DAILY_PANEL from "./assets/ui_screen_chrome/desk_daily_panel.png";
+import DESK_INBOX_PANEL from "./assets/ui_screen_chrome/desk_inbox_panel.png";
+import DESK_PHYSICAL_STAMP from "./assets/ui_screen_chrome/desk_physical_stamp.png";
 import MOVE_ROW from "./assets/items/task_card_assets/horizontal/move_row_card.png";
 import JOB_ROW from "./assets/items/task_card_assets/horizontal/job_row_card.png";
 import ADMIN_ROW from "./assets/items/task_card_assets/horizontal/admin_row_card.png";
@@ -1529,13 +1558,13 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
   };
   return (
     <Screen title="Ledger" icon="📒" onBack={() => go("board")} subtitle="See-all · Edit · Archive" bg="#2A1A0C">
+      <div aria-hidden="true" style={{ height: 48, margin: "-4px auto 8px", maxWidth: 390, display: "grid", placeItems: "center", background: `url(${LEDGER_HEADER}) center/100% 100% no-repeat`, color: "#FFD97A", fontSize: 16, ...LB }}>LEDGER</div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 }}>
         {LEDGER_LANES.map((l) => (
           <button key={l.id} type="button" onClick={() => { setLane(l.id); setEditId(null); }} style={{
             padding: "6px 8px", fontSize: 10, cursor: "pointer",
-            background: lane === l.id ? "#C9942E" : "#3A2410",
-            color: lane === l.id ? "#120A04" : "#C9B896",
-            border: "2px solid #120A04", ...LB,
+            background: `url(${lane === l.id ? LEDGER_CHIP_PAPER : LEDGER_CHIP_DARK}) center/100% 100% no-repeat`,
+            color: lane === l.id ? "#120A04" : "#C9B896", border: 0, ...LB,
           }}>{l.label}</button>
         ))}
       </div>
@@ -1544,9 +1573,9 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
         {LEDGER_SORTS.map((s) => (
           <button key={s.id} type="button" onClick={() => setSortBy(s.id)} style={{
             padding: "4px 8px", fontSize: 10, cursor: "pointer",
-            background: sortBy === s.id ? "#5D7C3B" : "#241509",
+            background: `url(${sortBy === s.id ? LEDGER_CHIP_ACTIVE : LEDGER_CHIP_DARK}) center/100% 100% no-repeat`,
             color: sortBy === s.id ? "#F2E4C0" : "#C9B896",
-            border: "2px solid #120A04", ...LB,
+            border: 0, ...LB,
           }}>{s.label}</button>
         ))}
         <button type="button" onClick={() => { setShowArchived((v) => !v); setEditId(null); }} style={{
@@ -1557,7 +1586,7 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
         }}>{showArchived ? "Active" : "Archived"}</button>
       </div>
       {!showArchived && (
-      <div style={{ ...FR, padding: 10, marginBottom: 10 }}>
+      <div style={{ ...FR, padding: "18px 12px 12px", marginBottom: 10, background: `url(${LEDGER_QUICK_ADD}) center/100% 100% no-repeat`, border: 0 }}>
         <div style={{ color: "#FFD97A", fontSize: 10, marginBottom: 6, ...LB }}>Quick-add sticky</div>
         <input
           value={draft}
@@ -1666,23 +1695,9 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
           );
         }
         return (
-          <div key={t.id} style={{
-            display: "flex", gap: 6, alignItems: "center", marginBottom: 6, padding: "8px 10px",
-            background: open ? (PAPER[t.category] || "#EBDDBA") : "#3A2A1A",
-            border: "2px solid #120A04", color: open ? "#3A2018" : "#8A7350", opacity: open ? 1 : 0.7,
-          }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, ...LB }}>{t.title}</div>
-              <div style={{ fontSize: 9, marginTop: 2, ...LB }}>
-                {t.due || "—"} · {EFFORT_DOT(t.effort)}
-                {(t.score != null || SAMPLE_JOBS[t.jobId]?.priority != null)
-                  ? ` · score ${t.score ?? SAMPLE_JOBS[t.jobId].priority}`
-                  : ""}
-                {isHardOverdue(t) ? " · overdue" : ""}
-                {t.status === "done" ? " · done" : ""}
-                {t.status === "archived" ? " · archived" : ""}
-              </div>
-            </div>
+          <div key={t.id} style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 72px", gap: 6, alignItems: "center", marginBottom: 7, opacity: open ? 1 : 0.68 }}>
+            <HorizontalTaskCard task={t} dimmed={!open} style={{ width: "100%", minWidth: 0 }} />
+            <div style={{ display: "grid", gap: 4 }}>
             {showArchived ? (
               <button type="button" onClick={() => restoreArchived(t.id)} style={{
                 padding: "8px 10px", background: "#5D7C3B", color: "#F2E4C0",
@@ -1690,18 +1705,13 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
               }}>Restore</button>
             ) : (
               <>
-                <button type="button" onClick={() => beginEdit(t)} style={{
-                  padding: "8px 8px", background: "#3A2410", color: "#FFD97A",
-                  border: "2px solid #120A04", fontSize: 10, cursor: "pointer", flex: "0 0 auto", ...LB,
-                }}>Edit</button>
+                <button aria-label={`Edit ${t.title}`} type="button" onClick={() => beginEdit(t)} style={{ height: 34, border: 0, cursor: "pointer", background: `url(${LEDGER_EDIT}) center/100% 100% no-repeat` }} />
                 {open && !isWorldBoundTask(t) && (
-                  <button type="button" onClick={() => markDone(t.id)} style={{
-                    padding: "8px 10px", background: "#5D7C3B", color: "#F2E4C0",
-                    border: "2px solid #120A04", fontSize: 11, cursor: "pointer", flex: "0 0 auto", ...LB,
-                  }}>Done</button>
+                  <button aria-label={`Done ${t.title}`} type="button" onClick={() => markDone(t.id)} style={{ height: 34, border: 0, cursor: "pointer", background: `url(${LEDGER_DONE}) center/100% 100% no-repeat` }} />
                 )}
               </>
             )}
+            </div>
           </div>
         );
       })}
@@ -2105,14 +2115,17 @@ function ShirleyCallOverlay({
 function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewardToast,
   appointments, setAppointments, phoneNudge, clearPhoneNudge }) {
   const [tray, setTray] = useState("all"); // all | admin | job | housing
-  const deskTasks = tasks.filter((t) => isOpen(t) && ["job", "admin", "move", "housing"].includes(t.category));
+  const deskTasks = tasks.filter((t) => isOpen(t) && ["job", "admin", "move", "housing", "health", "cat"].includes(t.category));
   const filtered = deskTasks.filter((t) => {
     if (tray === "admin") return t.category === "admin" || t.category === "move";
     if (tray === "job") return t.category === "job";
     if (tray === "housing") return t.category === "housing";
     return true;
   });
-  const filed = tasks.filter((t) => t.status === "done" && ["job", "admin", "move", "housing"].includes(t.category));
+  const filed = tasks.filter((t) => t.status === "done" && ["job", "admin", "move", "housing", "health", "cat"].includes(t.category));
+  const deskCategories = ["move", "job", "admin", "health", "cat", "housing"];
+  const incomingByCategory = deskCategories.map((category) => ({ category, tasks: deskTasks.filter((task) => task.category === category) }));
+  const filedByCategory = deskCategories.map((category) => ({ category, tasks: filed.filter((task) => task.category === category) }));
   const doneCount = filed.length;
   const outboxVis = filed.slice(-6);
   const adminCount = deskTasks.filter((t) => t.category === "admin" || t.category === "move").length;
@@ -2413,6 +2426,11 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
 
   const resolve = (mode) => {
     if (!inspected || resolving) return;
+    if (isWorldBoundTask(inspected) && mode !== "info") {
+      setRelief("Complete this card through its linked game action.");
+      setTimeout(() => setRelief(null), 1800);
+      return;
+    }
     const id = inspected.id;
     setResolving({ id, mode });
     if ((mode === "stamp" || mode === "info") && playSfx) playSfx("stamp");
@@ -2477,28 +2495,14 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
       checklist={<ChecklistCard items={prog.items} title="Session" />}
     >
       <RewardToast text={rewardToast} />
-      <div style={{
-        display: "flex", gap: 8, marginBottom: 8, padding: "8px 10px",
-        background: "#EFE7D2", border: "2px solid #120A04", boxShadow: "2px 2px 0 rgba(0,0,0,0.35)",
-      }}>
-        {housingProg.items.map((it) => (
-          <button
-            key={it.id}
-            type="button"
-            disabled={it.done}
-            onClick={() => {
-              if (it.done) return;
-              onSessionBump?.(it.key, 1, it.key === "messages" ? "Msg +1" : "Backup +1");
-            }}
-            style={{
-              flex: 1, padding: "6px 4px", textAlign: "center", cursor: it.done ? "default" : "pointer",
-              background: it.done ? "#CBDCC2" : "#F7F0DC", border: "2px solid #120A04", color: "#3A2018", ...LB,
-            }}
-          >
-            <div style={{ fontSize: 9 }}>{it.label}</div>
-            <div style={{ fontSize: 12, marginTop: 2 }}>{it.cur}/{it.target}{it.done ? " ✓" : " +"}</div>
-          </button>
-        ))}
+      <div style={{ display: "grid", gridTemplateColumns: "1.35fr 1fr", gap: 8, marginBottom: 8 }}>
+        <div style={{ minHeight: 90, padding: "28px 14px 10px", background: `url(${DESK_DAILY_PANEL}) center/100% 100% no-repeat`, color: "#3A2018" }}>
+          {prog.items.slice(0, 3).map((it) => <div key={it.id} style={{ fontSize: 9, marginTop: 3, ...LB }}>{it.done ? "☑" : "☐"} {it.label} <span style={{ float: "right" }}>{it.cur}/{it.target}</span></div>)}
+        </div>
+        <div style={{ minHeight: 90, padding: "28px 12px 10px", background: `url(${DESK_INBOX_PANEL}) center/100% 100% no-repeat`, color: "#3A2018" }}>
+          <div style={{ fontSize: 10, ...LB }}>{deskTasks.length} incoming</div>
+          <div style={{ fontSize: 9, marginTop: 6, ...LB }}>{deskTasks.filter((task) => task.urgency >= 3).length} urgent · {housingProg.done}/{housingProg.total} contacts</div>
+        </div>
       </div>
       <div style={{
         border: "3px solid #120A04", background: "repeating-linear-gradient(0deg, #5A381F 0 14px, #6E452A 14px 16px)",
@@ -2510,6 +2514,26 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
           {trayBtn("admin", "ADMIN", "#B9CEDC", adminCount)}
           {trayBtn("job", "APPS", "#E9BFB2", jobCount)}
           {trayBtn("all", "ALL", "#EBDDBA", deskTasks.length)}
+        </div>
+
+        <div style={{ color: "#C9B896", fontSize: 10, textAlign: "center", margin: "2px 0 6px", ...LB }}>INCOMING</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 7, marginBottom: 10 }}>
+          {incomingByCategory.map(({ category, tasks: stack }) => {
+            const top = stack[0];
+            return <button key={category} type="button" disabled={!top} onClick={() => top && setInspectId(top.id)} style={{ position: "relative", height: 100, overflow: "hidden", border: 0, padding: 0, background: "transparent", cursor: top ? "pointer" : "default" }}>
+              {top ? <div style={{ transform: "scale(.42)", transformOrigin: "top left", width: "238%" }}><VerticalTaskCard task={top} /></div> : <div style={{ height: 82, border: "2px dashed #5A381F" }} />}
+              <img src={DESK_COUNT_TAB} alt="" style={{ position: "absolute", width: 30, height: 30, top: -2, right: 2 }} />
+              <span style={{ position: "absolute", top: 6, right: 12, color: "#241509", fontSize: 9, ...LB }}>{stack.length}</span>
+            </button>;
+          })}
+        </div>
+
+        <div style={{ color: "#C9B896", fontSize: 10, textAlign: "center", margin: "2px 0 6px", ...LB }}>FILED</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 4, marginBottom: 10 }}>
+          {filedByCategory.map(({ category, tasks: stack }, index) => <div key={category} style={{ position: "relative", height: 58, background: PAPER[category] || "#EBDDBA", border: "2px solid #120A04" }}>
+            <span style={{ position: "absolute", top: 4, left: 4, color: "#3A2018", fontSize: 7, ...LB }}>{TASK_CATEGORIES[category]?.label || category}</span>
+            {stack.length > 0 && <img src={[DESK_STAMP_APPROVED, DESK_STAMP_FILED, DESK_STAMP_DONE][index % 3]} alt="" style={{ position: "absolute", width: "90%", left: "5%", bottom: 3 }} />}
+          </div>)}
         </div>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 10 }}>
@@ -2623,8 +2647,8 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
         </div>
 
         <div style={{
-          marginTop: 8, minHeight: 150, border: "3px solid #120A04", background: "#3E2413",
-          boxShadow: "inset 0 0 0 2px #2A1709, inset 0 6px 12px rgba(0,0,0,0.35)", padding: 10,
+          marginTop: 8, minHeight: 210, border: 0, background: `url(${DESK_TRAY}) center/100% 100% no-repeat`,
+          boxShadow: "none", padding: 22,
           display: "flex", alignItems: "center", justifyContent: "center", position: "relative",
         }}>
           {!phonePhase && (
@@ -3197,11 +3221,6 @@ function StretchyScreen({ go, tasks }) {
   const pressure = taskPressure(tasks);
   const hearts = pressure === 0 ? 3 : pressure === 1 ? 3 : pressure === 2 ? 2 : 1;
   const catTasks = tasks.filter((t) => isOpen(t) && t.category === "cat");
-  const rows = [
-    { icon: "🏥", text: "Vet visit around mid-month — meds refill + travel certificate." },
-    { icon: "💊", text: "Meds test drive before the trip, so nothing is a surprise." },
-    { icon: "🧳", text: "Travel prep: carrier out early so it becomes furniture, not a threat." },
-  ];
   const mood = hearts === 3 ? "loafing contentedly" : hearts === 2 ? "a little watchful" : "needs a quiet corner";
   return (
     <Screen title="Stretchy" icon="🐈" onBack={() => go("apartment")} subtitle="Orange. Employed as a cat.">
@@ -3216,22 +3235,26 @@ function StretchyScreen({ go, tasks }) {
           <div style={{ color: "#FFD97A", fontSize: 16, ...LB }}>Stretchy</div>
           <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
             {[1, 2, 3].map((i) => (
-              <span key={i} style={{
-                fontSize: 18, color: i <= hearts ? "#C43B34" : "#4A2E17",
-                textShadow: i <= hearts ? "0 0 0 #120A04" : "none",
-              }}>♥</span>
+              <img key={i} src={i <= hearts ? STRETCHY_HEART_FULL : STRETCHY_HEART_EMPTY} alt="" style={{ width: 28, height: 24, objectFit: "contain", imageRendering: "pixelated" }} />
             ))}
           </div>
           <div style={{ color: "#8FD14F", fontSize: 11, marginTop: 8, ...LB }}>mood: {mood}</div>
         </div>
       </Panel>
       <div style={{ color: "#C9B896", fontSize: 12, marginTop: 14, ...LB }}>Coming up for him ({catTasks.length} noted):</div>
-      {rows.map((r, i) => (
-        <div key={i} style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 8, padding: "11px 12px", ...FR }}>
-          <span style={{ fontSize: 16 }}>{r.icon}</span>
-          <span style={{ color: "#F2E4C0", fontSize: 12, lineHeight: 1.5, ...LB }}>{r.text}</span>
-        </div>
-      ))}
+      <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
+        {catTasks.length ? catTasks.map((task) => <HorizontalTaskCard key={task.id} task={task} style={{ width: "100%" }} />) : (
+          <div style={{ color: "#8A7350", padding: 12, ...LB }}>Nothing pending for Stretchy.</div>
+        )}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 76px", gap: 8, alignItems: "center", marginTop: 8 }}>
+        <button type="button" onClick={pickUpPhone} aria-label="Contacts" style={{ height: 58, border: 0, cursor: "pointer", background: `url(${DESK_CONTACTS}) center/100% 100% no-repeat` }} />
+        <button type="button" onClick={() => resolve("stamp")} disabled={!inspected || !!resolving} aria-label="Use stamp" style={{ height: 58, border: 0, opacity: inspected ? 1 : .45, background: `url(${DESK_PHYSICAL_STAMP}) center/contain no-repeat` }} />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "64px 1fr", alignItems: "center", gap: 8, marginTop: 12 }}>
+        <img src={SHIRLEY_PORTRAIT} alt="Shirley" style={{ width: 64, height: 58, objectFit: "contain", imageRendering: "pixelated" }} />
+        <button type="button" onClick={() => go("desk")} aria-label="Call Shirley" style={{ height: 58, border: 0, cursor: "pointer", background: `url(${CALL_SHIRLEY_BUTTON}) center/100% 100% no-repeat` }} />
+      </div>
     </Screen>
   );
 }
@@ -3245,12 +3268,11 @@ function VolSlider({ label, value, onChange }) {
         <span style={{ color: "#F2E4C0", fontSize: 13, ...LB }}>{label}</span>
         <span style={{ color: "#C9B896", fontSize: 12, ...LB }}>{pct === 0 ? "off" : `${pct}%`}</span>
       </div>
-      <input
-        type="range" min={0} max={100} step={1} value={pct}
-        onChange={(e) => onChange(Number(e.target.value) / 100)}
-        aria-label={label}
-        style={{ width: "100%", height: 18, cursor: "pointer", accentColor: "#5D7C3B" }}
-      />
+      <div style={{ position: "relative", height: 24, background: `url(${SETTINGS_SLIDER_TRACK}) center/100% 100% no-repeat` }}>
+        <img src={SETTINGS_SLIDER_KNOB} alt="" style={{ position: "absolute", width: 28, height: 28, top: -2, left: `calc(${pct}% - ${pct * 0.28}px)`, imageRendering: "pixelated", pointerEvents: "none" }} />
+        <input type="range" min={0} max={100} step={1} value={pct} onChange={(e) => onChange(Number(e.target.value) / 100)} aria-label={label}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", margin: 0, opacity: 0, cursor: "pointer" }} />
+      </div>
     </div>
   );
 }
@@ -3322,11 +3344,12 @@ function SettingsScreen({ go }) {
   };
   return (
     <Screen title="Settings" icon="⚙️" onBack={() => go("apartment")} subtitle="Sound & such">
+      <div aria-hidden="true" style={{ height: 48, maxWidth: 390, margin: "-4px auto 6px", display: "grid", placeItems: "center", background: `url(${SETTINGS_HEADER}) center/100% 100% no-repeat`, color: "#FFD97A", fontSize: 16, ...LB }}>SETTINGS</div>
       <VolSlider label="Music / ambience" value={musicVol} onChange={(v) => { setMusicVol(v); setMusicVolume(v); }} />
       <VolSlider label="Sound effects" value={sfxVol} onChange={(v) => { setSfxVolUi(v); setSfxVolume(v); }} />
 
       <Panel style={{ marginTop: 10 }}>
-        <div style={{ color: "#FFD97A", fontSize: 12, marginBottom: 8, ...LB }}>{RECEPTIONIST_NAME} (OpenRouter)</div>
+        <div style={{ color: "#FFD97A", fontSize: 12, marginBottom: 8, ...LB }}>Contacts (OpenRouter)</div>
         <div style={{ color: "#8A7350", fontSize: 10, marginBottom: 8, ...LB }}>
           Paste your key — improv turns on automatically. Replies can take a few seconds on free models.
         </div>
@@ -3343,7 +3366,7 @@ function SettingsScreen({ go }) {
           placeholder="sk-or-…"
           style={{
             width: "100%", boxSizing: "border-box", padding: "10px", marginBottom: 8,
-            background: "#1A0F06", color: "#F2E4C0", border: "2px solid #4A2E17", fontSize: 12, ...LB,
+            background: `#1A0F06 url(${SETTINGS_INPUT}) center/100% 100% no-repeat`, color: "#F2E4C0", border: 0, fontSize: 12, ...LB,
           }}
         />
         <label style={{ display: "block", color: "#C9B896", fontSize: 10, marginBottom: 4, ...LB }}>Free model slug</label>
@@ -3355,50 +3378,37 @@ function SettingsScreen({ go }) {
           placeholder={DEFAULT_MODEL}
           style={{
             width: "100%", boxSizing: "border-box", padding: "10px", marginBottom: 8,
-            background: "#1A0F06", color: "#F2E4C0", border: "2px solid #4A2E17", fontSize: 11, ...LB,
+            background: `#1A0F06 url(${SETTINGS_INPUT}) center/100% 100% no-repeat`, color: "#F2E4C0", border: 0, fontSize: 11, ...LB,
           }}
         />
         <button
           type="button"
           onClick={() => persistShirley({ apiKey, model, improv: apiKey.trim() ? (improv || true) : false })}
-          style={{
-            width: "100%", marginBottom: 8, padding: "10px", background: "#3A2410", color: "#FFD97A",
-            border: "3px solid #120A04", fontSize: 12, cursor: "pointer", ...LB,
-          }}
-        >
-          Save Shirley settings
-        </button>
+          aria-label="Save Contacts Settings"
+          style={{ width: "100%", height: 54, marginBottom: 8, border: 0, cursor: "pointer", background: `url(${SETTINGS_SAVE}) center/100% 100% no-repeat` }}
+        />
         <button
           type="button"
           onClick={() => {
             if (!window.confirm("Remove the saved OpenRouter key from this device?")) return;
             persistShirley({ apiKey: "", clearApiKey: true, improv: false });
           }}
-          style={{
-            width: "100%", marginBottom: 10, padding: "8px", background: "#241509", color: "#C9B896",
-            border: "2px solid #4A2E17", fontSize: 11, cursor: "pointer", ...LB,
-          }}
-        >
-          Clear API key
-        </button>
-        <div style={{ color: improv && apiKey.trim() ? "#8FD14F" : "#C9942E", fontSize: 10, marginBottom: 8, ...LB }}>
+          aria-label="Clear API Key"
+          style={{ width: "100%", height: 50, marginBottom: 10, border: 0, cursor: "pointer", background: `url(${SETTINGS_CLEAR}) center/100% 100% no-repeat` }}
+        />
+        <div style={{ display: "flex", gap: 6, alignItems: "center", color: improv && apiKey.trim() ? "#8FD14F" : "#C9942E", fontSize: 10, marginBottom: 8, ...LB }}>
+          {apiKey.trim() && <img src={SETTINGS_CHECK} alt="" style={{ width: 26, height: 26, objectFit: "contain" }} />}
+          <span>
           {apiKey.trim()
             ? (improv
               ? "Status: improv on (OpenRouter key saved) — phone shows live vs script per reply"
               : "Status: key saved, improv off")
-            : "Status: offline script bank"}
+            : "Status: offline script bank"}</span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ color: "#F2E4C0", fontSize: 12, ...LB }}>Improv dialogue</span>
           <div style={{ position: "relative", width: 52, height: 26 }}>
-            <div style={{
-              width: 52, height: 26, padding: 2, border: "3px solid #120A04",
-              background: improv && apiKey.trim() ? "#5D7C3B" : "#241509",
-              display: "flex", justifyContent: improv && apiKey.trim() ? "flex-end" : "flex-start",
-              pointerEvents: "none",
-            }}>
-              <span style={{ width: 16, height: "100%", background: "#EFE7D2", border: "2px solid #120A04", display: "block" }} />
-            </div>
+            <div style={{ width: 56, height: 28, background: `url(${improv && apiKey.trim() ? SETTINGS_TOGGLE_ON : SETTINGS_TOGGLE_OFF}) center/100% 100% no-repeat`, pointerEvents: "none" }} />
             <input
               type="checkbox"
               checked={!!(improv && apiKey.trim())}
@@ -3417,13 +3427,7 @@ function SettingsScreen({ go }) {
         <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, padding: "12px", ...FR }}>
           <span style={{ color: "#F2E4C0", fontSize: 13, ...LB }}>{label} {soonTag}</span>
           <div style={{ position: "relative", width: 52, height: 26 }}>
-            <div style={{
-              width: 52, height: 26, padding: 2, border: "3px solid #120A04",
-              background: t[k] ? "#5D7C3B" : "#241509", display: "flex", justifyContent: t[k] ? "flex-end" : "flex-start",
-              pointerEvents: "none",
-            }}>
-              <span style={{ width: 16, height: "100%", background: "#EFE7D2", border: "2px solid #120A04", display: "block" }} />
-            </div>
+            <div style={{ width: 56, height: 28, background: `url(${t[k] ? SETTINGS_TOGGLE_ON : SETTINGS_TOGGLE_OFF}) center/100% 100% no-repeat`, pointerEvents: "none" }} />
             <input type="checkbox" checked={t[k]} onChange={() => flip(k)} aria-label={label}
               style={{ position: "absolute", inset: 0, width: "100%", height: "100%", margin: 0, padding: 0, opacity: 0, cursor: "pointer" }} />
           </div>
