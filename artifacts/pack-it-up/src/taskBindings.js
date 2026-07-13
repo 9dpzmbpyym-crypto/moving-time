@@ -1,4 +1,5 @@
 import { INVENTORY_COLLECTION_OPTIONS, INVENTORY_ITEM_OPTIONS, inventoryTargetKeys } from "./inventoryCollections.js";
+import { PACKABLE_APARTMENT_TARGET_OPTIONS } from "./apartmentObjectCatalog.js";
 
 /* Canonical links between Ledger tasks and gameplay state. Static binding
    definitions stay in code/tasks; saves persist only the chosen binding and
@@ -71,7 +72,7 @@ export const TASK_RESULT_OPTIONS = [
 ];
 
 export function targetOptionsForFeature(feature) {
-  if (feature === "apartment_item") return ITEM_TARGET_OPTIONS;
+  if (feature === "apartment_item") return PACKABLE_APARTMENT_TARGET_OPTIONS;
   if (feature === "inventory_collection") return INVENTORY_COLLECTION_OPTIONS;
   if (feature === "inventory_item") return INVENTORY_ITEM_OPTIONS;
   if (feature === "health_zone" || feature === "health_appointment") return HEALTH_TARGETS;
