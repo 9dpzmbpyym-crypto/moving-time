@@ -1645,6 +1645,14 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
     setTasks((ts) => ts.map((t) => (t.id === editId ? { ...t, status: "archived" } : t)));
     setEditId(null);
   };
+  const archivedCount = tasks.filter((t) => t.status === "archived").length;
+  const clearArchived = () => {
+    if (!archivedCount) return;
+    if (!window.confirm(`Permanently delete all ${archivedCount} archived task${archivedCount === 1 ? "" : "s"} (every lane)? This can't be undone.`)) return;
+    // Removing from the saved list is permanent: mergeTasks treats saved membership
+    // as canonical, so the seed won't re-add them on next load.
+    setTasks((ts) => ts.filter((t) => t.status !== "archived"));
+  };
   const restoreArchived = (id) => {
     setTasks((ts) => ts.map((t) => (t.id === id ? { ...t, status: "pending" } : t)));
   };
@@ -1688,6 +1696,12 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
           border: "2px solid #120A04", ...LB,
         }}>{showArchived ? "Active" : "Archived"}</button>
       </div>
+      {showArchived && archivedCount > 0 && (
+        <button type="button" onClick={clearArchived} style={{
+          width: "100%", marginBottom: 10, padding: "10px", cursor: "pointer",
+          background: "#5A1E18", color: "#F2C9C0", border: "2px solid #120A04", fontSize: 11, ...LB,
+        }}>🗑 Delete all {archivedCount} archived (every lane) — permanent</button>
+      )}
       {!showArchived && (
       <div style={{ ...FR, padding: "18px 12px 12px", marginBottom: 10, background: `url(${LEDGER_QUICK_ADD}) center/100% 100% no-repeat`, border: 0 }}>
         <div style={{ color: "#3A2018", fontSize: 10, marginBottom: 8, ...LB }}>QUICK-ADD STICKY</div>
