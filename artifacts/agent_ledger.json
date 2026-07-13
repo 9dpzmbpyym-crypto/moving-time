@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-13T08:53:21.298Z",
+  "last_updated": "2026-07-13T09:04:23.391Z",
   "rules": {
     "read_before_work": true,
     "write_before_editing": true,
@@ -128,9 +128,9 @@
       "model": "Opus 4.8",
       "role": "Senior Reviewer / Taste + Reasoning Specialist",
       "thinking": "high",
-      "status": "ACTIVE",
+      "status": "IDLE",
       "branch": null,
-      "working_on": "tech-debt/data-bloat cleanup (priority+binding fixes shipped)",
+      "working_on": "",
       "files_locked": [],
       "systems_locked": [],
       "risk_level": null,
@@ -138,7 +138,7 @@
       "rate_limited": false,
       "cooldown_until": null,
       "handoff_needed": null,
-      "last_seen": "2026-07-13T08:53:21.298Z",
+      "last_seen": "2026-07-13T09:04:23.391Z",
       "expires_at": null,
       "notes": "Premium Claude reviewer. Supports Fable on taste, docs, prose, Marcy voice, pixel-art standards."
     },

@@ -1,23 +1,41 @@
 # Latest handoff
 
-→ **`docs/sessions/2026-07-12-codex-body-board-apartment-text-2.md`** (Codex — second screenshot pass for Body Board, Overview, and apartment text)
+→ **`docs/sessions/2026-07-13-claude-opus-recovery-priority-cleanup.md`** (Claude/Opus — save recovery, priority fixes, cleanup)
 
-**Eloisa's editor layout is now canonical:** the final exported Body Board, apartment HUD, and Overview values are production defaults (`dateY: 0` from the final repeated copy). The selected-paper plus badge is gone, `N DAYS LEFT` sits under the date/time, and `/?ui=1` remains available for future tuning. Full build passes.
-
-**Next up:** review the GitHub-triggered Vercel deploy, then continue the remaining UI reskins.
+**Shipped to `main` (all pushed, build + tests green):**
+- **Save recovery**: Settings → **"Import / restore save…"** now works — paste a
+  "Copy canonical mobile save" blob → Restore → reloads with everything back.
+  Eloisa's full export is in the chat transcript; she pastes it after the next
+  Vercel deploy. Her data is **not lost**.
+- **Priority fixes**: pressure/Stretchy meter un-pinned (`taskPressure` was on the
+  old 0–100 scale); self-imposed job deadlines no longer outrank real move work;
+  removed dead `urgencyScore` code.
+- **Criticality editable** in the ledger + **"Priority" sort**.
+- **Binding uniqueness**: no item bound to two tasks (`p_death_cords` + 5 legacy
+  coarse cards unbound); new `tests/binding-uniqueness.test.mjs`.
+- **Cleanup**: −119 lines dead scheduler code; save flag-map pruned (~400 → few).
 
 ---
 *Session reports live in `docs/sessions/`; see `docs/ai-team/end-here.md`.*
 
-## Open punch list (Eloisa, Jul 12 — next sessions)
-**UI redesign still needed:** **Stretchy screen · Ledger · Inventory · Desk/Admin · Settings** — plus any other screen not yet reskinned.
-**Ledger:** add **sort-by-urgency**, calculated with `urgencyScore`/`taskStatus` in `schedule.js`.
-**Part 7 — task↔gameplay wiring:** link tasks to packing/selling, Shirley appointments, and health state. Spec: `docs/inbox/chat-gpt-connecting-tasks-to-gameplay-suggestions.md`; start fresh rather than relying on the incomplete stash.
+## Open / next
 
-## Notes for Codex (Jul 13, Fable)
-Three UI polish nits from live review are in FINISH_PLAN → Open next → "UI polish nits — [codex]": segmented apartment top HUD bar · Command Board "draws" copy should say effort · Command Board empty pre-pick void.
+**⚠️ Desk real-cards — PARKED in `git stash@{0}`** ("desk-real-cards-wip").
+Eloisa wants INCOMING/FILED to use the **actual** `VerticalTaskCard`s (like the
+hand/deal, not drawn) and a tapped card to land in the **inspection tray**, not a
+modal. The stash is incomplete (`DeskCardStack` unfinished). Redo with her in the
+loop; the current on-`main` desk is the earlier category-stack + drop-down version
+she moved past.
 
-### ⚠️ Codex — pull `main` before you merge (Claude landed on main, Jul 13)
-- **Splash screen** added: `main.tsx` (1 line) + new `SplashScreen.jsx`, `GameWithSplash.jsx`, `assets/splash.png`. No overlap with your locked files (Screens.jsx/BedroomSlice/ui_mockups/ui_screen_chrome) — but `git pull main` into `codex` before merging so main.tsx stays consistent.
-- **Onboarding change:** claiming the ledger (`update-agent-ledger.js <you> --status ACTIVE …`) is now an explicit step in your start-here checklist + AGENTS.md. Keep doing it — it's why we could finally see your work.
-- Your 3 UI polish nits are in FINISH_PLAN → Open next ("UI polish nits — [codex]").
+**Tech-debt (next session / Codex):**
+- `buildMinimumSchedule` is now test-only after the dead-chain removal.
+- Legacy coarse tasks (`m_pack_kitchen/living`, `p_bedroom_capsule`,
+  `p_bathroom_kit`, `p_close_office`) still in `INITIAL_TASKS`, unbound — candidate
+  seed removal (her save keeps them as archived saved-only, so it's safe).
+- Proper unused-export audit needs a `.mjs`-aware tool (grep missed test imports).
+
+**Notes for Codex (priority lane):** all scheduler tests pass after the fixes +
+cleanup. `urgencyScore` is now a criticality-weighted sort key (self-target
+damped); `taskPressure` reads the deadline state machine, not the numeric score.
+Criticality edits persist via `criticalityOverride` (honoured first in
+`normalizeTask`).
