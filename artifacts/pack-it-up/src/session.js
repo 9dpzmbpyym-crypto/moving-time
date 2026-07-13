@@ -93,6 +93,14 @@ export function mergeSession(savedSession) {
         : null,
       fixedDay: !!savedSession.dailyDeal.fixedDay,
       dealConfirmed: !!savedSession.dailyDeal.dealConfirmed,
+      // User-customizable hand (Sol §H) — manual Ledger-adds / Board put-backs.
+      // Old saves never had these; [] here is the correct "no manual edits yet" state.
+      manualAddIds: Array.isArray(savedSession.dailyDeal.manualAddIds)
+        ? savedSession.dailyDeal.manualAddIds
+        : [],
+      manualDropIds: Array.isArray(savedSession.dailyDeal.manualDropIds)
+        ? savedSession.dailyDeal.manualDropIds
+        : [],
     }
     : null;
   return {

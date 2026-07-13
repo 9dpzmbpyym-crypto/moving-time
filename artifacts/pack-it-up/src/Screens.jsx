@@ -91,7 +91,8 @@ import {
   isTaskDateLocked, scheduleDatesForLedger,
 } from "./tasks.js";
 import {
-  ensureDailyDeal, handTasks, offerTasks, dealProgress, toggleDealPick, taskStatus, urgencyScore,
+  ensureDailyDeal, handTasks, offerTasks, dealProgress, toggleDealPick, manualToggleHand,
+  taskStatus, urgencyScore, isBoundToday,
 } from "./schedule.js";
 import { PixelCanvas } from "./BedroomSlice.jsx";
 import {
@@ -131,6 +132,7 @@ import {
   HOUSING_SESSION_GOALS,
   sessionProgress,
   bumpSession,
+  todayKey,
 } from "./session.js";
 import { DATE_TRIGGERS, daysUntil } from "./movePhase.js";
 import {
@@ -413,7 +415,7 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
  * Natural PNG aspect (no stretch) so % overlays stay locked to art.
  */
 export function VerticalTaskCard({
-  task, width = 106, bound = false, selected = false, compact = false, textScale = 1, onClick, style,
+  task, width = 106, bound = false, manual = false, selected = false, compact = false, textScale = 1, onClick, style,
 }) {
   const src = CARD_FULL[task?.category] || CARD_FULL.admin;
   const effort = clampPips(task?.effort || 1) || 1;
@@ -475,6 +477,18 @@ export function VerticalTaskCard({
               fontSize: boundPx,
               background: "rgba(255,248,235,0.85)", padding: "1px 3px", lineHeight: 1, ...LB,
             }}>B</span>
+          </div>
+        )}
+        {!bound && manual && (
+          <div style={{
+            position: "absolute", ...L.bound,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <span style={{
+              border: "1px solid #B77A1E", color: "#B77A1E",
+              fontSize: boundPx,
+              background: "rgba(255,248,235,0.85)", padding: "1px 3px", lineHeight: 1, ...LB,
+            }}>M</span>
           </div>
         )}
         <UrgencyTag
@@ -1136,6 +1150,10 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
   const toggleOffer = (id) => {
     onSessionBump?.("dealPick", 0, null, { toggleDealId: id });
   };
+  const putBack = (id) => {
+    onSessionBump?.("manualPick", 0, null, { manualToggleId: id, manualToggleTasks: tasks });
+    if (focusId === id) setFocusId(null);
+  };
   const drawLabel = progress.requiredOptionalEffort > 0
     ? `Draw · ${progress.remainingEffort} effort left`
     : "Draw (optional)";
@@ -1329,6 +1347,10 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
                   padding: "6px 8px", background: "#5D7C3B", color: "#F2E4C0",
                   border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB,
                 }}>Done</button>}
+                {!focus.bound && <button type="button" onClick={() => putBack(focus.id)} style={{
+                  padding: "6px 8px", background: "#3A1810", color: "#E8C4A8",
+                  border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB,
+                }}>Put back</button>}
               </div>
             )}
 
@@ -1370,6 +1392,7 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
                       task={t}
                       width={handCardW}
                       bound={!!t.bound}
+                      manual={!!t.manual}
                       selected={on}
                       onClick={() => setFocusId(on ? null : t.id)}
                       style={{
@@ -1523,7 +1546,7 @@ function TaskBindingFields({ value, onChange, fieldStyle }) {
   );
 }
 
-function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
+function LedgerScreen({ go, tasks, setTasks, session, onSessionBump }) {
   const [lane, setLane] = useState("housing");
   const [sortBy, setSortBy] = useState("due");
   const [showArchived, setShowArchived] = useState(false);
@@ -1571,6 +1594,12 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
     ));
     onSessionBump?.("cleared", 1, "Cleared +1");
     if (editId === id) setEditId(null);
+  };
+  const dailyDeal = session?.dailyDeal;
+  const hasTodayDeal = dailyDeal?.day === todayKey();
+  const handSet = new Set(dailyDeal?.selectedTaskIds || []);
+  const toggleHand = (id) => {
+    onSessionBump?.("manualPick", 0, null, { manualToggleId: id, manualToggleTasks: tasks });
   };
   const beginEdit = (t) => {
     const calculated = t.dueDate ? scheduleDatesForLedger(t, t.dueDate) : null;
@@ -1733,6 +1762,8 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
       )}
       {rows.map((t) => {
         const open = isOpen(t);
+        const inHand = handSet.has(t.id);
+        const handForced = hasTodayDeal && open && isBoundToday(t, new Date(), tasks);
         if (editId === t.id) {
           const dateLocked = isTaskDateLocked(t);
           const datePreview = !dateLocked && /^\d{4}-\d{2}-\d{2}$/.test(editDraft.dueDate)
@@ -1837,6 +1868,27 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
                 <button aria-label={`Edit ${t.title}`} type="button" onClick={() => beginEdit(t)} style={{ height: 34, border: 0, cursor: "pointer", background: `url(${LEDGER_EDIT}) center/100% 100% no-repeat` }} />
                 {open && !isWorldBoundTask(t) && (
                   <button aria-label={`Done ${t.title}`} type="button" onClick={() => markDone(t.id)} style={{ height: 34, border: 0, cursor: "pointer", background: `url(${LEDGER_DONE}) center/100% 100% no-repeat` }} />
+                )}
+                {open && hasTodayDeal && (
+                  handForced ? (
+                    <span aria-label={`${t.title} is locked into today's hand`} style={{
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      padding: "3px 4px", border: "2px solid #120A04", background: "#241509",
+                      color: "#8A7350", fontSize: 9, textAlign: "center", ...LB,
+                    }}>LOCKED</span>
+                  ) : (
+                    <button
+                      type="button"
+                      aria-label={inHand ? `Remove ${t.title} from today's hand` : `Add ${t.title} to today's hand`}
+                      onClick={() => toggleHand(t.id)}
+                      style={{
+                        padding: "3px 4px", border: "2px solid #120A04", cursor: "pointer",
+                        background: inHand ? "#44695B" : "#241509",
+                        color: inHand ? "#F2E4C0" : "#C9B896",
+                        fontSize: 9, textAlign: "center", ...LB,
+                      }}
+                    >{inHand ? "IN HAND ✓" : "HAND +"}</button>
+                  )
                 )}
               </>
             )}
@@ -3734,7 +3786,7 @@ export default function ScreenLayer({
       session={session} onSessionBump={onSessionBump} rewardToast={rewardToast} />
   );
   if (screen === "ledger")    return (
-    <LedgerScreen go={go} tasks={tasks} setTasks={setTasks} onSessionBump={onSessionBump} />
+    <LedgerScreen go={go} tasks={tasks} setTasks={setTasks} session={session} onSessionBump={onSessionBump} />
   );
   if (screen === "desk")      return (
     <DeskScreen go={go} tasks={tasks} setTasks={setTasks} playSfx={playSfx}

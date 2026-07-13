@@ -13,6 +13,7 @@ import {
   buildMinimumSchedule,
   dealDailyHand,
   toggleDealPick,
+  manualToggleHand,
   dealProgress,
   ensureDailyDeal,
   normalizeTask,
@@ -347,6 +348,75 @@ test("Full Steam exposes optional work that Steady excludes", () => {
   const full = dealDailyHand(tasks, "full", d("2026-07-30"));
   assert.ok(!steady.offerTaskIds.includes("c1"));
   assert.ok(full.offerTaskIds.includes("c1"));
+});
+
+/* ---------------- Part H: user-customizable hand (manualToggleHand) ---------------- */
+
+test("manualToggleHand adds an open non-hand task to the hand", () => {
+  const extra = mkTask({ id: "extra1", category: "admin", criticality: 1, effort: 2 });
+  const tasks = [extra];
+  const deal = dealDailyHand(tasks, "fumes", d("2026-07-11")); // fumes: no bound work, empty hand
+  assert.ok(!deal.selectedTaskIds.includes("extra1"));
+  const next = manualToggleHand(deal, "extra1", tasks, d("2026-07-11"));
+  assert.ok(next.selectedTaskIds.includes("extra1"), "manual add must land in selectedTaskIds");
+  assert.ok(next.manualAddIds.includes("extra1"), "manual add must be tracked in manualAddIds");
+  assert.equal(next.effortById.extra1, 2, "effortById must be backfilled for the manual add");
+});
+
+test("manualToggleHand removes a scheduler-selected non-forced card", () => {
+  const c1 = mkTask({ id: "sel1", category: "admin", criticality: 1, effort: 1, latestDate: "2026-07-31" });
+  const tasks = [c1];
+  let deal = dealDailyHand(tasks, "full", d("2026-07-11"));
+  deal = toggleDealPick(deal, "sel1");
+  assert.ok(deal.selectedTaskIds.includes("sel1"), "setup: card should be selected via toggleDealPick");
+  const next = manualToggleHand(deal, "sel1", tasks, d("2026-07-11"));
+  assert.ok(!next.selectedTaskIds.includes("sel1"), "removed card must leave selectedTaskIds");
+  assert.ok(next.manualDropIds.includes("sel1"), "removed card must be tracked in manualDropIds");
+});
+
+test("manualToggleHand cannot remove a date-forced card", () => {
+  const forced = mkTask({
+    id: "forced1", criticality: 2,
+    exactDate: "2026-07-11", targetDate: "2026-07-11", latestDate: "2026-07-11",
+  });
+  const tasks = [forced];
+  const deal = dealDailyHand(tasks, "fumes", d("2026-07-11"));
+  assert.ok(deal.selectedTaskIds.includes("forced1"), "setup: exact-date-today card is bound + selected");
+  const next = manualToggleHand(deal, "forced1", tasks, d("2026-07-11"));
+  assert.deepEqual(next, deal, "removing a date-forced card must be a no-op");
+});
+
+test("re-toggling a manually dropped card restores it", () => {
+  const c1 = mkTask({ id: "sel2", category: "admin", criticality: 1, effort: 1, latestDate: "2026-07-31" });
+  const tasks = [c1];
+  let deal = dealDailyHand(tasks, "full", d("2026-07-11"));
+  deal = toggleDealPick(deal, "sel2");
+  deal = manualToggleHand(deal, "sel2", tasks, d("2026-07-11")); // drop
+  assert.ok(deal.manualDropIds.includes("sel2"));
+  assert.ok(!deal.selectedTaskIds.includes("sel2"));
+  deal = manualToggleHand(deal, "sel2", tasks, d("2026-07-11")); // re-toggle: restore
+  assert.ok(!deal.manualDropIds.includes("sel2"), "restored card must leave manualDropIds");
+  assert.ok(deal.selectedTaskIds.includes("sel2"), "restored card must be back in the hand");
+});
+
+test("ensureDailyDeal preserves a manual add across a same-day regen", () => {
+  const today = d("2026-07-11");
+  const day = todayKey(today);
+  const base = mkTask({ id: "base1", category: "admin", criticality: 1, effort: 1 });
+  const extra = mkTask({ id: "manualExtra", category: "admin", criticality: 1, effort: 1 });
+  let tasks = [base, extra];
+  let deal = dealDailyHand(tasks, "steady", today);
+  deal = manualToggleHand(deal, "manualExtra", tasks, today);
+  assert.ok(deal.selectedTaskIds.includes("manualExtra"));
+  assert.ok(deal.manualAddIds.includes("manualExtra"));
+  const session = { day, energy: "steady", dailyDeal: deal };
+  // Add a new task so taskScheduleKey changes and ensureDailyDeal regenerates the deal.
+  const newTask = mkTask({ id: "newOne", category: "admin", criticality: 1, effort: 1 });
+  tasks = [base, extra, newTask];
+  const after = ensureDailyDeal(session, tasks, "steady", today);
+  assert.notEqual(after.dailyDeal.scheduleKey, deal.scheduleKey, "setup: scheduleKey must actually change");
+  assert.ok(after.dailyDeal.selectedTaskIds.includes("manualExtra"), "manual add must survive the regen");
+  assert.ok(after.dailyDeal.manualAddIds.includes("manualExtra"), "manualAddIds must carry the id forward");
 });
 
 /* ---------------- summary ---------------- */

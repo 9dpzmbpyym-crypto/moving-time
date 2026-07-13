@@ -58,7 +58,7 @@ import {
   clampRoomIndex,
 } from "./save.js";
 import { mergeSession, bumpSession } from "./session.js";
-import { ensureDailyDeal, toggleDealPick, handTasks } from "./schedule.js";
+import { ensureDailyDeal, toggleDealPick, manualToggleHand, handTasks } from "./schedule.js";
 import {
   completeTaskFromEvent,
   reconcileTasksFromWorldState,
@@ -2823,6 +2823,12 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     setSession((prev) => {
       if (extra?.toggleDealId && prev.dailyDeal) {
         return { ...prev, dailyDeal: toggleDealPick(prev.dailyDeal, extra.toggleDealId) };
+      }
+      if (extra?.manualToggleId && prev.dailyDeal) {
+        return {
+          ...prev,
+          dailyDeal: manualToggleHand(prev.dailyDeal, extra.manualToggleId, extra.manualToggleTasks || []),
+        };
       }
       if (extra && Object.prototype.hasOwnProperty.call(extra, "energy")) {
         if (extra.clearDeal || extra.energy == null) {

@@ -434,6 +434,10 @@ export function dealDailyHand(tasks, energy = "steady", today = new Date()) {
     overload: overloadReasons.length > 0, overloadReasons,
     scheduleKey: taskScheduleKey(openTasks, today),
     dealConfirmed: requiredOptionalEffort === 0,
+    // User-customizable hand (Sol §H): explicit Ledger adds / Board put-backs.
+    // Empty on a fresh deal; ensureDailyDeal carries these across same-day regen.
+    manualAddIds: [],
+    manualDropIds: [],
   };
 }
 
@@ -459,6 +463,58 @@ export function toggleDealPick(dailyDeal, taskId) {
   return {
     ...dailyDeal,
     selectedTaskIds: [...selected],
+    dealConfirmed: remainingEffort <= 0,
+  };
+}
+
+/**
+ * Manual hand edit (Sol §H): add any eligible open task straight from the
+ * Ledger, or put back any non-forced card straight from the hand. Distinct
+ * from toggleDealPick — that only toggles cards already in the offer pool;
+ * this works on ANY open task and tracks the choice in manualAddIds /
+ * manualDropIds so ensureDailyDeal can carry it across same-day regen.
+ * Truly date-forced cards (isBoundToday) can never be manually removed.
+ */
+export function manualToggleHand(dailyDeal, taskId, tasks, today = new Date()) {
+  if (!dailyDeal || !taskId) return dailyDeal;
+  const allTasks = normalizeTasks(tasks);
+  const task = allTasks.find((t) => t.id === taskId);
+  if (!task || !isOpen(task)) return dailyDeal;
+  const forced = isBoundToday(task, today, allTasks);
+
+  const manualAddSet = new Set(dailyDeal.manualAddIds || []);
+  const manualDropSet = new Set(dailyDeal.manualDropIds || []);
+  const selectedSet = new Set(dailyDeal.selectedTaskIds || []);
+  const inHand = (selectedSet.has(taskId) || manualAddSet.has(taskId)) && !manualDropSet.has(taskId);
+  const effortById = { ...(dailyDeal.effortById || {}) };
+
+  if (inHand) {
+    if (forced) return dailyDeal; // date-forced cards cannot be removed
+    manualAddSet.delete(taskId);
+    if (selectedSet.has(taskId)) {
+      manualDropSet.add(taskId);
+      selectedSet.delete(taskId);
+    }
+  } else {
+    manualAddSet.add(taskId);
+    manualDropSet.delete(taskId);
+    selectedSet.add(taskId);
+    effortById[taskId] = effortOf(task);
+  }
+
+  const bound = new Set(dailyDeal.boundTaskIds || []);
+  const selectedOptionalEffort = [...selectedSet]
+    .filter((id) => !bound.has(id))
+    .reduce((s, id) => s + (effortById[id] ?? 1), 0);
+  const requiredOptionalEffort = dailyDeal.requiredOptionalEffort || 0;
+  const remainingEffort = Math.max(0, requiredOptionalEffort - selectedOptionalEffort);
+
+  return {
+    ...dailyDeal,
+    selectedTaskIds: [...selectedSet],
+    manualAddIds: [...manualAddSet],
+    manualDropIds: [...manualDropSet],
+    effortById,
     dealConfirmed: remainingEffort <= 0,
   };
 }
@@ -569,7 +625,26 @@ export function ensureDailyDeal(session, tasks, energy, today = new Date()) {
     for (const id of prev.selectedTaskIds || []) {
       if (validOffers.has(id)) selected.add(id);
     }
+
+    // Carry manual Ledger-adds / Board put-backs across the regen (same day
+    // only — a new day resets both via dealDailyHand's fresh empty arrays).
+    const allOpenTasks = normalizeTasks(tasks).filter(isOpen);
+    const byId = Object.fromEntries(allOpenTasks.map((t) => [t.id, t]));
+    const carriedAdds = (prev.manualAddIds || [])
+      .filter((id) => byId[id] && isActionable(byId[id], today, allOpenTasks));
+    for (const id of carriedAdds) {
+      selected.add(id);
+      if (deal.effortById[id] == null) deal.effortById[id] = effortOf(byId[id]);
+    }
+    // A carried drop is dropped again UNLESS the task is now date-forced —
+    // a real deadline overrides an earlier manual put-back.
+    const carriedDrops = (prev.manualDropIds || [])
+      .filter((id) => !(byId[id] && isBoundToday(byId[id], today, allOpenTasks)));
+    for (const id of carriedDrops) selected.delete(id);
+
     deal.selectedTaskIds = [...selected];
+    deal.manualAddIds = carriedAdds;
+    deal.manualDropIds = carriedDrops;
     deal.dealConfirmed = dealProgress(deal).ready;
   }
   return {
@@ -588,6 +663,7 @@ export function handTasks(tasks, dailyDeal) {
   const all = tasks || [];
   const byId = Object.fromEntries(all.map((t) => [t.id, t]));
   const bound = new Set(dailyDeal.boundTaskIds || []);
+  const manual = new Set(dailyDeal.manualAddIds || []);
   const today = new Date();
   return dailyDeal.selectedTaskIds
     .map((id) => byId[id])
@@ -595,6 +671,7 @@ export function handTasks(tasks, dailyDeal) {
     .map((t) => ({
       ...normalizeTask(t),
       bound: bound.has(t.id),
+      manual: manual.has(t.id),
       urgencyStatus: taskStatus(t, today, all),
     }));
 }
