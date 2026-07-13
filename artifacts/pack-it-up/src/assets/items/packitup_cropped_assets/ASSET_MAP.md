@@ -23,24 +23,15 @@ Also used, but one level up in `src/assets/` (not in this folder):
 `Screens.jsx`, which render `task_card_assets/`. There is no bespoke "drawn desk
 card" — the Desk, Command Board hand, and ledger all use the same card component.
 
-## SOURCE / INTERMEDIATE — not imported, safe to archive or delete
+## SOURCE / INTERMEDIATE — MOVED OUT of `src/` (Jul 13)
 
-Kept only as source material; nothing in code imports these. They're ~44 MB of
-clone weight and the main reason this folder is confusing.
+The ~46 MB of unimported source art that used to clutter this folder now lives in
+**`artifacts/pack-it-up/asset-sources/`** (loose mockups, `source_sheets/`,
+`by_room/`, `contact_sheets/`, `pack_it_up_individual_cards/`, `raw_crops/`). See
+`asset-sources/README.md`. Nothing imports it; it's reference only. This folder now
+contains only shipped assets + metadata (`manifest.json`, `manifest.csv`,
+`README.txt`).
 
-| Path | What it is | Size |
-|------|-----------|------|
-| `ui_mockups/*.png` (loose root files) | Original full UI mockups + source sheets the `_slices/` were cut from. Canonical mockups already live in `docs/mockups/`. | ~35 MB |
-| `source_sheets/` | Original sprite source sheets | ~3.3 MB |
-| `contact_sheets/` | Preview contact sheets | ~2.5 MB |
-| `by_room/` | Per-room organization of the same crops that ended up in `normalized/` | ~1.9 MB |
-| `pack_it_up_individual_cards/` | Loose individual card art | ~0.6 MB |
-| `raw_crops/` | Pre-normalization crops. **Named in `manifest.json`/`manifest.csv`** (metadata only — code loads `normalized/`), so verify before deleting. | ~1.7 MB |
-
-Already removed (Jul 13): `packitup_cropped_assets.zip` (10 MB archive),
+Already deleted (Jul 13): `packitup_cropped_assets.zip` (10 MB archive),
 `task_card_assets_pack/` (exact duplicate of `task_card_assets/`), `src/sell.mp3`
 (orphan; sell chime is base64-inlined).
-
-**Recommendation:** move the source rows above out of `src/` (e.g. to
-`artifacts/pack-it-up/asset-sources/`) or delete them — git history preserves
-them either way. Left in place pending Eloisa's OK because they're her source art.
