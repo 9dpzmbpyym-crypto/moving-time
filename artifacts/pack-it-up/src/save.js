@@ -179,7 +179,11 @@ export function mergeTasks(initial, savedTasks) {
       jobId: s.jobId !== undefined && s.jobId !== null ? s.jobId : t.jobId,
       selfTarget: s.selfTarget !== undefined ? !!s.selfTarget : !!t.selfTarget,
       estimatedLatest: s.estimatedLatest !== undefined ? !!s.estimatedLatest : !!t.estimatedLatest,
-      binding: s.binding || t.binding || null,
+      // Canonical mixed packing bindings supersede the older single-kind
+      // bindings saved before environment + contents could be selected together.
+      binding: t.binding?.feature === "packing_requirement" && s.binding?.feature !== "packing_requirement"
+        ? t.binding
+        : (s.binding || t.binding || null),
       scheduleOverride: !!s.scheduleOverride,
     });
   });

@@ -1306,7 +1306,7 @@ function TaskBindingFields({ value, onChange, fieldStyle }) {
   const targets = binding.feature ? targetOptionsForFeature(binding.feature) : [];
   const triggers = binding.feature ? (COMPLETION_TRIGGER_OPTIONS[binding.feature] || []) : [];
   const targetIsKnown = targets.some((option) => optionValue(option) === binding.target);
-  const supportsMany = binding.feature === "inventory_collection" || binding.feature === "inventory_item";
+  const supportsMany = ["packing_requirement", "apartment_item", "inventory_collection", "inventory_item"].includes(binding.feature);
   const selectedTargets = binding.targets?.length ? binding.targets : (binding.target ? [binding.target] : []);
   const update = (patch) => onChange({ ...binding, ...patch });
   const selectStyle = { ...fieldStyle, marginBottom: 0, minWidth: 0 };

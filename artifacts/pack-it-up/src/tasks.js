@@ -111,6 +111,11 @@ const apartmentItems = (trigger, ...targets) => ({
   ...(targets.length > 1 ? { targets, aggregate: "all" } : {}),
   trigger, resultStatus: "done",
 });
+const packingRequirements = (...targets) => ({
+  feature: "packing_requirement", target: targets[0],
+  ...(targets.length > 1 ? { targets, aggregate: "all" } : {}),
+  trigger: "packed", resultStatus: "done",
+});
 
 /**
  * Active job tracker only (Saved + Applied-watch still in play).
@@ -197,7 +202,7 @@ export const INITIAL_TASKS = [
   base({ id: "p_games", title: "Pack board games and gaming extras", category: "move", effort: 1, due: "Jul 12", dueDate: "2026-07-12", dueEnd: "2026-07-16", availableFrom: "2026-07-11", targetDate: "2026-07-12", latestDate: "2026-07-16", criticality: 2, binding: packedCollections("collection:living:tv_hutch:games & gaming extras") }),
   base({ id: "p_winter_clothes", title: "Pack winter/off-season clothes", category: "move", effort: 2, due: "Jul 14", dueDate: "2026-07-14", dueEnd: "2026-07-18", availableFrom: "2026-07-12", targetDate: "2026-07-14", latestDate: "2026-07-18", criticality: 2, binding: packedCollections("collection:bedroom:closet_door:winter & off-season clothes") }),
   base({ id: "p_linens", title: "Pack extra linens/towels", category: "move", effort: 1, due: "Jul 14", dueDate: "2026-07-14", dueEnd: "2026-07-18", availableFrom: "2026-07-12", targetDate: "2026-07-14", latestDate: "2026-07-18", criticality: 2, binding: packedCollections("collection:task:linens and towels") }),
-  base({ id: "p_barware", title: "Pack unused barware/glassware", category: "move", effort: 2, due: "Jul 14", dueDate: "2026-07-14", dueEnd: "2026-07-19", availableFrom: "2026-07-12", targetDate: "2026-07-14", latestDate: "2026-07-19", criticality: 2, binding: packedCollections("collection:dining:bar_cabinet:glassware") }),
+  base({ id: "p_barware", title: "Pack unused barware/glassware", category: "move", effort: 2, due: "Jul 14", dueDate: "2026-07-14", dueEnd: "2026-07-19", availableFrom: "2026-07-12", targetDate: "2026-07-14", latestDate: "2026-07-19", criticality: 2, binding: packingRequirements("object:dining:bar_cabinet", "collection:dining:bar_cabinet:glassware") }),
   base({ id: "p_outdoor_keep", title: "Pack outdoor/garden items being kept", category: "move", effort: 2, due: "Jul 15", dueDate: "2026-07-15", dueEnd: "2026-07-18", availableFrom: "2026-07-13", targetDate: "2026-07-15", latestDate: "2026-07-18", criticality: 2 }),
   base({ id: "p_electronics", title: "Pack remaining nonessential electronics", category: "move", effort: 2, due: "Jul 15", dueDate: "2026-07-15", dueEnd: "2026-07-19", availableFrom: "2026-07-13", targetDate: "2026-07-15", latestDate: "2026-07-19", criticality: 2, binding: packedCollections("collection:office:desk_hutch:nonessential electronics") }),
 
@@ -207,7 +212,7 @@ export const INITIAL_TASKS = [
   base({ id: "m_pack_office", title: "Pack office supplies and papers", category: "move", effort: 2, due: "Jul 18–24", dueDate: "2026-07-18", dueEnd: "2026-07-24", availableFrom: "2026-07-16", targetDate: "2026-07-18", latestDate: "2026-07-24", criticality: 2, binding: packedCollections("collection:office:desk_hutch:office supplies", "collection:office:side_cabinet:documents") }),
   base({ id: "p_triage_docs", title: "Triage documents into archive/carry/shred", category: "move", effort: 2, urgency: 2, due: "Jul 18", dueDate: "2026-07-18", dueEnd: "2026-07-22", availableFrom: "2026-07-16", targetDate: "2026-07-18", latestDate: "2026-07-22", criticality: 3 }),
   base({ id: "m_pack_kitchen", title: "Pack nonessential kitchen", category: "move", effort: 2, due: "Jul 19–23", dueDate: "2026-07-19", dueEnd: "2026-07-23", availableFrom: "2026-07-17", targetDate: "2026-07-19", latestDate: "2026-07-23", criticality: 2, binding: packedCollections("collection:kitchen:counter_sink:utensils", "collection:kitchen:counter_sink:dishes & cookware") }),
-  base({ id: "p_dining_bar", title: "Pack dining/bar cabinet contents", category: "move", effort: 2, due: "Jul 19", dueDate: "2026-07-19", dueEnd: "2026-07-23", availableFrom: "2026-07-17", targetDate: "2026-07-19", latestDate: "2026-07-23", criticality: 2, binding: packedCollections("collection:dining:bar_bottles:alcohol", "collection:dining:bar_bottles:bar tools") }),
+  base({ id: "p_dining_bar", title: "Pack dining/bar cabinet contents", category: "move", effort: 2, due: "Jul 19", dueDate: "2026-07-19", dueEnd: "2026-07-23", availableFrom: "2026-07-17", targetDate: "2026-07-19", latestDate: "2026-07-23", criticality: 2, binding: packingRequirements("object:dining:bar_bottles", "collection:dining:bar_bottles:alcohol", "collection:dining:bar_bottles:bar tools") }),
   base({ id: "m_pack_living", title: "Pack living decor/electronics + dining/bar", category: "move", effort: 2, due: "Jul 20–24", dueDate: "2026-07-20", dueEnd: "2026-07-24", availableFrom: "2026-07-18", targetDate: "2026-07-20", latestDate: "2026-07-24", criticality: 2, binding: packedCollections("collection:living:tv_hutch:decor & knickknacks", "collection:living:tv_hutch:games & gaming extras", "collection:dining:bar_bottles:all", "collection:dining:bar_cabinet:all") }),
   base({ id: "p_cat_belongings", title: "Pack Stretchy's nonessential belongings", category: "move", effort: 1, due: "Jul 21", dueDate: "2026-07-21", dueEnd: "2026-07-25", availableFrom: "2026-07-19", targetDate: "2026-07-21", latestDate: "2026-07-25", criticality: 2, binding: packedCollections("collection:task:cat belongings") }),
   base({ id: "p_bedroom_capsule", title: "Reduce bedroom to travel capsule", category: "move", effort: 2, due: "Jul 22", dueDate: "2026-07-22", dueEnd: "2026-07-25", availableFrom: "2026-07-20", targetDate: "2026-07-22", latestDate: "2026-07-25", criticality: 2, binding: packedCollections("collection:bedroom:dresser:all", "collection:bedroom:closet_door:all") }),

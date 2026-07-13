@@ -6,6 +6,7 @@ import { PACKABLE_APARTMENT_TARGET_OPTIONS } from "./apartmentObjectCatalog.js";
    the resulting world/task state. */
 
 export const GAME_FEATURE_OPTIONS = [
+  { value: "packing_requirement", label: "Packing requirements (mixed)" },
   { value: "apartment_item", label: "Apartment item / packing" },
   { value: "inventory_collection", label: "Stored item collection" },
   { value: "inventory_item", label: "Individual stored item" },
@@ -47,6 +48,10 @@ export const COMPLETION_TRIGGER_OPTIONS = {
     { value: "buyerFound", label: "Buyer found" },
     { value: "removed", label: "Sold or donated (physically removed)" },
   ],
+  packing_requirement: [
+    { value: "packed", label: "Everything packed" },
+    { value: "handled", label: "Everything packed, sold, or donated" },
+  ],
   inventory_collection: [
     { value: "packed", label: "Every item packed" },
     { value: "handled", label: "Every item packed, sold, or donated" },
@@ -72,6 +77,11 @@ export const TASK_RESULT_OPTIONS = [
 ];
 
 export function targetOptionsForFeature(feature) {
+  if (feature === "packing_requirement") return [
+    ...PACKABLE_APARTMENT_TARGET_OPTIONS.map((option) => ({ value: `object:${option.value}`, label: `Environment · ${option.label}` })),
+    ...INVENTORY_COLLECTION_OPTIONS.map((option) => ({ ...option, label: `Collection · ${option.label}` })),
+    ...INVENTORY_ITEM_OPTIONS.map((option) => ({ value: `item:${option.value}`, label: `Stored item · ${option.label}` })),
+  ];
   if (feature === "apartment_item") return PACKABLE_APARTMENT_TARGET_OPTIONS;
   if (feature === "inventory_collection") return INVENTORY_COLLECTION_OPTIONS;
   if (feature === "inventory_item") return INVENTORY_ITEM_OPTIONS;
@@ -111,6 +121,16 @@ export function resolveTaskDestination(task) {
   if (binding?.feature === "apartment_item") {
     const [roomId, objectId] = binding.target.split(":");
     return { screen: "apartment", roomId, objectId };
+  }
+  if (binding?.feature === "packing_requirement") {
+    const first = binding.target;
+    const raw = first.startsWith("object:")
+      ? first.slice("object:".length)
+      : first.startsWith("item:")
+        ? first.slice("item:".length)
+        : inventoryTargetKeys("inventory_collection", first)[0]?.replace(/^object:/, "");
+    const [roomId, objectId] = String(raw || "").split(":");
+    return roomId && objectId ? { screen: "apartment", roomId, objectId } : null;
   }
   if (binding?.feature === "inventory_collection" || binding?.feature === "inventory_item") {
     const raw = binding.feature === "inventory_collection"
@@ -156,6 +176,26 @@ export function taskBindingSatisfied(task, world = {}) {
       if (binding.trigger === "handled") return !!(flags.packed || flags.sold || flags.donated);
       if (binding.trigger === "removed") return !!(flags.sold || flags.donated);
       return !!flags[binding.trigger];
+    });
+    return binding.aggregate === "any" ? checks.some(Boolean) : checks.every(Boolean);
+  }
+  if (binding.feature === "packing_requirement") {
+    const targets = binding.targets || [binding.target];
+    const checks = targets.map((target) => {
+      const keys = target.startsWith("object:")
+        ? [target]
+        : target.startsWith("item:")
+          ? [target.slice("item:".length)]
+          : inventoryTargetKeys("inventory_collection", target);
+      if (!keys.length) return false;
+      return keys.every((key) => {
+        const isObject = key.startsWith("object:");
+        const stateKey = isObject ? key.slice("object:".length) : key;
+        const flags = isObject ? world.objState?.[stateKey] : world.contentsState?.[stateKey];
+        if (!flags) return false;
+        if (binding.trigger === "handled") return !!(flags.packed || flags.sold || flags.donated);
+        return !!flags.packed;
+      });
     });
     return binding.aggregate === "any" ? checks.some(Boolean) : checks.every(Boolean);
   }
