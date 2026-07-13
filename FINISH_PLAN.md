@@ -30,7 +30,7 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 - [x] **Criticality** editable in the ledger (saved as `criticalityOverride`) + new **Priority sort**.
 - [x] **Binding uniqueness**: no item bound to two tasks (`p_death_cords` + 5 legacy coarse cards unbound); new `tests/binding-uniqueness.test.mjs`.
 - [x] **Cleanup**: −119 lines dead legacy scheduler code (`legacyDealDailyHand` chain).
-- [ ] **PARKED (`git stash@{0}`)**: desk "real cards → inspection tray" — needs Eloisa's visual feedback, don't ship blind.
+- [ ] **PARKED (`git stash@{0}`)**: desk "real cards → inspection tray" — needs Eloisa's visual feedback, don't ship blind. **Guard: the Desk INCOMING/FILED must render the shared `VerticalTaskCard` component (the exact card used in the hand/deal/ledger), NEVER a bespoke drawn card.** The earlier drawn `DeskStack` was a detour Eloisa rejected. Selection routes the card to the inspection **tray**, not a modal overlay.
 
 ### UI polish nits — [codex] (Fable, Jul 13 — from live review of your screens)
 Three small things spotted reviewing the redesigned screens; not urgent, fold into your current UI pass:

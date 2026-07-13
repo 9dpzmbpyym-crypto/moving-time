@@ -74,10 +74,14 @@ artifacts/pack-it-up/src/schedule.js       ← urgency/criticality scoring, dail
 artifacts/pack-it-up/src/save.js           ← localStorage save/load/migrate + import/restore (key: pack-it-up-save)
 artifacts/pack-it-up/src/main.tsx          ← 15-line entry point
 artifacts/pack-it-up/src/layout.json       ← furniture X/Y positions per room
-artifacts/pack-it-up/src/sell.mp3          ← sell sound
 artifacts/pack-it-up/src/assets/Cat-Sheet.png ← cat sprite sheet
 artifacts/pack-it-up/src/dev/spritePreview.jsx ← dev tool only
 ```
+
+Audio is NOT in `src/` — all sound lives in `public/assets/audio/` (music · sfx/{cat,containers,ui} · code · docs). The sell chime is base64-inlined in code, not a file.
+
+Assets map (what's actually imported vs source clutter): see
+`artifacts/pack-it-up/src/assets/items/packitup_cropped_assets/ASSET_MAP.md`.
 
 Everything else at the root is monorepo config. Do not touch it.
 
