@@ -119,10 +119,13 @@ export function mergeTasks(initial, savedTasks) {
   const byId = Object.fromEntries(
     savedTasks.filter((t) => t && t.id && !REMOVED_TASK_IDS.has(t.id)).map((t) => [t.id, t])
   );
+  // Once a device has a task ledger, that saved membership is canonical. New
+  // source defaults must not silently repopulate a list the player curated.
+  const savedIds = new Set(Object.keys(byId));
   const ok = new Set(["pending", "active", "done", "dismissed", "archived"]);
   const initialIds = new Set(initial.map((t) => t.id));
   const merged = initial
-    .filter((t) => !REMOVED_TASK_IDS.has(t.id))
+    .filter((t) => !REMOVED_TASK_IDS.has(t.id) && savedIds.has(t.id))
     .map((t) => {
     const s = byId[t.id];
     if (!s || !ok.has(s.status)) return normalizeTask(t);
@@ -130,6 +133,17 @@ export function mergeTasks(initial, savedTasks) {
     const effort = typeof s.effort === "number" ? Math.min(3, Math.max(1, s.effort)) : t.effort;
     const category = FORCE_TASK_CATEGORY[t.id]
       || (typeof s.category === "string" && s.category ? s.category : t.category);
+    const savedDueDate = typeof s.dueDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s.dueDate)
+      ? s.dueDate
+      : null;
+    // Ledger dueDate is the mobile player's edited date and therefore wins
+    // over stale source target/latest fields. Never allow a deadline window
+    // or availability gate to end after/before it nonsensically.
+    const targetDate = savedDueDate || s.targetDate || t.targetDate || t.dueDate || null;
+    const rawLatest = s.latestDate || s.dueEnd || t.latestDate || t.dueEnd || targetDate;
+    const latestDate = targetDate && (!rawLatest || rawLatest < targetDate) ? targetDate : rawLatest;
+    const rawAvailable = s.availableFrom !== undefined ? s.availableFrom : t.availableFrom;
+    const availableFrom = targetDate && rawAvailable && rawAvailable > targetDate ? targetDate : rawAvailable;
     return normalizeTask({
       ...t,
       status: s.status,
@@ -140,12 +154,14 @@ export function mergeTasks(initial, savedTasks) {
         ? t.title
         : (typeof s.title === "string" && s.title.trim() ? s.title.trim() : t.title),
       due: t.selfTarget ? t.due : (typeof s.due === "string" ? s.due : t.due),
-      dueDate: s.dueDate !== undefined ? s.dueDate : t.dueDate,
-      dueEnd: s.dueEnd !== undefined ? s.dueEnd : t.dueEnd,
-      targetDate: s.targetDate !== undefined ? s.targetDate : t.targetDate,
-      latestDate: s.latestDate !== undefined ? s.latestDate : t.latestDate,
-      exactDate: s.exactDate !== undefined ? s.exactDate : t.exactDate,
-      availableFrom: s.availableFrom !== undefined ? s.availableFrom : t.availableFrom,
+      dueDate: savedDueDate || (s.dueDate !== undefined ? s.dueDate : t.dueDate),
+      dueEnd: latestDate,
+      targetDate,
+      latestDate,
+      exactDate: (s.exactDate || t.exactDate) && savedDueDate
+        ? savedDueDate
+        : (s.exactDate !== undefined ? s.exactDate : t.exactDate),
+      availableFrom,
       criticality: s.criticality !== undefined ? s.criticality : t.criticality,
       category,
       kind: s.kind || t.kind || null,
@@ -158,7 +174,7 @@ export function mergeTasks(initial, savedTasks) {
       jobId: s.jobId !== undefined && s.jobId !== null ? s.jobId : t.jobId,
       selfTarget: !!t.selfTarget,
       estimatedLatest: s.estimatedLatest !== undefined ? !!s.estimatedLatest : !!t.estimatedLatest,
-      binding: s.binding !== undefined ? s.binding : (t.binding || null),
+      binding: s.binding || t.binding || null,
     });
   });
   for (const s of savedTasks) {

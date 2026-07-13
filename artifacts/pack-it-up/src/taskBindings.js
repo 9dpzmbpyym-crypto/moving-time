@@ -40,6 +40,7 @@ export const COMPLETION_TRIGGER_OPTIONS = {
     { value: "sold", label: "Sold" },
     { value: "donated", label: "Donated" },
     { value: "buyerFound", label: "Buyer found" },
+    { value: "removed", label: "Sold or donated (physically removed)" },
   ],
   health_zone: [{ value: "stabilized", label: "Zone stabilized" }],
   health_appointment: [
@@ -70,11 +71,21 @@ export function normalizeTaskBinding(binding) {
   const trigger = triggers.some((option) => option.value === binding.trigger)
     ? binding.trigger
     : triggers[0]?.value;
-  if (!trigger || !String(binding.target || "").trim()) return null;
+  const targets = Array.isArray(binding.targets)
+    ? binding.targets.map((target) => String(target || "").trim()).filter(Boolean)
+    : [];
+  const target = String(binding.target || targets[0] || "").trim();
+  if (!trigger || !target) return null;
   const resultStatus = TASK_RESULT_OPTIONS.some((option) => option.value === binding.resultStatus)
     ? binding.resultStatus
     : "done";
-  return { feature, target: String(binding.target).trim(), trigger, resultStatus };
+  return {
+    feature,
+    target,
+    ...(targets.length > 1 ? { targets: [...new Set(targets)], aggregate: binding.aggregate === "any" ? "any" : "all" } : {}),
+    trigger,
+    resultStatus,
+  };
 }
 
 export function resolveTaskDestination(task) {
@@ -92,9 +103,11 @@ export function resolveTaskDestination(task) {
 export function bindingMatchesEvent(bindingLike, event) {
   const binding = normalizeTaskBinding(bindingLike);
   if (!binding || !event) return false;
-  if (binding.feature !== event.feature || binding.target !== event.target) return false;
+  const targets = binding.targets || [binding.target];
+  if (binding.feature !== event.feature || !targets.includes(event.target)) return false;
   if (binding.trigger === event.trigger) return true;
-  return binding.trigger === "handled" && ["packed", "sold", "donated"].includes(event.trigger);
+  if (binding.trigger === "handled") return ["packed", "sold", "donated"].includes(event.trigger);
+  return binding.trigger === "removed" && ["sold", "donated"].includes(event.trigger);
 }
 
 export function completeTaskFromEvent(tasks, event) {
@@ -111,10 +124,15 @@ export function taskBindingSatisfied(task, world = {}) {
   const binding = normalizeTaskBinding(task?.binding);
   if (!binding) return null;
   if (binding.feature === "apartment_item") {
-    const flags = world.objState?.[binding.target];
-    if (!flags) return false;
-    if (binding.trigger === "handled") return !!(flags.packed || flags.sold || flags.donated);
-    return !!flags[binding.trigger];
+    const targets = binding.targets || [binding.target];
+    const checks = targets.map((target) => {
+      const flags = world.objState?.[target];
+      if (!flags) return false;
+      if (binding.trigger === "handled") return !!(flags.packed || flags.sold || flags.donated);
+      if (binding.trigger === "removed") return !!(flags.sold || flags.donated);
+      return !!flags[binding.trigger];
+    });
+    return binding.aggregate === "any" ? checks.some(Boolean) : checks.every(Boolean);
   }
   if (binding.feature === "health_zone") {
     return binding.trigger === "stabilized" && !!world.calmedZones?.[binding.target];

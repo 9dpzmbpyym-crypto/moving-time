@@ -2854,8 +2854,11 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     playPackSfx();
     setPackingId(id);
     schedule(() => {
-      setObjState((s) => ({ ...s, [k]: { ...s[k], packed: true } }));
-      setTasks((current) => completeTaskFromEvent(current, { feature: "apartment_item", target: k, trigger: "packed" }));
+      const nextState = { ...objState, [k]: { ...objState[k], packed: true } };
+      setObjState(nextState);
+      setTasks((current) => reconcileTasksFromWorldState(current, {
+        objState: nextState, appointments, calmedZones: session.calmedZones,
+      }));
       setUndoStack((stack) => [...stack, undoEntry(id, prev, 0, 10)]);
       setPackingId(null);
       setSelectedId(null);
@@ -2880,8 +2883,11 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     haptic(HAPTIC.sell);
     playSellSound();
     schedule(() => {
-      setObjState((s) => ({ ...s, [k]: { ...s[k], sold: true, soldFor: credit } }));
-      setTasks((current) => completeTaskFromEvent(current, { feature: "apartment_item", target: k, trigger: "sold" }));
+      const nextState = { ...objState, [k]: { ...objState[k], sold: true, soldFor: credit } };
+      setObjState(nextState);
+      setTasks((current) => reconcileTasksFromWorldState(current, {
+        objState: nextState, appointments, calmedZones: session.calmedZones,
+      }));
       setCoins((c) => c + credit);
       setUndoStack((stack) => [...stack, undoEntry(id, prev, credit, 5)]);
       setSellingId(null);
@@ -2900,8 +2906,11 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     playDonateSfx();
     setDonatingId(id);
     schedule(() => {
-      setObjState((s) => ({ ...s, [k]: { ...s[k], donated: true } }));
-      setTasks((current) => completeTaskFromEvent(current, { feature: "apartment_item", target: k, trigger: "donated" }));
+      const nextState = { ...objState, [k]: { ...objState[k], donated: true } };
+      setObjState(nextState);
+      setTasks((current) => reconcileTasksFromWorldState(current, {
+        objState: nextState, appointments, calmedZones: session.calmedZones,
+      }));
       setUndoStack((stack) => [...stack, undoEntry(id, prev, 0, 5)]);
       setDonatingId(null);
       setSelectedId(null);

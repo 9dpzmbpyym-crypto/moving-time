@@ -49,4 +49,22 @@ assert.equal(appointmentTask.zone, "heart");
 const restored = mergeTasks([], [{ ...appointmentTask, status: "pending" }]);
 assert.deepEqual(restored[0].binding, appointmentTask.binding, "custom task bindings survive save restore");
 
+const canonical = mergeTasks([
+  { id: "kept", title: "Source title", category: "move", status: "pending", dueDate: "2026-07-10",
+    binding: { feature: "apartment_item", target: "living:sofa", trigger: "removed", resultStatus: "done" } },
+  { id: "new_default", title: "Must not revive", category: "move", status: "pending" },
+], [{
+  id: "kept", title: "Mobile title", category: "admin", status: "pending",
+  due: "Jul 25", dueDate: "2026-07-25", dueEnd: "2026-07-16",
+  targetDate: "2026-07-10", latestDate: "2026-07-16", availableFrom: "2026-07-30",
+  binding: null,
+}]);
+assert.deepEqual(canonical.map((task) => task.id), ["kept"], "source defaults absent from the mobile ledger do not revive");
+assert.equal(canonical[0].title, "Mobile title", "mobile title remains canonical");
+assert.equal(canonical[0].category, "admin", "mobile lane remains canonical");
+assert.equal(canonical[0].targetDate, "2026-07-25", "mobile dueDate drives scheduler target");
+assert.equal(canonical[0].latestDate, "2026-07-25", "stale latestDate cannot precede mobile dueDate");
+assert.equal(canonical[0].availableFrom, "2026-07-25", "availability cannot open after the canonical due date");
+assert.equal(canonical[0].binding?.trigger, "removed", "code wiring enriches a saved task without replacing mobile edits");
+
 console.log("task binding transitions passed");
