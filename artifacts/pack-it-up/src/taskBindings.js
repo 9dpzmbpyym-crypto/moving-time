@@ -1,9 +1,13 @@
+import { INVENTORY_COLLECTION_OPTIONS, INVENTORY_ITEM_OPTIONS, inventoryTargetKeys } from "./inventoryCollections.js";
+
 /* Canonical links between Ledger tasks and gameplay state. Static binding
    definitions stay in code/tasks; saves persist only the chosen binding and
    the resulting world/task state. */
 
 export const GAME_FEATURE_OPTIONS = [
   { value: "apartment_item", label: "Apartment item / packing" },
+  { value: "inventory_collection", label: "Stored item collection" },
+  { value: "inventory_item", label: "Individual stored item" },
   { value: "health_zone", label: "Health body zone" },
   { value: "health_appointment", label: "Health appointment" },
 ];
@@ -42,6 +46,16 @@ export const COMPLETION_TRIGGER_OPTIONS = {
     { value: "buyerFound", label: "Buyer found" },
     { value: "removed", label: "Sold or donated (physically removed)" },
   ],
+  inventory_collection: [
+    { value: "packed", label: "Every item packed" },
+    { value: "handled", label: "Every item packed, sold, or donated" },
+  ],
+  inventory_item: [
+    { value: "packed", label: "Packed" },
+    { value: "handled", label: "Packed, sold, or donated" },
+    { value: "sold", label: "Sold" },
+    { value: "donated", label: "Donated" },
+  ],
   health_zone: [{ value: "stabilized", label: "Zone stabilized" }],
   health_appointment: [
     { value: "booked", label: "Appointment booked" },
@@ -58,6 +72,8 @@ export const TASK_RESULT_OPTIONS = [
 
 export function targetOptionsForFeature(feature) {
   if (feature === "apartment_item") return ITEM_TARGET_OPTIONS;
+  if (feature === "inventory_collection") return INVENTORY_COLLECTION_OPTIONS;
+  if (feature === "inventory_item") return INVENTORY_ITEM_OPTIONS;
   if (feature === "health_zone" || feature === "health_appointment") return HEALTH_TARGETS;
   return [];
 }
@@ -94,6 +110,13 @@ export function resolveTaskDestination(task) {
   if (binding?.feature === "apartment_item") {
     const [roomId, objectId] = binding.target.split(":");
     return { screen: "apartment", roomId, objectId };
+  }
+  if (binding?.feature === "inventory_collection" || binding?.feature === "inventory_item") {
+    const raw = binding.feature === "inventory_collection"
+      ? inventoryTargetKeys(binding.feature, binding.target)[0]
+      : binding.target;
+    const [roomId, objectId] = String(raw || "").split(":");
+    return roomId && objectId ? { screen: "apartment", roomId, objectId } : null;
   }
   if (binding?.feature === "health_zone" || binding?.feature === "health_appointment") {
     return { screen: "health", zone: binding.target };
@@ -135,6 +158,22 @@ export function taskBindingSatisfied(task, world = {}) {
     });
     return binding.aggregate === "any" ? checks.some(Boolean) : checks.every(Boolean);
   }
+  if (binding.feature === "inventory_collection" || binding.feature === "inventory_item") {
+    const targets = binding.targets || [binding.target];
+    const checks = targets.map((target) => {
+      const keys = inventoryTargetKeys(binding.feature, target);
+      if (!keys.length) return false;
+      return keys.every((key) => {
+        const isObject = key.startsWith("object:");
+        const stateKey = isObject ? key.slice("object:".length) : key;
+        const flags = isObject ? world.objState?.[stateKey] : world.contentsState?.[stateKey];
+        if (!flags) return false;
+        if (binding.trigger === "handled") return !!(flags.packed || flags.sold || flags.donated);
+        return !!flags[binding.trigger];
+      });
+    });
+    return binding.aggregate === "any" ? checks.some(Boolean) : checks.every(Boolean);
+  }
   if (binding.feature === "health_zone") {
     return binding.trigger === "stabilized" && !!world.calmedZones?.[binding.target];
   }
@@ -155,7 +194,7 @@ export function reconcileTasksFromWorldState(tasks, world) {
     const satisfied = taskBindingSatisfied(task, world);
     if (satisfied === true) return { ...task, status: binding.resultStatus };
     // State-bound "done" tasks reopen when an undo restores the world.
-    if (satisfied === false && binding.resultStatus === "done" && task.status === "done") {
+    if (satisfied === false && task.completionMode === "world" && binding.resultStatus === "done" && task.status === "done") {
       return { ...task, status: "pending" };
     }
     return task;

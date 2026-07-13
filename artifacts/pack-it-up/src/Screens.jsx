@@ -1306,6 +1306,8 @@ function TaskBindingFields({ value, onChange, fieldStyle }) {
   const targets = binding.feature ? targetOptionsForFeature(binding.feature) : [];
   const triggers = binding.feature ? (COMPLETION_TRIGGER_OPTIONS[binding.feature] || []) : [];
   const targetIsKnown = targets.some((option) => optionValue(option) === binding.target);
+  const supportsMany = binding.feature === "inventory_collection" || binding.feature === "inventory_item";
+  const selectedTargets = binding.targets?.length ? binding.targets : (binding.target ? [binding.target] : []);
   const update = (patch) => onChange({ ...binding, ...patch });
   const selectStyle = { ...fieldStyle, marginBottom: 0, minWidth: 0 };
   return (
@@ -1336,9 +1338,18 @@ function TaskBindingFields({ value, onChange, fieldStyle }) {
         </select>
         <select
           aria-label="Game target"
-          value={binding.target ? (targetIsKnown ? binding.target : "__custom__") : ""}
+          multiple={supportsMany}
+          size={supportsMany ? 6 : undefined}
+          value={supportsMany ? selectedTargets : (binding.target ? (targetIsKnown ? binding.target : "__custom__") : "")}
           disabled={!binding.feature}
-          onChange={(e) => update({ target: e.target.value === "__custom__" ? "custom:" : e.target.value, targets: undefined, aggregate: undefined })}
+          onChange={(e) => {
+            if (supportsMany) {
+              const selected = Array.from(e.target.selectedOptions, (option) => option.value).filter((value) => value !== "__custom__");
+              update({ target: selected[0] || "", targets: selected.length > 1 ? selected : undefined, aggregate: "all" });
+            } else {
+              update({ target: e.target.value === "__custom__" ? "custom:" : e.target.value, targets: undefined, aggregate: undefined });
+            }
+          }}
           style={{ ...selectStyle, opacity: binding.feature ? 1 : 0.55 }}
         >
           <option value="">Target</option>
@@ -1372,6 +1383,9 @@ function TaskBindingFields({ value, onChange, fieldStyle }) {
           ))}
         </select>
       </div>
+      {supportsMany && <div style={{ color: "#8A7350", fontSize: 8, marginTop: 4, ...LB }}>
+        Select one or more. All selected requirements must be complete.
+      </div>}
       {binding.feature && (binding.target?.startsWith("custom:") || (binding.target && !targetIsKnown)) && (
         <input
           aria-label="Custom game target ID"

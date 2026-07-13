@@ -2570,14 +2570,11 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     }
     setScreen(nextScreen);
   }, [isMobile]);
-  const didReconcileBootRef = useRef(false);
   useEffect(() => {
-    if (didReconcileBootRef.current) return;
-    didReconcileBootRef.current = true;
     setTasks((current) => reconcileTasksFromWorldState(current, {
-      objState, appointments, calmedZones: session.calmedZones,
+      objState, contentsState, appointments, calmedZones: session.calmedZones,
     }));
-  }, [objState, appointments, session.calmedZones]);
+  }, [objState, contentsState, appointments, session.calmedZones]);
   const [phoneNudge, setPhoneNudge] = useState(null);
   const phoneNudgeShownRef = useRef(false);
   /** Apartment hand fan — drag to place/resize; badge offset from rightmost card (draggable). */
