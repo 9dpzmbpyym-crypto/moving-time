@@ -1,4 +1,11 @@
 # Master-list incorporation — seed data, NPC casting, and the one new structure
+
+> **⚠️ Status (Jul 13): the seed data drop is DONE.** The present-tense "Finding"
+> below (fictional SAMPLE_JOBS, ~35 of ~45 items missing) describes the *pre-drop*
+> state — it's historical. `tasks.js` now seeds ~180 real dated tasks + the real
+> job shortlist as `INITIAL_TASKS`. Keep this doc for the NPC-casting rationale and
+> the calendar-spine call, which still hold; ignore the "it's all fictional" framing.
+
 **Owner:** [Claude / Fable 5] · companion to `move-spine-integration.md`.
 **Source of truth for items:** `docs/move-spine/master/MASTER_REAL_WORLD_GOALS_JULY_2026.md` (gap-diffed against game data Jul 11).
 
