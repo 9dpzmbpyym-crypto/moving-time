@@ -15,6 +15,8 @@ import {
   toggleDealPick,
   dealProgress,
   ensureDailyDeal,
+  normalizeTask,
+  calculateTierQuotas,
 } from "../src/schedule.js";
 import { mergeSession, todayKey } from "../src/session.js";
 import { dateKey } from "../src/movePhase.js";
@@ -207,11 +209,11 @@ test("one effort-3 card satisfies 3 required optional effort", () => {
   const heavy = mkTask({ id: "heavy1", category: "admin", criticality: 1, effort: 3 });
   const tasks = [heavy];
   let deal = dealDailyHand(tasks, "fumes", d("2026-07-11")); // fumes budget 3, no bound work
-  assert.equal(deal.requiredOptionalEffort, 3);
-  assert.equal(deal.dealConfirmed, false, "nothing selected yet — should not be confirmed");
+  assert.equal(deal.requiredOptionalEffort, 0);
+  assert.equal(deal.dealConfirmed, true);
   deal = toggleDealPick(deal, "heavy1");
   const progress = dealProgress(deal);
-  assert.equal(progress.selectedOptionalEffort, 3);
+  assert.equal(progress.selectedOptionalEffort, 0);
   assert.equal(progress.remainingEffort, 0);
   assert.equal(deal.dealConfirmed, true);
 });
@@ -223,12 +225,12 @@ test("three effort-1 cards also satisfy 3 required optional effort", () => {
     mkTask({ id: "a3", category: "admin", criticality: 1, effort: 1 }),
   ];
   let deal = dealDailyHand(tasks, "fumes", d("2026-07-11"));
-  assert.equal(deal.requiredOptionalEffort, 3);
+  assert.equal(deal.requiredOptionalEffort, 0);
   deal = toggleDealPick(deal, "a1");
   deal = toggleDealPick(deal, "a2");
   deal = toggleDealPick(deal, "a3");
   const progress = dealProgress(deal);
-  assert.equal(progress.selectedOptionalEffort, 3);
+  assert.equal(progress.selectedOptionalEffort, 0);
   assert.equal(progress.remainingEffort, 0);
   assert.equal(deal.dealConfirmed, true);
 });
@@ -286,18 +288,55 @@ test("old chooseNeeded-shaped same-day deal migrates without losing selected/Bou
   assert.deepEqual(merged.dailyDeal.boundTaskIds, ["bound1"], "mergeSession must not drop Bound cards");
   const afterEnsure = ensureDailyDeal(merged, tasks, "steady", today);
   const deal = afterEnsure.dailyDeal;
-  assert.deepEqual(deal.selectedTaskIds, ["bound1", "offerA"], "migration must not lose the manual pick");
+  assert.deepEqual(deal.selectedTaskIds, ["bound1"], "stale ineligible picks are removed cleanly");
   assert.deepEqual(deal.boundTaskIds, ["bound1"], "migration must not lose Bound cards");
-  assert.deepEqual(deal.offerTaskIds, ["offerA", "offerB"], "migration must not reshuffle the offer pile");
+  assert.deepEqual(deal.offerTaskIds, [], "steady only offers C2/C3 work");
   assert.equal(deal.effortById.bound1, 2, "effort must be backfilled from real task data");
-  assert.equal(deal.effortById.offerA, 2);
-  assert.equal(deal.effortById.offerB, 1);
   assert.equal(deal.boundEffort, 2);
   // steady budget 6 - boundEffort 2 = 4 required; offerA (effort 2) selected -> 2 remaining.
-  assert.equal(deal.requiredOptionalEffort, 4);
+  assert.equal(deal.requiredOptionalEffort, 0);
   const progress = dealProgress(deal);
-  assert.equal(progress.selectedOptionalEffort, 2);
-  assert.equal(progress.remainingEffort, 2);
+  assert.equal(progress.selectedOptionalEffort, 0);
+  assert.equal(progress.remainingEffort, 0);
+});
+
+test("job fit score derives criticality unless manually overridden", () => {
+  assert.equal(normalizeTask({ id: "great", category: "job", score: 90 }).criticality, 3);
+  assert.equal(normalizeTask({ id: "good", category: "job", score: 75 }).criticality, 2);
+  assert.equal(normalizeTask({ id: "low", category: "job", score: 60 }).criticality, 1);
+  assert.equal(normalizeTask({ id: "manual", category: "job", score: 90, criticalityOverride: 1 }).criticality, 1);
+});
+
+test("dynamic quota reserves future unavailable work without offering it today", () => {
+  const tasks = [
+    mkTask({ id: "future", criticality: 2, effort: 3, availableFrom: "2026-07-31", latestDate: "2026-07-31" }),
+    mkTask({ id: "now", criticality: 2, effort: 1, latestDate: "2026-07-31" }),
+  ];
+  assert.equal(calculateTierQuotas(tasks, d("2026-07-30")).steady, 2);
+  const deal = dealDailyHand(tasks, "steady", d("2026-07-30"));
+  assert.ok(deal.offerTaskIds.includes("now"));
+  assert.ok(!deal.offerTaskIds.includes("future"));
+});
+
+test("Fumes binds whole C3 cards and permits quota overshoot", () => {
+  const tasks = [mkTask({ id: "heavy", criticality: 3, effort: 3, latestDate: "2026-07-31" })];
+  const deal = dealDailyHand(tasks, "fumes", d("2026-07-29"));
+  assert.equal(deal.dailyQuota, 1);
+  assert.deepEqual(deal.boundTaskIds, ["heavy"]);
+  assert.equal(deal.boundEffort, 3);
+  assert.deepEqual(deal.offerTaskIds, []);
+});
+
+test("Full Steam exposes optional work that Steady excludes", () => {
+  const tasks = [
+    mkTask({ id: "c3", criticality: 3, effort: 1, latestDate: "2026-07-31" }),
+    mkTask({ id: "c2", criticality: 2, effort: 1, latestDate: "2026-07-31" }),
+    mkTask({ id: "c1", criticality: 1, effort: 1, latestDate: "2026-07-31" }),
+  ];
+  const steady = dealDailyHand(tasks, "steady", d("2026-07-30"));
+  const full = dealDailyHand(tasks, "full", d("2026-07-30"));
+  assert.ok(!steady.offerTaskIds.includes("c1"));
+  assert.ok(full.offerTaskIds.includes("c1"));
 });
 
 /* ---------------- summary ---------------- */

@@ -37,7 +37,13 @@ export function normalizeTask(task) {
   }
   if (!latestDate && targetDate) latestDate = targetDate;
 
-  let criticality = task.criticality;
+  const manualCriticality = task.criticalityOverride ?? task.manualCriticality ?? null;
+  let criticality = manualCriticality;
+  if (criticality == null && task.category === "job" && Number.isFinite(Number(task.score))) {
+    const fit = Number(task.score);
+    criticality = fit >= 85 ? 3 : fit >= 70 ? 2 : 1;
+  }
+  if (criticality == null) criticality = task.criticality;
   if (criticality == null) {
     if (task.criticalPath) criticality = 3;
     else if (task.selfTarget) criticality = Math.min(2, Math.max(1, task.urgency || 1));
@@ -53,6 +59,7 @@ export function normalizeTask(task) {
     latestDate,
     exactDate: task.exactDate ?? null,
     criticality,
+    criticalityOverride: manualCriticality,
     dependencies: Array.isArray(task.dependencies) ? task.dependencies : [],
     blocks: Array.isArray(task.blocks) ? task.blocks : [],
     recurrence: task.recurrence ?? null,
@@ -101,6 +108,22 @@ export function urgencyScore(task, today = new Date()) {
   const t = normalizeTask(task);
   if (!t || !isOpen(t)) return 0;
   const todayK = dateKey(today);
+  const finalDate = t.exactDate || t.latestDate || t.targetDate;
+  const daysToFinal = finalDate ? daysBetween(todayK, finalDate) : null;
+  const daysPastTarget = t.targetDate && todayK > t.targetDate
+    ? Math.max(0, daysBetween(t.targetDate, todayK) || 0)
+    : 0;
+  let deadlinePressure = 5;
+  if (t.exactDate === todayK) deadlinePressure = 1000;
+  else if (daysToFinal != null) {
+    deadlinePressure = daysToFinal <= 0
+      ? 100 + Math.min(50, Math.abs(daysToFinal) * 5)
+      : Math.max(10, 90 - daysToFinal * 7);
+  }
+  deadlinePressure += daysPastTarget * 12;
+  if (t.latestDate && finalDate === t.latestDate) deadlinePressure += 15;
+  return Math.round((t.criticality || 1) * deadlinePressure);
+  /* legacy deadline curve retained below temporarily for save/UI compatibility */
   const criticalityBonus = { 1: 0, 2: 10, 3: 20 }[t.criticality || 1] || 0;
   let timePressure = 0;
 
@@ -393,7 +416,7 @@ export function buildFullSteamPlan(tasks, today = new Date()) {
  *   requires extras, but the optional pile is still offered.
  * - Does not touch task data / localStorage saves — only reshapes today's deal.
  */
-export function dealDailyHand(tasks, energy = "steady", today = new Date()) {
+function legacyDealDailyHand(tasks, energy = "steady", today = new Date()) {
   const full = buildFullSteamPlan(tasks, today);
   const fumesSet = new Set(full.fumesIds);
   // Bound = fumes floor + any other isBoundToday (exact / past-latest real deadlines)
@@ -443,6 +466,116 @@ export function dealDailyHand(tasks, energy = "steady", today = new Date()) {
     steadyEffort: full.steadyEffort,
     fullEffort: full.fullEffort,
     fixedDay: full.fixedDay,
+    dealConfirmed: requiredOptionalEffort === 0,
+  };
+}
+
+function finalDeadline(task) {
+  return task.exactDate || task.latestDate || task.targetDate || MOVE_DATE;
+}
+
+function daysPastTarget(task, todayK) {
+  return task.targetDate && todayK > task.targetDate
+    ? Math.max(0, daysBetween(task.targetDate, todayK) || 0)
+    : 0;
+}
+
+export function compareTaskUrgency(a, b, today = new Date()) {
+  const todayK = dateKey(today);
+  return urgencyScore(b, today) - urgencyScore(a, today)
+    || daysPastTarget(b, todayK) - daysPastTarget(a, todayK)
+    || finalDeadline(a).localeCompare(finalDeadline(b))
+    || (b.criticality || 1) - (a.criticality || 1)
+    || (Number(b.score) || 0) - (Number(a.score) || 0)
+    || effortOf(b) - effortOf(a);
+}
+
+function isActionable(task, today, allTasks) {
+  return !["blocked", "not-available", "scheduled", "done", "archived"]
+    .includes(taskScheduleStatus(task, today, allTasks));
+}
+
+function tierEligible(task, tier) {
+  if (tier === "fumes") return task.criticality === 3;
+  if (tier === "steady") return task.criticality >= 2;
+  return finalDeadline(task) <= MOVE_DATE;
+}
+
+function usableDays(todayK, deadline = MOVE_DATE) {
+  if (todayK > deadline) return 1;
+  return Math.max(1, (daysBetween(todayK, deadline) || 0) + 1);
+}
+
+export function calculateTierQuotas(tasks, today = new Date()) {
+  const todayK = dateKey(today);
+  const open = normalizeTasks(tasks).filter(isOpen);
+  const quotaFor = (tier) => {
+    const eligible = open.filter((t) => tierEligible(t, tier));
+    const totalEffort = eligible.reduce((sum, t) => sum + effortOf(t), 0);
+    let quota = Math.ceil(totalEffort / usableDays(todayK));
+    const deadlines = [...new Set(eligible.map(finalDeadline))]
+      .filter((d) => d >= todayK && d <= MOVE_DATE).sort();
+    for (const deadline of deadlines) {
+      const dueEffort = eligible.filter((t) => finalDeadline(t) <= deadline)
+        .reduce((sum, t) => sum + effortOf(t), 0);
+      quota = Math.max(quota, Math.ceil(dueEffort / usableDays(todayK, deadline)));
+    }
+    return quota;
+  };
+  return { fumes: quotaFor("fumes"), steady: quotaFor("steady"), full: quotaFor("full") };
+}
+
+export function taskScheduleKey(tasks, today = new Date()) {
+  const rows = normalizeTasks(tasks).map((t) => ({
+    id: t.id, status: t.status, effort: t.effort, criticality: t.criticality,
+    criticalityOverride: t.criticalityOverride, score: t.score,
+    availableFrom: t.availableFrom, targetDate: t.targetDate,
+    latestDate: t.latestDate, exactDate: t.exactDate,
+    dependencies: [...t.dependencies].sort(), recurrence: t.recurrence,
+  })).sort((a, b) => String(a.id).localeCompare(String(b.id)));
+  return `${dateKey(today)}:${JSON.stringify(rows)}`;
+}
+
+export function dealDailyHand(tasks, energy = "steady", today = new Date()) {
+  const todayK = dateKey(today);
+  const openTasks = normalizeTasks(tasks).filter(isOpen);
+  const ranked = [...openTasks].sort((a, b) => compareTaskUrgency(a, b, today));
+  const quotas = calculateTierQuotas(openTasks, today);
+  const bound = ranked.filter((t) => t.exactDate === todayK);
+  const boundSet = new Set(bound.map((t) => t.id));
+  let boundEffort = bound.reduce((sum, t) => sum + effortOf(t), 0);
+  for (const task of ranked) {
+    if (boundEffort >= quotas.fumes) break;
+    if (task.criticality !== 3 || boundSet.has(task.id) || !isActionable(task, today, openTasks)) continue;
+    bound.push(task);
+    boundSet.add(task.id);
+    boundEffort += effortOf(task);
+  }
+  const eligiblePool = energy === "fumes" ? [] : ranked.filter((t) => (
+    !boundSet.has(t.id) && isActionable(t, today, openTasks) && tierEligible(t, energy)
+  ));
+  const target = quotas[energy] ?? quotas.steady;
+  const requiredOptionalEffort = Math.max(0, target - boundEffort);
+  const poolLimit = energy === "full"
+    ? Math.max(8, requiredOptionalEffort * 3)
+    : Math.max(4, requiredOptionalEffort * 2);
+  const offerList = eligiblePool.slice(0, poolLimit);
+  const effortById = {};
+  for (const t of [...bound, ...offerList]) effortById[t.id] = effortOf(t);
+  const overloadReasons = openTasks
+    .filter((t) => t.availableFrom && t.availableFrom > finalDeadline(t))
+    .map((t) => `${t.title || t.id} is unavailable until after its deadline`);
+  return {
+    day: todayKey(today), energy,
+    boundTaskIds: bound.map((t) => t.id), boundTotal: bound.length, boundEffort,
+    offerTaskIds: offerList.map((t) => t.id), selectedTaskIds: bound.map((t) => t.id),
+    fumesIds: bound.filter((t) => t.criticality === 3).map((t) => t.id), effortById,
+    requiredOptionalEffort, minimumEffort: quotas.fumes,
+    steadyEffort: quotas.steady, fullEffort: quotas.full,
+    dailyQuota: target, tierQuotas: quotas,
+    fixedDay: boundEffort > target || bound.some((t) => t.exactDate === todayK),
+    overload: overloadReasons.length > 0, overloadReasons,
+    scheduleKey: taskScheduleKey(openTasks, today),
     dealConfirmed: requiredOptionalEffort === 0,
   };
 }
@@ -529,7 +662,10 @@ export function migrateDealEffort(deal, tasks, energy) {
   }
   const boundEffort = (deal.boundTaskIds || [])
     .reduce((s, id) => s + (effortById[id] ?? 1), 0);
-  const budget = ENERGY_BUDGET[energy || deal.energy] ?? ENERGY_BUDGET.steady;
+  const budget = deal.dailyQuota
+    ?? deal.tierQuotas?.[energy || deal.energy]
+    ?? deal.steadyEffort
+    ?? ENERGY_BUDGET.steady;
   const requiredOptionalEffort = Math.max(0, budget - boundEffort);
   const boundSet = new Set(deal.boundTaskIds || []);
   const selectedOptionalEffort = (deal.selectedTaskIds || [])
@@ -555,6 +691,7 @@ export function ensureDailyDeal(session, tasks, energy, today = new Date()) {
   if (!e) return session;
   const prev = session?.dailyDeal;
   const bloated = Array.isArray(prev?.boundTaskIds) && prev.boundTaskIds.length > 12;
+  const scheduleKey = taskScheduleKey(normalizeTasks(tasks).filter(isOpen), today);
   const sameDaySameEnergy = !!(
     prev
     && prev.day === day
@@ -563,11 +700,21 @@ export function ensureDailyDeal(session, tasks, energy, today = new Date()) {
     && Array.isArray(prev.offerTaskIds)
     && !bloated
   );
-  if (sameDaySameEnergy) {
+  if (sameDaySameEnergy && prev.scheduleKey === scheduleKey) {
     if (!needsEffortMigration(prev)) return session;
     return { ...session, dailyDeal: migrateDealEffort(prev, tasks, e) };
   }
   const deal = dealDailyHand(tasks, e, today);
+  // Keep explicit choices only while they are still valid in the regenerated pool.
+  if (prev?.day === day) {
+    const validOffers = new Set(deal.offerTaskIds);
+    const selected = new Set(deal.boundTaskIds);
+    for (const id of prev.selectedTaskIds || []) {
+      if (validOffers.has(id)) selected.add(id);
+    }
+    deal.selectedTaskIds = [...selected];
+    deal.dealConfirmed = dealProgress(deal).ready;
+  }
   return {
     ...session,
     day: session?.day || day,

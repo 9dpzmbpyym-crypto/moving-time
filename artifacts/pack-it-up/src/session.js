@@ -80,6 +80,17 @@ export function mergeSession(savedSession) {
       minimumEffort: Math.max(0, Number(savedSession.dailyDeal.minimumEffort) || 0),
       steadyEffort: Math.max(0, Number(savedSession.dailyDeal.steadyEffort) || 0),
       fullEffort: Math.max(0, Number(savedSession.dailyDeal.fullEffort) || 0),
+      dailyQuota: Math.max(0, Number(savedSession.dailyDeal.dailyQuota) || 0),
+      tierQuotas: savedSession.dailyDeal.tierQuotas && typeof savedSession.dailyDeal.tierQuotas === "object"
+        ? { ...savedSession.dailyDeal.tierQuotas }
+        : null,
+      overload: !!savedSession.dailyDeal.overload,
+      overloadReasons: Array.isArray(savedSession.dailyDeal.overloadReasons)
+        ? savedSession.dailyDeal.overloadReasons
+        : [],
+      scheduleKey: typeof savedSession.dailyDeal.scheduleKey === "string"
+        ? savedSession.dailyDeal.scheduleKey
+        : null,
       fixedDay: !!savedSession.dailyDeal.fixedDay,
       dealConfirmed: !!savedSession.dailyDeal.dealConfirmed,
     }
