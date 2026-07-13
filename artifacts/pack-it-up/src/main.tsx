@@ -1,7 +1,9 @@
 ﻿import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 // @ts-ignore - JSX source files from original project
-import PackItUp, { LayoutEditor } from "./BedroomSlice.jsx";
+import { LayoutEditor } from "./BedroomSlice.jsx";
+// @ts-ignore
+import GameWithSplash from "./GameWithSplash.jsx";
 // @ts-ignore
 import SpritePreview from "./dev/spritePreview.jsx";
 // @ts-ignore
@@ -32,7 +34,7 @@ createRoot(document.getElementById("root")!).render(
     ) : isPreview ? (
       <SpritePreview />
     ) : (
-      <PackItUp glowMode={glowMode} initialScreen={uiPreview || "apartment"} />
+      <GameWithSplash glowMode={glowMode} initialScreen={uiPreview || "apartment"} />
     )}
   </StrictMode>
 );
