@@ -1,0 +1,469 @@
+Use this as the Claude prompt card.
+
+We are working on Pack It Up, repo: moving-time, app path likely `artifacts/pack-it-up`.
+Goal: finish the Daily Hand / Ledger / task-data cleanup pass. Do not redesign UI, do not add new art, do not invent a new workflow. This is a logic/data cleanup task.
+Current problem:
+The Daily Hand system is confusing “minimum effort quota” with “bound cards.” It is binding future crit-3 tasks just to satisfy fumes quota, which makes nonsense hands like:
+- h_lock
+- h_keys_access
+- h_finalize_address
+on Jul 13, even though these are future/dependent/outcome cards and not the real next actions.
+Also:
+- Fumes has no extra/offer cards to draw.
+- Steady/full screens can be exited without drawing enough additional cards.
+- Full quota math should use effort and ceiling correctly. Example: 192 effort / 18 days = 10.6, so full quota should be 11, not 10.
+- Archived/done/dismissed/old seed data is still confusing agents and should be removed or isolated.
+- `dependsNote` is currently only text; it does not actually block anything.
+- Some large/outcome tasks need to become non-dealable capstones or be split.
+- Ledger/task labels for effort, urgency, criticality, availableFrom, dependencies, and exactDate need cleanup.
+Definitions:
+- Effort: 1 tiny, 2 medium, 3 heavy.
+- Criticality:
+  - 1 = optional/backburner/flexible
+  - 2 = important, should appear in steady/full
+  - 3 = true hard-deadline / move-failure / cat/flight/U-Box critical
+- Urgency = time pressure / soonness, not importance.
+- `targetDate` = when we want to start/aim.
+- `latestDate` = last safe day.
+- `exactDate` = must happen on that date.
+- `availableFrom` = do not offer before this date.
+- `dependencies` = hard block. `dependsNote` is only explanatory and must not be relied on for logic.
+Main required changes:
+1. Finish archived/seed cleanup
+Remove archived/done/dismissed historical seed task objects from runtime seed lists so future agents do not treat them as live product data.
+Keep only live seeded tasks in the active task source.
+If old tasks are needed for migration/history, move them to a clearly named non-runtime file such as:
+- `docs/archive/archived-task-seeds-july-2026.json`
+- or `src/data/archivedTaskSeeds.NOT_IMPORTED.js`
+Do not import archived seed data into the runtime task deck.
+Preserve old-save compatibility:
+- Old localStorage/save files may still contain archived/done/dismissed task ids.
+- Runtime merge should not revive removed seed tasks.
+- `REMOVED_TASK_IDS` or equivalent pruning should still remove deleted obsolete ids.
+- Statuses from existing saves should be respected, but archived/done/dismissed tasks must not enter active deck, Ledger active view, Daily Hand, offer pile, quotas, or schedule pressure.
+Acceptance:
+- Active task list contains only open/pending live tasks.
+- Archived/done/dismissed tasks do not affect quota math.
+- Archived seed data is not imported by runtime.
+- Old saves do not resurrect obsolete tasks.
+2. Fix Daily Hand quota logic
+Do not bind future criticality-3 tasks just to satisfy fumes quota.
+Separate these concepts:
+A. Bound / forced cards:
+Only these should be bound:
+- exactDate === today
+- latestDate <= today for real non-selfTarget deadlines
+- daily recurrence that must happen today
+- manually locked/overridden cards
+- true same-day hard blockers
+B. Required effort quota:
+This is the amount of total work the player should select for the chosen energy tier.
+C. Offer pile:
+This is the ranked pool the player can draw/select from.
+Current bad behavior:
+- fumes quota is computed from all crit-3 effort
+- then `dealDailyHand()` fills bound cards with crit-3 tasks until boundEffort >= fumes quota
+- this pulls future tasks into today
+Fix:
+- Remove the “fill bound with ranked crit-3 until fumes quota” behavior.
+- Bound cards should be date/deadline forced only.
+- Quotas should determine how much optional effort still needs to be selected, not what gets hard-bound.
+Pseudo behavior:
+
+bound = exactDateToday + pastLatestRealDeadlines + trueDailyRequired + manualLocked
+
+boundEffort = sum(bound)
+
+targetEffort = tierQuota[energy]
+
+requiredOptionalEffort = max(0, targetEffort - boundEffort)
+
+offerList = ranked actionable tasks not in bound
+
+Fumes should also have offers.
+Do not set `eligiblePool = []` for fumes.
+Fumes behavior:
+- If bound effort already satisfies fumes quota, requiredOptionalEffort = 0.
+- Still show offers/swaps so the user can voluntarily add or replace work.
+- User should be able to leave fumes if requiredOptionalEffort is 0.
+- If requiredOptionalEffort > 0, user must select/draw enough effort before leaving.
+Steady/full behavior:
+- Must require enough selected optional effort before leaving/confirming.
+- Do not allow exiting the card draw screen unless `remainingEffort <= 0`, unless there is a deliberate “lower energy” action.
+- If user chooses “I cannot do this much,” downgrade energy tier instead of silently letting the hand be underfilled.
+3. Fix quota calculation / rounding
+All tier quotas must be effort-based and use ceiling.
+Example:
+- If full remaining effort is 192 over 18 usable days:
+  - 192 / 18 = 10.666...
+  - full quota = 11
+Check for any display logic that floors/rounds incorrectly.
+Acceptance:
+- `Math.ceil(totalEffort / usableDays)` is used.
+- Displayed quota matches stored `dailyQuota`.
+- Full quota never shows 10 when math requires 11.
+4. Fix offer pile and draw rules
+Offer pile should include actionable tasks ranked by:
+- true deadline pressure
+- criticality
+- availability
+- dependencies
+- category balance
+- outcome penalty
+- job cap
+Offer pile must exclude:
+- done
+- archived
+- dismissed
+- blocked by dependency
+- unavailable future tasks
+- future exactDate tasks
+- outcome/capstone tasks when their prerequisite actions are not done
+Offer pile should include enough options for swapping:
+- fumes: at least 4–8 offers if available
+- steady: enough to satisfy required optional effort, plus extras
+- full: enough to satisfy required optional effort, plus extras
+Selection confirmation must be effort-based:
+- Bound effort always counts.
+- Selected optional effort counts.
+- Card count does not matter.
+- Confirm only when selected total effort reaches quota, unless quota already met by bound cards.
+5. Allow swaps / manual correction
+The app should support the mental model:
+“The app tries; user corrects it; it obeys.”
+Every recommended/bound hand card should be swappable unless it is truly exact-date or past-latest forced.
+Swap behavior:
+- Swap opens eligible active tasks sorted by priority.
+- Replacement is saved as a same-day manual override for that slot.
+- Manual override wins over scoring for the rest of the day.
+- Manual override should not be overwritten by regeneration.
+- Override clears if task becomes done/archived/dismissed/blocked.
+- No separate “intent” flow.
+Important:
+- Outcome cards like `h_lock` should not become bound if the real next action is outreach/followup/qualify lead.
+- Swapping a card is the user’s intent signal.
+6. Fix dependency handling
+`dependsNote` is not logic. Add real `dependencies` where needed.
+Recommended dependency edits:
+- `h_finalize_address` depends on `h_lock`
+- `h_keys_access` depends on `h_lock`
+- `a_usps` depends on `h_finalize_address`
+- `a_bank` depends on `h_finalize_address`
+- `h_forward_deposit_address` depends on `h_finalize_address`
+- `f_remove_bedframe` depends on `f_bed_plan`
+- `f_remove_mattress` depends on `f_bed_plan`
+- `m_photo_lock` depends on `m_load_complete`
+- `m_lock_final` depends on `m_lock`, `m_load_complete`, and probably `m_photo_lock`
+- `h_photo_condition` depends on `h_moveout_clean`
+- `h_restore_blinds` depends on `h_ask_blinds` and/or `h_walkthrough`
+- `h_fill_holes` depends on walkthrough/curtain removal task if present
+- `c_vet_attend` depends on `c_vet_book`
+- `c_cert` depends on `c_vet_attend`
+- `c_med_test` depends on medication pickup task
+- `c_med_reaction` depends on `c_med_test`
+- `t_labs` depends on the appointment/order task that creates lab orders, or rename it if it is directly actionable
+- `t_med_bridge` should either be directly actionable (“request medication bridge/refills”) or depend on PCP approval
+Acceptance:
+- Tasks with incomplete dependencies are not offered, not bound, and not counted as actionable today.
+- `dependsNote` can remain as display copy, but never substitutes for `dependencies`.
+7. Fix availableFrom / future actionability
+Future `targetDate` alone should not mean “doable now.”
+Use `availableFrom` for tasks that should not appear early.
+Recommended availableFrom fixes:
+- `w_travel_checkin`: availableFrom or exactDate `2026-07-30`
+- `c_kit`: availableFrom `2026-07-29` or `2026-07-30`
+- `m_load_late_value`: availableFrom `2026-07-29`
+- `m_load_complete`: availableFrom `2026-07-30`
+- furniture removal tasks should generally remain blocked by buyer-plan dependencies, not merely available early
+- health/cat tasks may remain available if they are actually bookable now
+Acceptance:
+- Jul 13 hand does not pull Jul 27–31 operational tasks just because they are criticality 3.
+8. Convert outcome/capstone cards
+Some cards are outcomes, not next actions. They should not be dealt unless prerequisites are satisfied or they are exact-date/past-latest.
+Outcome/capstone examples:
+- `h_lock` Lock the Aug 1 sublet
+- `m_load_complete` Complete final U-Box load
+- `m_lock_final` Lock the U-Box — packed by tonight
+- possibly `m_load_main` Load U-Box
+Rules:
+- Outcome cards should be non-dealable or heavily penalized until prerequisite concrete actions are complete.
+- Prefer concrete actions first: send, call, book, pack, reply, find buyer, confirm, photograph, load.
+- Penalize vague verbs: lock, finalize, complete, secure, handle, finish, resolve, plan, decide.
+Specific:
+- `h_lock` should not beat housing outreach/followups/lead qualification.
+- If no warm lead exists, app should offer outreach/followup, not “lock sublet.”
+- If `h_outreach_daily` is done, the next housing card should probably be followups/lead qualification, not address/keys until locked.
+9. Task-data criticality/effort edits
+Apply or implement these data changes.
+Move/admin packing:
+- `m_lock`: criticality 1 → 3. Effort 1 ok. Consider target earlier than Jul 26.
+- `m_labels`: criticality 1 → 2.
+- `m_load_map`: criticality 3 → 2.
+- `p_death_cords`: criticality 1 → 2.
+- `m_pack_overflow`: criticality 1 → 2.
+- `m_pack_bath`: criticality 1 → 2.
+- `m_pack_office`: criticality 1 → 2.
+- `m_sell_final`: criticality 1 → 2.
+- `m_photo_lock`: criticality 1 → 2.
+- `m_sweep`: criticality 2 → 3.
+- `f_bed_plan`: criticality 3 → 2.
+- `p_books`: if only upper hutch remains, effort 2 → 1.
+- `p_electronics` overlaps with `p_death_cords`; merge, retarget, or add dependency so both do not represent the same collection.
+- `p_guitar_amp`: object state says guitar case donated. If this means guitar gear is handled, mark done/archive; otherwise keep but probably criticality 2, not 3.
+- `m_load_main`: too vague/duplicative. Either split into concrete load cards or make it a non-dealable umbrella outcome.
+- `m_load_complete`: if this means final verification, effort 3 → 1. If it means finish all loading, split it.
+Housing:
+- `h_lock`: outcome/capstone. Do not deal before concrete lead actions. Add dependencies or mark non-dealable until ready.
+- `h_ask_blinds`: criticality 3 → 2.
+- `h_walkthrough_prep`: probably criticality 3 → 2.
+- `h_restore_blinds`: criticality 3 only if landlord explicitly requires it; otherwise 2.
+- `h_fill_holes`: probably criticality 2.
+- `h_moveout_clean`: too broad. Split into:
+  - Clean kitchen
+  - Clean bathroom
+  - Clean floors/surfaces
+  - Final trash/donations
+  - Photo-ready condition
+- `h_empty_fridge`: criticality 3 / effort 1 ok.
+Jobs:
+- During move-crisis mode, cap jobs to max one dealt card per day unless user manually chooses more.
+- `j_exec`: archive or convert to “check if still open.”
+- `j_cphds`: archive or convert to “check if still open.”
+- `j_student`: archive or convert to “check if still open.”
+- `j_onboard`: triage/verify open, not high-priority app card.
+- `j_equity`: triage/decide fit; do not compete with move-critical cards.
+- `j_hpd`: keep as effort 1 follow-up.
+- `j_hunter`, `j_hopwa1`, `j_hopwa2`: keep as optional job cards, but cap exposure.
+- `j_labor`: set availableFrom after move or exclude until August.
+Work/admin/travel:
+- `w_wifi_cutoff`: probably criticality 2, not 3.
+- `w_wifi_return_method`: probably criticality 2.
+- `w_wifi_return`: keep criticality 3.
+- `w_work_return_process`: probably criticality 2.
+- `w_work_return`: criticality 3 ok if return has real consequences.
+- `w_travel_transport`: criticality 3 / effort 1 ok.
+- `w_travel_checkin`: add availableFrom or exactDate Jul 30.
+- `w_flight`: ok.
+Health:
+- `t_heart`: criticality 1 → 2.
+- `t_lymph`: criticality 1 → 2.
+- `t_teeth`: criticality 2 / effort 2 ok.
+- `t_skin`: ok.
+- `t_obgyn`: ok.
+- `t_labs`: add real dependency or rename as directly actionable.
+- `t_med_bridge`: make directly actionable or add dependency.
+Cat:
+- `c_vet_book`: criticality 3 / effort 1 ok.
+- `c_vet_attend`: depends on `c_vet_book`; once booked, set exactDate.
+- `c_cert`: depends on `c_vet_attend`; fix impossible date conflict because it currently targets Jul 25 while vet attend is Jul 26.
+- `c_med_test`: depends on medication pickup.
+- `c_med_reaction`: depends on `c_med_test`.
+- `c_kit`: add availableFrom Jul 29/30.
+- `c_departure`: ok.
+10. Ledger behavior
+Ledger should make the data model legible and prevent bad edits.
+Required:
+- Ledger active view must hide done/archived/dismissed by default.
+- Provide Archived view separately if already present, but do not mix with active deck.
+- Label “Score” as “Priority” or “Fit” for jobs; do not imply it is scheduler pressure.
+- Show criticality and effort clearly.
+- If user edits due date, update structured schedule fields, not only display `due`.
+- Trust structured dates over display strings.
+- Display `due` is copy only; schedule logic must use `targetDate`, `latestDate`, `exactDate`, `availableFrom`, dependencies.
+- If a task has `dependsNote` but no real dependency, flag it for cleanup or show as note only.
+Ledger edit requirements:
+- In Ledger, active tasks must be editable.
+- User must be able to mark a task complete/done from Ledger.
+- User must be able to edit effort: 1, 2, or 3.
+- User must be able to edit criticality: 1, 2, or 3.
+- User must be able to add/remove dependencies by selecting other task ids/titles.
+- User must be able to edit availableFrom, targetDate, latestDate, and exactDate.
+- Editing display `due` text alone is not enough; Ledger edits must update the structured scheduling fields used by the Daily Hand.
+- If a task has `dependsNote` but no real `dependencies`, Ledger should surface that as “note only / not blocking” or offer a way to convert it into a real dependency.
+- Ledger active view should allow completing, archiving, dismissing, and restoring tasks.
+Criticality / effort audit edits to apply:
+
+Use these meanings consistently:
+- Criticality 3 = hard external deadline, move/travel/housing failure, financial/legal risk, or cannot miss.
+- Criticality 2 = important and should be surfaced, but flexible or recoverable.
+- Criticality 1 = optional, comfort, cleanup, nice-to-have, self-imposed, or low consequence.
+- Effort 1 = quick call/text/click/simple physical action.
+- Effort 2 = moderate admin or packing task, 30–60 min.
+- Effort 3 = heavy, multi-step, emotionally/physically draining, or 60–120+ min.
+- Anything bigger than effort 3 should be split into smaller tasks or treated as a milestone, not one dealt card.
+
+Specific edits:
+
+Housing:
+- h_lock: keep criticality 3, effort 3, but treat as an outcome/milestone unless no concrete housing action exists.
+- h_finalize_address: criticality 3, effort 1, add dependency on h_lock.
+- h_keys_access: criticality 3, effort 1, add dependency on h_lock.
+- h_confirm_extension: criticality 2, effort 1.
+- h_ask_blinds: lower to criticality 2 unless landlord/deposit risk is confirmed.
+- h_walkthrough_prep: criticality 2 or 3, effort 1, availableFrom 2026-07-24 is fine.
+- h_walkthrough: criticality 3, effort 1, exact/fixed date.
+- h_restore_blinds: criticality 3 only if landlord confirms required; otherwise criticality 2. Add dependency on h_walkthrough / landlord response.
+- h_fill_holes: criticality 3 only if holes definitely exist; add dependency on curtain rods removed / walkthrough response.
+- h_photo_condition: criticality 3, effort 1, add dependency on h_moveout_clean.
+- h_forward_deposit_address: criticality 2, effort 1, add dependency on h_finalize_address.
+
+Address/admin:
+- a_usps: raise to criticality 2, effort 1, add dependency on h_finalize_address.
+- a_bank: criticality 1, effort 1, add dependency on h_finalize_address.
+- a_payout: criticality 1, effort 1.
+
+Health:
+- t_teeth: criticality 2, effort 2.
+- t_heart: raise from criticality 1 to 2.
+- t_lymph: raise from criticality 1 to 2.
+- t_skin: criticality 1 or 2; not 3 unless there is a hard medical reason.
+- t_obgyn: criticality 2, effort 2.
+- t_labs: criticality 2, effort 2, add dependency on rheum/PCP order task.
+- t_med_bridge: criticality 3, effort 1, but fix dependency logic. If PCP approval is already handled, remove the dependsNote; otherwise add a real dependency on the PCP/bridge approval task.
+
+Cat / Stretchy:
+- c_vet_book: criticality 3, effort 1, but should not bind before due/ready.
+- c_vet_attend: criticality 3, effort 2, fixed/appointment-like.
+- c_cert: criticality 3, effort 1, add dependency on c_vet_attend.
+- c_med_test: criticality 3 or 2, effort 2, add dependency on medication pickup task. Do not depend on an archived task unless archived counts as completed.
+- c_med_reaction: lower to criticality 2, effort 1, dependency on c_med_test.
+- c_kit: criticality 3, effort 1.
+- c_departure: criticality 3, effort 2, exact date.
+
+Packing:
+- p_books: if only office:hutch_books_upper remains, reduce effort from 2 to 1. Otherwise keep effort 2.
+- p_death_cords: criticality 1, effort 2 is fine.
+- p_decor: criticality 2, effort 3 is fine.
+- p_art: criticality 2, effort 3, but availableFrom should be closer to actual packing window, not 2026-07-11.
+- p_craft_supplies: criticality 2, effort 2 is fine.
+- p_games: criticality 2, effort 1 is fine.
+- p_winter_clothes: criticality 2, effort 3 is fine.
+- p_linens: criticality 2, effort 1 is fine.
+- p_barware: criticality 2, effort 3 is fine.
+- p_outdoor_keep: criticality 2, effort 2 is fine.
+- p_electronics: criticality 2, effort 2 is fine.
+- p_dining_bar: criticality 2, effort 2 is fine.
+- p_cat_belongings: criticality 2, effort 2 is fine.
+- p_reduce_kitchen: criticality 2, effort 3 is fine.
+- p_roll_rug_lamp: criticality 3, effort 2, availableFrom 2026-07-23 is fine.
+- p_guitar_amp: consider lowering to criticality 2 unless it is truly move-blocking; effort 1 is fine.
+- m_pack_office: raise from criticality 1 to 2.
+- m_pack_bath: raise from criticality 1 to 2.
+- m_pack_overflow: raise from criticality 1 to 2.
+- m_labels: raise from criticality 1 to 2.
+- m_lock: raise from criticality 1 to 3 if this is the actual U-Box lock needed for pickup/security.
+- m_load_map: lower from criticality 3 to 2 unless the load map is actually required for helpers/movers.
+
+Furniture / selling:
+- Buyer tasks should usually be criticality 2, effort 1.
+- Removal tasks should usually be criticality 3, effort 1–2, but must be blocked by their buyer/decision task.
+- f_bed_plan: lower from criticality 3 to 2 unless no plan creates direct move failure.
+- f_remove_bedframe: add dependency on f_bed_plan.
+- f_remove_mattress: criticality 3, effort 2, availableFrom 2026-07-30 is fine.
+
+U-Box / loading:
+- m_load1, m_load_main, and m_load_complete are too large/overlapping as dealt cards.
+- Split actual loading into smaller actionable cards, or mark the big cards as milestones.
+- Suggested split:
+  - Load heavy/boring/low-theft first: effort 3, criticality 3, exact 2026-07-27.
+  - Load furniture/large keep items: effort 3, criticality 3.
+  - Load packed boxes by zone: effort 3, criticality 3.
+  - Load late-value storage items: effort 2, criticality 3.
+  - Final packed interior photo: effort 1, criticality 2.
+  - Lock U-Box: effort 1, criticality 3, exact 2026-07-30.
+- m_load_complete should become a milestone/checkoff after the split tasks, not a standalone huge effort-3 task.
+
+Cleaning:
+- h_moveout_clean is too large as one effort-3 card.
+- Split into:
+  - Clean kitchen: effort 2–3, criticality 3.
+  - Clean bathroom: effort 2, criticality 3.
+  - Floors/surfaces/trash pass: effort 2–3, criticality 3.
+  - Final photo condition: effort 1, criticality 3, dependency on cleaning.
+- If not split, keep h_moveout_clean as effort 3 but treat as a milestone, not a normal dealt card.
+
+Work/Wi-Fi/travel:
+- w_wifi_cutoff: criticality 3, effort 1 is fine.
+- w_wifi_return_method: lower to criticality 2 unless method uncertainty blocks return.
+- w_wifi_return: criticality 3, effort 2 is fine.
+- w_work_return_process: lower to criticality 2 unless employer deadline is strict.
+- w_work_return: criticality 2 or 3 depending employer consequence; effort 2 is fine.
+- w_travel_transport: criticality 3, effort 1 is fine.
+- w_travel_checkin: criticality 3, effort 1, add availableFrom 2026-07-30.
+- w_flight: criticality 3, effort 1, exact date.
+
+Jobs:
+- Follow-up tasks are effort 1.
+- Full applications are effort 3.
+- Job tasks should not bind multiple slots during move crisis.
+- j_cphds, j_exec, and j_student are stale/past self-target or likely expired; archive or suppress unless explicitly kept.
+- j_onboard should be reviewed; archive/suppress if stale.
+- Keep live jobs such as j_hpd, j_hunter, j_hopwa1, j_hopwa2, but cap daily job dealing to 0–1 unless user chooses job focus.
+11. Daily cards / recurrence
+`h_outreach_daily` and `s_fb_inbox` should not become stale one-off cards.
+Fix:
+- `h_outreach_daily` should recur/regenerate while housing is not locked, unless explicitly done for that day.
+- `s_fb_inbox` should be refreshed daily or retargeted to today when still relevant.
+- A daily task marked done today should not appear again today, but can appear tomorrow if still relevant.
+- Do not keep old `targetDate` / `latestDate` from Jul 11 making it look stale forever.
+12. Acceptance test for Jul 13 save
+Given the Jul 13 save state where:
+- `h_outreach_daily` is done
+- current generated hand is wrongly `h_lock`, `h_keys_access`, `h_finalize_address`
+- energy is full
+- `boundEffort` is 5
+- `requiredOptionalEffort` is 6
+- full quota should be 11
+Expected after fix:
+- `h_keys_access` and `h_finalize_address` should be blocked by `h_lock`.
+- `h_lock` should not be bound unless it is truly actionable/capstone-ready.
+- Fumes should not bind future crit-3 cards just to meet quota.
+- Full quota should be 11 if remaining effort math is 192/18.
+- User cannot leave full draw until selected effort reaches quota, unless they downgrade energy.
+- Fumes has offers available for optional draws/swaps.
+- Suggested Jul 13 hand should contain concrete near-term actions, likely from:
+  - `p_books`
+  - `p_games`
+  - `p_craft_supplies`
+  - `p_winter_clothes`
+  - `s_fb_inbox`
+  - `t_teeth`
+  - `t_skin`
+  - `t_obgyn`
+  - `f_buyer_dining`
+  - `f_buyer_outdoor`
+  - `f_buyer_shoeshelf`
+  - maybe one job max if full energy and enough quota remains
+13. Implementation constraints
+Do not:
+- Redesign the UI.
+- Add a new intent screen.
+- Add complex AI/API picking.
+- Let display `due` strings drive scheduling.
+- Let archived seed data remain in active runtime task source.
+- Let future targetDate tasks bind today just because they are criticality 3.
+- Let `dependsNote` act like a dependency.
+Do:
+- Keep changes deterministic, local, and debuggable.
+- Prefer small helper functions with clear names.
+- Add comments where the old behavior was wrong.
+- Add console/debug summary if useful:
+  - bound cards and why bound
+  - required optional effort
+  - selected optional effort
+  - remaining effort
+  - blocked tasks and why blocked
+  - offer pile ids
+  - quota math
+14. Return format
+When done, report:
+- Files changed.
+- Archived/seed cleanup completed.
+- Scheduler changes made.
+- Ledger changes made.
+- Task-data edits made.
+- Before/after Jul 13 hand.
+- Quota math for fumes/steady/full.
+- Any tasks intentionally left unchanged and why.
+
+This prompt is broad enough for Claude to finish the half-done cleanup, but narrow enough that it should not wander into UI redesign.
