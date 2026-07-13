@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-13T06:16:22.380Z",
+  "last_updated": "2026-07-13T08:42:52.506Z",
   "rules": {
     "read_before_work": true,
     "write_before_editing": true,
@@ -128,17 +128,26 @@
       "model": "Opus 4.8",
       "role": "Senior Reviewer / Taste + Reasoning Specialist",
       "thinking": "high",
-      "status": "IDLE",
+      "status": "ACTIVE",
       "branch": null,
-      "working_on": null,
-      "files_locked": [],
-      "systems_locked": [],
-      "risk_level": "taste/review",
+      "working_on": "priority fixes: taskPressure recalibration, urgencyScore self-target cap + dead-code removal, criticality editable+sortable, binding uniqueness (death-cords dup)",
+      "files_locked": [
+        "artifacts/pack-it-up/src/schedule.js",
+        "artifacts/pack-it-up/src/tasks.js",
+        "artifacts/pack-it-up/src/Screens.jsx"
+      ],
+      "systems_locked": [
+        "urgency",
+        "pressure",
+        "ledger-edit",
+        "bindings"
+      ],
+      "risk_level": "medium",
       "commit_authority": false,
       "rate_limited": true,
       "cooldown_until": "next Claude usage reset",
       "handoff_needed": null,
-      "last_seen": null,
+      "last_seen": "2026-07-13T08:42:52.506Z",
       "expires_at": null,
       "notes": "Premium Claude reviewer. Supports Fable on taste, docs, prose, Marcy voice, pixel-art standards."
     },

@@ -1411,6 +1411,7 @@ const LEDGER_LANES = [
 
 const LEDGER_SORTS = [
   { id: "due", label: "Due" },
+  { id: "crit", label: "Priority" },
   { id: "effort", label: "Effort" },
   { id: "score", label: "Score" },
 ];
@@ -1531,7 +1532,7 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
   const [editId, setEditId] = useState(null);
   const [editDraft, setEditDraft] = useState({
     title: "", due: "", dueDate: "", targetDate: "", latestDate: "",
-    effort: 1, category: "housing", status: "pending", selfTarget: false, scheduleOverride: false,
+    effort: 1, criticality: 1, category: "housing", status: "pending", selfTarget: false, scheduleOverride: false,
     binding: EMPTY_TASK_BINDING,
   });
   const rows = tasks
@@ -1548,6 +1549,11 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
       if (sortBy === "effort") {
         const e = (b.effort || 1) - (a.effort || 1);
         if (e !== 0) return e;
+      } else if (sortBy === "crit") {
+        const c = (b.criticality || 1) - (a.criticality || 1);
+        if (c !== 0) return c;
+        const d = ledgerDueKey(a).localeCompare(ledgerDueKey(b));
+        if (d !== 0) return d;
       } else if (sortBy === "score") {
         const as = a.score ?? SAMPLE_JOBS[a.jobId]?.priority ?? -1;
         const bs = b.score ?? SAMPLE_JOBS[b.jobId]?.priority ?? -1;
@@ -1578,6 +1584,7 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
       latestDate: calculated?.latestDate || t.latestDate || t.dueEnd || "",
       scheduleOverride: !!t.scheduleOverride,
       effort: t.effort || 1,
+      criticality: Math.min(3, Math.max(1, Number(t.criticality) || 1)),
       category: t.category || lane,
       status: t.status || "pending",
       selfTarget: !!t.selfTarget,
@@ -1602,6 +1609,11 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
           due: dateLocked ? t.due : editDraft.due.trim(),
           dueDate: dateLocked ? t.dueDate : dueDate,
           effort: Math.min(3, Math.max(1, Number(editDraft.effort) || 1)),
+          // Persist as criticalityOverride so normalizeTask honours the manual
+          // value over the job fit-score bucket; mirror into criticality so the
+          // importance pips update immediately (before the next normalize pass).
+          criticality: Math.min(3, Math.max(1, Number(editDraft.criticality) || 1)),
+          criticalityOverride: Math.min(3, Math.max(1, Number(editDraft.criticality) || 1)),
           category: cat,
           status: editDraft.status === "done" ? "done" : "pending",
           selfTarget: !!editDraft.selfTarget,
@@ -1767,13 +1779,26 @@ function LedgerScreen({ go, tasks, setTasks, onSessionBump }) {
                   Self-imposed date (latest becomes +5 days)
                 </label>
               )}
-              <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
+              <div style={{ color: "#8A7350", fontSize: 8, margin: "0 0 2px", ...LB }}>EFFORT</div>
+              <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
                 {[1, 2, 3].map((n) => (
                   <button key={n} type="button" onClick={() => setEditDraft((d) => ({ ...d, effort: n }))} style={{
                     flex: 1, padding: "6px", fontSize: 10, cursor: "pointer",
                     background: editDraft.effort === n ? "#5D7C3B" : "#241509", color: "#F2E4C0",
                     border: "2px solid #120A04", ...LB,
                   }}>{EFFORT_DOT(n)}</button>
+                ))}
+              </div>
+              <div style={{ color: "#8A7350", fontSize: 8, margin: "0 0 2px", ...LB }}>
+                PRIORITY / IMPORTANCE{editDraft.category === "job" ? " · overrides fit-score default" : ""}
+              </div>
+              <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
+                {[1, 2, 3].map((n) => (
+                  <button key={n} type="button" onClick={() => setEditDraft((d) => ({ ...d, criticality: n }))} style={{
+                    flex: 1, padding: "6px", fontSize: 10, cursor: "pointer",
+                    background: editDraft.criticality === n ? "#C43B34" : "#241509", color: "#F2E4C0",
+                    border: "2px solid #120A04", ...LB,
+                  }}>{"●".repeat(n)}{"○".repeat(3 - n)}</button>
                 ))}
               </div>
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>

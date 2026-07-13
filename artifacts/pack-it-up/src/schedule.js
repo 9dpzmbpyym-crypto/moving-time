@@ -103,70 +103,36 @@ export function taskScheduleStatus(task, today = new Date(), tasks = []) {
   return "available";
 }
 
-/** 0–100 schedule urgency (Sol §4). Job fit score stays separate. */
+/**
+ * Sort key: criticality-weighted deadline pressure (higher = handle sooner).
+ * `deadline` is a 0–110 time-pressure term; the return multiplies it by
+ * criticality (1–3) so importance and urgency both count in ordering.
+ * Self-imposed job deadlines (selfTarget + estimatedLatest) are damped so a
+ * fake "overdue" can never outrank real crit-3 move work. Job fit score
+ * (task.score) is deliberately NOT consulted here — deadline urgency only.
+ */
 export function urgencyScore(task, today = new Date()) {
   const t = normalizeTask(task);
   if (!t || !isOpen(t)) return 0;
   const todayK = dateKey(today);
   const finalDate = t.exactDate || t.latestDate || t.targetDate;
   const daysToFinal = finalDate ? daysBetween(todayK, finalDate) : null;
-  const daysPastTarget = t.targetDate && todayK > t.targetDate
+  const soft = !!(t.selfTarget && t.estimatedLatest); // fake / self-imposed deadline
+  const daysPastTarget = (!soft && t.targetDate && todayK > t.targetDate)
     ? Math.max(0, daysBetween(t.targetDate, todayK) || 0)
     : 0;
-  let deadlinePressure = 5;
-  if (t.exactDate === todayK) deadlinePressure = 1000;
+  let deadline = 5;
+  if (t.exactDate === todayK) deadline = 100;
   else if (daysToFinal != null) {
-    deadlinePressure = daysToFinal <= 0
-      ? 100 + Math.min(50, Math.abs(daysToFinal) * 5)
-      : Math.max(10, 90 - daysToFinal * 7);
+    deadline = daysToFinal <= 0
+      ? 90 + Math.min(10, Math.abs(daysToFinal) * 2)
+      : Math.max(8, 88 - daysToFinal * 7);
   }
-  deadlinePressure += daysPastTarget * 12;
-  if (t.latestDate && finalDate === t.latestDate) deadlinePressure += 15;
-  return Math.round((t.criticality || 1) * deadlinePressure);
-  /* legacy deadline curve retained below temporarily for save/UI compatibility */
-  const criticalityBonus = { 1: 0, 2: 10, 3: 20 }[t.criticality || 1] || 0;
-  let timePressure = 0;
-
-  if (t.exactDate && todayK < t.exactDate) {
-    const delta = daysBetween(todayK, t.exactDate);
-    timePressure = delta <= 1 ? 45 : delta <= 3 ? 25 : 5;
-  } else if (!t.targetDate && t.latestDate) {
-    if (todayK >= t.latestDate) {
-      const past = daysBetween(t.latestDate, todayK) || 0;
-      timePressure = 95 + Math.min(5, past * 2);
-    } else {
-      const start = t.availableFrom || addDaysISO(t.latestDate, -FALLBACK_LEAD_DAYS);
-      const totalLead = Math.max(1, daysBetween(start, t.latestDate) || 1);
-      const elapsed = Math.max(0, daysBetween(start, todayK) || 0);
-      const progress = Math.min(1, elapsed / totalLead);
-      timePressure = 10 + 25 * progress;
-    }
-  } else if (!t.targetDate) {
-    timePressure = 10;
-  } else if (todayK < t.targetDate) {
-    const start = t.availableFrom || addDaysISO(t.targetDate, -FALLBACK_LEAD_DAYS);
-    const totalLead = Math.max(1, daysBetween(start, t.targetDate) || 1);
-    const elapsed = Math.max(0, daysBetween(start, todayK) || 0);
-    const progress = Math.min(1, elapsed / totalLead);
-    timePressure = 10 + 20 * progress;
-  } else if (todayK === t.targetDate) {
-    timePressure = 35;
-  } else if (!t.latestDate || todayK < t.latestDate) {
-    const grace = Math.max(1, daysBetween(t.targetDate, t.latestDate || t.targetDate) || 1);
-    const overdue = Math.max(1, daysBetween(t.targetDate, todayK) || 1);
-    const progress = Math.min(1, overdue / grace);
-    timePressure = 35 + 50 * progress * progress;
-  } else {
-    // On or after latestDate — FINAL CALL floor; may still climb slightly for visual intensity.
-    const past = daysBetween(t.latestDate, todayK) || 0;
-    timePressure = 95 + Math.min(5, past * 2);
-  }
-
-  const dependencyBonus = (t.blocks || []).length ? 10 : 0;
-  // Self-target jobs never outrank crit-3 move work merely by being overdue
-  let score = Math.min(100, Math.round(timePressure + criticalityBonus + dependencyBonus));
-  if (t.selfTarget && (t.criticality || 1) <= 2) score = Math.min(score, 69);
-  return score;
+  deadline += daysPastTarget * 6;
+  if (t.latestDate && finalDate === t.latestDate) deadline += 8;
+  if (soft) deadline = Math.min(deadline, 50); // never dominate real deadlines
+  deadline = Math.max(0, Math.min(110, deadline));
+  return Math.round((t.criticality || 1) * deadline);
 }
 
 /**

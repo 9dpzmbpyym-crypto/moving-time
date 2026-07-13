@@ -7,7 +7,7 @@ import { ENERGY_BUDGET } from "./session.js";
 // imports `isOpen` from this file — a circular ESM import, safe here because
 // both sides only touch the other's exports inside function bodies, never at
 // module-eval time.)
-import { taskStatus, urgencyScore } from "./schedule.js";
+import { taskStatus, normalizeTask } from "./schedule.js";
 
 export const SUBLET_OUTREACH_ID = "h_outreach_daily";
 const LATE_WINDOW_START = "2026-07-27";
@@ -195,7 +195,10 @@ export const INITIAL_TASKS = [
 
   // §9 EARLY PACKING — none of these existed yet; all new granular packing cards.
   base({ id: "p_books", title: "Pack books and coffee-table books", category: "move", effort: 2, due: "Jul 11", dueDate: "2026-07-11", dueEnd: "2026-07-15", availableFrom: "2026-07-11", targetDate: "2026-07-11", latestDate: "2026-07-15", criticality: 2, binding: packedCollections("collection:living:tv_hutch:coffee-table books", "collection:office:side_cabinet:books & prints") }),
-  base({ id: "p_death_cords", title: "Pack death-closet cords/electronics", category: "move", effort: 2, due: "Jul 11", dueDate: "2026-07-11", dueEnd: "2026-07-15", availableFrom: "2026-07-11", targetDate: "2026-07-11", latestDate: "2026-07-15", criticality: 2, binding: packedCollections("collection:office:desk_hutch:nonessential electronics") }),
+  // Manual: "death closet" cords are a distinct physical spot, not the desk-hutch
+  // electronics collection (which p_electronics owns) — unbound so one shelf can't
+  // complete two tasks. See binding-uniqueness invariant (assertUniqueBindings).
+  base({ id: "p_death_cords", title: "Pack death-closet cords/electronics", category: "move", effort: 2, due: "Jul 11", dueDate: "2026-07-11", dueEnd: "2026-07-15", availableFrom: "2026-07-11", targetDate: "2026-07-11", latestDate: "2026-07-15", criticality: 2 }),
   base({ id: "p_decor", title: "Pack decor/vases/candles/knickknacks", category: "move", effort: 2, due: "Jul 12", dueDate: "2026-07-12", dueEnd: "2026-07-15", availableFrom: "2026-07-11", targetDate: "2026-07-12", latestDate: "2026-07-15", criticality: 2, binding: packedCollections("collection:dining:bar_cabinet:vases", "collection:dining:bar_cabinet:candles & incense", "collection:living:tv_hutch:decor & knickknacks") }),
   base({ id: "p_art", title: "Pack framed art and prints", category: "move", effort: 2, due: "Jul 13", dueDate: "2026-07-13", dueEnd: "2026-07-16", availableFrom: "2026-07-11", targetDate: "2026-07-13", latestDate: "2026-07-16", criticality: 2, binding: packedCollections("collection:task:art and prints") }),
   base({ id: "p_craft_supplies", title: "Pack art/sewing/fabric supplies", category: "move", effort: 2, due: "Jul 13", dueDate: "2026-07-13", dueEnd: "2026-07-16", availableFrom: "2026-07-11", targetDate: "2026-07-13", latestDate: "2026-07-16", criticality: 2, binding: packedCollections("collection:office:storage_bin:sewing supplies", "collection:living:tv_hutch:fabric & craft supplies") }),
@@ -211,17 +214,22 @@ export const INITIAL_TASKS = [
   base({ id: "m_pack_bath", title: "Pack bathroom backup + vanity extras", category: "move", effort: 2, due: "Jul 17–23", dueDate: "2026-07-17", dueEnd: "2026-07-23", availableFrom: "2026-07-16", targetDate: "2026-07-17", latestDate: "2026-07-23", criticality: 2, binding: packedCollections("collection:bathroom:bath_vanity:hair care", "collection:bathroom:bath_vanity:nail care") }),
   base({ id: "m_pack_office", title: "Pack office supplies and papers", category: "move", effort: 2, due: "Jul 18–24", dueDate: "2026-07-18", dueEnd: "2026-07-24", availableFrom: "2026-07-16", targetDate: "2026-07-18", latestDate: "2026-07-24", criticality: 2, binding: packedCollections("collection:office:desk_hutch:office supplies", "collection:office:side_cabinet:documents") }),
   base({ id: "p_triage_docs", title: "Triage documents into archive/carry/shred", category: "move", effort: 2, urgency: 2, due: "Jul 18", dueDate: "2026-07-18", dueEnd: "2026-07-22", availableFrom: "2026-07-16", targetDate: "2026-07-18", latestDate: "2026-07-22", criticality: 3 }),
-  base({ id: "m_pack_kitchen", title: "Pack nonessential kitchen", category: "move", effort: 2, due: "Jul 19–23", dueDate: "2026-07-19", dueEnd: "2026-07-23", availableFrom: "2026-07-17", targetDate: "2026-07-19", latestDate: "2026-07-23", criticality: 2, binding: packedCollections("collection:kitchen:counter_sink:utensils", "collection:kitchen:counter_sink:dishes & cookware") }),
+  // Legacy coarse card superseded by p_reduce_kitchen (owns the kitchen collections). Unbound.
+  base({ id: "m_pack_kitchen", title: "Pack nonessential kitchen", category: "move", effort: 2, due: "Jul 19–23", dueDate: "2026-07-19", dueEnd: "2026-07-23", availableFrom: "2026-07-17", targetDate: "2026-07-19", latestDate: "2026-07-23", criticality: 2 }),
   base({ id: "p_dining_bar", title: "Pack dining/bar cabinet contents", category: "move", effort: 2, due: "Jul 19", dueDate: "2026-07-19", dueEnd: "2026-07-23", availableFrom: "2026-07-17", targetDate: "2026-07-19", latestDate: "2026-07-23", criticality: 2, binding: packingRequirements("object:dining:bar_bottles", "collection:dining:bar_bottles:alcohol", "collection:dining:bar_bottles:bar tools") }),
-  base({ id: "m_pack_living", title: "Pack living decor/electronics + dining/bar", category: "move", effort: 2, due: "Jul 20–24", dueDate: "2026-07-20", dueEnd: "2026-07-24", availableFrom: "2026-07-18", targetDate: "2026-07-20", latestDate: "2026-07-24", criticality: 2, binding: packedCollections("collection:living:tv_hutch:decor & knickknacks", "collection:living:tv_hutch:games & gaming extras", "collection:dining:bar_bottles:all", "collection:dining:bar_cabinet:all") }),
+  // Legacy coarse card superseded by p_decor / p_games / p_dining_bar / p_barware. Unbound.
+  base({ id: "m_pack_living", title: "Pack living decor/electronics + dining/bar", category: "move", effort: 2, due: "Jul 20–24", dueDate: "2026-07-20", dueEnd: "2026-07-24", availableFrom: "2026-07-18", targetDate: "2026-07-20", latestDate: "2026-07-24", criticality: 2 }),
   base({ id: "p_cat_belongings", title: "Pack Stretchy's nonessential belongings", category: "move", effort: 1, due: "Jul 21", dueDate: "2026-07-21", dueEnd: "2026-07-25", availableFrom: "2026-07-19", targetDate: "2026-07-21", latestDate: "2026-07-25", criticality: 2, binding: packedCollections("collection:task:cat belongings") }),
-  base({ id: "p_bedroom_capsule", title: "Reduce bedroom to travel capsule", category: "move", effort: 2, due: "Jul 22", dueDate: "2026-07-22", dueEnd: "2026-07-25", availableFrom: "2026-07-20", targetDate: "2026-07-22", latestDate: "2026-07-25", criticality: 2, binding: packedCollections("collection:bedroom:dresser:all", "collection:bedroom:closet_door:all") }),
-  base({ id: "p_bathroom_kit", title: "Reduce bathroom to daily kit", category: "move", effort: 1, due: "Jul 22", dueDate: "2026-07-22", dueEnd: "2026-07-25", availableFrom: "2026-07-20", targetDate: "2026-07-22", latestDate: "2026-07-25", criticality: 2, binding: packedCollections("collection:bathroom:bath_vanity:hair care", "collection:bathroom:bath_vanity:nail care") }),
+  // Legacy coarse card superseded by m_pack_overflow / p_winter_clothes. Unbound.
+  base({ id: "p_bedroom_capsule", title: "Reduce bedroom to travel capsule", category: "move", effort: 2, due: "Jul 22", dueDate: "2026-07-22", dueEnd: "2026-07-25", availableFrom: "2026-07-20", targetDate: "2026-07-22", latestDate: "2026-07-25", criticality: 2 }),
+  // Legacy coarse card superseded by m_pack_bath. Unbound.
+  base({ id: "p_bathroom_kit", title: "Reduce bathroom to daily kit", category: "move", effort: 1, due: "Jul 22", dueDate: "2026-07-22", dueEnd: "2026-07-25", availableFrom: "2026-07-20", targetDate: "2026-07-22", latestDate: "2026-07-25", criticality: 2 }),
   base({ id: "p_zones_plane", title: "Establish PLANE and DO NOT PACK zones", category: "move", effort: 1, urgency: 2, due: "Jul 22", dueDate: "2026-07-22", dueEnd: "2026-07-24", availableFrom: "2026-07-18", targetDate: "2026-07-22", latestDate: "2026-07-24", criticality: 3 }),
   base({ id: "p_reduce_kitchen", title: "Reduce kitchen to survival kit", category: "move", effort: 2, due: "Jul 23", dueDate: "2026-07-23", dueEnd: "2026-07-25", availableFrom: "2026-07-20", targetDate: "2026-07-23", latestDate: "2026-07-25", criticality: 2, binding: packedCollections("collection:kitchen:counter_sink:dishes & cookware", "collection:kitchen:counter_sink:utensils") }),
   base({ id: "p_food_drawdown", title: "Begin food drawdown", category: "move", effort: 1, due: "Jul 23", dueDate: "2026-07-23", dueEnd: "2026-07-25", availableFrom: "2026-07-20", targetDate: "2026-07-23", latestDate: "2026-07-25", criticality: 2 }),
   base({ id: "p_final_clean_kit", title: "Prepare final-clean kit", category: "move", effort: 1, due: "Jul 23", dueDate: "2026-07-23", dueEnd: "2026-07-26", availableFrom: "2026-07-20", targetDate: "2026-07-23", latestDate: "2026-07-26", criticality: 2, binding: packedCollections("collection:kitchen:counter_sink:cleaning supplies") }),
-  base({ id: "p_close_office", title: "Close office except active work kit", category: "move", effort: 2, due: "Jul 24", dueDate: "2026-07-24", dueEnd: "2026-07-26", availableFrom: "2026-07-22", targetDate: "2026-07-24", latestDate: "2026-07-26", criticality: 2, binding: packedCollections("collection:office:desk_hutch:office supplies", "collection:office:desk_hutch:nonessential electronics", "collection:office:side_cabinet:all", "collection:office:storage_bin:all") }),
+  // Legacy coarse card superseded by m_pack_office / p_electronics / p_craft_supplies. Unbound.
+  base({ id: "p_close_office", title: "Close office except active work kit", category: "move", effort: 2, due: "Jul 24", dueDate: "2026-07-24", dueEnd: "2026-07-26", availableFrom: "2026-07-22", targetDate: "2026-07-24", latestDate: "2026-07-26", criticality: 2 }),
 
   // §7 Furniture sale windows. Buyer is responsible for loading/transport; "remove" isn't
   // done until the item is physically gone. Dresser/sofa/desk/bed are late on purpose — still in use.
@@ -449,23 +457,29 @@ export function refreshDailyHousingTasks(tasks, date = new Date()) {
  */
 export function taskPressure(tasks, date = new Date()) {
   const open = (tasks || []).filter(isOpen);
-  let maxScore = 0;
-  let closingOrLouder = false;
+  // Status-based, not score-based: the numeric urgencyScore is a criticality-
+  // weighted sort key (0..~330), so thresholding it here would pin the meter.
+  // The deadline state machine (taskStatus) is the honest pressure signal.
   let genuineFinalCall = false;
+  let closing = false;
+  let dueSoon = false;
   for (const task of open) {
-    const status = taskStatus(task, date, tasks);
-    if (status === "BLOCKED") continue; // excluded from actionable pressure — see ledger BLOCKED label instead
-    const score = urgencyScore(task, date);
-    if (score > maxScore) maxScore = score;
-    if (status === "FINAL CALL" && (task.criticality || 1) >= 2 && !task.selfTarget) {
+    const t = normalizeTask(task);
+    const status = taskStatus(t, date, tasks);
+    if (status === "BLOCKED" || status === "SCHEDULED") continue; // not actionable pressure
+    const real = !t.selfTarget; // self-imposed deadlines never dominate the meter
+    const crit = t.criticality || 1;
+    if (status === "FINAL CALL" && crit >= 2 && real) {
       genuineFinalCall = true;
-    } else if (status === "FINAL CALL" || status === "CLOSING") {
-      closingOrLouder = true;
+    } else if (real && (status === "FINAL CALL" || status === "CLOSING" || status === "OVERDUE")) {
+      closing = true;
+    } else if (["DUE", "SOON", "OVERDUE", "CLOSING", "FINAL CALL"].includes(status)) {
+      dueSoon = true; // self-target or crit-1 near/past deadline — mild only
     }
   }
   if (genuineFinalCall) return 3;
-  if (maxScore >= 70 || closingOrLouder) return 2;
-  if (maxScore >= 30) return 1;
+  if (closing) return 2;
+  if (dueSoon) return 1;
   return 0;
 }
 
