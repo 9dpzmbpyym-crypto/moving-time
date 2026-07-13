@@ -13,3 +13,6 @@
 **UI redesign still needed:** **Stretchy screen · Ledger · Inventory · Desk/Admin · Settings** — plus any other screen not yet reskinned.
 **Ledger:** add **sort-by-urgency**, calculated with `urgencyScore`/`taskStatus` in `schedule.js`.
 **Part 7 — task↔gameplay wiring:** link tasks to packing/selling, Shirley appointments, and health state. Spec: `docs/inbox/chat-gpt-connecting-tasks-to-gameplay-suggestions.md`; start fresh rather than relying on the incomplete stash.
+
+## Notes for Codex (Jul 13, Fable)
+Three UI polish nits from live review are in FINISH_PLAN → Open next → "UI polish nits — [codex]": segmented apartment top HUD bar · Command Board "draws" copy should say effort · Command Board empty pre-pick void.

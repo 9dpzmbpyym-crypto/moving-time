@@ -24,6 +24,13 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 
 ## Open next (Jul 11 — after Grok env/storage session)
 
+### UI polish nits — [codex] (Fable, Jul 13 — from live review of your screens)
+Three small things spotted reviewing the redesigned screens; not urgent, fold into your current UI pass:
+- [ ] **Apartment top HUD bar reads as segmented** — the 5 panels (clock/coins/room/boxes/undo) show as separate boxes with dark gaps; should read as one continuous/unified bar. Close the gaps / unify the frame.
+- [ ] **Command Board pace copy says "draws," system is effort** — the pre-pick blurb reads "Steady: +2 draws · Full: +4 draws" (card-count) but the deal is effort-based ("Draw · N effort left"). Reword to effort (e.g. "Steady: ~6 effort · Full: ~9 effort") so copy matches behavior.
+- [ ] **Command Board empty pre-pick state** — big black void below FULL LEDGER before a pace is picked; center/balance the pre-pick layout so it doesn't look unfinished.
+
+
 ### Jul 12 screenshot correction pass — [codex]
 - [x] Match Body Board zone markers to the enlarged figure, keep OB/GYN fully selectable, and raise/inset the selected-zone paper.
 - [x] Re-center apartment HUD and room-navigation text inside the existing mockup chrome; no room-art or layout redesign.
