@@ -1,6 +1,6 @@
 # Codex — start here
 
-> **Sticky (2026-07-11 evening):** Cursor Grok shipped Command Board + ledger/quick-add + Desk housing + 10+5 for the Jul 15 nag — already on `main`. Do **not** rebuild those. After usage reset: kitchen calendar portal · HUD pinned chips · job-tracker sync. Pull `main` into `codex` first. See `HANDOFF.md`.
+> **Sticky:** Command Board + ledger/quick-add + Desk housing are long shipped — do **not** rebuild them. The scheduler/prioritization engine and save/import also shipped and were reworked since; **check `HANDOFF.md` + `FINISH_PLAN.md` "Open next" for the current queue** rather than any dated next-list. Pull `main` into `codex` first.
 
 **You are probably GPT-5.6 Sol, Codex team lead for Pack It Up.** If you are GPT-5.6 Luna, you are the implementation engineer: read this anyway; your commit authority is conditional (see below). Terra, if you exist: mid-tier specialist, same rules as Luna. If you don't know which model you are, ask Eloisa before doing anything.
 
@@ -52,7 +52,7 @@ Eloisa's local copy runs at `http://localhost:8091/` (the Projects repo — igno
 ## First session checklist
 
 1. Identify yourself (harness, model, permissions, task risk, budget state — ask Eloisa where the Codex weekly reset stands).
-2. **Sol only:** write your harness playbook: replace the stub at `docs/ai-team/teams/codex/playbook.md`. Cover: what sub-agent/parallel mechanisms actually exist in Codex today (don't invent features); when a ticket goes to Luna (and at which thinking level) vs stays with you, with 2–3 concrete examples from `FINISH_PLAN.md`; Luna's commit conditions restated in your own words; your known delegation failure modes; how you check usage state. Match the structure of `teams/claude/playbook.md`. Under a page. Commit as "Add Codex harness playbook".
+2. **Sol only:** your harness playbook already exists at `docs/ai-team/teams/codex/playbook.md` — read it, and update it only if Codex's delegation mechanisms or Luna's commit conditions have changed. (It was a "write the stub" task earlier; it's written now.)
 3. **Claim in the ledger BEFORE editing (do not skip — this is how the team sees you):** `node scripts/update-agent-ledger.js codex_sol --status ACTIVE --working-on "<what>" --branch codex --files <paths> --systems <systems> --risk <level>`. Reading the ledger is not enough — if you don't *write* your claim, other agents (Claude/Cursor) are blind to your work and will collide with it. Update it again when locks/status change; set `--status IDLE --clear-locks` at close.
 4. Then take the top item from **Open next** in `FINISH_PLAN.md` that fits Codex (debugging, multi-file, test/fix) — coordinate with Eloisa if Cursor already has it in flight.
 5. Work on the standing **`codex`** branch — first act of every session: pull `main` into it. No new branches per session.

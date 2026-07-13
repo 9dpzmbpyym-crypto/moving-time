@@ -71,7 +71,15 @@ Pressure rules (binding on all future passes, including Sal/Vivian):
 
 ## Pressure v2 & Stretchy stress (Eloisa, Jul 11)
 
-**Why now:** current `taskPressure` (`tasks.js:92`) sums urgency across ALL open tasks. The seed-data drop (~35 real tasks) pins it at 3/"Getting loud" from day one to move day — permanent red vignette, permanently 1-heart guilty cat. A meter pinned at max is no meter. **Pressure v2 must land WITH the data drop.**
+> **⚠️ Status (Jul 13): the `taskPressure` part is SUPERSEDED.** It's been reworked
+> twice since — Codex's scheduler redo, then Claude re-deriving `taskPressure` from
+> the deadline state machine (FINAL CALL / CLOSING / OVERDUE / DUE / SOON) so it no
+> longer pins. The "sums urgency across ALL open tasks / pins at 3" description
+> below is historical. `stretchyStress` (his own decoupled chain) still stands; the
+> meow-tier wiring is still open. Live behavior: `tasks.js` `taskPressure` +
+> `stretchyStress`.
+
+**Why now (historical):** the old `taskPressure` summed urgency across ALL open tasks. The seed-data drop (~35 real tasks) pins it at 3/"Getting loud" from day one to move day — permanent red vignette, permanently 1-heart guilty cat. A meter pinned at max is no meter. **Pressure v2 must land WITH the data drop.**
 
 **1. Pressure measures loudness, not volume.** v2 = weighted count of open tasks that are *overdue or due within ~48h* (critical-path items weigh double), read via the calendar spine. Thirty-five tasks due in two weeks = "All clear." One vet appointment tomorrow = pressure. The existing 0–3 scale, labels ("All clear / Manageable / Piling up / Getting loud"), and every consumer (vignette, fan twitch, red dots) keep working unchanged — only the input honestly changes.
 

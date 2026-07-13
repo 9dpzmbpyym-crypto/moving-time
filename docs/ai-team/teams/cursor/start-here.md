@@ -45,7 +45,7 @@ Eloisa's local copy runs at `http://localhost:8091/` (the Projects repo — igno
 ## First session checklist
 
 1. Identify yourself (harness, model, permissions, task risk, budget state — ask Eloisa where Cursor usage stands).
-2. Write your harness playbook: replace the stub at `docs/ai-team/teams/cursor/playbook.md`. Cover: what delegation mechanisms actually exist in Cursor today (don't invent features); when you delegate to Composer vs doing it yourself, with 2–3 concrete examples from `FINISH_PLAN.md`; how paid API enters Cursor and the confirm-spend rule; your known delegation failure modes; how you check usage state. Match the structure of `teams/claude/playbook.md`. Under a page. Commit as "Add Cursor harness playbook".
+2. Your harness playbook already exists at `docs/ai-team/teams/cursor/playbook.md` — read it, and update it only if Cursor's delegation mechanisms or the paid-API/confirm-spend rules have changed. (It was a "write the stub" task earlier; it's written now.)
 3. **Claim in the ledger BEFORE editing (do not skip — this is how the team sees you):** `node scripts/update-agent-ledger.js cursor_grok_4_5 --status ACTIVE --working-on "<what>" --branch cursor --files <paths> --systems <systems> --risk <level>`. Reading the ledger is not enough — if you don't *write* your claim, other agents (Claude/Codex) are blind to your work and will collide with it. Update it again when locks/status change; set `--status IDLE --clear-locks` at close.
 4. Then take the top item from **Open next** in `FINISH_PLAN.md`.
 5. Work on the standing **`cursor`** branch — first act of every session: pull `main` into it. No new branches per session.

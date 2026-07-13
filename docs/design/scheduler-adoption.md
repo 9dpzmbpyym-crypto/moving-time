@@ -1,5 +1,14 @@
 # Scheduler engine — adopted with amendments
-**Owner:** [Claude / Fable 5] · ruling on `docs/inbox/chatgpt-productivity-structure-for-claude-7-11.md` (the implementation spec — complete, use it) and `docs/inbox/chatgpt-pressure-calls-overdue-ui-suggestions-7-11.md`.
+
+> **⚠️ Status (Jul 13, 2026): IMPLEMENTED, then partly REWORKED.** This ruling
+> is historical. Codex shipped the engine, then replaced the daily-deal model and
+> rewrote `urgencyScore`; Claude then re-fixed `taskPressure` (it read the old
+> 0–100 scale) and restored the self-imposed-deadline cap. **The live behavior is
+> `schedule.js` + `tests/schedule.test.mjs`, not this doc.** Keep for the design
+> rationale (Ledger=deck / Board=hand, effort ⊥ criticality, "optional never
+> outranks crit-3"), but do not treat the scoring details here as current.
+
+**Owner:** [Claude / Fable 5] · ruling on `docs/inbox/chatgpt-productivity-structure-for-claude-7-11.md` (the implementation spec) and `docs/inbox/chatgpt-pressure-calls-overdue-ui-suggestions-7-11.md`.
 
 ## Verdict
 
