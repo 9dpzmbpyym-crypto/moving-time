@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-13T02:18:00.000Z",
+  "last_updated": "2026-07-13T02:00:21.578Z",
   "rules": {
     "read_before_work": true,
     "write_before_editing": true,
@@ -52,17 +52,24 @@
       "model": "GPT-5.6 Sol",
       "role": "Codex Team Lead / Senior Agentic Engineer",
       "thinking": "high",
-      "status": "IDLE",
+      "status": "ACTIVE",
       "branch": "codex-part7-buyer-urgency",
-      "working_on": null,
-      "files_locked": [],
-      "systems_locked": [],
-      "risk_level": null,
+      "working_on": "Mobile UI correction: remove legacy chrome from Desk/Ledger/Settings/Stretchy, single-viewport Desk rebuild, Ledger collision fix, Stretchy white-screen runtime repair",
+      "files_locked": [
+        "artifacts/pack-it-up/src/Screens.jsx",
+        "artifacts/pack-it-up/src/BedroomSlice.jsx",
+        "artifacts/pack-it-up/src/assets/ui_screen_chrome/**"
+      ],
+      "systems_locked": [
+        "overlay-screen-ui",
+        "mobile-screen-layout"
+      ],
+      "risk_level": "structural",
       "commit_authority": true,
       "rate_limited": false,
       "cooldown_until": null,
       "handoff_needed": null,
-      "last_seen": "2026-07-13T02:18:00.000Z",
+      "last_seen": "2026-07-13T02:00:21.578Z",
       "expires_at": null,
       "notes": "Completed dynamic UI pass for Paperwork Desk, Ledger, Settings, and Stretchy using sliced transparent ui_mockups assets. Preserved card/gameplay wiring; audited storage/item-detail overlays without risky structural changes. Build/typecheck passed; UI commit follows on main."
     },
