@@ -66,10 +66,12 @@ A personal pixel-art moving game built with React + HTML canvas. The player walk
 ## The only files that matter for the game
 
 ```
-artifacts/pack-it-up/src/BedroomSlice.jsx   ← entire hub + game (~3,800 lines)
-artifacts/pack-it-up/src/Screens.jsx       ← full-screen overlays (Menu/Desk/Health/Storage/etc.)
+artifacts/pack-it-up/src/BedroomSlice.jsx   ← entire hub + game (~5,150 lines)
+artifacts/pack-it-up/src/Screens.jsx       ← full-screen overlays (Menu/Desk/Health/Storage/Ledger/Settings/etc.)
 artifacts/pack-it-up/src/contents.js       ← storage contents data (items inside cabinets/drawers)
-artifacts/pack-it-up/src/tasks.js          ← task/urgency scaffold (sample data for the overlay shells)
+artifacts/pack-it-up/src/tasks.js          ← the REAL move plan: ~180 dated tasks + real job shortlist, seeded as INITIAL_TASKS (not sample data). Save/urgency logic in save.js + schedule.js
+artifacts/pack-it-up/src/schedule.js       ← urgency/criticality scoring, daily deal, task state machine
+artifacts/pack-it-up/src/save.js           ← localStorage save/load/migrate + import/restore (key: pack-it-up-save)
 artifacts/pack-it-up/src/main.tsx          ← 15-line entry point
 artifacts/pack-it-up/src/layout.json       ← furniture X/Y positions per room
 artifacts/pack-it-up/src/sell.mp3          ← sell sound

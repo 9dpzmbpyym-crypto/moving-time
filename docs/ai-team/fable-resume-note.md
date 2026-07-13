@@ -1,5 +1,12 @@
 # Fable resume note — AI-team docs and org chart
 
+> **✅ COMPLETED — historical (closed Jul 13, 2026).** This resume trail is kept
+> for history only. The pause is over and everything below landed: the AI-team
+> docs/org-chart pass is done, the coordination ledger (`artifacts/agent_ledger.json`)
+> is in daily use by every harness, and the Body Board shipped. **Do not "resume"
+> this task** — there is nothing pending here. For a fresh session, start at
+> `docs/ai-team/teams/claude/start-here.md`; the live queue is `FINISH_PLAN.md`.
+
 Claude/Fable was paused because Eloisa hit the Claude usage limit during the AI-team docs/org-chart reorganization and design pass. While Claude was paused, Codex added a lightweight machine-readable coordination ledger so non-conflicting Cursor and Codex work could continue without replacing Fable's design direction.
 
 ## Read in this order

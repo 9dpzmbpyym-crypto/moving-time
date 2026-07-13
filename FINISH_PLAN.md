@@ -24,6 +24,14 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 
 ## Open next (Jul 11 — after Grok env/storage session)
 
+### Shipped Jul 13 (Claude/Opus) — see `docs/sessions/2026-07-13-claude-opus-recovery-priority-cleanup.md`
+- [x] **Save recovery**: working Import (Settings) — recovered Eloisa's wiped Vercel save; export blob + localStorage now pruned of untouched flags (`pruneFlagMap`).
+- [x] **Priority fixes**: `taskPressure` was thresholding the criticality-weighted score on the old 0–100 buckets → the Stretchy/pressure meter was pinned; now reads the deadline state machine. Restored the self-imposed-deadline cap; removed dead `urgencyScore` code (see "Pressure v2" note below — that earlier description is now historical).
+- [x] **Criticality** editable in the ledger (saved as `criticalityOverride`) + new **Priority sort**.
+- [x] **Binding uniqueness**: no item bound to two tasks (`p_death_cords` + 5 legacy coarse cards unbound); new `tests/binding-uniqueness.test.mjs`.
+- [x] **Cleanup**: −119 lines dead legacy scheduler code (`legacyDealDailyHand` chain).
+- [ ] **PARKED (`git stash@{0}`)**: desk "real cards → inspection tray" — needs Eloisa's visual feedback, don't ship blind.
+
 ### UI polish nits — [codex] (Fable, Jul 13 — from live review of your screens)
 Three small things spotted reviewing the redesigned screens; not urgent, fold into your current UI pass:
 - [ ] **Apartment top HUD bar reads as segmented** — the 5 panels (clock/coins/room/boxes/undo) show as separate boxes with dark gaps; should read as one continuous/unified bar. Close the gaps / unify the frame.
@@ -212,10 +220,10 @@ Three small things spotted reviewing the redesigned screens; not urgent, fold in
 
 - **Binding rules (design: `move-spine-integration.md` → "Functional-companion gaps"):** ≤2 taps to mark any real-world task done, everywhere it appears · phone is the canonical save device · after this drop, schema bumps must MIGRATE status, never wipe (`save.js` `v`-mismatch wipe becomes forbidden)
 - [x] **[cursor]** Quick-add on the ledger page: text + lane + effort dots → normal task card. A sticky note, not a form (no recurrence, no complex dates). Without this the app is a fixed script.
-- [ ] SOFT **[cursor]** Save export/import (clipboard JSON) as a lifeboat
+- [x] **[claude]** Save export/import (clipboard JSON) as a lifeboat — **DONE Jul 13**: Settings "Copy canonical mobile save" (export) + "Import / restore save…" (paste → restore, backs up first, `suspendSaves()` so autosave can't clobber). Recovered Eloisa's wiped Vercel save.
 
 - [x] **[cursor/codex]** Seed `tasks.js` + `save.js` defaults from the manifest in **`docs/design/master-list-incorporation.md`** (mechanical transcription): ~12 packing/U-Box process tasks · new `housing` category (4 tasks; daily 10+5 quota is a session meter, NOT tasks) · **replace all 3 fictional SAMPLE_JOBS with the real shortlist** (Hunter Jul 14, HOPWA ×2 Jul 18, MOCS Jul 26, MOPT Jul 28, Labor Relations Aug 30) · ~10 admin cutoff cards · health additions (OB/GYN IUD by ~Jul 25 → nearest existing zone for v1, PCP 90-day bridge) · fix `t_vet` due to the real **Jul 22–25** window · Stretchy chain tasks
-- [ ] **[cursor/codex]** **Pressure v2 — MUST land with the data drop** (design: `move-spine-integration.md` → "Pressure v2 & Stretchy stress"): current sum-of-all-urgency `taskPressure` pins at 3 forever once ~35 real tasks seed. v2 = overdue/due-≤48h count (critical-path ×2) via calendar spine; consumers unchanged. Decouple `stretchyStress` (0–2, reads HIS travel chain + U-Box-week disruption only); "!" bubble only when a cat task is truly due; wire stressed/desperate meow tiers (desperate = final week + chain incomplete only); Fumes-day quiet rule (vignette/fan suppressed); morning check-in = his status line
+- [ ] **[cursor/codex]** **Pressure v2 — MUST land with the data drop** (design: `move-spine-integration.md` → "Pressure v2 & Stretchy stress"). *(Jul 13 update: superseded twice — Codex's scheduler redo reworked `taskPressure`, then Claude re-fixed it to read the deadline state machine, so it no longer pins. The "pins at 3" text below is historical.)* current sum-of-all-urgency `taskPressure` pins at 3 forever once ~35 real tasks seed. v2 = overdue/due-≤48h count (critical-path ×2) via calendar spine; consumers unchanged. Decouple `stretchyStress` (0–2, reads HIS travel chain + U-Box-week disruption only); "!" bubble only when a cat task is truly due; wire stressed/desperate meow tiers (desperate = final week + chain incomplete only); Fumes-day quiet rule (vignette/fan suppressed); morning check-in = his status line
   - [x] **[codex] Core landed on codex:** due/overdue weighted pressure + decoupled cat-chain/U-Box stretchyStress data API.
   - [ ] **[codex/cursor integration]** Wire Stretchy hearts/mood/glow/bubble and later meow tiers to stretchyStress; Fumes-day suppression waits for energy check-in.
   - [x] **[codex] Save v2 migration:** schema bumps preserve packed/content state and saved task status; no version-mismatch wipe.
