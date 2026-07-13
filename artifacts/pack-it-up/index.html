@@ -17,6 +17,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      /* Paint the page dark from the very first frame so there's no white
+         flash before the JS bundle loads and React renders the splash. */
+      html, body, #root { margin: 0; background: #090700; }
+    </style>
   </head>
   <body>
     <div id="root"></div>
