@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-12T22:57:37.233Z",
+  "last_updated": "2026-07-13T01:26:31.306Z",
   "rules": {
     "read_before_work": true,
     "write_before_editing": true,
@@ -52,18 +52,27 @@
       "model": "GPT-5.6 Sol",
       "role": "Codex Team Lead / Senior Agentic Engineer",
       "thinking": "high",
-      "status": "IDLE",
+      "status": "ACTIVE",
       "branch": "codex-part7-buyer-urgency",
-      "working_on": null,
-      "files_locked": [],
-      "systems_locked": [],
-      "risk_level": null,
+      "working_on": "Completed: canonical mobile task/date rules, editable game links, full inventory collections, mixed environment+contents requirements, all 64 packable environment targets, deployed through c434268/e615752. NOW: replacing Paperwork Desk, Ledger, Settings, Stretchy from new ui_mockups sheets; then storage/item-detail chrome audit. Claude: do not edit these screens/assets until lock clears.",
+      "files_locked": [
+        "artifacts/pack-it-up/src/Screens.jsx",
+        "artifacts/pack-it-up/src/BedroomSlice.jsx",
+        "artifacts/pack-it-up/src/assets/items/packitup_cropped_assets/ui_mockups/**",
+        "artifacts/pack-it-up/src/assets/ui_screen_chrome/**"
+      ],
+      "systems_locked": [
+        "overlay-screen-ui",
+        "desk-ledger-settings-stretchy-ui",
+        "storage-detail-ui"
+      ],
+      "risk_level": "structural",
       "commit_authority": true,
       "rate_limited": false,
       "cooldown_until": null,
       "handoff_needed": null,
-      "last_seen": "2026-07-12T22:00:00.000Z",
-      "expires_at": null,
+      "last_seen": "2026-07-13T01:26:31.306Z",
+      "expires_at": "2026-07-13T05:26:31.2189302Z",
       "notes": "Installing machine-readable coordination layer without changing game code."
     },
     "codex_luna": {
