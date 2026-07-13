@@ -67,7 +67,6 @@ import DESK_STAMP_FILED from "./assets/ui_screen_chrome/desk_stamp_filed.png";
 import DESK_STAMP_APPROVED from "./assets/ui_screen_chrome/desk_stamp_approved.png";
 import DESK_STAMP_DONE from "./assets/ui_screen_chrome/desk_stamp_done.png";
 import DESK_CONTACTS from "./assets/ui_screen_chrome/desk_contacts.png";
-import DESK_COUNT_TAB from "./assets/ui_screen_chrome/desk_count_tab.png";
 import DESK_DAILY_PANEL from "./assets/ui_screen_chrome/desk_daily_panel.png";
 import DESK_INBOX_PANEL from "./assets/ui_screen_chrome/desk_inbox_panel.png";
 import DESK_PHYSICAL_STAMP from "./assets/ui_screen_chrome/desk_physical_stamp.png";
@@ -92,7 +91,7 @@ import {
   isTaskDateLocked, scheduleDatesForLedger,
 } from "./tasks.js";
 import {
-  ensureDailyDeal, handTasks, offerTasks, dealProgress, toggleDealPick, taskStatus,
+  ensureDailyDeal, handTasks, offerTasks, dealProgress, toggleDealPick, taskStatus, urgencyScore,
 } from "./schedule.js";
 import { PixelCanvas } from "./BedroomSlice.jsx";
 import {
@@ -528,7 +527,6 @@ export function VerticalTaskCard({
     </Tag>
   );
 }
-
 
 const GOLD_PLATE = {
   background: "linear-gradient(#3A2A12, #2A1C0C)",
@@ -2130,6 +2128,9 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
   const deskCategories = ["move", "job", "admin", "health", "cat", "housing"];
   const incomingByCategory = deskCategories.map((category) => ({ category, tasks: deskTasks.filter((task) => task.category === category) }));
   const filedByCategory = deskCategories.map((category) => ({ category, tasks: filed.filter((task) => task.category === category) }));
+  // Real cards, most-urgent first — the actual tasks from the data.
+  const incomingSorted = deskTasks.slice().sort((a, b) => urgencyScore(b) - urgencyScore(a));
+  const filedRecent = filed.slice().reverse();
   const doneCount = filed.length;
   const outboxVis = filed.slice(-6);
   const adminCount = deskTasks.filter((t) => t.category === "admin" || t.category === "move").length;
@@ -2507,9 +2508,12 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
         <div style={{ minHeight: 0, padding: "27px 12px 8px", background: `url(${DESK_DAILY_PANEL}) center/100% 100% no-repeat`, color: "#3A2018" }}>
           {prog.items.slice(0, 3).map((it) => <div key={it.id} style={{ fontSize: 9, marginTop: 3, ...LB }}>{it.done ? "☑" : "☐"} {it.label} <span style={{ float: "right" }}>{it.cur}/{it.target}</span></div>)}
         </div>
-        <div style={{ minHeight: 0, padding: "27px 11px 8px", background: `url(${DESK_INBOX_PANEL}) center/100% 100% no-repeat`, color: "#3A2018" }}>
-          <div style={{ fontSize: 10, ...LB }}>Inbox {session.messages || 0}/10</div>
-          <div style={{ fontSize: 9, marginTop: 6, ...LB }}>{deskTasks.filter((task) => task.urgency >= 3).length} urgent · {deskTasks.filter((task) => task.category === "housing").length} follow-up</div>
+        <div style={{ minHeight: 0, padding: "44px 11px 8px", background: `url(${DESK_INBOX_PANEL}) center/100% 100% no-repeat`, color: "#3A2018" }}>
+          <div style={{ fontSize: 10, ...LB }}>{deskTasks.length} to process</div>
+          <div style={{ fontSize: 8.5, marginTop: 5, ...LB }}>
+            <span style={{ color: "#A3252C" }}>● {deskTasks.filter((t) => t.urgency >= 3).length}</span> urgent{"   "}
+            <span style={{ color: "#B77A1E" }}>● {deskTasks.filter((t) => t.urgency === 2).length}</span> soon
+          </div>
         </div>
       </div>
       <div style={{
@@ -2518,26 +2522,29 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
         display: "flex", flexDirection: "column",
       }}>
         <div style={{ color: "#C9B896", fontSize: 10, textAlign: "center", margin: "2px 0 6px", ...LB }}>INCOMING</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gridTemplateRows: "repeat(2, minmax(0, 1fr))", gap: 5, marginBottom: 5, flex: "1 1 clamp(205px, 29dvh, 255px)", minHeight: 195 }}>
-          {incomingByCategory.map(({ category, tasks: stack }) => {
-            const top = stack[0];
-            return <button key={category} type="button" disabled={!top} onClick={() => top && setInspectId(top.id)} style={{ position: "relative", minHeight: 72, overflow: "hidden", border: 0, padding: 0, background: "transparent", cursor: top ? "pointer" : "default" }}>
-              {top && <><div style={{ position: "absolute", inset: "8px 1px 1px 8px", background: PAPER[category], border: "2px solid #120A04", transform: "rotate(2deg)" }} /><div style={{ position: "absolute", inset: "4px 5px 5px 4px", background: PAPER[category], border: "2px solid #120A04", transform: "rotate(-1deg)" }} /></>}
-              {top ? <div style={{ position: "relative", zIndex: 2, transform: "scale(.46)", transformOrigin: "top left", width: "218%" }}><VerticalTaskCard task={top} /></div> : <div style={{ height: "90%", border: "2px dashed #5A381F" }} />}
-              <img src={DESK_COUNT_TAB} alt="" style={{ position: "absolute", width: 30, height: 30, top: -2, right: 2 }} />
-              <span style={{ position: "absolute", top: 6, right: 12, color: "#241509", fontSize: 9, ...LB }}>{stack.length}</span>
-            </button>;
-          })}
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "center", gap: 8, marginBottom: 5, flex: "1 1 auto", minHeight: 0, overflowY: "auto" }}>
+          {incomingSorted.length === 0
+            ? <div style={{ width: "100%", textAlign: "center", color: "#C9B896", fontSize: 10, padding: 16, ...LB }}>Inbox clear — nothing to process.</div>
+            : incomingSorted.slice(0, 12).map((task) => (
+                <VerticalTaskCard key={task.id} task={task} width={150} onClick={() => setInspectId(task.id)} />
+              ))}
+          {incomingSorted.length > 12 && (
+            <button type="button" onClick={() => go("ledger")} style={{ width: "100%", border: 0, background: "transparent", color: "#C9B896", fontSize: 9, padding: "2px 0 4px", cursor: "pointer", ...LB }}>
+              +{incomingSorted.length - 12} more in the Ledger →
+            </button>
+          )}
         </div>
 
         <div style={{ color: "#C9B896", fontSize: 10, textAlign: "center", margin: "2px 0 6px", ...LB }}>FILED</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 4, marginBottom: 6, flex: "0 0 82px" }}>
-          {filedByCategory.map(({ category, tasks: stack }, index) => <div key={category} style={{ position: "relative", height: 78, overflow: "hidden" }}>
-            <div style={{ position: "absolute", inset: "7px 1px 0 7px", background: PAPER[category], border: "2px solid #120A04", transform: "rotate(2deg)" }} />
-            <div style={{ position: "absolute", inset: "3px 4px 3px 3px", background: PAPER[category], border: "2px solid #120A04" }} />
-            {stack[0] ? <div style={{ position: "relative", zIndex: 2, transform: "scale(.27)", transformOrigin: "top left", width: "370%" }}><VerticalTaskCard task={stack[0]} /></div> : <div style={{ position: "relative", zIndex: 2, height: 18, paddingTop: 4, background: TASK_CATEGORIES[category]?.color, color: "#2A1709", textAlign: "center", fontSize: 6, ...LB }}>{TASK_CATEGORIES[category]?.label || category}</div>}
-            {stack.length > 0 && <img src={[DESK_STAMP_APPROVED, DESK_STAMP_FILED, DESK_STAMP_DONE][index % 3]} alt="" style={{ position: "absolute", zIndex: 4, width: "92%", left: "4%", bottom: 5 }} />}
-          </div>)}
+        <div style={{ display: "flex", gap: 7, marginBottom: 6, flex: "0 0 auto", overflowX: "auto", paddingBottom: 2 }}>
+          {filedRecent.length === 0
+            ? <div style={{ color: "#9C8A66", fontSize: 9, padding: "10px 4px", ...LB }}>Nothing filed yet — stamp a paper to file it.</div>
+            : filedRecent.map((task, index) => (
+                <div key={task.id} style={{ position: "relative", flex: "0 0 auto" }}>
+                  <VerticalTaskCard task={task} width={120} onClick={() => setInspectId(task.id)} style={{ opacity: 0.9 }} />
+                  <img src={[DESK_STAMP_APPROVED, DESK_STAMP_FILED, DESK_STAMP_DONE][index % 3]} alt="" style={{ position: "absolute", left: "8%", bottom: "10%", width: "84%", pointerEvents: "none" }} />
+                </div>
+              ))}
         </div>
 
         <div style={{ display: "none", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 10 }}>
