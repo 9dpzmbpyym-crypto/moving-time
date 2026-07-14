@@ -213,8 +213,8 @@ export const LINES = {
     "Diet Coke and a haunted copier. Also staring at your empty {visit} slot.",
   ],
   greet: [
-    "Hi. Shirley. How are we on {visit}?",
-    "Hey. Phone works. {visit} status?",
+    "Hey. How are we on {visit}?",
+    "What's the status on {visit}?",
   ],
   probe_day: [
     "Cool. Date for {visit}. Hit me.",

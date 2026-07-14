@@ -2527,11 +2527,17 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
 
     let usedAgent = false;
     if (improvEnabled()) {
-      const agent = await askShirley({
-        messages: nextMsgs,
-        tasks,
-        appointments: apptsRef.current,
-      });
+      let agent = { ok: false, error: "network" };
+      try {
+        agent = await askShirley({
+          messages: nextMsgs,
+          tasks,
+          appointments: apptsRef.current,
+        });
+      } catch (e) {
+        console.warn("[Shirley] askShirley threw:", e);
+        agent = { ok: false, error: "network", detail: String(e?.message || e) };
+      }
       if (agent.ok && agent.text) {
         usedAgent = true;
         let appts = apptsRef.current;

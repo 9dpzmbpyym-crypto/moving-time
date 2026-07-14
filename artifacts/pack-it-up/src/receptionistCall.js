@@ -12,23 +12,21 @@ import {
 const SETTINGS_KEY = "pack-it-up-shirley";
 /** Small chat model — openrouter/free often picks thinky models that dump CoT into content. */
 export const DEFAULT_MODEL = "meta-llama/llama-3.2-3b-instruct:free";
-/** Free models are slow / flaky — give them room, then try short backups. */
-const TIMEOUT_MS = 25000;
-/** Keep short so free models can't fill the budget with planning prose. */
-const MAX_TOKENS = 100;
-const TEMPERATURE = 0.6;
+/** Per-attempt cap. Whole askShirley also has an overall budget so the phone never spins. */
+const TIMEOUT_MS = 10000;
+const OVERALL_BUDGET_MS = 14000;
+/** Enough for 2 short sentences; not enough for a planning essay. */
+const MAX_TOKENS = 120;
+const TEMPERATURE = 0.55;
 /**
- * On 429/404/502/503, try different provider families.
- * Prefer short chat models (not giant reasoning) so replies aren't empty.
+ * On 429/404/502/503, try one other family then give up to script bank.
  * Verified against /api/v1/models (pricing 0) on 2026-07-14.
  */
 const RATE_LIMIT_FALLBACKS = [
   "openai/gpt-oss-20b:free",
   "google/gemma-4-31b-it:free",
-  "qwen/qwen3-coder:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
 ];
-const MAX_MODEL_ATTEMPTS = 4;
+const MAX_MODEL_ATTEMPTS = 2;
 /** Slugs we used to ship that are dead, paid-only, congested, or CoT-leaky for Shirley. */
 const STALE_DEFAULTS = new Set([
   "openrouter/free",
@@ -37,6 +35,8 @@ const STALE_DEFAULTS = new Set([
   "google/gemma-3-27b-it:free",
   "google/gemma-2-9b-it:free",
   "nvidia/nemotron-nano-9b-v2:free",
+  "qwen/qwen3-coder:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
 ]);
 
 /** Strip paste junk (ZWSP, smart quotes, BOM) — OpenRouter keys are ASCII. */
@@ -254,7 +254,7 @@ export function scrubShirleyReply(raw) {
     .trim();
 
   // Planning / meta markers that must never reach the phone UI.
-  const leak = /the player|let me craft|openhealth|taskid\b|priorityvisit|no em dashes|in.?character|something like that|i switch|i need to confirm|keep it short|never narrate|output rules|facts \(|named another|urgency\s*\d|zone\s*brain|dry,? irritated|reply body|machine line|got it\. what date and time for\s*$|so i (need|switch|should)|confirm which one|ask for (a )?date\/time|one to three sentences|no emoji|no markdown|draft options|what day and time did you book/i;
+  const leak = /the player|let me craft|openhealth|taskid\b|priorityvisit|no em dashes|in.?character|something like that|i switch|i need to confirm|keep it short|never narrate|output rules|facts \(|named another|urgency\s*\d|zone\s*brain|dry,? irritated|reply body|machine line|so i (need|switch|should)|confirm which one|ask for (a )?date\/time|one to three sentences|no emoji|no markdown|draft options|what day and time did you book|sure,? we need\b/i;
 
   const looksLikeLeak =
     leak.test(text)
@@ -263,33 +263,42 @@ export function scrubShirleyReply(raw) {
     || /\b(taskId|openHealthTasks|priorityVisit)\b/.test(text);
 
   if (!looksLikeLeak) {
-    // Still clamp normal replies.
     const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [text];
-    return sentences.slice(0, 3).join(" ").trim().slice(0, 280);
+    text = sentences.slice(0, 3).join(" ").trim().slice(0, 280);
+    return isIncompleteShirleyLine(text) ? "" : text;
   }
 
   // Salvage last clean quoted Shirley line only.
   const quotes = [...text.matchAll(/"([^"]{12,220})"/g)].map((m) => m[1].trim());
   const goodQuote = [...quotes].reverse().find((q) => {
-    if (!q || leak.test(q) || q.length > 220) return false;
-    // Reject quotes that are still mid-instruction.
-    if (/^(so |okay so |the player|i need|keep it)/i.test(q)) return false;
+    if (!q || leak.test(q) || q.length > 220 || isIncompleteShirleyLine(q)) return false;
+    if (/^(so |okay so |the player|i need|keep it|sure,? we)/i.test(q)) return false;
     return /[.!?]$/.test(q) || /^(hey|hi|cool|okay|pcp|stretchy|book|got it|locked|wrote|shirley|day|date)/i.test(q);
   });
   if (goodQuote) return goodQuote;
 
-  // Last short line that reads like desk dialogue.
   const lines = text.split(/\n/).map((l) => l.trim().replace(/^["']|["']$/g, "")).filter(Boolean);
   for (let i = lines.length - 1; i >= 0; i -= 1) {
     const line = lines[i];
-    if (line.length < 12 || line.length > 220 || leak.test(line)) continue;
-    if (/^(the player|so |i |let |keep |never |ask |confirm |name the|switch)/i.test(line)) continue;
+    if (line.length < 12 || line.length > 220 || leak.test(line) || isIncompleteShirleyLine(line)) continue;
+    if (/^(the player|so |i |let |keep |never |ask |confirm |name the|switch|sure)/i.test(line)) continue;
     if (/[.!?]$/.test(line) || /^(hey|hi|cool|okay|pcp|stretchy|got it|locked|wrote|shirley)/i.test(line)) {
       return line;
     }
   }
 
   return "";
+}
+
+/** Truncated model output like "Sure, we need" — reject and use bank. */
+function isIncompleteShirleyLine(text) {
+  const t = String(text || "").trim();
+  if (!t || t.length < 10) return true;
+  if (/[,:;—\-]\s*$/.test(t)) return true;
+  if (/\b(we need|i need|so i|let me|and|or|the|a|to|for)\s*$/i.test(t)) return true;
+  // Short reply with no sentence end is almost always a cut-off.
+  if (t.length < 48 && !/[.!?]"?\s*$/.test(t)) return true;
+  return false;
 }
 
 async function callOpenRouterOnce({ apiKey, model, messages, timeoutMs }) {
@@ -377,16 +386,23 @@ export async function askShirley({
   ];
 
   const models = buildModelAttempts(primary);
+  const deadline = Date.now() + OVERALL_BUDGET_MS;
 
   let lastError = "network";
   let lastDetail = "";
   for (const model of models) {
+    const left = deadline - Date.now();
+    if (left < 1500) {
+      lastError = "timeout";
+      lastDetail = "overall budget";
+      break;
+    }
     try {
       const raw = await callOpenRouterOnce({
         apiKey: settings.apiKey,
         model,
         messages: chatMessages,
-        timeoutMs,
+        timeoutMs: Math.min(timeoutMs, left),
       });
       const { display, book } = parseBookTag(raw);
       const text = scrubShirleyReply(display || raw);
@@ -404,7 +420,7 @@ export async function askShirley({
       console.warn("[Shirley] model failed:", model, lastError, lastDetail);
       // Auth / billing — don't burn the rest of the free pool
       if (e?.status === 401 || e?.status === 402 || e?.status === 403) break;
-      // 404/429/502/503/timeout → try next provider family (retired :free slugs 404)
+      // 404/429/502/503/timeout/empty → try next (capped)
     }
   }
   return { ok: false, text: "", book: null, error: lastError, detail: lastDetail || undefined };
