@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PackItUp from "./BedroomSlice.jsx";
 import SplashScreen from "./SplashScreen.jsx";
+import { warmArtCache } from "./preloadArt.js";
 
 /**
  * Wraps the game with a cold-boot splash overlay. The game mounts and boots
@@ -9,6 +10,9 @@ import SplashScreen from "./SplashScreen.jsx";
  */
 export default function GameWithSplash(props) {
   const [showSplash, setShowSplash] = useState(true);
+  // Warm the art cache while the splash gate is up — cards/chrome first,
+  // sliced screens on idle — so screens don't pop in piecemeal.
+  useEffect(() => { warmArtCache(); }, []);
   return (
     <>
       <PackItUp {...props} />
