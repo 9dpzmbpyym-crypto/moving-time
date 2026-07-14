@@ -97,6 +97,7 @@ Three small things spotted reviewing the redesigned screens; not urgent, fold in
 - [x] Style + ruleset prompt landed: `docs/move-spine/npc-guides/SHIRLEY_HEALTH_RECEPTIONIST.md` + `prompts/RUNTIME_SYSTEM_PROMPTS.md`
 - [x] [cursor] **Pass 1**: rebuild `SHIRLEY_SYSTEM_PROMPT` + thin fallback bank from the guide; FSM bookings kept; calibration lines in bank sparingly
 - [x] [cursor] Jul 14: free-model **429** on Vercel (not bad key) — default `openrouter/free` + provider rotation; Test key saves-then-verifies
+- [x] [cursor] Jul 14: live prompt = move-spine `RUNTIME_SYSTEM_PROMPTS.md` Shirley + shared wrapper (BOOK: kept; JSON reply shape later)
 - [ ] [cursor] Tune stall → hang-up + “mention objective ≤1 message gap”
 - [ ] Optional: landline pixel art per `docs/art-briefs/landline-shirley.md`
 - Later passes (Command Board → lifecycle states → Sal → Vivian) sequenced in the implementation manifest; don’t start them in Pass 1

@@ -1,10 +1,10 @@
 # Latest handoff
 
-→ **`docs/sessions/2026-07-14-cursor-shirley-429.md`** (Cursor Grok — Shirley free-model 429 fix + Settings Test/save alignment)
+→ **`docs/sessions/2026-07-14-cursor-shirley-429.md`** (Cursor Grok — Shirley 429 fix + move-spine live prompt)
 
-**Shipped:** OpenRouter key was fine; Vercel errors were **http_429** on free Meta/Llama. Default is now `openrouter/free` with short provider rotation; Test key persists then verifies saved key; phone errors are actionable (no raw JSON blob).
+**Shipped:** OpenRouter key was fine; Vercel errors were **http_429** on free Meta/Llama. Default is `openrouter/free` with short provider rotation. Live Shirley system prompt now matches move-spine (`RUNTIME_SYSTEM_PROMPTS.md` + guide lifecycle); `BOOK:` machine line kept.
 
-**Next up:** Shirley stall→hang-up · Stretchy meows · (Codex) card one-scale / HUD nits if still open.
+**Next up:** Script-bank re-thin from guide examples · wire `should_end_call` / hang-up on live path · Stretchy meows · (Codex) card one-scale / HUD nits if still open.
 
 **Nag:** sublet lock Jul 15 · Hunter.
 

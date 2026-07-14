@@ -8,10 +8,13 @@
 - Default model → `openrouter/free`; on 429/5xx rotate through other free providers (capped at 3).
 - Auto-migrate stale congested defaults (`deepseek…`, `llama-3.3…`).
 - Settings: Test key saves then verifies *saved* key; fingerprint + origin note; cleaner phone error labels (401/402/429/timeout).
+- Live Shirley system prompt replaced with move-spine source (`RUNTIME_SYSTEM_PROMPTS.md` shared wrapper + Shirley block + guide lifecycle); kept `BOOK:` machine line for existing FSM.
 
 ### Still broken / unfinished (do next)
 - Free tier can still 429 when every pool is busy — wait or use a paid slug.
-- Shirley stall → hang-up cadence still open in FINISH_PLAN.
+- Move-spine shared wrapper JSON reply shape (`npc_message` / `should_end_call`) not wired — still plain text + BOOK.
+- Script bank still older compressed lines (not fully re-banked from guide examples).
+- Shirley stall → hang-up cadence still open in FINISH_PLAN (live prompt now states it; bank path has STALL_HANGUP_AFTER).
 - Stretchy stressed/desperate meows still unwired.
 
 ### Do not

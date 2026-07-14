@@ -11,6 +11,7 @@ Covers **July 5–10, 2026**. Combines:
 
 ## 2026-07-14 — [Cursor / Grok 4.5]
 - Shirley on Vercel: “bad key” was actually free-model **429**; default → `openrouter/free` + provider rotation; Test key saves-then-verifies; cleaner phone errors
+- Live Shirley prompt swapped to move-spine `RUNTIME_SYSTEM_PROMPTS.md` (+ guide lifecycle); kept `BOOK:` for FSM
 - Session: `docs/sessions/2026-07-14-cursor-shirley-429.md`
 
 ## 2026-07-12 — [Codex / GPT-5]
