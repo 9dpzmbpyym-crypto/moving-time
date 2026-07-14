@@ -20,12 +20,11 @@
 
 ## Open / next
 
-**⚠️ Desk real-cards — PARKED in `git stash@{0}`** ("desk-real-cards-wip").
-Eloisa wants INCOMING/FILED to use the **actual** `VerticalTaskCard`s (like the
-hand/deal, not drawn) and a tapped card to land in the **inspection tray**, not a
-modal. The stash is incomplete (`DeskCardStack` unfinished). Redo with her in the
-loop; the current on-`main` desk is the earlier category-stack + drop-down version
-she moved past.
+**✅ Desk real-cards — SHIPPED Jul 14** (`3912fd8`): INCOMING = six per-category
+stacks faced by the actual `VerticalTaskCard`, FILED = real stamped cards, tap →
+card lands in the **inspection tray** (no modal), stamp animation intact. The old
+"desk-real-cards-wip" stash was superseded and dropped. **Standing guard: Desk
+cards are the shared `VerticalTaskCard` — never a bespoke drawn card.**
 
 **Tech-debt (next session / Codex):**
 - `buildMinimumSchedule` is now test-only after the dead-chain removal.
