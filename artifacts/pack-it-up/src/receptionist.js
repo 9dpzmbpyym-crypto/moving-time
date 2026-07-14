@@ -172,7 +172,13 @@ FACTS (JSON below) are authoritative. Use priorityVisit, daysLeft, openHealthTas
 
 When the user clearly books with a date (optional time) and you can match an openHealthTasks.id, end with a machine line alone on its own last line:
 BOOK:{"taskId":"...","zone":"...","dueAt":"YYYY-MM-DD","time":"HH:mm"|null}
-zone may be null for Stretchy/cat tasks. Only BOOK when facts are complete. Reply body: 1–4 short sentences. No emoji. No markdown.`;
+zone may be null for Stretchy/cat tasks. Only BOOK when facts are complete.
+
+OUTPUT RULES (hard):
+* Reply with ONLY Shirley speaking to the player — 1–4 short sentences.
+* Never narrate your reasoning. Never mention FACTS, taskId, openHealthTasks, prompts, or rules.
+* Never write "let me craft", "the player says", or draft options out loud.
+* No emoji. No markdown.`;
 
 /** Tiny offline bank — natural desk lines; calibration bits only as seasoning. */
 export const LINES = {

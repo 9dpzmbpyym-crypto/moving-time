@@ -216,7 +216,8 @@ async function fetchWithTimeout(url, opts, ms) {
   }
 }
 
-/** Pull assistant text from messy OpenRouter payloads (parts / reasoning empties). */
+/** Pull assistant text from OpenRouter payloads. Never use reasoning fields
+ *  as dialogue — that dumps chain-of-thought into the phone UI. */
 function extractAssistantText(data) {
   const choice = data?.choices?.[0];
   const msg = choice?.message || {};
@@ -224,15 +225,57 @@ function extractAssistantText(data) {
     if (typeof val === "string") return val;
     if (Array.isArray(val)) {
       return val
-        .map((p) => (typeof p === "string" ? p : p?.text || p?.content || ""))
+        .map((p) => {
+          if (typeof p === "string") return p;
+          // Skip thinking/reasoning parts if the API tags them.
+          if (p?.type && /reason|think/i.test(p.type)) return "";
+          return p?.text || p?.content || "";
+        })
         .join("");
     }
     return "";
   };
   let text = fromParts(msg.content);
   if (!String(text).trim()) text = fromParts(choice?.text);
-  if (!String(text).trim()) text = fromParts(msg.reasoning) || fromParts(msg.reasoning_content);
   return String(text || "").trim();
+}
+
+/**
+ * Free models often dump planning into `content`. Keep only in-character speech.
+ * Returns "" when the reply is unusable so we fall through to the next model/bank.
+ */
+export function scrubShirleyReply(raw) {
+  let text = String(raw || "").replace(/\r/g, "").trim();
+  if (!text) return "";
+
+  // Strip common thinking wrappers if present.
+  text = text
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/<\/?thinking>/gi, "")
+    .trim();
+
+  const cot = /the player says|let me craft|openhealthtasks|taskid\b|no em dashes|in.?character|something like that|i switch to that|priorityvisit|keep it short|never narrate|output rules|facts \(json|draft options|named another open visit/i;
+
+  if (!cot.test(text) && text.length < 500) return text;
+
+  // Prefer the last quoted line that looks like Shirley speaking.
+  const quotes = [...text.matchAll(/"([^"]{10,280})"/g)].map((m) => m[1].trim());
+  const goodQuote = [...quotes].reverse().find((q) => q && !cot.test(q) && !/taskId|openHealth|let me/i.test(q));
+  if (goodQuote) return goodQuote;
+
+  const afterCraft = text.split(/let me craft:?\s*/i);
+  if (afterCraft.length > 1) {
+    let cand = afterCraft[afterCraft.length - 1].trim().replace(/^["']|["']$/g, "");
+    // Cut off mid-thought if it trails into more planning.
+    cand = cand.split(/\n/)[0].trim();
+    if (cand && !cot.test(cand) && cand.length >= 10 && cand.length < 320) return cand;
+  }
+
+  // If the whole blob is CoT and we couldn't salvage a line, reject it.
+  if (cot.test(text)) return "";
+  // Long non-CoT replies: keep first 3 sentences max.
+  const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [text];
+  return sentences.slice(0, 3).join(" ").trim().slice(0, 400);
 }
 
 async function callOpenRouterOnce({ apiKey, model, messages, timeoutMs }) {
@@ -265,7 +308,7 @@ async function callOpenRouterOnce({ apiKey, model, messages, timeoutMs }) {
     throw err;
   }
   const data = await res.json();
-  const raw = extractAssistantText(data);
+  const raw = scrubShirleyReply(extractAssistantText(data));
   if (!raw.trim()) {
     const err = new Error("empty");
     throw err;
