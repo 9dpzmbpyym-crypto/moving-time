@@ -542,74 +542,53 @@ export function VerticalTaskCard({
   );
 }
 
-/* Saturated lane-header colors + short labels for the Paperwork Desk stacks. */
-const DESK_HEADER = {
-  move: "#E0A93A", job: "#C24A3E", admin: "#5C8CB4",
-  health: "#5FA84E", cat: "#E1893A", housing: "#8A6DB0",
-};
-const DESK_SHORT = {
-  move: "MOVE", job: "JOB", admin: "ADMIN",
-  health: "HEALTH", cat: "STRETCHY", housing: "HOUSING",
-};
+/* Full-card aspect ratio shared with the hand/deal VerticalTaskCard (487/284 source art). */
+const DESK_STACK_CARD_H_OVER_W = 487 / 284;
 
-/* A small pile of one category's desk papers: colored header + the top paper's
-   title + a folded count corner, with offset shadow papers behind = a stack you
-   tap to bring the full card down into the inspect tray. Deliberately small —
-   the readable full card only appears on selection. */
-function DeskStack({ category, stack = [], stamp, selected, onClick }) {
-  const header = DESK_HEADER[category] || TASK_CATEGORIES[category]?.color || "#C9942E";
-  const label = DESK_SHORT[category] || (TASK_CATEGORIES[category]?.label || category).toUpperCase();
-  const icon = TASK_CATEGORIES[category]?.icon || "📄";
+/* One category's incoming pile on the Paperwork Desk: 1-2 offset plain paper
+   edges (not card faces — just enough to read as a pile) behind the REAL
+   VerticalTaskCard for the top task, plus a small count badge. No bespoke
+   drawn card — this is the exact component the hand/deal screens use.
+   Tapping routes straight to the desk's inspection tray via onClick. */
+function DeskIncomingStack({ category, stack = [], width = 104, selected, onClick }) {
+  const color = TASK_CATEGORIES[category]?.color || "#C9942E";
   const n = stack.length;
   const top = stack[0];
-  const depth = Math.min(n, 3);
+  const cardH = Math.round(width * DESK_STACK_CARD_H_OVER_W);
+  if (!top) {
+    return (
+      <div style={{
+        width, height: cardH, border: "2px dashed #6B563B", opacity: 0.32,
+        display: "grid", placeItems: "center", color: "#6B563B", fontSize: 8, ...LB,
+      }}>
+        empty
+      </div>
+    );
+  }
+  const edges = Math.min(2, Math.max(0, n - 1));
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={n === 0}
-      style={{
-        position: "relative", width: "100%", height: "100%", minHeight: 0,
-        border: 0, background: "transparent", padding: 0, textAlign: "left",
-        appearance: "none", WebkitAppearance: "none", font: "inherit",
-        cursor: n ? "pointer" : "default", opacity: n ? 1 : 0.4,
-      }}
-    >
-      {Array.from({ length: Math.max(0, depth - 1) }).map((_, i) => (
+    <div style={{ position: "relative", width: width + edges * 4, height: cardH + edges * 4 }}>
+      {Array.from({ length: edges }).map((_, i) => (
         <div key={i} style={{
-          position: "absolute", inset: 0,
-          transform: `translate(${(i + 1) * 3}px, ${(i + 1) * 3}px)`,
+          position: "absolute", left: (i + 1) * 3, top: (i + 1) * 3, width, height: cardH,
           background: "#E7DCC0", border: "2px solid #120A04",
         }} />
       ))}
+      <VerticalTaskCard
+        task={top}
+        width={width}
+        selected={selected}
+        onClick={onClick}
+        style={{ position: "absolute", left: 0, top: 0 }}
+      />
       <div style={{
-        position: "absolute", inset: 0, display: "flex", flexDirection: "column",
-        background: "#F3EAD3", border: "2px solid #120A04",
-        outline: selected ? "3px solid #FFD97A" : "none", outlineOffset: -3,
-        boxShadow: "1px 1px 0 rgba(0,0,0,0.3)", overflow: "hidden",
+        position: "absolute", top: -6, right: -6, width: 16, height: 16, zIndex: 2,
+        border: "2px solid #120A04", background: color, color: "#180E04",
+        display: "grid", placeItems: "center", fontSize: 8, ...LB,
       }}>
-        <div style={{
-          flex: "0 0 auto", background: header, color: "#180E04",
-          display: "flex", alignItems: "center", gap: 3, padding: "2px 4px",
-          fontSize: 8, borderBottom: "2px solid #120A04", ...LB,
-        }}>
-          <span style={{ fontSize: 9, lineHeight: 1 }}>{icon}</span>
-          <span style={{ flex: 1, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{label}</span>
-        </div>
-        <div style={{
-          flex: 1, minHeight: 0, padding: "3px 4px", color: "#241509", fontSize: 7.5, lineHeight: 1.15,
-          overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", ...LB,
-        }}>{top ? top.title : "clear"}</div>
-        {stamp && top && <img src={stamp} alt="" style={{ position: "absolute", left: "6%", bottom: "8%", width: "80%", pointerEvents: "none" }} />}
+        {n}
       </div>
-      {n > 0 && (
-        <div style={{
-          position: "absolute", top: -5, right: -5, minWidth: 16, height: 16, padding: "0 3px",
-          background: header, color: "#180E04", border: "2px solid #120A04",
-          display: "grid", placeItems: "center", fontSize: 8, ...LB,
-        }}>{n}</div>
-      )}
-    </button>
+    </div>
   );
 }
 
@@ -662,11 +641,6 @@ const screenCss = (
     .cardFile  { animation: cardFile 460ms ease-in 420ms both; }
     .outboxLand { animation: outboxLand 380ms cubic-bezier(0.2, 1.2, 0.4, 1) both; }
     .rewardPop { animation: rewardPop 1.8s ease-out both; }
-    @keyframes cardDrop {
-      0%   { transform: translateY(-40px) rotate(-3deg); opacity: 0; }
-      100% { transform: translateY(0) rotate(0deg); opacity: 1; }
-    }
-    .cardDrop { animation: cardDrop 260ms cubic-bezier(0.2, 1.15, 0.4, 1) both; }
     /* Physical stamp flies up from its desk spot, presses the page, returns.
        The translate origin (down-left) is the stamp button's offset from the
        inspected card; --sx/--sy let callers tune it. */
@@ -2712,53 +2686,19 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
         padding: "5px 7px 7px", boxShadow: "inset 0 0 0 2px #3E2413", flex: 1, minHeight: 0,
         display: "flex", flexDirection: "column",
       }}>
-        {/* Tap a stack → the full card drops down here, readable, over the desk. */}
-        {inspected && (
-          <div
-            onClick={() => !resolving && setInspectId(null)}
-            style={{
-              position: "absolute", inset: 0, zIndex: 30, background: "rgba(10,6,2,0.72)",
-              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-              gap: 12, padding: 12,
-            }}
-          >
-            <div className="cardDrop" onClick={(e) => e.stopPropagation()} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-              <VerticalTaskCard task={inspected} width={172} />
-              {resolving && resolving.id === inspected.id && resolving.mode !== "info" && (
-                <>
-                  {/* ink residue left on the paper — pops in as the stamp presses */}
-                  <div className="stampMark" style={{
-                    position: "absolute", top: "30%", left: "10%", padding: "5px 14px", zIndex: 4,
-                    border: `5px solid ${resolving.mode === "file" ? "#44695B" : "#A3252C"}`,
-                    color: resolving.mode === "file" ? "#44695B" : "#A3252C",
-                    fontSize: 22, letterSpacing: 2, background: "rgba(255,255,255,0.28)",
-                    transform: "rotate(-8deg)", animation: "stampIn 300ms cubic-bezier(0.2,1.4,0.4,1) 500ms both", ...LB,
-                  }}>{resolving.mode === "file" ? "FILED" : "DONE"}</div>
-                  {/* the real stamp sprite flies from its desk spot, presses, returns */}
-                  <div style={{ position: "absolute", top: "34%", left: "50%", transform: "translate(-50%, -50%)", pointerEvents: "none", zIndex: 6 }}>
-                    <img src={DESK_PHYSICAL_STAMP} alt="" className="stampFly" style={{ width: 78, height: 78, imageRendering: "pixelated", display: "block" }} />
-                  </div>
-                </>
-              )}
-              {inspected.status !== "done" ? (
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button type="button" onClick={() => resolve("stamp")} disabled={!!resolving} style={{ padding: "8px 16px", border: "3px solid #120A04", background: "#44695B", color: "#F2E4C0", fontSize: 12, cursor: "pointer", ...LB }}>✓ Done</button>
-                  <button type="button" onClick={() => resolve("info")} disabled={!!resolving} style={{ padding: "8px 12px", border: "3px solid #120A04", background: "#3A2410", color: "#FFD97A", fontSize: 12, cursor: "pointer", ...LB }}>Needs info</button>
-                  <button type="button" onClick={() => setInspectId(null)} disabled={!!resolving} style={{ padding: "8px 12px", border: "3px solid #120A04", background: "#241509", color: "#C9B896", fontSize: 12, cursor: "pointer", ...LB }}>Close</button>
-                </div>
-              ) : (
-                <button type="button" onClick={() => setInspectId(null)} style={{ padding: "8px 18px", border: "3px solid #120A04", background: "#241509", color: "#C9B896", fontSize: 12, cursor: "pointer", ...LB }}>Close</button>
-              )}
-            </div>
-          </div>
-        )}
+        {/* No overlay here anymore — tapping a stack/filed card sets inspectId,
+            and the real card renders down in the DESK_TRAY area below. */}
         <div style={{ color: "#C9B896", fontSize: 10, textAlign: "center", margin: "2px 0 6px", ...LB }}>INCOMING — one stack per category</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gridAutoRows: "84px", gap: "13px 10px", marginBottom: 8, flex: "0 0 auto" }}>
+        <div style={{
+          display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gridAutoRows: "min-content",
+          columnGap: 6, rowGap: 10, marginBottom: 8, flex: "0 0 auto", justifyItems: "center",
+        }}>
           {incomingByCategory.map(({ category, tasks: stack }) => (
-            <DeskStack
+            <DeskIncomingStack
               key={category}
               category={category}
               stack={stack}
+              width={104}
               selected={!!inspected && stack.some((t) => t.id === inspected.id)}
               onClick={() => stack[0] && setInspectId(stack[0].id)}
             />
@@ -2766,21 +2706,24 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
         </div>
 
         <div style={{ color: "#C9B896", fontSize: 10, textAlign: "center", margin: "2px 0 6px", ...LB }}>FILED — finished</div>
-        <div style={{ display: "flex", gap: 7, marginBottom: 6, flex: "0 0 46px", overflowX: "auto", paddingBottom: 2 }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 6, flex: "0 0 auto", overflowX: "auto", paddingBottom: 2 }}>
           {filedRecent.length === 0
             ? <div style={{ color: "#9C8A66", fontSize: 9, padding: "10px 4px", ...LB }}>Nothing filed yet — stamp a paper to finish it.</div>
             : filedRecent.map((task, index) => (
-                <button
-                  key={task.id}
-                  type="button"
-                  onClick={() => setInspectId(task.id)}
-                  style={{ position: "relative", flex: "0 0 auto", width: 60, height: "100%", padding: 0, border: "2px solid #120A04", background: "#F3EAD3", cursor: "pointer", overflow: "hidden" }}
-                >
-                  <div style={{ height: 13, background: DESK_HEADER[task.category] || "#C9942E", borderBottom: "2px solid #120A04", display: "flex", alignItems: "center", padding: "0 3px", fontSize: 6, color: "#180E04", ...LB }}>
-                    {DESK_SHORT[task.category] || task.category}
-                  </div>
-                  <img src={[DESK_STAMP_APPROVED, DESK_STAMP_FILED, DESK_STAMP_DONE][index % 3]} alt="" style={{ position: "absolute", left: "8%", bottom: "6%", width: "84%", pointerEvents: "none" }} />
-                </button>
+                <div key={task.id} style={{ position: "relative", flex: "0 0 auto" }}>
+                  <VerticalTaskCard
+                    task={task}
+                    width={78}
+                    selected={inspectId === task.id}
+                    onClick={() => setInspectId(task.id)}
+                    style={{ opacity: 0.9 }}
+                  />
+                  <img
+                    src={[DESK_STAMP_APPROVED, DESK_STAMP_FILED, DESK_STAMP_DONE][index % 3]}
+                    alt=""
+                    style={{ position: "absolute", left: "8%", bottom: "6%", width: "84%", pointerEvents: "none" }}
+                  />
+                </div>
               ))}
         </div>
 
@@ -2905,7 +2848,7 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
               <div style={{ color: "#5A381F", fontSize: 7, ...LB }}>{["SUN","MON","TUE","WED","THU","FRI","SAT"][deskNow.getDay()]}</div>
             </div>
           </div>
-          <div style={{ minHeight: 0, border: 0, background: `url(${DESK_TRAY}) center/100% 100% no-repeat`, boxShadow: "none", padding: 18, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+          <div style={{ minHeight: 0, border: 0, background: `url(${DESK_TRAY}) center/100% 100% no-repeat`, boxShadow: "none", padding: "6px", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "visible" }}>
           {phonePhase && (
             <ShirleyCallOverlay
               phase={phonePhase}
@@ -2922,15 +2865,55 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
               onCancelCeremony={cancelCeremony}
             />
           )}
-          {!phonePhase && (
+          {!phonePhase && inspected && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+              <div style={{ position: "relative" }}>
+                <VerticalTaskCard task={inspected} width={84} />
+                {resolving && resolving.id === inspected.id && resolving.mode !== "info" && (
+                  <>
+                    {/* ink residue left on the paper — pops in as the stamp presses */}
+                    <div className="stampMark" style={{
+                      position: "absolute", top: "26%", left: "8%", padding: "3px 8px", zIndex: 4,
+                      border: `4px solid ${resolving.mode === "file" ? "#44695B" : "#A3252C"}`,
+                      color: resolving.mode === "file" ? "#44695B" : "#A3252C",
+                      fontSize: 14, letterSpacing: 1, background: "rgba(255,255,255,0.28)",
+                      transform: "rotate(-8deg)", animation: "stampIn 300ms cubic-bezier(0.2,1.4,0.4,1) 500ms both", ...LB,
+                    }}>{resolving.mode === "file" ? "FILED" : "DONE"}</div>
+                    {/* the real stamp sprite flies in from the physical stamp button at the tray's left, presses, returns */}
+                    <div style={{
+                      position: "absolute", top: "34%", left: "50%", transform: "translate(-50%, -50%)",
+                      pointerEvents: "none", zIndex: 6,
+                    }}>
+                      <img
+                        src={DESK_PHYSICAL_STAMP}
+                        alt=""
+                        className="stampFly"
+                        style={{ "--sx": "-120px", "--sy": "40px", width: 48, height: 48, imageRendering: "pixelated", display: "block" }}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+              {inspected.status !== "done" ? (
+                <div style={{ display: "flex", gap: 3 }}>
+                  <button type="button" onClick={() => resolve("stamp")} disabled={!!resolving} style={{ padding: "2px 5px", border: "2px solid #120A04", background: "#44695B", color: "#F2E4C0", fontSize: 7.5, lineHeight: 1.2, cursor: "pointer", ...LB }}>✓ Done</button>
+                  <button type="button" onClick={() => resolve("info")} disabled={!!resolving} style={{ padding: "2px 5px", border: "2px solid #120A04", background: "#3A2410", color: "#FFD97A", fontSize: 7.5, lineHeight: 1.2, cursor: "pointer", ...LB }}>Needs info</button>
+                  <button type="button" onClick={() => setInspectId(null)} disabled={!!resolving} style={{ padding: "2px 5px", border: "2px solid #120A04", background: "#241509", color: "#C9B896", fontSize: 7.5, lineHeight: 1.2, cursor: "pointer", ...LB }}>Close</button>
+                </div>
+              ) : (
+                <button type="button" onClick={() => setInspectId(null)} style={{ padding: "2px 7px", border: "2px solid #120A04", background: "#241509", color: "#C9B896", fontSize: 7.5, lineHeight: 1.2, cursor: "pointer", ...LB }}>Close</button>
+              )}
+            </div>
+          )}
+          {!phonePhase && !inspected && (
             <div style={{ color: "#8A7350", fontSize: 11, textAlign: "center", ...LB }}>
               Tap a stack to inspect a paper.
             </div>
           )}
           {relief && (
             <div style={{
-              position: "absolute", bottom: 8, left: 0, right: 0, textAlign: "center",
-              color: "#8FD14F", fontSize: 12, animation: "reliefUp 1.6s ease-out both", ...LB,
+              position: "absolute", bottom: 2, left: 0, right: 0, textAlign: "center",
+              color: "#8FD14F", fontSize: 11, animation: "reliefUp 1.6s ease-out both", ...LB,
             }}>{relief}</div>
           )}
         </div>
