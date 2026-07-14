@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-13T21:01:38.723Z",
+  "last_updated": "2026-07-14T07:10:58.465Z",
   "rules": {
     "read_before_work": true,
     "write_before_editing": true,
@@ -109,17 +109,22 @@
       "model": "Fable 5",
       "role": "Claude Team Lead / Principal Consultant / Creative Director",
       "thinking": "medium/high",
-      "status": "IDLE",
-      "branch": "claude/team-onboarding-b0c4c9",
-      "working_on": null,
-      "files_locked": [],
-      "systems_locked": [],
-      "risk_level": null,
+      "status": "ACTIVE",
+      "branch": "claude/desk-screenshot-fixes",
+      "working_on": "Desk screenshot feedback: bottom clipping, real next-card peek, filed wrap layout, Daily Hand top panel (Eloisa 4-item punch list)",
+      "files_locked": [
+        "artifacts/pack-it-up/src/Screens.jsx"
+      ],
+      "systems_locked": [
+        "desk-screen",
+        "daily-deal"
+      ],
+      "risk_level": "routine",
       "commit_authority": "docs/design only unless explicitly authorized for repo code",
       "rate_limited": false,
       "cooldown_until": null,
       "handoff_needed": null,
-      "last_seen": "2026-07-12T20:13:03.863Z",
+      "last_seen": "2026-07-14T07:10:58.465Z",
       "expires_at": null,
       "notes": "Active Jul 11 session: orientation + whatever Eloisa queues next. Prior interruption (usage limit mid docs/org-chart pass) was reconciled in the Jul 11 review-cleanup session."
     },
