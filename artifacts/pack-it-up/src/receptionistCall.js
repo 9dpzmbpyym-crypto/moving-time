@@ -10,17 +10,88 @@ import {
 } from "./receptionist.js";
 
 const SETTINGS_KEY = "pack-it-up-shirley";
-export const DEFAULT_MODEL = "deepseek/deepseek-chat-v3.1:free";
-/** Free models are slow / flaky — give them room, then try one backup. */
+/** Auto-picks any free model that isn't currently rate-limited. */
+export const DEFAULT_MODEL = "openrouter/free";
+/** Free models are slow / flaky — give them room, then try short backups. */
 const TIMEOUT_MS = 25000;
 const MAX_TOKENS = 120;
 const TEMPERATURE = 0.6;
-/** Single backup only — long fallback chains hang (~25s each) and hide bad slugs. */
-const FALLBACK_MODEL = "meta-llama/llama-3.3-70b-instruct:free";
+/**
+ * On 429/502/503, try different provider families (not the same Meta pool twice).
+ * Cap the chain — each miss is usually fast, but don't hang the phone UI.
+ */
+const RATE_LIMIT_FALLBACKS = [
+  "openai/gpt-oss-20b:free",
+  "google/gemma-3-27b-it:free",
+  "nvidia/nemotron-nano-9b-v2:free",
+];
+const MAX_MODEL_ATTEMPTS = 3;
+/** Slugs we used to ship that are dead or permanently congested — migrate off. */
+const STALE_DEFAULTS = new Set([
+  "deepseek/deepseek-chat-v3.1:free",
+  "deepseek/deepseek-chat-v3-0324:free",
+  "meta-llama/llama-3.2-3b-instruct:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+]);
+
+/** Strip paste junk (ZWSP, smart quotes, BOM) — OpenRouter keys are ASCII. */
+export function sanitizeApiKey(key) {
+  return String(key || "").replace(/[^\x20-\x7E]/g, "").trim();
+}
+
+/** Last-4 fingerprint so Settings can confirm what localStorage actually holds. */
+export function keyFingerprint(key) {
+  const k = sanitizeApiKey(key);
+  if (!k) return "";
+  return k.length <= 4 ? "····" : `…${k.slice(-4)}`;
+}
+
+/**
+ * Turn raw askShirley failures into short actionable labels for the phone UI.
+ * OpenRouter's 401 body is often the cryptic "User not found" (invalid OR expired).
+ */
+export function formatShirleyLineError(error, detail) {
+  const raw = detail ? `${error || ""} — ${String(detail)}` : String(error || "failed");
+  if (/http_401|user not found/i.test(raw)) {
+    return "key rejected (bad/expired/revoked) — Clear key, paste a new one from openrouter.ai/keys, Test key";
+  }
+  if (/http_402/i.test(raw)) {
+    return "OpenRouter needs credits — add a little balance (free models often still need this)";
+  }
+  if (/http_429|rate.?limit|too many requests/i.test(raw)) {
+    return "free model busy (429) — wait ~1 min, or set model to openrouter/free in Settings";
+  }
+  if (error === "timeout" || /abort/i.test(raw)) {
+    return "timed out — free models are slow; try again or set openrouter/free";
+  }
+  if (/http_502|http_503/i.test(raw)) {
+    return "model unavailable — try openrouter/free in Settings";
+  }
+  if (error === "bad_model") {
+    return detail ? String(detail).slice(0, 100) : "bad model slug in Settings";
+  }
+  if (error === "disabled") return "improv off — turn on in Settings";
+  if (error === "empty") return "empty model reply — try again";
+  return raw.slice(0, 120);
+}
 
 /** OpenRouter slugs look like `vendor/model[:variant]`. */
 export function isPlausibleModelSlug(model) {
   return typeof model === "string" && /^[a-z0-9._-]+\/[a-z0-9._/:_-]+$/i.test(model.trim());
+}
+
+function buildModelAttempts(primary) {
+  const out = [];
+  const push = (slug) => {
+    const s = (slug || "").trim();
+    if (!s || !isPlausibleModelSlug(s) || out.includes(s)) return;
+    if (out.length < MAX_MODEL_ATTEMPTS) out.push(s);
+  };
+  push(primary);
+  // Prefer the free router next — it skips providers that are currently 429ing.
+  if (primary !== DEFAULT_MODEL) push(DEFAULT_MODEL);
+  for (const slug of RATE_LIMIT_FALLBACKS) push(slug);
+  return out;
 }
 
 export function loadShirleySettings() {
@@ -28,28 +99,26 @@ export function loadShirleySettings() {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (!raw) return { apiKey: "", model: DEFAULT_MODEL, improv: false };
     const p = JSON.parse(raw);
-    const apiKey = typeof p.apiKey === "string" ? p.apiKey : "";
-    const hasKey = !!apiKey.trim();
+    const apiKey = sanitizeApiKey(typeof p.apiKey === "string" ? p.apiKey : "");
+    const hasKey = !!apiKey;
     // Explicit opt-out only. Old builds saved improv:false whenever the
     // toggle wasn't flipped — treat that as "on" if a key exists.
     const improvOff = p.improvOff === true;
     const improv = hasKey && !improvOff;
-    const model = typeof p.model === "string" && p.model ? p.model : DEFAULT_MODEL;
-    // Migrate stale false + tiny default model once.
-    if (hasKey && (p.improv === false || p.model === "meta-llama/llama-3.2-3b-instruct:free")) {
+    let model = typeof p.model === "string" && p.model ? p.model : DEFAULT_MODEL;
+    const staleModel = STALE_DEFAULTS.has(model);
+    const needsImprovMigrate = hasKey && p.improv === false && !improvOff;
+    if (hasKey && (needsImprovMigrate || staleModel)) {
+      if (staleModel) model = DEFAULT_MODEL;
       try {
         localStorage.setItem(SETTINGS_KEY, JSON.stringify({
           apiKey,
-          model: p.model === "meta-llama/llama-3.2-3b-instruct:free" ? DEFAULT_MODEL : model,
+          model,
           improv: true,
           improvOff: false,
         }));
       } catch {}
-      return {
-        apiKey,
-        model: p.model === "meta-llama/llama-3.2-3b-instruct:free" ? DEFAULT_MODEL : model,
-        improv: true,
-      };
+      return { apiKey, model, improv: true };
     }
     return { apiKey, model, improv };
   } catch {
@@ -61,10 +130,10 @@ export function saveShirleySettings(partial) {
   const cur = loadShirleySettings();
   // Never clobber a saved key/model with "" from blur / stale React state / autofill.
   // Explicit clear: pass clearApiKey: true (Settings "Clear key" button).
-  let apiKey = partial.apiKey != null ? String(partial.apiKey) : cur.apiKey;
+  let apiKey = partial.apiKey != null ? sanitizeApiKey(partial.apiKey) : cur.apiKey;
   if (
     partial.apiKey != null &&
-    !String(partial.apiKey).trim() &&
+    !sanitizeApiKey(partial.apiKey) &&
     cur.apiKey.trim() &&
     !partial.clearApiKey
   ) {
@@ -137,7 +206,7 @@ async function fetchWithTimeout(url, opts, ms) {
 }
 
 async function callOpenRouterOnce({ apiKey, model, messages, timeoutMs }) {
-  const safeApiKey = String(apiKey || "").replace(/[^\x20-\x7E]/g, "").trim();
+  const safeApiKey = sanitizeApiKey(apiKey);
   const res = await fetchWithTimeout(
     "https://openrouter.ai/api/v1/chat/completions",
     {
@@ -176,7 +245,7 @@ async function callOpenRouterOnce({ apiKey, model, messages, timeoutMs }) {
 
 /**
  * Ask Shirley via OpenRouter. Returns { ok, text, book, error, detail?, model? }.
- * Tries the configured model, then at most one backup.
+ * Tries the configured model, then other free providers on 429/5xx (capped).
  */
 export async function askShirley({
   messages,
@@ -218,15 +287,14 @@ export async function askShirley({
     })),
   ];
 
-  const models = [primary];
-  if (FALLBACK_MODEL && FALLBACK_MODEL !== primary) models.push(FALLBACK_MODEL);
+  const models = buildModelAttempts(primary);
 
   let lastError = "network";
   let lastDetail = "";
   for (const model of models) {
     try {
       const raw = await callOpenRouterOnce({
-        apiKey: settings.apiKey.trim(),
+        apiKey: settings.apiKey,
         model,
         messages: chatMessages,
         timeoutMs,
@@ -240,8 +308,9 @@ export async function askShirley({
       lastError = e?.name === "AbortError" ? "timeout" : (e?.message || "network");
       lastDetail = e?.detail || "";
       console.warn("[Shirley] model failed:", model, lastError, lastDetail);
-      // Auth errors — don't burn the backup
+      // Auth / billing — don't burn the rest of the free pool
       if (e?.status === 401 || e?.status === 402 || e?.status === 403) break;
+      // 429/502/503/timeout → try next provider family
     }
   }
   return { ok: false, text: "", book: null, error: lastError, detail: lastDetail || undefined };

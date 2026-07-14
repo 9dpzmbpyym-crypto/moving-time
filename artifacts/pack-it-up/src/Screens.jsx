@@ -159,6 +159,9 @@ import {
   askShirley,
   applyBookPayload,
   DEFAULT_MODEL,
+  sanitizeApiKey,
+  keyFingerprint,
+  formatShirleyLineError,
 } from "./receptionistCall.js";
 
 /* ============================================================
@@ -2550,14 +2553,7 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
         setPhoneWaiting(false);
         return;
       }
-      const rawLabel = agent.detail
-        ? `${agent.error} — ${String(agent.detail).slice(0, 80)}`
-        : (agent.error || "failed");
-      // OpenRouter's 401 body is a cryptic "User not found" — translate it into
-      // the action that actually fixes it.
-      const errLabel = /http_401|user not found/i.test(rawLabel)
-        ? "key not recognized — re-paste your OpenRouter key in Settings (Test key there)"
-        : rawLabel;
+      const errLabel = formatShirleyLineError(agent.error, agent.detail);
       setLineError(errLabel);
       console.warn("[Shirley] falling back to script bank:", errLabel);
     }
@@ -3571,8 +3567,21 @@ function SettingsScreen({ go }) {
   const [exportState, setExportState] = useState("idle");
   const [keyTest, setKeyTest] = useState(null); // null | "testing" | result string
   const testApiKey = async () => {
-    const k = apiKey.trim();
-    if (!k) { setKeyTest("✗ no key entered"); return; }
+    // Persist first — Shirley reads localStorage, not the input's ephemeral value.
+    // Then verify the *saved* key so Test and phone can't disagree.
+    const saved = saveShirleySettings({
+      apiKey,
+      improv: !!sanitizeApiKey(apiKey),
+    });
+    setApiKey(saved.apiKey);
+    setModel(saved.model);
+    setImprov(saved.improv);
+    const k = sanitizeApiKey(saved.apiKey);
+    if (!k) { setKeyTest("✗ no key saved — paste, then Test again"); return; }
+    if (!k.startsWith("sk-or-")) {
+      setKeyTest("✗ that doesn't look like an OpenRouter key (should start with sk-or-)");
+      return;
+    }
     setKeyTest("testing");
     try {
       const res = await fetch("https://openrouter.ai/api/v1/key", {
@@ -3581,9 +3590,12 @@ function SettingsScreen({ go }) {
       if (res.ok) {
         const data = await res.json().catch(() => null);
         const label = data?.data?.label ? ` (${data.data.label})` : "";
-        setKeyTest(`✓ key valid${label}`);
+        const fp = keyFingerprint(k);
+        setKeyTest(`✓ key valid${label} · saved ${fp} on this site`);
       } else if (res.status === 401) {
-        setKeyTest("✗ key not recognized — regenerate at openrouter.ai/keys and re-paste");
+        setKeyTest("✗ key rejected — create a NEW key at openrouter.ai/keys (expired/revoked also look like this), Clear key, paste, Test");
+      } else if (res.status === 402) {
+        setKeyTest("✗ OpenRouter needs credits — add a small balance at openrouter.ai/settings/credits");
       } else {
         setKeyTest(`✗ OpenRouter answered ${res.status}`);
       }
@@ -3699,7 +3711,11 @@ function SettingsScreen({ go }) {
       <Panel style={{ marginTop: 10 }}>
         <div style={{ color: "#FFD97A", fontSize: 12, marginBottom: 8, ...LB }}>Contacts (OpenRouter)</div>
         <div style={{ color: "#8A7350", fontSize: 10, marginBottom: 8, ...LB }}>
-          Paste your key — improv turns on automatically. Replies can take a few seconds on free models.
+          Paste your OpenRouter key — improv turns on automatically. Keys are stored
+          only on this site ({typeof window !== "undefined" ? window.location.host : "…"});
+          localhost and Vercel do not share a key. Default model is openrouter/free
+          (auto-picks a free provider). A ✓ Test key only proves auth — free models
+          can still 429 when busy; wait a minute or leave the slug as openrouter/free.
         </div>
         <label style={{ display: "block", color: "#C9B896", fontSize: 10, marginBottom: 4, ...LB }}>API key</label>
         <input
@@ -3709,9 +3725,11 @@ function SettingsScreen({ go }) {
           onBlur={(e) => {
             const v = e.target.value;
             // Only touch the key — don't rewrite model from possibly-stale state.
-            persistShirley({ apiKey: v, improv: !!v.trim() });
+            persistShirley({ apiKey: v, improv: !!sanitizeApiKey(v) });
           }}
           placeholder="sk-or-…"
+          autoComplete="off"
+          spellCheck={false}
           style={{
             width: "100%", boxSizing: "border-box", padding: "10px", marginBottom: 8,
             background: `#1A0F06 url(${SETTINGS_INPUT}) center/100% 100% no-repeat`, color: "#F2E4C0", border: 0, fontSize: 12, ...LB,
@@ -3730,7 +3748,12 @@ function SettingsScreen({ go }) {
         {keyTest && keyTest !== "testing" && (
           <div role="status" style={{ marginBottom: 8, color: keyTest.startsWith("✓") ? "#8FD14F" : "#E8A080", fontSize: 10, ...LB }}>{keyTest}</div>
         )}
-        <label style={{ display: "block", color: "#C9B896", fontSize: 10, marginBottom: 4, ...LB }}>Free model slug</label>
+        {apiKey.trim() && !keyTest && (
+          <div style={{ marginBottom: 8, color: "#8A7350", fontSize: 10, ...LB }}>
+            Saved on this device: {keyFingerprint(apiKey) || "—"}
+          </div>
+        )}
+        <label style={{ display: "block", color: "#C9B896", fontSize: 10, marginBottom: 4, ...LB }}>Model slug (free router recommended)</label>
         <input
           type="text"
           value={model}
@@ -3744,7 +3767,7 @@ function SettingsScreen({ go }) {
         />
         <button
           type="button"
-          onClick={() => persistShirley({ apiKey, model, improv: apiKey.trim() ? (improv || true) : false })}
+          onClick={() => persistShirley({ apiKey, model, improv: sanitizeApiKey(apiKey) ? (improv || true) : false })}
           aria-label="Save Contacts Settings"
           style={{ width: "100%", height: 54, marginBottom: 8, border: 0, cursor: "pointer", background: `url(${SETTINGS_SAVE}) center/100% 100% no-repeat` }}
         />
