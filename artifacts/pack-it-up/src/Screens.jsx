@@ -545,15 +545,17 @@ export function VerticalTaskCard({
 /* Full-card aspect ratio shared with the hand/deal VerticalTaskCard (487/284 source art). */
 const DESK_STACK_CARD_H_OVER_W = 487 / 284;
 
-/* One category's incoming pile on the Paperwork Desk: 1-2 offset plain paper
-   edges (not card faces — just enough to read as a pile) behind the REAL
-   VerticalTaskCard for the top task, plus a small count badge. No bespoke
-   drawn card — this is the exact component the hand/deal screens use.
-   Tapping routes straight to the desk's inspection tray via onClick. */
-function DeskIncomingStack({ category, stack = [], width = 104, selected, onClick }) {
+/* One category's incoming pile on the Paperwork Desk: the REAL next-in-stack
+   VerticalTaskCard peeks from behind the top card (same width, offset down-
+   right, non-interactive) so the pile reads as actual papers, not decoration.
+   A third card (if any) only adds a plain paper edge behind that for depth.
+   No bespoke drawn card — this is the exact component the hand/deal screens
+   use. Tapping routes straight to the desk's inspection tray via onClick. */
+function DeskIncomingStack({ category, stack = [], width = 90, selected, onClick }) {
   const color = TASK_CATEGORIES[category]?.color || "#C9942E";
   const n = stack.length;
   const top = stack[0];
+  const next = stack[1];
   const cardH = Math.round(width * DESK_STACK_CARD_H_OVER_W);
   if (!top) {
     return (
@@ -565,15 +567,19 @@ function DeskIncomingStack({ category, stack = [], width = 104, selected, onClic
       </div>
     );
   }
-  const edges = Math.min(2, Math.max(0, n - 1));
+  const peekOffset = 5;
+  // Only REAL cards in the pile — the top card and the literal next card
+  // peeking behind it. No fake paper edges (Eloisa's ruling, twice).
+  const totalOffset = next ? peekOffset : 0;
   return (
-    <div style={{ position: "relative", width: width + edges * 4, height: cardH + edges * 4 }}>
-      {Array.from({ length: edges }).map((_, i) => (
-        <div key={i} style={{
-          position: "absolute", left: (i + 1) * 3, top: (i + 1) * 3, width, height: cardH,
-          background: "#E7DCC0", border: "2px solid #120A04",
-        }} />
-      ))}
+    <div style={{ position: "relative", width: width + totalOffset, height: cardH + totalOffset }}>
+      {next && (
+        <VerticalTaskCard
+          task={next}
+          width={width}
+          style={{ position: "absolute", left: peekOffset, top: peekOffset, pointerEvents: "none" }}
+        />
+      )}
       <VerticalTaskCard
         task={top}
         width={width}
@@ -2593,6 +2599,18 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
   const prog = sessionProgress(session, SESSION_GOALS);
   const housingProg = sessionProgress(session, HOUSING_SESSION_GOALS);
 
+  /* Today's Hand status for the left daily panel — reads session.dailyDeal
+     directly against selectedTaskIds (not handTasks(), which filters to open
+     tasks only and would hide the done ones we need to count). */
+  const dailyDeal = session?.dailyDeal;
+  const hasHandToday = dailyDeal?.day === todayKey();
+  const handTaskObjs = hasHandToday
+    ? (dailyDeal.selectedTaskIds || []).map((id) => tasks.find((t) => t.id === id)).filter(Boolean)
+    : [];
+  const handTotal = handTaskObjs.length;
+  const handDoneCount = handTaskObjs.filter((t) => t.status === "done").length;
+  const handRemaining = handTaskObjs.filter((t) => t.status !== "done");
+
   const resolve = (mode) => {
     if (!inspected || resolving) return;
     if (isWorldBoundTask(inspected) && mode !== "info") {
@@ -2663,18 +2681,53 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
       flush
     >
       <RewardToast text={rewardToast} />
-      <div style={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column", gap: 5 }}>
-      <div style={{ height: 44, flex: "0 0 auto", display: "grid", gridTemplateColumns: "72px 1fr", gap: 8 }}>
+      <div style={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ height: 40, flex: "0 0 auto", display: "grid", gridTemplateColumns: "72px 1fr", gap: 8 }}>
         <button type="button" onClick={() => go("apartment")} style={{ border: 0, background: `url(${LEDGER_CHIP_DARK}) center/100% 100% no-repeat`, color: "#FFD97A", fontSize: 11, ...LB }}>BACK</button>
         <div style={{ display: "grid", placeItems: "center", background: `url(${DESK_PLAQUE}) center/100% 100% no-repeat`, color: "#FFD97A", fontSize: 15, ...LB }}>PAPERWORK DESK</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: 7, flex: "0 0 105px" }}>
-        <div style={{ minHeight: 0, padding: "27px 12px 8px", background: `url(${DESK_DAILY_PANEL}) center/100% 100% no-repeat`, color: "#3A2018" }}>
-          {prog.items.slice(0, 3).map((it) => <div key={it.id} style={{ fontSize: 9, marginTop: 3, ...LB }}>{it.done ? "☑" : "☐"} {it.label} <span style={{ float: "right" }}>{it.cur}/{it.target}</span></div>)}
-        </div>
-        <div style={{ minHeight: 0, padding: "44px 11px 8px", background: `url(${DESK_INBOX_PANEL}) center/100% 100% no-repeat`, color: "#3A2018" }}>
-          <div style={{ fontSize: 10, ...LB }}>{deskTasks.length} to process</div>
-          <div style={{ fontSize: 8.5, marginTop: 5, ...LB }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: 7, flex: "0 0 84px" }}>
+        <button
+          type="button"
+          onClick={() => go("board")}
+          style={{
+            /* paddingTop clears the baked-in "Daily To-Do Board" band of the
+               stretched panel PNG (~26% of panel height at 84px). minWidth 0
+               stops long card titles from inflating the grid column. */
+            minWidth: 0, minHeight: 0, height: "100%", boxSizing: "border-box", padding: "23px 11px 6px",
+            background: `url(${DESK_DAILY_PANEL}) center/100% 100% no-repeat`, color: "#3A2018",
+            border: 0, margin: 0, appearance: "none", WebkitAppearance: "none",
+            font: "inherit", textAlign: "left", cursor: "pointer", overflow: "hidden",
+            display: "flex", flexDirection: "column", justifyContent: "center",
+          }}
+        >
+          {!hasHandToday || handTotal === 0 ? (
+            <div style={{ fontSize: 9, lineHeight: 1.25, ...LB }}>No hand dealt yet — tap to pick today's pace.</div>
+          ) : handDoneCount === handTotal ? (
+            <div style={{ fontSize: 9, lineHeight: 1.25, ...LB }}>Hand clear — nicely done.</div>
+          ) : (
+            <>
+              <div style={{ fontSize: 9, ...LB }}>HAND&nbsp;&nbsp;{handDoneCount}/{handTotal}</div>
+              {handRemaining.slice(0, 2).map((t) => (
+                <div key={t.id} style={{
+                  fontSize: 8, marginTop: 3, whiteSpace: "nowrap", overflow: "hidden",
+                  textOverflow: "ellipsis", ...LB,
+                }}>
+                  {t.title}
+                </div>
+              ))}
+            </>
+          )}
+        </button>
+        <div style={{
+          /* paddingTop clears the baked-in "Inbox" band of the stretched panel
+             PNG (~42% of panel height at 84px); content centers below it. */
+          minWidth: 0, minHeight: 0, height: "100%", boxSizing: "border-box", padding: "34px 11px 7px",
+          background: `url(${DESK_INBOX_PANEL}) center/100% 100% no-repeat`, color: "#3A2018",
+          display: "flex", flexDirection: "column", justifyContent: "center",
+        }}>
+          <div style={{ fontSize: 10, ...LB }}>{deskTasks.length} open</div>
+          <div style={{ fontSize: 8.5, marginTop: 4, ...LB }}>
             <span style={{ color: "#A3252C" }}>● {deskTasks.filter((t) => t.urgency >= 3).length}</span> urgent{"   "}
             <span style={{ color: "#B77A1E" }}>● {deskTasks.filter((t) => t.urgency === 2).length}</span> soon
           </div>
@@ -2683,51 +2736,69 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
       <div style={{
         position: "relative",
         border: "3px solid #120A04", background: "repeating-linear-gradient(0deg, #5A381F 0 14px, #6E452A 14px 16px)",
-        padding: "5px 7px 7px", boxShadow: "inset 0 0 0 2px #3E2413", flex: 1, minHeight: 0,
+        padding: "4px 7px 4px", boxShadow: "inset 0 0 0 2px #3E2413", flex: 1, minHeight: 0,
         display: "flex", flexDirection: "column",
       }}>
         {/* No overlay here anymore — tapping a stack/filed card sets inspectId,
-            and the real card renders down in the DESK_TRAY area below. */}
-        <div style={{ color: "#C9B896", fontSize: 10, textAlign: "center", margin: "2px 0 6px", ...LB }}>INCOMING — one stack per category</div>
-        <div style={{
-          display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gridAutoRows: "min-content",
-          columnGap: 6, rowGap: 10, marginBottom: 8, flex: "0 0 auto", justifyItems: "center",
-        }}>
-          {incomingByCategory.map(({ category, tasks: stack }) => (
-            <DeskIncomingStack
-              key={category}
-              category={category}
-              stack={stack}
-              width={104}
-              selected={!!inspected && stack.some((t) => t.id === inspected.id)}
-              onClick={() => stack[0] && setInspectId(stack[0].id)}
-            />
-          ))}
-        </div>
+            and the real card renders down in the DESK_TRAY area below.
+            This wrapper (not the tray/phone row) absorbs any height pressure
+            from INCOMING/FILED growing — flex:1 + minHeight:0 + overflowY
+            keeps the stamp/tray/phone row pinned at a fixed height so it can
+            never get pushed off the bottom of the screen. */}
+        <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+          <div style={{ color: "#C9B896", fontSize: 10, textAlign: "center", margin: "1px 0 4px", ...LB }}>INCOMING — one stack per category</div>
+          <div style={{
+            display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gridAutoRows: "min-content",
+            columnGap: 5, rowGap: 7, marginBottom: 6, flex: "0 0 auto", justifyItems: "center",
+          }}>
+            {incomingByCategory.map(({ category, tasks: stack }) => (
+              <DeskIncomingStack
+                key={category}
+                category={category}
+                stack={stack}
+                width={90}
+                selected={!!inspected && stack.some((t) => t.id === inspected.id)}
+                onClick={() => stack[0] && setInspectId(stack[0].id)}
+              />
+            ))}
+          </div>
 
-        <div style={{ color: "#C9B896", fontSize: 10, textAlign: "center", margin: "2px 0 6px", ...LB }}>FILED — finished</div>
-        <div style={{ display: "flex", gap: 8, marginBottom: 6, flex: "0 0 auto", overflowX: "auto", paddingBottom: 2 }}>
-          {filedRecent.length === 0
-            ? <div style={{ color: "#9C8A66", fontSize: 9, padding: "10px 4px", ...LB }}>Nothing filed yet — stamp a paper to finish it.</div>
-            : filedRecent.map((task, index) => (
-                <div key={task.id} style={{ position: "relative", flex: "0 0 auto" }}>
-                  <VerticalTaskCard
-                    task={task}
-                    width={78}
-                    selected={inspectId === task.id}
-                    onClick={() => setInspectId(task.id)}
-                    style={{ opacity: 0.9 }}
-                  />
-                  <img
-                    src={[DESK_STAMP_APPROVED, DESK_STAMP_FILED, DESK_STAMP_DONE][index % 3]}
-                    alt=""
-                    style={{ position: "absolute", left: "8%", bottom: "6%", width: "84%", pointerEvents: "none" }}
-                  />
-                </div>
-              ))}
+          <div style={{ color: "#C9B896", fontSize: 10, textAlign: "center", margin: "1px 0 4px", ...LB }}>FILED — finished</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 4, flex: "0 0 auto" }}>
+            {filedRecent.length === 0 ? (
+              <div style={{ color: "#9C8A66", fontSize: 9, padding: "10px 4px", ...LB }}>Nothing filed yet — stamp a paper to finish it.</div>
+            ) : (
+              <>
+                {filedRecent.slice(0, 5).map((task, index) => (
+                  <div key={task.id} style={{ position: "relative", flex: "0 0 auto" }}>
+                    <VerticalTaskCard
+                      task={task}
+                      width={62}
+                      selected={inspectId === task.id}
+                      onClick={() => setInspectId(task.id)}
+                      style={{ opacity: 0.9 }}
+                    />
+                    <img
+                      src={[DESK_STAMP_APPROVED, DESK_STAMP_FILED, DESK_STAMP_DONE][index % 3]}
+                      alt=""
+                      style={{ position: "absolute", left: "8%", bottom: "6%", width: "84%", pointerEvents: "none" }}
+                    />
+                  </div>
+                ))}
+                {filedRecent.length > 5 && (
+                  <div style={{
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    flex: "0 0 auto", alignSelf: "center",
+                    border: "2px solid #120A04", background: "#241509", color: "#C9B896",
+                    fontSize: 9, textAlign: "center", padding: "5px 7px", ...LB,
+                  }}>
+                    +{filedRecent.length - 5} more
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
-
-        <div style={{ flex: "1 1 auto", minHeight: 8 }} />
 
         <div style={{ display: "none", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 10 }}>
           <div style={{ position: "relative", width: 64, height: 52, flex: "0 0 auto" }}>
@@ -2824,7 +2895,7 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
             </div>
           </div>
         </div>
-        <div style={{ height: 8 }} />
+        <div style={{ height: 4 }} />
 
         <div style={{ display: "none", gap: 8, overflowX: "auto", paddingBottom: 6 }}>
           {active.map((t, i) => (
