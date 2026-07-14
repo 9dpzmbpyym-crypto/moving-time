@@ -3715,7 +3715,8 @@ function SettingsScreen({ go }) {
           only on this site ({typeof window !== "undefined" ? window.location.host : "…"});
           localhost and Vercel do not share a key. Default model is openrouter/free
           (auto-picks a free provider). A ✓ Test key only proves auth — free models
-          can still 429 when busy; wait a minute or leave the slug as openrouter/free.
+          can still 429/404 when busy or retired. If every free call fails, enable
+          free endpoints at openrouter.ai/settings/privacy (or use a paid slug).
         </div>
         <label style={{ display: "block", color: "#C9B896", fontSize: 10, marginBottom: 4, ...LB }}>API key</label>
         <input

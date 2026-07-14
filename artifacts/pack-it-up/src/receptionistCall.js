@@ -17,21 +17,25 @@ const TIMEOUT_MS = 25000;
 const MAX_TOKENS = 120;
 const TEMPERATURE = 0.6;
 /**
- * On 429/502/503, try different provider families (not the same Meta pool twice).
- * Cap the chain — each miss is usually fast, but don't hang the phone UI.
+ * On 429/404/502/503, try different provider families.
+ * Slugs must stay on the live free catalog — OpenRouter retires :free often.
+ * Verified against /api/v1/models (pricing 0) on 2026-07-14.
  */
 const RATE_LIMIT_FALLBACKS = [
   "openai/gpt-oss-20b:free",
-  "google/gemma-3-27b-it:free",
+  "google/gemma-4-31b-it:free",
   "nvidia/nemotron-nano-9b-v2:free",
+  "qwen/qwen3-coder:free",
 ];
-const MAX_MODEL_ATTEMPTS = 3;
-/** Slugs we used to ship that are dead or permanently congested — migrate off. */
+const MAX_MODEL_ATTEMPTS = 4;
+/** Slugs we used to ship that are dead, paid-only, or permanently congested. */
 const STALE_DEFAULTS = new Set([
   "deepseek/deepseek-chat-v3.1:free",
   "deepseek/deepseek-chat-v3-0324:free",
   "meta-llama/llama-3.2-3b-instruct:free",
   "meta-llama/llama-3.3-70b-instruct:free",
+  "google/gemma-3-27b-it:free",
+  "google/gemma-2-9b-it:free",
 ]);
 
 /** Strip paste junk (ZWSP, smart quotes, BOM) — OpenRouter keys are ASCII. */
@@ -57,6 +61,12 @@ export function formatShirleyLineError(error, detail) {
   }
   if (/http_402/i.test(raw)) {
     return "OpenRouter needs credits — add a little balance (free models often still need this)";
+  }
+  if (/unavailable for free|no longer free|paid version is available/i.test(raw)) {
+    return "that free slug retired — set model to openrouter/free in Settings (or pick a current :free model)";
+  }
+  if (/http_404|no endpoints|no allowed providers/i.test(raw)) {
+    return "free model blocked/gone — enable free endpoints in openrouter.ai/settings/privacy, or set openrouter/free";
   }
   if (/http_429|rate.?limit|too many requests/i.test(raw)) {
     return "free model busy (429) — wait ~1 min, or set model to openrouter/free in Settings";
@@ -310,7 +320,7 @@ export async function askShirley({
       console.warn("[Shirley] model failed:", model, lastError, lastDetail);
       // Auth / billing — don't burn the rest of the free pool
       if (e?.status === 401 || e?.status === 402 || e?.status === 403) break;
-      // 429/502/503/timeout → try next provider family
+      // 404/429/502/503/timeout → try next provider family (retired :free slugs 404)
     }
   }
   return { ok: false, text: "", book: null, error: lastError, detail: lastDetail || undefined };
