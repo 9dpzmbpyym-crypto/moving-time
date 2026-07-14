@@ -3713,10 +3713,10 @@ function SettingsScreen({ go }) {
         <div style={{ color: "#8A7350", fontSize: 10, marginBottom: 8, ...LB }}>
           Paste your OpenRouter key — improv turns on automatically. Keys are stored
           only on this site ({typeof window !== "undefined" ? window.location.host : "…"});
-          localhost and Vercel do not share a key. Default model is openrouter/free
-          (auto-picks a free provider). A ✓ Test key only proves auth — free models
-          can still 429/404 when busy or retired. If every free call fails, enable
-          free endpoints at openrouter.ai/settings/privacy (or use a paid slug).
+          localhost and Vercel do not share a key. Default model is a small Llama
+          chat slug (openrouter/free was dumping thoughts into the phone). A ✓ Test
+          key only proves auth. If every free call fails, enable free endpoints at
+          openrouter.ai/settings/privacy (or use a paid slug).
         </div>
         <label style={{ display: "block", color: "#C9B896", fontSize: 10, marginBottom: 4, ...LB }}>API key</label>
         <input
