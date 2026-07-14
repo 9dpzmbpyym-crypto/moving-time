@@ -1824,7 +1824,7 @@ function LedgerScreen({ go, tasks, setTasks, session, onSessionBump }) {
                   Self-imposed date (latest becomes +5 days)
                 </label>
               )}
-              <div style={{ color: "#8A7350", fontSize: 8, margin: "0 0 2px", ...LB }}>EFFORT</div>
+              <div style={{ color: "#8A7350", fontSize: 8, margin: "0 0 2px", ...LB }}>EFFORT — top circles on card (⚡)</div>
               <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
                 {[1, 2, 3].map((n) => (
                   <button key={n} type="button" onClick={() => setEditDraft((d) => ({ ...d, effort: n }))} style={{
@@ -1835,7 +1835,7 @@ function LedgerScreen({ go, tasks, setTasks, session, onSessionBump }) {
                 ))}
               </div>
               <div style={{ color: "#8A7350", fontSize: 8, margin: "0 0 2px", ...LB }}>
-                PRIORITY / IMPORTANCE{editDraft.category === "job" ? " · overrides fit-score default" : ""}
+                IMPORTANCE (criticality) — bottom circles on card (⚠), drives Priority sort{editDraft.category === "job" ? " · overrides fit-score default" : ""}
               </div>
               <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
                 {[1, 2, 3].map((n) => (
@@ -1866,8 +1866,17 @@ function LedgerScreen({ go, tasks, setTasks, session, onSessionBump }) {
             ) : (
               <>
                 <button aria-label={`Edit ${t.title}`} type="button" onClick={() => beginEdit(t)} style={{ height: 34, border: 0, cursor: "pointer", background: `url(${LEDGER_EDIT}) center/100% 100% no-repeat` }} />
-                {open && !isWorldBoundTask(t) && (
+                {open && (
+                  // Always allow manual completion — world-bound tasks auto-complete
+                  // via their game action, but the ledger must never trap a real
+                  // task behind gameplay.
                   <button aria-label={`Done ${t.title}`} type="button" onClick={() => markDone(t.id)} style={{ height: 34, border: 0, cursor: "pointer", background: `url(${LEDGER_DONE}) center/100% 100% no-repeat` }} />
+                )}
+                {!open && t.status === "done" && (
+                  <button aria-label={`Undo done ${t.title}`} type="button" onClick={() => restoreArchived(t.id)} style={{
+                    padding: "8px 6px", background: "#3A2410", color: "#FFD97A",
+                    border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB,
+                  }}>UNDO ✓</button>
                 )}
                 {open && hasTodayDeal && (
                   handForced ? (

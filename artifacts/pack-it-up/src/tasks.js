@@ -16,7 +16,8 @@ const LOCKED_DATE_TASK_IDS = new Set([
   "w_flight", "c_departure", "h_walkthrough",
   "m_load1", "m_load_main", "m_ubox_receive", "m_ubox_photo_empty",
   "m_load_late_value", "m_load_complete", "m_photo_lock", "m_lock_final",
-  "c_vet_attend",
+  // c_vet_attend deliberately NOT here: until the visit is actually booked
+  // (kind === "attend" locks recorded appointments), Eloisa edits its date.
 ]);
 
 function shiftISO(iso, days) {
