@@ -12,19 +12,20 @@ import {
 const SETTINGS_KEY = "pack-it-up-shirley";
 /** Auto-picks any free model that isn't currently rate-limited. */
 export const DEFAULT_MODEL = "openrouter/free";
-/** Free models are slow / flaky — give them room, then try short backups. */
+/** Free models are slow / flaky — give them room, then try short backups.
+ *  Reasoning free models burn tokens on thinking; keep headroom. */
 const TIMEOUT_MS = 25000;
-const MAX_TOKENS = 120;
+const MAX_TOKENS = 220;
 const TEMPERATURE = 0.6;
 /**
  * On 429/404/502/503, try different provider families.
- * Slugs must stay on the live free catalog — OpenRouter retires :free often.
+ * Prefer short chat models (not giant reasoning) so replies aren't empty.
  * Verified against /api/v1/models (pricing 0) on 2026-07-14.
  */
 const RATE_LIMIT_FALLBACKS = [
+  "meta-llama/llama-3.2-3b-instruct:free",
   "openai/gpt-oss-20b:free",
   "google/gemma-4-31b-it:free",
-  "nvidia/nemotron-nano-9b-v2:free",
   "qwen/qwen3-coder:free",
 ];
 const MAX_MODEL_ATTEMPTS = 4;
@@ -32,10 +33,10 @@ const MAX_MODEL_ATTEMPTS = 4;
 const STALE_DEFAULTS = new Set([
   "deepseek/deepseek-chat-v3.1:free",
   "deepseek/deepseek-chat-v3-0324:free",
-  "meta-llama/llama-3.2-3b-instruct:free",
   "meta-llama/llama-3.3-70b-instruct:free",
   "google/gemma-3-27b-it:free",
   "google/gemma-2-9b-it:free",
+  "nvidia/nemotron-nano-9b-v2:free",
 ]);
 
 /** Strip paste junk (ZWSP, smart quotes, BOM) — OpenRouter keys are ASCII. */
@@ -215,6 +216,25 @@ async function fetchWithTimeout(url, opts, ms) {
   }
 }
 
+/** Pull assistant text from messy OpenRouter payloads (parts / reasoning empties). */
+function extractAssistantText(data) {
+  const choice = data?.choices?.[0];
+  const msg = choice?.message || {};
+  const fromParts = (val) => {
+    if (typeof val === "string") return val;
+    if (Array.isArray(val)) {
+      return val
+        .map((p) => (typeof p === "string" ? p : p?.text || p?.content || ""))
+        .join("");
+    }
+    return "";
+  };
+  let text = fromParts(msg.content);
+  if (!String(text).trim()) text = fromParts(choice?.text);
+  if (!String(text).trim()) text = fromParts(msg.reasoning) || fromParts(msg.reasoning_content);
+  return String(text || "").trim();
+}
+
 async function callOpenRouterOnce({ apiKey, model, messages, timeoutMs }) {
   const safeApiKey = sanitizeApiKey(apiKey);
   const res = await fetchWithTimeout(
@@ -245,7 +265,7 @@ async function callOpenRouterOnce({ apiKey, model, messages, timeoutMs }) {
     throw err;
   }
   const data = await res.json();
-  const raw = data?.choices?.[0]?.message?.content || "";
+  const raw = extractAssistantText(data);
   if (!raw.trim()) {
     const err = new Error("empty");
     throw err;
