@@ -61,10 +61,11 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, 'dist/public'),
     emptyOutDir: true,
-    // Force audio + cat sprite sheet to inline as base64 data: URIs so they
-    // load under the hosted artifact's CSP (same reasoning as the original repo).
-    assetsInlineLimit: (filePath: string) =>
-      /\.(mp3|wav|ogg|m4a|png)$/.test(filePath) ? true : undefined,
+    // NOTE: we previously force-inlined every png/mp3 as base64 for the old
+    // claude.ai artifact CSP. On Vercel (own origin) that produced a 17 MB JS
+    // bundle — the whole art set parsed and held in memory at once, which is
+    // what got the iOS home-screen webview killed. Default inline limit keeps
+    // images as separate cacheable files the browser loads and evicts lazily.
   },
   server: {
     port,
