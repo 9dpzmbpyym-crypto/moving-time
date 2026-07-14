@@ -2550,9 +2550,14 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
         setPhoneWaiting(false);
         return;
       }
-      const errLabel = agent.detail
+      const rawLabel = agent.detail
         ? `${agent.error} — ${String(agent.detail).slice(0, 80)}`
         : (agent.error || "failed");
+      // OpenRouter's 401 body is a cryptic "User not found" — translate it into
+      // the action that actually fixes it.
+      const errLabel = /http_401|user not found/i.test(rawLabel)
+        ? "key not recognized — re-paste your OpenRouter key in Settings (Test key there)"
+        : rawLabel;
       setLineError(errLabel);
       console.warn("[Shirley] falling back to script bank:", errLabel);
     }
@@ -2769,7 +2774,10 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
               <div style={{ color: "#9C8A66", fontSize: 9, padding: "10px 4px", ...LB }}>Nothing filed yet — stamp a paper to finish it.</div>
             ) : (
               <>
-                {filedRecent.slice(0, 5).map((task, index) => (
+                {/* ALL filed cards, wrapped — never a side-scroll, never hidden
+                    behind a "+N more". The blotter scrolls vertically if the
+                    pile outgrows the screen; the tray row stays pinned. */}
+                {filedRecent.map((task, index) => (
                   <div key={task.id} style={{ position: "relative", flex: "0 0 auto" }}>
                     <VerticalTaskCard
                       task={task}
@@ -2785,16 +2793,6 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
                     />
                   </div>
                 ))}
-                {filedRecent.length > 5 && (
-                  <div style={{
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    flex: "0 0 auto", alignSelf: "center",
-                    border: "2px solid #120A04", background: "#241509", color: "#C9B896",
-                    fontSize: 9, textAlign: "center", padding: "5px 7px", ...LB,
-                  }}>
-                    +{filedRecent.length - 5} more
-                  </div>
-                )}
               </>
             )}
           </div>
@@ -3571,6 +3569,28 @@ function SettingsScreen({ go }) {
   const [improv, setImprov] = useState(shirleyBoot.improv);
   const [t, setT] = useState({ haptics: true, motion: false, bigText: false });
   const [exportState, setExportState] = useState("idle");
+  const [keyTest, setKeyTest] = useState(null); // null | "testing" | result string
+  const testApiKey = async () => {
+    const k = apiKey.trim();
+    if (!k) { setKeyTest("✗ no key entered"); return; }
+    setKeyTest("testing");
+    try {
+      const res = await fetch("https://openrouter.ai/api/v1/key", {
+        headers: { Authorization: `Bearer ${k}` },
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => null);
+        const label = data?.data?.label ? ` (${data.data.label})` : "";
+        setKeyTest(`✓ key valid${label}`);
+      } else if (res.status === 401) {
+        setKeyTest("✗ key not recognized — regenerate at openrouter.ai/keys and re-paste");
+      } else {
+        setKeyTest(`✗ OpenRouter answered ${res.status}`);
+      }
+    } catch {
+      setKeyTest("✗ network error — try again");
+    }
+  };
   const [importText, setImportText] = useState("");
   const [importState, setImportState] = useState("idle");
   const [importOpen, setImportOpen] = useState(false);
@@ -3697,6 +3717,19 @@ function SettingsScreen({ go }) {
             background: `#1A0F06 url(${SETTINGS_INPUT}) center/100% 100% no-repeat`, color: "#F2E4C0", border: 0, fontSize: 12, ...LB,
           }}
         />
+        <button
+          type="button"
+          onClick={testApiKey}
+          disabled={keyTest === "testing"}
+          style={{
+            width: "100%", padding: "8px", marginBottom: keyTest ? 4 : 8,
+            background: "#3A2410", color: "#FFD97A", border: "2px solid #120A04",
+            fontSize: 11, cursor: "pointer", textAlign: "left", ...LB,
+          }}
+        >{keyTest === "testing" ? "Testing key…" : "Test key"}</button>
+        {keyTest && keyTest !== "testing" && (
+          <div role="status" style={{ marginBottom: 8, color: keyTest.startsWith("✓") ? "#8FD14F" : "#E8A080", fontSize: 10, ...LB }}>{keyTest}</div>
+        )}
         <label style={{ display: "block", color: "#C9B896", fontSize: 10, marginBottom: 4, ...LB }}>Free model slug</label>
         <input
           type="text"
