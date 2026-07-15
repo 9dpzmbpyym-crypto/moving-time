@@ -4,7 +4,7 @@
 
 **Shipped:** OpenRouter key was fine; Vercel errors were **http_429** on free Meta/Llama. Default is `openrouter/free` with short provider rotation. Live Shirley system prompt now matches move-spine (`RUNTIME_SYSTEM_PROMPTS.md` + guide lifecycle); `BOOK:` machine line kept.
 
-**Next up:** Script-bank re-thin from guide examples · wire `should_end_call` / hang-up on live path · Stretchy meows · (Codex) card one-scale / HUD nits if still open.
+**Next up:** wire `should_end_call` / hang-up on live path · Stretchy meows · (Codex) card one-scale / HUD nits if still open. *(Script-bank + voice re-thin done by Fable Jul 15: natural pickups, zero em dashes anywhere the model reads, zone nicknames over raw titles, Stretchy vet explicitly hers.)*
 
 **Nag:** sublet lock Jul 15 · Hunter.
 
