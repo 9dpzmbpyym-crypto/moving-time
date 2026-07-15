@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-15T02:00:00.000Z",
+  "last_updated": "2026-07-15T01:59:49.659Z",
   "rules": {
     "read_before_work": true,
     "write_before_editing": true,
@@ -109,25 +109,17 @@
       "model": "Fable 5",
       "role": "Claude Team Lead / Principal Consultant / Creative Director",
       "thinking": "medium/high",
-      "status": "ACTIVE",
+      "status": "IDLE",
       "branch": "main (working tree only, per explicit task instruction — no commit)",
-      "working_on": "Shirley phone bugs (explicitly authorized game-code task from Eloisa): (1) opener repeating verbatim on greeting — bank routing + pickLine anti-repeat + live-path anti-echo output rule, (2) CANCEL machine line end-to-end (bank + live + Screens wiring), (3) reported real-world bookings — BOOK existing/ADD new/MARK attended via new machine lines, wired bank+live+Screens. Voice re-thin per Eloisa amendment 2 (plainer, at-most-one-joke-per-call). New tests/shirley-fsm.test.mjs (20 passed). schedule.test.mjs (31) + binding-uniqueness still pass. Build + Playwright phone-overlay smoke pass. DONE in working tree (uncommitted), awaiting session close/merge. Desk screenshot fixes from the prior entry were already merged (working tree was clean at session start).",
-      "files_locked": [
-        "artifacts/pack-it-up/src/Screens.jsx",
-        "artifacts/pack-it-up/src/receptionist.js",
-        "artifacts/pack-it-up/src/receptionistCall.js",
-        "artifacts/pack-it-up/tests/shirley-fsm.test.mjs"
-      ],
-      "systems_locked": [
-        "desk-screen",
-        "shirley-phone"
-      ],
-      "risk_level": "routine",
+      "working_on": null,
+      "files_locked": [],
+      "systems_locked": [],
+      "risk_level": null,
       "commit_authority": "docs/design only unless explicitly authorized for repo code — this session was explicitly authorized for these 3 files only",
       "rate_limited": false,
       "cooldown_until": null,
       "handoff_needed": null,
-      "last_seen": "2026-07-15T02:00:00.000Z",
+      "last_seen": "2026-07-15T01:59:49.659Z",
       "expires_at": null,
       "notes": "Screens.jsx edits this session are confined to the phone/DeskScreen call handlers (handlePhoneSend + imports), not the daily-deal/urgency/ledger sections Opus's entry below claims — no functional overlap with that in-flight work, though both entries list Screens.jsx as locked. Flag to Opus/Eloisa if a merge conflict shows up there."
     },
