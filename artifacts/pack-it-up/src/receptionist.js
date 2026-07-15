@@ -1,7 +1,7 @@
 /* Shirley — style + ruleset + thin fallback lines + appointment FSM.
    Live dialogue prefers OpenRouter; bank is the same voice, not a form wizard. */
 
-import { isOpen } from "./tasks.js";
+import { isOpen, makeQuickTask } from "./tasks.js";
 
 export const MOVE_DATE_ISO = "2026-07-31";
 export const RECEPTIONIST_NAME = "Shirley";
@@ -25,7 +25,12 @@ export const BOOKABLE_ZONES = new Set([
 export function isBookableHealthTask(t) {
   if (!t || !isOpen(t) || t.kind !== "book") return false;
   if (String(t.id).startsWith("attend_")) return false;
-  if (t.category === "health") return BOOKABLE_ZONES.has(t.zone);
+  if (t.category === "health") {
+    // Zoned cards from the seed list, plus zone-less quick cards Shirley
+    // writes down herself for real-world bookings that match nothing on
+    // the board (ADD machine line) — those never get a zone assigned.
+    return BOOKABLE_ZONES.has(t.zone) || (!t.zone && String(t.id).startsWith("u_"));
+  }
   // Stretchy travel vet Book card (cat lane, Shirley still books it)
   if (t.category === "cat") return true;
   return false;
@@ -88,6 +93,24 @@ function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+/** Module-level "last line served" per bucket, so a 2-line bucket doesn't
+ *  coin-flip into repeating itself back to back (e.g. two "greet" turns
+ *  in a row landing on the exact same line). Session-lifetime only. */
+const lastPick = new Map();
+
+function pickFresh(bucket, arr) {
+  if (!arr || !arr.length) return "";
+  if (arr.length === 1) return arr[0];
+  const last = lastPick.get(bucket);
+  let choice = pick(arr);
+  if (choice === last) {
+    const rest = arr.filter((l) => l !== last);
+    choice = pick(rest.length ? rest : arr);
+  }
+  lastPick.set(bucket, choice);
+  return choice;
+}
+
 /* ============================================================
    CHARACTER — style + ruleset (canonical). Thin lines = offline twin.
    ============================================================ */
@@ -116,34 +139,31 @@ Rules:
 * vary wording
 * do not give medical, legal, financial, or safety advice beyond telling the player to contact the proper provider or follow their existing plan
 * if the player reports completion, confirm the status and end cleanly
+* at most one joke per call. Most replies are plain logistics
 `.trim();
 
 export const SHIRLEY_STYLE = `
 You are Shirley, a medical office receptionist.
 
-You are dry, irritated, funny, and practical. You care about the player using their health coverage before the move. You are not sweet in a normal way. You are not a therapist. You are not a medical provider.
-
-Your humor is specific and office-worn. Copays, insurance cards, bad printers, Debbie, appointment windows, and fluorescent-light bureaucracy are your world. You can be crass sometimes.
+You are practical and a little tired, and you care about the player using their health coverage before the move. You are not sweet in a normal way. You are not a therapist. You are not a medical provider.
 
 You are allowed to sound like these calibration lines, but do not copy them constantly:
 
-"Do you know how many people would kill for a copay under forty dollars? Not me personally. Not anymore. I'm medicated."
+"Doctor's office, this is Shirley."
+
+"Okay. What day works for you?"
+
+"You're all set for the 25th at ten. Bring your insurance card."
+
+"No problem, I'll take it off the books. Want me to rebook it?"
+
+"Honestly, hon, just come in before the 31st. After that your insurance is gone."
+
+"Hold on. Debbie's using the good printer again."
 
 "Book the dentist, hon. Teeth are luxury bones."
 
-"Sexual wellness appointment overdue too? Okay. So we're just rawdogging fate across all departments."
-
-"Hold on. Debbie's using the good printer for her church flyers again. I'm gonna go cancel her parking validation."
-
-"Bring your insurance card, ID, and a willingness to stop treating preventative care like it's optional."
-
-"Gotta go. Debbie said HIPAA with two Ps again and now I have to sit in my car."
-
-"Doctor's office, this is Shirley. Oh, it's you. Good. The OB/GYN slot is still empty and it's staring at me."
-
-"Yes, I book the cat too. In this office Stretchy counts as a patient. Better attendance record than you, honestly."
-
-Front desk woman who has watched the American health system become a haunted copier room. Funny because she is specific, tired, and practical, not an AI comedian. Sideways affectionate. Short lines, usually one to three sentences. Sparing "hon"/"kid"/"babe". Do not overuse Debbie / HIPAA / copay / printer bits. Do not make her too clever, poetic, or brand-like. No shame about symptoms, sex, bodies, disability, or money. The joke is bureaucracy and the calendar. She also handles Stretchy the cat's travel vet paperwork and treats that as completely normal desk work.
+A real front-desk woman. Plain, brief, practical, a little tired, quietly kind. Says hon. Most lines are simple logistics: days, times, insurance cards, what happened. At most one dry joke per call, often none. Debbie exists but comes up rarely. She never performs, never stacks punchlines, never talks in quips. She also books Stretchy the cat's travel vet and treats it as normal desk work.
 `.trim();
 
 export const SHIRLEY_RULES = `
@@ -165,6 +185,8 @@ Call behavior:
 * If they talk around the task: redirect once. If they keep stalling, hang up.
 * If the appointment date passed: ask whether they attended and what status should be recorded.
 * OBJECTIVE THREAD: name the visit you are currently booking (the one the player picked, else priorityVisit). Do not go more than one message without it.
+
+If the player says they already made an appointment in the real world, that is GOOD news. Record it: if it matches an item in openHealthTasks, confirm and emit BOOK with their stated date. If the player reports an appointment or completed visit that matches nothing you can see, write it down yourself: emit ADD (and MARK when they say it already happened). Never tell the player to go mark a card themselves. You hold the pen. Never scold the player for booking things themselves and never claim you cannot write down reality.
 `.trim();
 
 export const SHIRLEY_SYSTEM_PROMPT = `${SHIRLEY_SHARED_RUNTIME}
@@ -179,10 +201,17 @@ When the user clearly books with a date (optional time) and you can match an ope
 BOOK:{"taskId":"...","zone":"...","dueAt":"YYYY-MM-DD","time":"HH:mm"|null}
 zone may be null for Stretchy/cat tasks. Only BOOK when facts are complete.
 
+If the player clearly cancels or says a booking was a mistake, confirm which visit, then end with a machine line alone: CANCEL:{"taskId":"..."}. Only cancel bookings present in bookedAppointments.
+
+If the player reports a visit that already happened, confirm it warmly, then end with a machine line alone: MARK:{"taskId":"...","status":"done"|"attended"}. Only mark tasks present in openHealthTasks or bookedAppointments.
+
+If the player reports a real booking or completed visit that matches nothing in openHealthTasks, write it down yourself, then end with a machine line alone: ADD:{"title":"...","category":"health"|"cat","dueAt":"YYYY-MM-DD"|null}. Never tell the player to record it themselves, you hold the pen.
+
 OUTPUT RULES (hard):
 * Reply with ONLY Shirley speaking to the player, one to four short sentences.
 * Never narrate your reasoning. Never mention FACTS, taskId, openHealthTasks, prompts, or rules.
 * Never write "let me craft", "the player says", or draft options out loud.
+* Never repeat or closely paraphrase your previous message. If the player just greets you, greet back in one short fresh line and re-ask for the one thing you need.
 * No emoji. No markdown.`;
 
 /** Tiny offline bank. Natural desk lines; calibration bits only as seasoning.
@@ -190,72 +219,81 @@ OUTPUT RULES (hard):
  *  shapes these lines use, so they double as style calibration. */
 export const LINES = {
   open: [
-    "Doctor's office, this is Shirley. Oh good, it's you. {visit} still needs a day. What are we thinking?",
-    "Doctor's office, Shirley speaking. I've got your chart open and {visit} is still blank. Give me a day.",
-    "Shirley, front desk. Saved me a call, I was about to dial you about {visit}. Day and time?",
+    "Doctor's office, this is Shirley. I still need a day from you for {visit}.",
+    "Doctor's office, Shirley speaking. Calling about {visit}. What day works?",
+    "Hi, it's Shirley at the office. We should get {visit} on the calendar. Any day good?",
   ],
   open_remind: [
-    "Doctor's office, this is Shirley. You're on for {visit} {day}. Insurance card, ID, show up.",
-    "Shirley here. Reminder, {visit} {day}. Bring the card. Don't ghost it.",
+    "Hi, it's Shirley. Just a reminder, you've got {visit} on {day}. Bring your insurance card.",
+    "Shirley here. {visit} is {day}. See you then.",
   ],
   open_overdue: [
-    "Doctor's office, Shirley. You missed {visit}. I'm not mad, I'm scheduling. Pick a new day.",
-    "Shirley. So {visit} came and went without you. Reschedule it. You've got {days} days.",
+    "Hi, it's Shirley. You missed {visit}. It happens. Let's pick a new day.",
+    "Shirley calling. We had you down for {visit} and didn't see you. Want to rebook?",
   ],
   deny: [
-    "Nothing yet? Hon, {visit} needs a date and you've got {days} days of coverage left. Pick one.",
-    "I heard nothing, which is a choice. Give me a day and time for {visit}.",
+    "Okay. You've got {days} days left on your insurance though. What day could work for {visit}?",
+    "That's fine, but the clock is real. {days} days. Think about a day for {visit}.",
   ],
   deny2: [
-    "Still nothing? My ears work fine. You have {days} days to use for {visit}. Date. Or I hang up and go bother Debbie.",
-    "I'm getting bored, which is dangerous for everyone. Talk to me about {visit}.",
+    "I still need a day, hon. {visit}. Anything. Morning, afternoon, whatever you've got.",
+    "We can do this next call, but there are only {days} days left. {visit} needs a date.",
   ],
   cave: [
-    "That's what I wanted to hear. Give me the day for {visit}.",
-    "Finally. Okay. Date for {visit}, then I can go cancel Debbie's parking validation.",
+    "Good. What day?",
+    "Okay, great. Give me a day for {visit} and I'll put you in.",
   ],
   lore: [
-    "Debbie's on the good printer with her church flyers again. Anyway. {visit} still needs a day.",
-    "Surviving. Fluorescent lights, haunted copier, warm Diet Coke. You? Besides avoiding {visit}.",
-    "Same as ever here. Meanwhile the slot for {visit} is empty and it's staring at me.",
+    "Same as always here. Debbie's using the good printer again. Anyway, about {visit}.",
+    "Busy morning. Anyway, I've still got {visit} open for you.",
+    "Oh, you know. Phones, files, Debbie. Where are we on {visit}?",
   ],
   greet: [
-    "Hey. Where are we on {visit}?",
-    "Hi hon. Status on {visit}?",
+    "Hi hon. Where are we on {visit}?",
+    "Hey. Any news on {visit}?",
   ],
   probe_day: [
-    "Good. Day and time for {visit}. Hit me.",
-    "Give me a day for {visit}. You've got {days} days before the move.",
-    "Day and time for {visit}. Before Debbie finishes that print job.",
+    "What day works? I'll put you in for {visit}.",
+    "Give me a day for {visit} and you're set.",
+    "Morning or afternoon for {visit}? I've got room most days.",
   ],
   confirm: [
-    "Locked in: {visit} on {day}{timeBit}. Look at you, using the benefit. Don't make it weird.",
-    "Wrote it down, {visit} on {day}{timeBit}. Insurance card. Show up.",
+    "You're all set. {visit} on {day}{timeBit}. Bring your insurance card.",
+    "Done, {visit} on {day}{timeBit}. See you then.",
   ],
   trap: [
-    "Cute. And {priority}? Or is that one still living in the filing cabinet of denial?",
-    "Okay, but {priority} is still naked on the chart. Are we doing that one too?",
+    "And {priority}? Want to knock that one out too while I have you?",
+    "While I've got you, {priority} is still open. Want a day for that one?",
   ],
   close_left: [
-    "Alright, call me back about {open}. I have to go cancel Debbie's parking validation.",
-    "Bye. {open} is still open. Don't waste the {days} days. Shirley out.",
+    "Okay, call me back about {open}. Have a good one.",
+    "Alright. {open} is still open when you're ready. Bye hon.",
   ],
   close_done: [
-    "You're booked. A miracle. I'm hanging up before I get emotional about employer-sponsored care. TAKE CARE.",
-    "Done. Calendar slightly less cursed. Don't ghost the appointment.",
+    "You're booked. That's everything. Take care, hon.",
+    "All set. See you then. TAKE CARE.",
   ],
   stall_hangup: [
-    "Gotta go, Debbie said HIPAA with two Ps again and I need to sit in my car. Book {visit}. TAKE CARE OF THAT {care}.",
-    "This call is dead air and I have a copier to un-haunt, and {visit} still needs a day. Bye.",
+    "I've got another call, hon. Book {visit} when you can, you've got {days} days. TAKE CARE OF THAT {care}.",
+    "I have to run. Think about a day for {visit}. Bye.",
   ],
   hangup_player: [
-    "Fine. Go. Book {visit} before your {days} days evaporate.",
-    "Bye. Book {visit}. Tell no one what Debbie did.",
+    "Okay, bye hon. Don't forget {visit}.",
+    "Bye. Call me back about {visit}.",
+  ],
+  cancel_confirm: [
+    "No problem, I'll take {visit} off the books. Want a new day?",
+    "Okay, cancelled. If you change your mind just call back.",
+  ],
+  noted_outside: [
+    "Oh good. I'll write that down on my end.",
+    "Perfect, I'll note it. Anything else you've already booked?",
   ],
 };
 
 export function pickLine(bucket, ctx = {}) {
-  const line = pick(LINES[bucket] || LINES.open);
+  const key = LINES[bucket] ? bucket : "open";
+  const line = pickFresh(key, LINES[key]);
   return fill(line, ctx);
 }
 
@@ -450,6 +488,19 @@ export function bookAppointment(appointments, tasks, draft, moveDateIso = MOVE_D
   return { ok: true, appointments: [...existing, appt], appt, error: null };
 }
 
+/** Cancel the active (booked/reminded) appointment for a task. Mirrors
+ *  bookAppointment's { ok, appointments, ... } contract. */
+export function cancelAppointment(appointments, taskId) {
+  const list = appointments || [];
+  const idx = list.findIndex(
+    (a) => a && a.taskId === taskId && (a.status === "booked" || a.status === "reminded")
+  );
+  if (idx === -1) return { ok: false, appointments: list, error: "no_active_appointment" };
+  const cancelled = { ...list[idx], status: "cancelled" };
+  const next = list.map((a, i) => (i === idx ? cancelled : a));
+  return { ok: true, appointments: next, cancelled, error: null };
+}
+
 export function markReminded(appointments, apptId) {
   return (appointments || []).map((a) =>
     a.id === apptId && a.status === "booked" ? { ...a, status: "reminded" } : a
@@ -552,6 +603,16 @@ export function parseUserDateTime(text) {
     if (mon.startsWith("jun")) month = 5;
     dueAt = `2026-${String(month + 1).padStart(2, "0")}-${String(Number(md[1])).padStart(2, "0")}`;
   }
+  // Bare slash dates ("7/16", "7/16/26") — players report real-world
+  // bookings this way more often than "July 16".
+  const slash = t.match(/\b(\d{1,2})\/(\d{1,2})(?:\/\d{2,4})?\b/);
+  if (!dueAt && slash) {
+    const mo = Number(slash[1]);
+    const da = Number(slash[2]);
+    if (mo >= 1 && mo <= 12 && da >= 1 && da <= 31) {
+      dueAt = `2026-${String(mo).padStart(2, "0")}-${String(da).padStart(2, "0")}`;
+    }
+  }
   const tm = t.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i);
   if (tm) {
     let h = Number(tm[1]);
@@ -564,23 +625,25 @@ export function parseUserDateTime(text) {
   return { dueAt, time };
 }
 
+// Named visits the player actually says (Stretchy / PCP / specialties).
+// Shared by matchTaskFromText (open-only) and matchAnyTaskFromText (any status).
+const NAMED_VISIT_MATCHERS = [
+  [/stretchy|travel vet|\bvet\b|\bcat\b/, (x) => x.category === "cat" || /stretchy|vet/i.test(x.title || "")],
+  [/pcp|primary care|med(?:ication)? bridge|prescriber/, (x) => x.id === "t_pcp" || /pcp/i.test(x.title || "")],
+  [/ob\s*\/?\s*gyn|iud/, (x) => x.zone === "obgyn"],
+  [/dent|teeth|tooth/, (x) => x.zone === "teeth"],
+  [/rheum|lymph|joint|\blabs?\b/, (x) => x.zone === "lymph"],
+  [/cardio|heart/, (x) => x.zone === "heart"],
+  [/derm|skin/, (x) => x.zone === "skin"],
+  [/psych|brain|psychiatr|med renew/, (x) => x.zone === "brain" && x.id !== "t_pcp"],
+];
+
 export function matchTaskFromText(text, tasks, appointments) {
   const t = String(text || "").toLowerCase();
   const open = openBookableTasks(tasks, appointments);
   if (!open.length) return null;
 
-  // Named visits the player actually says (Stretchy / PCP / specialties).
-  const named = [
-    [/stretchy|travel vet|\bvet\b|\bcat\b/, (x) => x.category === "cat" || /stretchy|vet/i.test(x.title || "")],
-    [/pcp|primary care|med(?:ication)? bridge|prescriber/, (x) => x.id === "t_pcp" || /pcp/i.test(x.title || "")],
-    [/ob\s*\/?\s*gyn|iud/, (x) => x.zone === "obgyn"],
-    [/dent|teeth|tooth/, (x) => x.zone === "teeth"],
-    [/rheum|lymph|joint|\blabs?\b/, (x) => x.zone === "lymph"],
-    [/cardio|heart/, (x) => x.zone === "heart"],
-    [/derm|skin/, (x) => x.zone === "skin"],
-    [/psych|brain|psychiatr|med renew/, (x) => x.zone === "brain" && x.id !== "t_pcp"],
-  ];
-  for (const [re, pred] of named) {
+  for (const [re, pred] of NAMED_VISIT_MATCHERS) {
     if (!re.test(t)) continue;
     const hit = open.find(pred);
     if (hit) return hit;
@@ -593,6 +656,44 @@ export function matchTaskFromText(text, tasks, appointments) {
     if (words.some((w) => t.includes(w))) return task;
   }
   return null;
+}
+
+/** Same named-visit matching as matchTaskFromText, but against ANY bookable
+ *  task regardless of open/booked status — used for "I already went to X" /
+ *  reported-booking flows where the visit may already be on the calendar. */
+export function matchAnyTaskFromText(text, tasks) {
+  const t = String(text || "").toLowerCase();
+  const all = (tasks || []).filter((x) => isBookableHealthTask(x));
+  for (const [re, pred] of NAMED_VISIT_MATCHERS) {
+    if (!re.test(t)) continue;
+    const hit = all.find((x) => pred(x));
+    if (hit) return hit;
+  }
+  return null;
+}
+
+/** Strip connective/date words from a reported-booking clause to get a
+ *  human title for a new ad hoc card ("vet for 7/18" -> "Vet"). */
+export function deriveReportedTitle(clause) {
+  let s = String(clause || "")
+    .replace(/\b(i|have|already|got|scheduled|booked|an|a|for|on|at|and)\b/gi, " ")
+    .replace(/\d{1,2}\/\d{1,2}(?:\/\d{2,4})?/g, " ")
+    .replace(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{1,2}\b/gi, " ")
+    .replace(/\d{1,2}(:\d{2})?\s*(am|pm)\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!s) return "Outside appointment";
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/** Split a message into clauses so "PCP for 7/16 and vet for 7/18" pairs
+ *  each visit with its own date instead of cross-wiring the first date
+ *  found in the whole string to whichever visit regex fires first. */
+export function splitReportedClauses(text) {
+  return String(text || "")
+    .split(/\band\b|,/i)
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 const STALL_HANGUP_AFTER = 4; // player turns with no booking progress
@@ -643,6 +744,130 @@ export function bankReply(userText, callState, tasks, appointments, days = daysU
       hangup: true,
       book: null,
     };
+  }
+
+  // Player wants to unbook something ("wait no that was an accident").
+  if (/(cancel|nevermind|never mind|that was (an accident|a mistake)|undo|wrong (day|date|time))/i.test(text)) {
+    const active = activeAppointments(appointments);
+    if (!active.length) {
+      return {
+        line: "Cancel what, hon? There's nothing of yours on my books right now.",
+        callState: withPriority,
+        hangup: false,
+        book: null,
+      };
+    }
+    if (active.length > 1) {
+      const list = active
+        .map((a) => visitLabel((tasks || []).find((t) => t.id === a.taskId) || a.zone))
+        .join(", ");
+      return {
+        line: `Which one, hon? I've got ${list} on the books for you.`,
+        callState: withPriority,
+        hangup: false,
+        book: null,
+      };
+    }
+    const appt = active[0];
+    const cancelTask = (tasks || []).find((t) => t.id === appt.taskId);
+    const cancelVisit = visitLabel(cancelTask || appt.zone);
+    const result = cancelAppointment(appointments, appt.taskId);
+    return {
+      line: pickLine("cancel_confirm", { ...ctxFor(cancelVisit, days), visit: cancelVisit }),
+      callState: { ...withPriority, stall: 0 },
+      hangup: false,
+      book: null,
+      cancelled: result.cancelled,
+      appointments: result.appointments,
+    };
+  }
+
+  // Player reports a visit that already happened in the real world.
+  if (/\b(already (went|attended|been|did)|i went to|i was at|went to (the|my|a)\b|attended (the|my)\b)/i.test(text)) {
+    const attendedTask = matchAnyTaskFromText(text, tasks);
+    if (attendedTask) {
+      const nextTasks = (tasks || []).map((t) => (
+        t.id === attendedTask.id ? { ...t, status: "attended" } : t
+      ));
+      const existingAppt = findApptForTask(appointments, attendedTask.id);
+      const nextAppointments = existingAppt
+        ? attendAppointment(appointments, existingAppt.id)
+        : appointments;
+      const attendedVisit = visitLabel(attendedTask);
+      return {
+        line: `Marked ${attendedVisit} attended. Look at you, following through.`,
+        callState: withPriority,
+        hangup: false,
+        book: null,
+        marked: { taskId: attendedTask.id, status: "attended" },
+        tasks: nextTasks,
+        appointments: nextAppointments,
+      };
+    }
+  }
+
+  // Player reports a booking they made themselves, outside this call
+  // ("I have pcp scheduled for 7/16 and vet for 7/18"). Recording reality
+  // is her job: book it if it matches an open visit, write it down (ADD)
+  // if it matches nothing she can see.
+  if (/\b(i (?:have|already|got)|scheduled|booked)\b/i.test(text)) {
+    const clauses = splitReportedClauses(text);
+    const items = clauses.length ? clauses : [text];
+    const first = items[0];
+    const { dueAt: firstDueAt, time: firstTime } = parseUserDateTime(first);
+    if (firstDueAt) {
+      const restClause = items[1];
+      const restTask = restClause ? matchAnyTaskFromText(restClause, tasks) : null;
+      const restLabel = restClause ? (restTask ? visitLabel(restTask) : deriveReportedTitle(restClause)) : null;
+      const reportedTask = matchAnyTaskFromText(first, tasks);
+      if (reportedTask) {
+        const result = bookAppointment(appointments, tasks, {
+          taskId: reportedTask.id,
+          dueAt: firstDueAt,
+          time: firstTime,
+        });
+        if (result.ok) {
+          const confirm = confirmLine(result.appt, reportedTask, days);
+          const mention = restLabel ? ` Mentioned ${restLabel} too, we'll get that one squared away next.` : "";
+          return {
+            line: `${confirm}${mention}`,
+            callState: {
+              ...withPriority,
+              priorityId: priority?.id || callState?.priorityId || null,
+              draft: {},
+              stall: 0,
+            },
+            hangup: false,
+            book: result,
+            appointments: result.appointments,
+          };
+        }
+      } else {
+        const title = deriveReportedTitle(first);
+        const newTask = makeQuickTask({
+          title,
+          category: "health",
+          effort: 1,
+          binding: { feature: "health_appointment", trigger: "booked", target: null },
+        });
+        const withNewTask = [...(tasks || []), newTask];
+        const apptResult = bookAppointment(appointments, withNewTask, {
+          taskId: newTask.id,
+          dueAt: firstDueAt,
+          time: firstTime,
+        });
+        const mention = restLabel ? ` Mentioned ${restLabel} too, tell me when you're ready for that one.` : "";
+        return {
+          line: `${pickLine("noted_outside", base)}${mention}`,
+          callState: withPriority,
+          hangup: false,
+          book: null,
+          added: { task: newTask, appt: apptResult.ok ? apptResult.appt : null },
+          tasks: withNewTask,
+          appointments: apptResult.ok ? apptResult.appointments : appointments,
+        };
+      }
+    }
   }
 
   let draft = { ...(callState?.draft || {}) };
@@ -780,12 +1005,14 @@ export function bankReply(userText, callState, tasks, appointments, days = daysU
     };
   }
 
+  // Default fallback — never "open" (that bucket is call-pickup only).
+  // Nudge back toward the one concrete thing she needs: a day.
   const stall = bumpStall();
   if (stall >= STALL_HANGUP_AFTER) {
     return { line: pickLine("stall_hangup", base), callState: withPriority, hangup: true, book: null };
   }
   return {
-    line: pickLine("lore", base),
+    line: pickLine("probe_day", base),
     callState: { ...withPriority, stall, skippedObjective: false },
     hangup: false,
     book: null,

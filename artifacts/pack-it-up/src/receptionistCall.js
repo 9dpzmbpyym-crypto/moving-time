@@ -205,6 +205,58 @@ export function parseBookTag(text) {
   }
 }
 
+/** Strip and parse trailing CANCEL:{...} from model text. Sibling of
+ *  parseBookTag; kept separate so parseBookTag's export/tests stay stable. */
+export function parseCancelTag(text) {
+  if (!text || typeof text !== "string") return { display: "", cancel: null };
+  const re = /CANCEL:\s*(\{[\s\S]*?\})\s*$/m;
+  const m = text.match(re);
+  if (!m) return { display: text.trim(), cancel: null };
+  const display = text.replace(re, "").trim();
+  try {
+    const c = JSON.parse(m[1]);
+    if (!c || typeof c !== "object" || !c.taskId) return { display, cancel: null };
+    return { display, cancel: { taskId: String(c.taskId) } };
+  } catch {
+    return { display, cancel: null };
+  }
+}
+
+/** Strip and parse trailing MARK:{...} from model text. */
+export function parseMarkTag(text) {
+  if (!text || typeof text !== "string") return { display: "", mark: null };
+  const re = /MARK:\s*(\{[\s\S]*?\})\s*$/m;
+  const m = text.match(re);
+  if (!m) return { display: text.trim(), mark: null };
+  const display = text.replace(re, "").trim();
+  try {
+    const c = JSON.parse(m[1]);
+    if (!c || typeof c !== "object" || !c.taskId) return { display, mark: null };
+    const status = c.status === "attended" ? "attended" : "done";
+    return { display, mark: { taskId: String(c.taskId), status } };
+  } catch {
+    return { display, mark: null };
+  }
+}
+
+/** Strip and parse trailing ADD:{...} from model text — Shirley writing
+ *  down a real-world booking/visit that matches nothing in FACTS. */
+export function parseAddTag(text) {
+  if (!text || typeof text !== "string") return { display: "", add: null };
+  const re = /ADD:\s*(\{[\s\S]*?\})\s*$/m;
+  const m = text.match(re);
+  if (!m) return { display: text.trim(), add: null };
+  const display = text.replace(re, "").trim();
+  try {
+    const c = JSON.parse(m[1]);
+    if (!c || typeof c !== "object" || !c.title) return { display, add: null };
+    const category = c.category === "cat" ? "cat" : "health";
+    return { display, add: { title: String(c.title), category, dueAt: c.dueAt || null } };
+  } catch {
+    return { display, add: null };
+  }
+}
+
 async function fetchWithTimeout(url, opts, ms) {
   const ctrl = new AbortController();
   const id = setTimeout(() => ctrl.abort(), ms);
@@ -404,8 +456,13 @@ export async function askShirley({
         messages: chatMessages,
         timeoutMs: Math.min(timeoutMs, left),
       });
-      const { display, book } = parseBookTag(raw);
-      const text = scrubShirleyReply(display || raw);
+      // Machine lines are mutually exclusive (one per turn), but strip all
+      // four so a stray/duplicate tag never leaks into the spoken line.
+      const { display: afterBook, book } = parseBookTag(raw);
+      const { display: afterCancel, cancel } = parseCancelTag(afterBook);
+      const { display: afterMark, mark } = parseMarkTag(afterCancel);
+      const { display: afterAdd, add } = parseAddTag(afterMark);
+      const text = scrubShirleyReply(afterAdd || raw);
       if (!text) {
         const err = new Error("empty");
         throw err;
@@ -413,7 +470,7 @@ export async function askShirley({
       if (model !== primary) {
         console.info("[Shirley] used fallback model:", model);
       }
-      return { ok: true, text, book, error: null, model };
+      return { ok: true, text, book, cancel, mark, add, error: null, model };
     } catch (e) {
       lastError = e?.name === "AbortError" ? "timeout" : (e?.message || "network");
       lastDetail = e?.detail || "";

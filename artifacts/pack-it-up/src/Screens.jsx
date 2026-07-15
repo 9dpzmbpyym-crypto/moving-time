@@ -151,6 +151,9 @@ import {
   activeAppointments,
   daysUntilMove,
   isBookableHealthTask,
+  cancelAppointment,
+  findApptForTask,
+  bookAppointment,
 } from "./receptionist.js";
 import {
   loadShirleySettings,
@@ -2553,6 +2556,47 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
             }
           }
         }
+        if (agent.cancel?.taskId) {
+          const cancelled = cancelAppointment(appts, agent.cancel.taskId);
+          if (cancelled.ok) {
+            setAppointments(cancelled.appointments);
+            appts = cancelled.appointments;
+          }
+        }
+        if (agent.mark?.taskId) {
+          const status = agent.mark.status === "attended" ? "attended" : "done";
+          setTasks((ts) => refreshDailyHousingTasks(
+            ts.map((t) => (t.id === agent.mark.taskId ? { ...t, status } : t))
+          ));
+          if (status === "attended") {
+            const activeAppt = findApptForTask(appts, agent.mark.taskId);
+            if (activeAppt) {
+              const nextAppts = attendAppointment(appts, activeAppt.id);
+              setAppointments(nextAppts);
+              appts = nextAppts;
+            }
+          }
+        }
+        if (agent.add?.title) {
+          const newTask = makeQuickTask({
+            title: agent.add.title,
+            category: agent.add.category === "cat" ? "cat" : "health",
+            effort: 1,
+            binding: { feature: "health_appointment", trigger: "booked", target: null },
+          });
+          setTasks((ts) => [...ts, newTask]);
+          if (agent.add.dueAt) {
+            const apptResult = bookAppointment(appts, [...tasks, newTask], {
+              taskId: newTask.id,
+              dueAt: agent.add.dueAt,
+              time: null,
+            });
+            if (apptResult.ok) {
+              setAppointments(apptResult.appointments);
+              appts = apptResult.appointments;
+            }
+          }
+        }
         setLineSource("live");
         setLineError(null);
         setPhoneMsgs([...nextMsgs, { role: "shirley", text: line }]);
@@ -2572,6 +2616,7 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
         apptsRef.current,
         daysUntilMove()
       );
+      if (reply.tasks) setTasks(refreshDailyHousingTasks(reply.tasks));
       if (reply.appointments) setAppointments(reply.appointments);
       else if (reply.book?.ok) applyBookResult(reply.book);
       setCallState(reply.callState || callStateRef.current);
