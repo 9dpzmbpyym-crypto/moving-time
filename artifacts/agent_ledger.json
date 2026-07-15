@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-15T08:47:46.575Z",
+  "last_updated": "2026-07-15T08:54:24.968Z",
   "rules": {
     "read_before_work": true,
     "write_before_editing": true,
@@ -109,24 +109,17 @@
       "model": "Fable 5",
       "role": "Claude Team Lead / Principal Consultant / Creative Director",
       "thinking": "medium/high",
-      "status": "ACTIVE",
+      "status": "IDLE",
       "branch": "main (working tree only, per explicit task instruction — no commit)",
-      "working_on": "NPC work done, awaiting Fable review",
-      "files_locked": [
-        "artifacts/pack-it-up/src/npcs.js",
-        "artifacts/pack-it-up/src/receptionistCall.js",
-        "artifacts/pack-it-up/src/Screens.jsx"
-      ],
-      "systems_locked": [
-        "npc",
-        "phone"
-      ],
-      "risk_level": "medium",
+      "working_on": null,
+      "files_locked": [],
+      "systems_locked": [],
+      "risk_level": null,
       "commit_authority": "docs/design only unless explicitly authorized for repo code — this session was explicitly authorized for these 3 files only",
       "rate_limited": false,
       "cooldown_until": null,
       "handoff_needed": null,
-      "last_seen": "2026-07-15T08:47:46.575Z",
+      "last_seen": "2026-07-15T08:54:24.968Z",
       "expires_at": null,
       "notes": "Screens.jsx edits this session are confined to the phone/DeskScreen call handlers (handlePhoneSend + imports), not the daily-deal/urgency/ledger sections Opus's entry below claims — no functional overlap with that in-flight work, though both entries list Screens.jsx as locked. Flag to Opus/Eloisa if a merge conflict shows up there."
     },
