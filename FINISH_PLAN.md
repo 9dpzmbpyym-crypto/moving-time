@@ -293,8 +293,8 @@ Today: one bundled `t_vet` task (`tasks.js:48`) + 3 static flavor rows on Stretc
 ## Deferred but defined — later NPC passes (do NOT start before Shirley Pass 1 + Command Board)
 
 Zero code exists for either today (audited Jul 11). Acceptance criteria live in `docs/move-spine/systems/IMPLEMENTATION_MANIFEST.md` (Sal = Pass 4, Vivian = Pass 5) — preserved here so they don't get lost:
-- [ ] **Sal from Dispatch** — packing/U-Box trigger layer. Calls **only** on: packing neglect, U-Box timing, Wi-Fi risk, furniture/sell deadlines, final sweep
-- [ ] **Vivian Vale** — job-tracker trigger layer. Calls **only** on: no job progress, high-fit deadline, 7-day follow-up, too many saved jobs, class conflict, poor-fit role
+- [x] **Sal from Dispatch** — LANDED v1 (Fable + Sonnet, Jul 15): voice per guide, outgoing via contacts picker, incoming on U-Box week / overdue furniture / Wi-Fi risk, MARK on move lane only. Date-driven triggers only; "no progress in N days" needs an activity log (deferred).
+- [x] **Vivian Vale** — LANDED v1 (same pass): Claudette/flat-affect voice (never uses contractions, enforced by test), incoming on 48h job deadlines / past-latest, MARK done/archived on job lane only. Same activity-log caveat.
 - Global rule: **one NPC call per session** unless critical deadline
 
 ---

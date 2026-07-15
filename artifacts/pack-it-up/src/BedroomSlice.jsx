@@ -66,8 +66,8 @@ import {
 import {
   sanitizeAppointments,
   markMissed,
-  getNudge,
 } from "./receptionist.js";
+import { pickIncomingCaller, NPCS } from "./npcs.js";
 
 /* ============================================================
    PACK IT UP — vertical slice: The Bedroom
@@ -2575,8 +2575,8 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
       objState, contentsState, appointments, calmedZones: session.calmedZones,
     }));
   }, [objState, contentsState, appointments, session.calmedZones]);
-  const [phoneNudge, setPhoneNudge] = useState(null);
-  const phoneNudgeShownRef = useRef(false);
+  const [incomingCall, setIncomingCall] = useState(null); // { npcId, reason } | null
+  const incomingCallShownRef = useRef(false);
   /** Apartment hand fan — drag to place/resize; badge offset from rightmost card (draggable). */
   // Old fallback geometry (tiny card, floated up-left) — kept only so a saved layout
   // that exactly matches it can be recognized as "never customized" and migrated below.
@@ -2641,25 +2641,25 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
   }, []);
 
   useEffect(() => {
-    const n = getNudge(appointments, tasks);
-    // Soft desk nudge for remind/overdue; cold open is available anytime via landline
-    if (n && (n.kind === "remind" || n.kind === "overdue")) {
-      if (phoneNudgeShownRef.current) return;
-      phoneNudgeShownRef.current = true;
-      setPhoneNudge(n);
+    // Priority ladder across all 3 phone NPCs (Shirley/Sal/Vivian), one-per-day
+    // guarded inside pickIncomingCaller itself (session.lastIncomingDay).
+    const call = pickIncomingCaller({ tasks, appointments, session, today: new Date() });
+    if (call) {
+      if (incomingCallShownRef.current) return;
+      incomingCallShownRef.current = true;
+      setIncomingCall(call);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps — boot once
 
-  // Shirley calling: bell ringtone as normal UI SFX (no music duck) while nudge is live.
+  // NPC calling: bell ringtone as normal UI SFX (no music duck) while the call is live.
   useEffect(() => {
-    if (!phoneNudge) {
+    if (!incomingCall) {
       stopPhoneIncomingRingtone();
       return;
     }
-    if (phoneNudge.kind !== "remind" && phoneNudge.kind !== "overdue") return;
     startPhoneIncomingRingtone();
     return () => stopPhoneIncomingRingtone();
-  }, [phoneNudge]);
+  }, [incomingCall]);
   const [rewardToast, setRewardToast] = useState(null);
   const [scale, setScale] = useState(1);
   const [sellFormOpen, setSellFormOpen] = useState(false);
@@ -2837,6 +2837,9 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
         const withEnergy = { ...prev, energy: extra.energy };
         const dealTasks = extra.dealTasks || [];
         return ensureDailyDeal(withEnergy, dealTasks, extra.energy);
+      }
+      if (extra && Object.prototype.hasOwnProperty.call(extra, "lastIncomingDay")) {
+        return { ...prev, lastIncomingDay: extra.lastIncomingDay };
       }
       const { session: next, justCompletedGoal, rewardLabel: auto } = bumpSession(prev, key, amount, rewardLabel);
       if (extra?.calmedZone) {
@@ -4793,11 +4796,12 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
           rewardToast={rewardToast}
           appointments={appointments}
           setAppointments={setAppointments}
-          phoneNudge={phoneNudge}
-          clearPhoneNudge={() => setPhoneNudge(null)}
+          objState={objState}
+          incomingCall={incomingCall}
+          clearIncomingCall={() => setIncomingCall(null)}
         />
-        {screen === "apartment" && phoneNudge && (phoneNudge.kind === "remind" || phoneNudge.kind === "overdue") && (
-          <IncomingPhoneCue onAnswer={() => setScreen("desk")} />
+        {screen === "apartment" && incomingCall && (
+          <IncomingPhoneCue npcName={NPCS[incomingCall.npcId]?.name} onAnswer={() => setScreen("desk")} />
         )}
         <RewardToast text={screen === "apartment" ? rewardToast : null} />
       </div>
@@ -5122,8 +5126,8 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
 
       {donateToastEl}
       <RewardToast text={screen === "apartment" ? rewardToast : null} />
-      {screen === "apartment" && phoneNudge && (phoneNudge.kind === "remind" || phoneNudge.kind === "overdue") && (
-        <IncomingPhoneCue onAnswer={() => setScreen("desk")} />
+      {screen === "apartment" && incomingCall && (
+        <IncomingPhoneCue npcName={NPCS[incomingCall.npcId]?.name} onAnswer={() => setScreen("desk")} />
       )}
       <ScreenLayer
         screen={screen}
@@ -5140,8 +5144,9 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
         rewardToast={rewardToast}
         appointments={appointments}
         setAppointments={setAppointments}
-        phoneNudge={phoneNudge}
-        clearPhoneNudge={() => setPhoneNudge(null)}
+        objState={objState}
+        incomingCall={incomingCall}
+        clearIncomingCall={() => setIncomingCall(null)}
       />
     </div>
   );

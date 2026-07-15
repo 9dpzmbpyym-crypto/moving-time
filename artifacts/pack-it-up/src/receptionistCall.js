@@ -1,13 +1,8 @@
 /* OpenRouter multi-turn for Shirley. Optional — bank path works without a key.
    Settings live in localStorage (`pack-it-up-shirley`). */
 
-import {
-  SHIRLEY_SYSTEM_PROMPT,
-  factsBlock,
-  bookAppointment,
-  todayISO,
-  daysUntilMove,
-} from "./receptionist.js";
+import { bookAppointment } from "./receptionist.js";
+import { NPCS } from "./npcs.js";
 
 const SETTINGS_KEY = "pack-it-up-shirley";
 /** Small chat model — openrouter/free often picks thinky models that dump CoT into content. */
@@ -394,15 +389,24 @@ async function callOpenRouterOnce({ apiKey, model, messages, timeoutMs }) {
 }
 
 /**
- * Ask Shirley via OpenRouter. Returns { ok, text, book, error, detail?, model? }.
+ * Ask any registered NPC via OpenRouter. Returns
+ * { ok, text, book, cancel, mark, add, error, detail?, model? }.
  * Tries the configured model, then other free providers on 429/5xx (capped).
+ * BOOK/CANCEL/ADD are parsed for every NPC (the tags are shared machinery),
+ * but callers must ignore them for non-Shirley NPCs — only Shirley's prompt
+ * documents those tags, so a non-Shirley model should never actually emit
+ * them; this is a belt-and-suspenders parse, not permission to apply them.
  */
-export async function askShirley({
+export async function askNpc(npcId, {
   messages,
   tasks,
   appointments,
+  session,
+  objState,
+  today,
   timeoutMs = TIMEOUT_MS,
 }) {
+  const npc = NPCS[npcId] || NPCS.shirley;
   const settings = loadShirleySettings();
   if (!settings.improv || !settings.apiKey.trim()) {
     return { ok: false, text: "", book: null, error: "disabled" };
@@ -410,7 +414,7 @@ export async function askShirley({
 
   const primary = (settings.model || DEFAULT_MODEL).trim();
   if (!isPlausibleModelSlug(primary)) {
-    console.warn("[Shirley] bad model slug:", primary);
+    console.warn(`[${npc.name}] bad model slug:`, primary);
     return {
       ok: false,
       text: "",
@@ -420,19 +424,14 @@ export async function askShirley({
     };
   }
 
-  const facts = factsBlock({
-    tasks,
-    appointments,
-    today: todayISO(),
-    daysLeft: daysUntilMove(),
-  });
+  const facts = npc.factsBlock({ tasks, appointments, session, objState, today });
 
-  const system = `${SHIRLEY_SYSTEM_PROMPT}\n\nFACTS (authoritative, do not invent beyond these):\n${JSON.stringify(facts)}`;
+  const system = `${npc.systemPrompt}\n\nFACTS (authoritative, do not invent beyond these):\n${JSON.stringify(facts)}`;
 
   const chatMessages = [
     { role: "system", content: system },
     ...(messages || []).map((m) => ({
-      role: m.role === "shirley" || m.role === "assistant" ? "assistant" : "user",
+      role: m.role === "user" ? "user" : "assistant",
       content: m.text || m.content || "",
     })),
   ];
@@ -468,19 +467,32 @@ export async function askShirley({
         throw err;
       }
       if (model !== primary) {
-        console.info("[Shirley] used fallback model:", model);
+        console.info(`[${npc.name}] used fallback model:`, model);
       }
       return { ok: true, text, book, cancel, mark, add, error: null, model };
     } catch (e) {
       lastError = e?.name === "AbortError" ? "timeout" : (e?.message || "network");
       lastDetail = e?.detail || "";
-      console.warn("[Shirley] model failed:", model, lastError, lastDetail);
+      console.warn(`[${npc.name}] model failed:`, model, lastError, lastDetail);
       // Auth / billing — don't burn the rest of the free pool
       if (e?.status === 401 || e?.status === 402 || e?.status === 403) break;
       // 404/429/502/503/timeout/empty → try next (capped)
     }
   }
   return { ok: false, text: "", book: null, error: lastError, detail: lastDetail || undefined };
+}
+
+/**
+ * Ask Shirley via OpenRouter. Thin wrapper over askNpc kept for callers that
+ * predate the NPC registry. Returns { ok, text, book, error, detail?, model? }.
+ */
+export async function askShirley({
+  messages,
+  tasks,
+  appointments,
+  timeoutMs = TIMEOUT_MS,
+}) {
+  return askNpc("shirley", { messages, tasks, appointments, timeoutMs });
 }
 
 /** Apply a BOOK payload through the FSM; returns bookAppointment result or null. */

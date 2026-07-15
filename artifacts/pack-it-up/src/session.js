@@ -40,6 +40,7 @@ export function defaultSession() {
     energy: null, // null | "fumes" | "steady" | "full"
     dailyDeal: null, // persisted hand for the local day (see schedule.js)
     calmedZones: {},
+    lastIncomingDay: null, // todayKey() of the last NPC incoming call, one-per-day guard
   };
 }
 
@@ -118,6 +119,9 @@ export function mergeSession(savedSession) {
     calmedZones: savedSession.calmedZones && typeof savedSession.calmedZones === "object"
       ? { ...savedSession.calmedZones }
       : {},
+    lastIncomingDay: typeof savedSession.lastIncomingDay === "string"
+      ? savedSession.lastIncomingDay
+      : null,
   };
 }
 

@@ -137,9 +137,7 @@ import {
 import { DATE_TRIGGERS, daysUntil } from "./movePhase.js";
 import {
   RECEPTIONIST_NAME,
-  openerForNudge,
   getNudge,
-  bankReply,
   buildQuickChips,
   confirmLine,
   markReminded,
@@ -147,9 +145,8 @@ import {
   canAttendZone,
   visitLabel,
   formatApptDay,
-  priorityHealthTask,
   activeAppointments,
-  daysUntilMove,
+  priorityHealthTask,
   isBookableHealthTask,
   cancelAppointment,
   findApptForTask,
@@ -159,13 +156,14 @@ import {
   loadShirleySettings,
   saveShirleySettings,
   improvEnabled,
-  askShirley,
+  askNpc,
   applyBookPayload,
   DEFAULT_MODEL,
   sanitizeApiKey,
   keyFingerprint,
   formatShirleyLineError,
 } from "./receptionistCall.js";
+import { NPCS, canNpcMark, pickIncomingCaller } from "./npcs.js";
 
 /* ============================================================
    SCREENS — mockup chrome (wood / gold / progress / checklist).
@@ -2007,12 +2005,12 @@ export function RingArcs({ side = "right", size = 36, color = "#FFD97A" }) {
   );
 }
 
-function LandlineHotspot({ onPickUp, ringing, rattling, showArcs, size = 72, idleLabel = "phone", bottom = 6, center = false }) {
+function LandlineHotspot({ onPickUp, ringing, rattling, showArcs, size = 72, idleLabel = "phone", bottom = 6, center = false, title = "Call" }) {
   return (
     <button
       type="button"
       onClick={onPickUp}
-      title={`Call ${RECEPTIONIST_NAME}`}
+      title={title}
       style={{
         position: "absolute", bottom, zIndex: 4,
         ...(center ? { left: "50%", transform: "translateX(-50%)" } : { left: 6 }),
@@ -2045,14 +2043,14 @@ function LandlineHotspot({ onPickUp, ringing, rattling, showArcs, size = 72, idl
 }
 
 /** Apartment HUD: floating ringing phone with arcs — tap to open Desk. */
-export function IncomingPhoneCue({ onAnswer }) {
+export function IncomingPhoneCue({ onAnswer, npcName = RECEPTIONIST_NAME }) {
   const [pulse, setPulse] = useState(false);
   useEffect(() => onIncomingRingPulse(setPulse), []);
   return (
     <button
       type="button"
       onClick={onAnswer}
-      title={`${RECEPTIONIST_NAME} is calling`}
+      title={`${npcName} is calling`}
       style={{
         position: "fixed",
         right: 12,
@@ -2103,7 +2101,7 @@ export function IncomingPhoneCue({ onAnswer }) {
         {pulse && <RingArcs side="right" size={32} />}
       </div>
       <div style={{ color: "#FFD97A", fontSize: 9, textAlign: "center", marginTop: 2 }}>
-        {RECEPTIONIST_NAME}…
+        {npcName}…
       </div>
     </button>
   );
@@ -2118,6 +2116,8 @@ function ShirleyCallOverlay({
   rattling,
   lineSource,
   lineError,
+  npcName = RECEPTIONIST_NAME,
+  idleSourceLabel = "on the line",
   onDial,
   onSend,
   onHangUp,
@@ -2144,7 +2144,7 @@ function ShirleyCallOverlay({
         ? `script bank · ${lineError}`
         : "script bank";
     }
-    return "doctors office · or whatever";
+    return idleSourceLabel;
   })();
 
   return (
@@ -2182,7 +2182,7 @@ function ShirleyCallOverlay({
                 padding: "14px 22px", background: "#EFE7D2", color: "#221306",
                 border: "3px solid #120A04", fontSize: 14, cursor: "pointer", ...LB,
               }}>
-                Dial {RECEPTIONIST_NAME}
+                Dial {npcName}
               </button>
               <button type="button" onClick={onCancelCeremony} style={{
                 background: "transparent", border: "none", color: "#8A7350", fontSize: 11, cursor: "pointer", ...LB,
@@ -2190,7 +2190,7 @@ function ShirleyCallOverlay({
             </>
           )}
           {phase === "dial" && (
-            <div style={{ color: "#C9B896", fontSize: 13 }}>Dialing {RECEPTIONIST_NAME}…</div>
+            <div style={{ color: "#C9B896", fontSize: 13 }}>Dialing {npcName}…</div>
           )}
           {phase === "ringing" && (
             <div style={{ color: "#FFD97A", fontSize: 13 }}>…ringing…</div>
@@ -2215,7 +2215,7 @@ function ShirleyCallOverlay({
               }}
             />
             <div style={{ flex: 1 }}>
-              <div style={{ color: "#FFD97A", fontSize: 13 }}>{RECEPTIONIST_NAME}</div>
+              <div style={{ color: "#FFD97A", fontSize: 13 }}>{npcName}</div>
               <div style={{ color: lineSource === "live" ? "#8FD14F" : lineError ? "#C9942E" : "#8A7350", fontSize: 10 }}>
                 {sourceLabel}
               </div>
@@ -2242,7 +2242,7 @@ function ShirleyCallOverlay({
                   border: "2px solid #120A04", fontSize: 12, lineHeight: 1.35, ...LB,
                 }}>
                   {m.role !== "user" && (
-                    <div style={{ fontSize: 8, color: "#8A7350", marginBottom: 4 }}>{RECEPTIONIST_NAME}</div>
+                    <div style={{ fontSize: 8, color: "#8A7350", marginBottom: 4 }}>{npcName}</div>
                   )}
                   {m.text}
                 </div>
@@ -2289,8 +2289,40 @@ function ShirleyCallOverlay({
   );
 }
 
+/** Outgoing contact picker — small in-tray list, one row per phone NPC. */
+function ContactPickerOverlay({ onPick, onClose }) {
+  const rows = [
+    { id: "shirley", label: `${NPCS.shirley.name} · ${NPCS.shirley.sub}` },
+    { id: "sal", label: `${NPCS.sal.name} · ${NPCS.sal.sub}` },
+    { id: "vivian", label: `${NPCS.vivian.name} · ${NPCS.vivian.sub}` },
+  ];
+  return (
+    <div style={{
+      display: "flex", flexDirection: "column", gap: 6, width: "100%", padding: 4,
+    }}>
+      <div style={{ color: "#C9B896", fontSize: 10, textAlign: "center", marginBottom: 2, ...LB }}>Contacts</div>
+      {rows.map((r) => (
+        <button
+          key={r.id}
+          type="button"
+          onClick={() => onPick(r.id)}
+          style={{
+            padding: "8px 10px", background: "#3A2410", color: "#F2E4C0",
+            border: "2px solid #120A04", fontSize: 11, cursor: "pointer", textAlign: "left", ...LB,
+          }}
+        >{r.label}</button>
+      ))}
+      <button
+        type="button"
+        onClick={onClose}
+        style={{ background: "transparent", border: "none", color: "#8A7350", fontSize: 10, cursor: "pointer", ...LB }}
+      >Close</button>
+    </div>
+  );
+}
+
 function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewardToast,
-  appointments, setAppointments, phoneNudge, clearPhoneNudge }) {
+  appointments, setAppointments, objState, incomingCall, clearIncomingCall }) {
   const [tray, setTray] = useState("all"); // all | admin | job | housing
   const deskTasks = tasks.filter((t) => isOpen(t) && ["job", "admin", "move", "housing", "health", "cat"].includes(t.category));
   const filtered = deskTasks.filter((t) => {
@@ -2325,14 +2357,16 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
     return () => clearInterval(id);
   }, []);
 
-  /* Shirley landline ceremony + call */
+  /* Landline ceremony + call — shared across Shirley/Sal/Vivian */
   const [phonePhase, setPhonePhase] = useState(null); // null | pickup | dial | ringing | talking | hanging
+  const [phoneNpc, setPhoneNpc] = useState("shirley"); // shirley | sal | vivian
+  const [contactPickerOpen, setContactPickerOpen] = useState(false);
   const [phoneMsgs, setPhoneMsgs] = useState([]);
   const [callState, setCallState] = useState({ phase: "await_visit", draft: {}, priorityId: null });
   const [phoneWaiting, setPhoneWaiting] = useState(false);
   const [lineSource, setLineSource] = useState(null); // live | script
   const [lineError, setLineError] = useState(null); // last improv failure reason, if any
-  const [incomingRing, setIncomingRing] = useState(!!phoneNudge);
+  const [incomingRing, setIncomingRing] = useState(!!incomingCall);
   const [phoneRattling, setPhoneRattling] = useState(false);
   const [incomingPulse, setIncomingPulse] = useState(false);
   const ringCancelRef = useRef(null);
@@ -2407,10 +2441,8 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
   };
 
   useEffect(() => {
-    if (phoneNudge && (phoneNudge.kind === "remind" || phoneNudge.kind === "overdue")) {
-      setIncomingRing(true);
-    }
-  }, [phoneNudge]);
+    if (incomingCall) setIncomingRing(true);
+  }, [incomingCall]);
 
   useEffect(() => () => {
     clearPhoneRing();
@@ -2419,30 +2451,47 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
     setPhoneMusicDuck(false);
   }, []);
 
-  const startTalking = (nudgeOverride) => {
+  /** Current gameState snapshot handed to an NPC's opener/factsBlock/bankReply. */
+  const gameStateNow = () => ({ tasks, appointments: apptsRef.current, session, objState });
+
+  const startTalking = (npcId) => {
     clearPhoneRing();
     stopPhoneReceiverLoop();
     stopPhoneIncomingRingtone();
     setIncomingRing(false);
     setPhoneMusicDuck(true);
     playPhoneAnswerSfx();
-    const nudge = nudgeOverride || phoneNudge || getNudge(apptsRef.current, tasks);
-    const pri = nudge?.task || priorityHealthTask(tasks, apptsRef.current);
-    const days = daysUntilMove();
-    const opener = openerForNudge(nudge, apptsRef.current, tasks, days);
+    const id = npcId || "shirley";
+    const npc = NPCS[id] || NPCS.shirley;
+    const gs = gameStateNow();
+    const opener = npc.opener(gs);
+    setPhoneNpc(id);
+    // Shirley-only: seed the FSM's priority task from her nudge (a "remind"/
+    // "overdue" nudge points at an already-booked appt, which priorityHealthTask
+    // alone would miss since it only looks at unbooked open visits), and mark
+    // a delivered reminder call. Sal/Vivian don't use priorityId.
+    let priorityId = null;
+    if (id === "shirley") {
+      const nudge = getNudge(apptsRef.current, tasks);
+      const pri = nudge?.task || priorityHealthTask(tasks, apptsRef.current);
+      priorityId = pri?.id || null;
+      if (nudge?.kind === "remind" && nudge.appt) {
+        setAppointments((a) => markReminded(a, nudge.appt.id));
+      }
+    }
     setCallState({
       phase: "await_visit",
       draft: {},
-      priorityId: pri?.id || null,
+      priorityId,
       stall: 0,
       denyCount: 0,
     });
-    setPhoneMsgs([{ role: "shirley", text: opener }]);
+    setPhoneMsgs([{ role: "npc", text: opener }]);
     setPhonePhase("talking");
-    if (nudge?.kind === "remind" && nudge.appt) {
-      setAppointments((a) => markReminded(a, nudge.appt.id));
+    if (incomingCall && incomingCall.npcId === id) {
+      onSessionBump?.("lastIncomingDay", 0, null, { lastIncomingDay: todayKey() });
+      clearIncomingCall?.();
     }
-    clearPhoneNudge?.();
   };
 
   const pickUpPhone = () => {
@@ -2450,18 +2499,31 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
     stopPhoneIncomingRingtone();
     const wasIncoming = incomingRing;
     setIncomingRing(false);
-    // Shirley calling you → answer straight into the chat (no dial ceremony).
+    // Someone's calling you → answer straight into the chat (no dial ceremony).
     if (wasIncoming) {
-      startTalking(phoneNudge || getNudge(apptsRef.current, tasks));
+      startTalking(incomingCall?.npcId || "shirley");
       return;
     }
+    // Quick-dial from the handset: ring whoever's highest priority right now.
+    const target = pickIncomingCaller({ tasks, appointments: apptsRef.current, session, today: new Date() });
+    setPhoneNpc(target?.npcId || "shirley");
     setPhonePhase("pickup");
     afterPhoneDuck(() => {
       playPhonePickupSfx(); // starts looping receiver tone
     });
   };
 
-  const dialShirley = () => {
+  /** Contact-picker row tap: same pickup ceremony as the handset, for a chosen NPC. */
+  const startContactCall = (npcId) => {
+    setContactPickerOpen(false);
+    setPhoneNpc(npcId);
+    setPhonePhase("pickup");
+    afterPhoneDuck(() => {
+      playPhonePickupSfx();
+    });
+  };
+
+  const dialCall = () => {
     // Music already ducked from pickup — no second lead-in before rotary.
     setPhonePhase("dial");
     setPhoneMusicDuck(true);
@@ -2482,7 +2544,7 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
         onBurst: startBurst,
         onDone: () => {
           ringCancelRef.current = null;
-          startTalking(phoneNudge || getNudge(apptsRef.current, tasks));
+          startTalking(phoneNpc);
         },
       });
     }, 1100);
@@ -2521,8 +2583,26 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
     }
   };
 
+  /** MARK application layer: only apply if the task's category is in that
+   *  NPC's allowed lane (Sal/move, Vivian/job, Shirley/health+cat). */
+  const applyMarkPayload = (npcId, mark, appts) => {
+    if (!mark?.taskId) return;
+    const task = tasks.find((t) => t.id === mark.taskId);
+    if (!task || !canNpcMark(npcId, task)) return;
+    const status = mark.status === "archived" ? "archived" : (mark.status === "attended" ? "attended" : "done");
+    setTasks((ts) => refreshDailyHousingTasks(
+      ts.map((t) => (t.id === mark.taskId ? { ...t, status } : t))
+    ));
+    if (status === "attended") {
+      const activeAppt = findApptForTask(appts, mark.taskId);
+      if (activeAppt) setAppointments(attendAppointment(appts, activeAppt.id));
+    }
+  };
+
   const handlePhoneSend = async (userText) => {
     if (phoneWaiting || phonePhase !== "talking") return;
+    const npcId = phoneNpc;
+    const npc = NPCS[npcId] || NPCS.shirley;
     const nextMsgs = [...msgsRef.current, { role: "user", text: userText }];
     setPhoneMsgs(nextMsgs);
     setPhoneWaiting(true);
@@ -2532,96 +2612,87 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
     if (improvEnabled()) {
       let agent = { ok: false, error: "network" };
       try {
-        agent = await askShirley({
+        agent = await askNpc(npcId, {
           messages: nextMsgs,
           tasks,
           appointments: apptsRef.current,
+          session,
+          objState,
         });
       } catch (e) {
-        console.warn("[Shirley] askShirley threw:", e);
+        console.warn(`[${npc.name}] askNpc threw:`, e);
         agent = { ok: false, error: "network", detail: String(e?.message || e) };
       }
       if (agent.ok && agent.text) {
         usedAgent = true;
         let appts = apptsRef.current;
         let line = agent.text;
-        if (agent.book) {
-          const booked = applyBookPayload(appts, tasks, agent.book);
-          if (booked?.ok) {
-            applyBookResult(booked);
-            appts = booked.appointments;
-            const task = tasks.find((t) => t.id === booked.appt.taskId);
-            if (!/booked|got it|written|locked/i.test(line)) {
-              line = `${line} ${confirmLine(booked.appt, task)}`.trim();
+        // BOOK/CANCEL/ADD are Shirley's desk only — parsed for every NPC by
+        // the shared tag parser, but only ever applied for her.
+        if (npcId === "shirley") {
+          if (agent.book) {
+            const booked = applyBookPayload(appts, tasks, agent.book);
+            if (booked?.ok) {
+              applyBookResult(booked);
+              appts = booked.appointments;
+              const task = tasks.find((t) => t.id === booked.appt.taskId);
+              if (!/booked|got it|written|locked/i.test(line)) {
+                line = `${line} ${confirmLine(booked.appt, task)}`.trim();
+              }
             }
           }
-        }
-        if (agent.cancel?.taskId) {
-          const cancelled = cancelAppointment(appts, agent.cancel.taskId);
-          if (cancelled.ok) {
-            setAppointments(cancelled.appointments);
-            appts = cancelled.appointments;
-          }
-        }
-        if (agent.mark?.taskId) {
-          const status = agent.mark.status === "attended" ? "attended" : "done";
-          setTasks((ts) => refreshDailyHousingTasks(
-            ts.map((t) => (t.id === agent.mark.taskId ? { ...t, status } : t))
-          ));
-          if (status === "attended") {
-            const activeAppt = findApptForTask(appts, agent.mark.taskId);
-            if (activeAppt) {
-              const nextAppts = attendAppointment(appts, activeAppt.id);
-              setAppointments(nextAppts);
-              appts = nextAppts;
+          if (agent.cancel?.taskId) {
+            const cancelled = cancelAppointment(appts, agent.cancel.taskId);
+            if (cancelled.ok) {
+              setAppointments(cancelled.appointments);
+              appts = cancelled.appointments;
             }
           }
-        }
-        if (agent.add?.title) {
-          const newTask = makeQuickTask({
-            title: agent.add.title,
-            category: agent.add.category === "cat" ? "cat" : "health",
-            effort: 1,
-            binding: { feature: "health_appointment", trigger: "booked", target: null },
-          });
-          setTasks((ts) => [...ts, newTask]);
-          if (agent.add.dueAt) {
-            const apptResult = bookAppointment(appts, [...tasks, newTask], {
-              taskId: newTask.id,
-              dueAt: agent.add.dueAt,
-              time: null,
+          if (agent.add?.title) {
+            const newTask = makeQuickTask({
+              title: agent.add.title,
+              category: agent.add.category === "cat" ? "cat" : "health",
+              effort: 1,
+              binding: { feature: "health_appointment", trigger: "booked", target: null },
             });
-            if (apptResult.ok) {
-              setAppointments(apptResult.appointments);
-              appts = apptResult.appointments;
+            setTasks((ts) => [...ts, newTask]);
+            if (agent.add.dueAt) {
+              const apptResult = bookAppointment(appts, [...tasks, newTask], {
+                taskId: newTask.id,
+                dueAt: agent.add.dueAt,
+                time: null,
+              });
+              if (apptResult.ok) {
+                setAppointments(apptResult.appointments);
+                appts = apptResult.appointments;
+              }
             }
           }
         }
+        if (agent.mark?.taskId) applyMarkPayload(npcId, agent.mark, appts);
         setLineSource("live");
         setLineError(null);
-        setPhoneMsgs([...nextMsgs, { role: "shirley", text: line }]);
+        setPhoneMsgs([...nextMsgs, { role: "npc", text: line }]);
         setPhoneWaiting(false);
         return;
       }
       const errLabel = formatShirleyLineError(agent.error, agent.detail);
       setLineError(errLabel);
-      console.warn("[Shirley] falling back to script bank:", errLabel);
+      console.warn(`[${npc.name}] falling back to script bank:`, errLabel);
     }
 
     if (!usedAgent) {
-      const reply = bankReply(
-        userText,
-        callStateRef.current,
-        tasks,
-        apptsRef.current,
-        daysUntilMove()
-      );
-      if (reply.tasks) setTasks(refreshDailyHousingTasks(reply.tasks));
-      if (reply.appointments) setAppointments(reply.appointments);
-      else if (reply.book?.ok) applyBookResult(reply.book);
+      const reply = npc.bankReply(userText, callStateRef.current, gameStateNow());
+      if (npcId === "shirley") {
+        if (reply.tasks) setTasks(refreshDailyHousingTasks(reply.tasks));
+        if (reply.appointments) setAppointments(reply.appointments);
+        else if (reply.book?.ok) applyBookResult(reply.book);
+      } else if (reply.mark) {
+        applyMarkPayload(npcId, reply.mark, apptsRef.current);
+      }
       setCallState(reply.callState || callStateRef.current);
       setLineSource("script");
-      setPhoneMsgs([...nextMsgs, { role: "shirley", text: reply.line }]);
+      setPhoneMsgs([...nextMsgs, { role: "npc", text: reply.line }]);
       setPhoneWaiting(false);
       if (reply.hangup) {
         setTimeout(() => hangUp(), 1400);
@@ -2629,8 +2700,22 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
     }
   };
 
+  const SAL_CHIPS = [
+    { id: "hi", label: "Hey Sal", text: "Hey Sal" },
+    { id: "boxes", label: "3 boxes closed", text: "3 boxes closed" },
+    { id: "next", label: "What's next?", text: "What's next?" },
+    { id: "bye", label: "Gotta go", text: "Gotta go" },
+  ];
+  const VIVIAN_CHIPS = [
+    { id: "hi", label: "Hi Vivian", text: "Hi Vivian" },
+    { id: "applied", label: "I applied", text: "I applied" },
+    { id: "notyet", label: "Not yet", text: "Not yet" },
+    { id: "bye", label: "Gotta go", text: "Gotta go" },
+  ];
   const chips = phonePhase === "talking"
-    ? buildQuickChips(tasks, appointments, callState)
+    ? (phoneNpc === "shirley" ? buildQuickChips(tasks, appointments, callState)
+      : phoneNpc === "sal" ? SAL_CHIPS
+        : VIVIAN_CHIPS)
     : [];
   const draftHint = null; // keep UI clean — no draft/nagging chrome
 
@@ -2975,13 +3060,22 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
               rattling={phoneRattling}
               lineSource={lineSource}
               lineError={lineError}
-              onDial={dialShirley}
+              npcName={NPCS[phoneNpc]?.name}
+              idleSourceLabel={
+                phoneNpc === "sal" ? "dispatch office · or whatever"
+                  : phoneNpc === "vivian" ? "recruiter's desk · or whatever"
+                    : "doctors office · or whatever"
+              }
+              onDial={dialCall}
               onSend={handlePhoneSend}
               onHangUp={hangUp}
               onCancelCeremony={cancelCeremony}
             />
           )}
-          {!phonePhase && inspected && (
+          {!phonePhase && contactPickerOpen && (
+            <ContactPickerOverlay onPick={startContactCall} onClose={() => setContactPickerOpen(false)} />
+          )}
+          {!phonePhase && !contactPickerOpen && inspected && (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
               <div style={{ position: "relative" }}>
                 <VerticalTaskCard task={inspected} width={84} />
@@ -3021,7 +3115,7 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
               )}
             </div>
           )}
-          {!phonePhase && !inspected && (
+          {!phonePhase && !contactPickerOpen && !inspected && (
             <div style={{ color: "#8A7350", fontSize: 11, textAlign: "center", ...LB }}>
               Tap a stack to inspect a paper.
             </div>
@@ -3035,9 +3129,9 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
         </div>
           <div style={{ display: "grid", gridTemplateRows: "1fr 60px", gap: 4, minHeight: 0 }}>
             <div style={{ position: "relative", minHeight: 0 }}>
-              {!phonePhase && <LandlineHotspot onPickUp={pickUpPhone} ringing={incomingRing} rattling={phoneRattling || incomingPulse} showArcs={incomingPulse} size={82} bottom={20} center idleLabel="CALL SHIRLEY" />}
+              {!phonePhase && <LandlineHotspot onPickUp={pickUpPhone} ringing={incomingRing} rattling={phoneRattling || incomingPulse} showArcs={incomingPulse} size={82} bottom={20} center idleLabel="CALL" title={incomingRing ? `${NPCS[incomingCall?.npcId || "shirley"]?.name} is calling` : "Call"} />}
             </div>
-            <button type="button" onClick={pickUpPhone} aria-label="Contacts" style={{ border: 0, cursor: "pointer", background: `url(${DESK_CONTACTS}) center/100% 100% no-repeat` }} />
+            <button type="button" onClick={() => { if (!phonePhase) setContactPickerOpen((v) => !v); }} aria-label="Contacts" style={{ border: 0, cursor: "pointer", background: `url(${DESK_CONTACTS}) center/100% 100% no-repeat` }} />
           </div>
         </div>
       </div>
@@ -3947,7 +4041,7 @@ function SettingsScreen({ go }) {
 export default function ScreenLayer({
   screen, go, tasks, setTasks, handled, openHandledSheet, busy, playSfx,
   session, onSessionBump, rewardToast,
-  appointments, setAppointments, phoneNudge, clearPhoneNudge,
+  appointments, setAppointments, objState, incomingCall, clearIncomingCall,
   taskFocus,
 }) {
   if (screen === "apartment") return null;
@@ -3963,7 +4057,7 @@ export default function ScreenLayer({
     <DeskScreen go={go} tasks={tasks} setTasks={setTasks} playSfx={playSfx}
       session={session} onSessionBump={onSessionBump} rewardToast={rewardToast}
       appointments={appointments || []} setAppointments={setAppointments}
-      phoneNudge={phoneNudge} clearPhoneNudge={clearPhoneNudge} />
+      objState={objState} incomingCall={incomingCall} clearIncomingCall={clearIncomingCall} />
   );
   if (screen === "health")    return (
     <HealthScreen go={go} tasks={tasks} setTasks={setTasks}
