@@ -27,6 +27,7 @@ import {
 } from "./gameAudio.js";
 // Stretchy the cat: PNG sprite sheet. Guitar hard case is canvas-drawn.
 import CAT_SHEET from "./assets/Cat-Sheet.png";
+import WALL_CALENDAR_SPRITE from "./assets/calendar/calendar_click_sprite_exact.png";
 // Apartment-screen HUD chrome: ornate wood/brass frame pieces sliced from the
 // mockup sheet (artifacts/pack-it-up/src/assets/items/packitup_cropped_assets/
 // ui_mockups/Apartment screen ui assets.png). Chrome-only — no gameplay art.
@@ -212,6 +213,10 @@ function drawShell(ctx) {
 /* ============================================================
    SPRITES — one draw fn per object (low-res cells)
    ============================================================ */
+// Shared bitmap for the wall-calendar prop's canvas fallback draw.
+const wallCalendarImg = typeof Image !== "undefined" ? new Image() : null;
+if (wallCalendarImg) { wallCalendarImg.decoding = "async"; wallCalendarImg.src = WALL_CALENDAR_SPRITE; }
+
 const SPRITES = {
   closet_door: { w: 28, h: 89, glowRegions: [[7, 12, 14, 28], [7, 52, 14, 28]], draw(ctx) {
     r(ctx, P.out, 0, 0, 28, 89);
@@ -976,20 +981,13 @@ const KITCHEN_SPRITES = {
     r(ctx, P.out, 1, 38, 28, 1);
     r(ctx, P.whiteLo, 1, 39, 28, 4);
   }},
-  wall_calendar: { w: 16, h: 18, draw(ctx) {
-    // two chunky clips (dark, gray highlight) sticking up
-    [4, 9].forEach((cx) => { r(ctx, P.out, cx, 0, 3, 4); r(ctx, "#948E84", cx + 1, 1, 1, 2); });
-    // black frame
-    r(ctx, P.out, 1, 3, 14, 14);
-    // bright red header with highlight + shade
-    r(ctx, "#CC4B3C", 2, 4, 12, 4);
-    r(ctx, "#E06456", 2, 4, 12, 1);
-    r(ctx, "#A83A2E", 2, 7, 12, 1);
-    // white body
-    r(ctx, P.white, 2, 8, 12, 8);
-    // 4×3 grid of light-gray days; today in red
-    for (let gy = 0; gy < 3; gy++) for (let gx = 0; gx < 4; gx++) {
-      r(ctx, (gx === 2 && gy === 1) ? "#CC4B3C" : "#C0BAAE", 3 + gx * 3, 9 + gy * 2, 2, 2);
+  // Cat-of-the-Month wall calendar (the same art the calendar screen opens).
+  // Rendered as an <img> at the room-render sites for crisp pixels; this
+  // drawImage path is a canvas fallback for any other consumer.
+  wall_calendar: { w: 16, h: 22, draw(ctx) {
+    if (wallCalendarImg && wallCalendarImg.complete && wallCalendarImg.naturalWidth) {
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(wallCalendarImg, 0, 0, 16, 22);
     }
   }},
   counter_sink: { w: 80, h: 44,
@@ -2335,7 +2333,10 @@ export function LayoutEditor() {
                 {part("cushion", 30, 9, drawDiningFrontCushion)}
                 {part("frame", 34, 38, drawDiningFrontFrame)}
               </div>;
-            })() : <PixelCanvas w={spr.w} h={spr.h} draw={spr.draw} />}</div>;
+            })() : o.id === "wall_calendar"
+              ? <img src={WALL_CALENDAR_SPRITE} alt="Wall calendar" draggable={false}
+                  style={{ width: spr.w * CELL, height: spr.h * CELL, imageRendering: "pixelated", display: "block" }} />
+              : <PixelCanvas w={spr.w} h={spr.h} draw={spr.draw} />}</div>;
           })}
           {/* game-crop guide: the game zooms in and only shows the bright middle band.
               Anything under the dimmed side strips gets cut off in the real game. */}
@@ -3572,7 +3573,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
               key={o.id}
               data-object-id={o.id}
               data-room-id={rm.id}
-              className={`obj ${isSel ? "sel" : ""} ${isPacking ? "packing" : ""} ${isRemoving ? "removing" : ""} ${o.removable ? "" : "static"} ${rm.id === "bathroom" && o.id === "mirror_cabinet" ? "portal" : ""} ${useOutlineGlow ? "portal" : ""}`}
+              className={`obj ${isSel ? "sel" : ""} ${isPacking ? "packing" : ""} ${isRemoving ? "removing" : ""} ${o.removable ? "" : "static"} ${rm.id === "bathroom" && o.id === "mirror_cabinet" ? "portal" : ""} ${o.id === "wall_calendar" ? "portal" : ""} ${useOutlineGlow ? "portal" : ""}`}
               style={{
                 position: "absolute", left: placed.x, top: placed.y, zIndex: o.z * 10,
                 transform: `scale(${placed.scale || 1})`, transformOrigin: "top left",
@@ -3586,6 +3587,11 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
                 if (rm.id === "bathroom" && o.id === "mirror_cabinet") {
                   playContainerSfx("mirror_cabinet", "open");
                   setScreen("health");
+                  return;
+                }
+                // the kitchen wall calendar is a doorway to the move calendar
+                if (o.id === "wall_calendar") {
+                  setScreen("calendar");
                   return;
                 }
                 // living-room radio — open the station panel (not packable)
@@ -3636,6 +3642,9 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
             >
               {o.id === "radio"
                 ? <RadioSprite />
+                : o.id === "wall_calendar"
+                ? <img src={WALL_CALENDAR_SPRITE} alt="Wall calendar" draggable={false}
+                    style={{ width: spr.w * CELL, height: spr.h * CELL, imageRendering: "pixelated", display: "block" }} />
                 : <PixelCanvas w={spr.w} h={spr.h} draw={spr.draw} />}
               {/* Door/drawer face glow (universal): one .drawerGlow rect per
                   face region — same pulse as the bar cabinet doors. Outward

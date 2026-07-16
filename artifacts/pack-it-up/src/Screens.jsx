@@ -135,7 +135,16 @@ import {
   bumpSession,
   todayKey,
 } from "./session.js";
-import { DATE_TRIGGERS, daysUntil } from "./movePhase.js";
+import { DATE_TRIGGERS, daysUntil, buildJulyCalendar } from "./movePhase.js";
+import CAL_HEADER from "./assets/calendar/cat_of_month_full_group_exact.png";
+import CAL_TODAY_RING from "./assets/calendar/today_ring.png";
+import CAL_INK_X from "./assets/calendar/ink_x_1.png";
+import CAL_ICON_MOVE from "./assets/calendar/move_truck.png";
+import CAL_ICON_HOUSING from "./assets/calendar/housing_house.png";
+import CAL_ICON_JOB from "./assets/calendar/job_briefcase.png";
+import CAL_ICON_ADMIN from "./assets/calendar/admin_folder.png";
+import CAL_ICON_HEALTH from "./assets/calendar/health_cross.png";
+import CAL_ICON_CAT from "./assets/calendar/stretchy_cat_face.png";
 import {
   RECEPTIONIST_NAME,
   getNudge,
@@ -4060,6 +4069,118 @@ function SettingsScreen({ go }) {
   );
 }
 
+/* ================= KITCHEN WALL CALENDAR ================= */
+const CAL_LANE_ICON = {
+  move: CAL_ICON_MOVE, housing: CAL_ICON_HOUSING, job: CAL_ICON_JOB,
+  admin: CAL_ICON_ADMIN, health: CAL_ICON_HEALTH, cat: CAL_ICON_CAT,
+};
+const CAL_LANE_LABEL = {
+  move: "Move", housing: "Housing", job: "Job",
+  admin: "Admin", health: "Health", cat: "Stretchy",
+};
+// Legend reads in the mockup's order, not lane-priority order.
+const CAL_LEGEND_ORDER = ["move", "job", "admin", "health", "cat", "housing"];
+
+/**
+ * Read-only kitchen wall calendar. Every inked day comes from buildJulyCalendar
+ * (live task due dates + the move spine), so it can never drift from the ledger;
+ * the mockup only governs layout. Paper page, grid, legend and text are
+ * code-drawn — the PNGs are just the Cat-of-the-Month header, lane icons, the
+ * today ring, and the past-day ink X.
+ */
+function CalendarScreen({ go, tasks }) {
+  const cal = buildJulyCalendar({ tasks: tasks || [], today: new Date() });
+  const PAPER = "#F1E4C4", INK = "#3A2A18", FAINT = "#B7A67F", LINE = "#CBB98E";
+  const icon = (src, size) => (
+    <img src={src} alt="" style={{ width: size, height: size, objectFit: "contain", imageRendering: "pixelated" }} />
+  );
+  const card = { background: PAPER, borderRadius: 10, border: `3px solid ${INK}` };
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 250, background: "#1A1008", overflowY: "auto",
+      animation: "screenIn 200ms ease-out",
+    }}>
+      <style>{"@keyframes screenIn{from{opacity:0;transform:translateY(14px)}}"}</style>
+      <div style={{ position: "sticky", top: 0, zIndex: 5, padding: "8px 10px", background: "linear-gradient(#1A1008, rgba(26,16,8,0))" }}>
+        <button type="button" onClick={() => go("apartment")} style={{
+          width: 74, height: 30, border: 0, cursor: "pointer", color: "#FFD97A", fontSize: 11, ...LB,
+          background: `url(${LEDGER_CHIP_DARK}) center/100% 100% no-repeat`,
+        }}>BACK</button>
+      </div>
+      <div style={{ width: "100%", maxWidth: 430, margin: "0 auto", padding: "0 10px 28px" }}>
+        {/* Cat of the Month header (single exact PNG) */}
+        <div style={{ ...card, padding: "12px 14px 8px" }}>
+          <img src={CAL_HEADER} alt="Cat of the Month: Stretchy" style={{ width: "100%", display: "block", imageRendering: "pixelated" }} />
+        </div>
+        {/* tear line */}
+        <div style={{ height: 0, borderTop: `3px dashed ${INK}`, margin: "9px 6px" }} />
+        {/* calendar body */}
+        <div style={{ ...card, padding: "12px 12px 16px" }}>
+          <div style={{ color: INK, fontSize: 12, ...LB, marginBottom: 6 }}>PHASE: {cal.phaseLabel.toUpperCase()}</div>
+          <div style={{ textAlign: "center", color: INK, fontSize: 22, ...LB, letterSpacing: 3, marginBottom: 10 }}>— {cal.title} —</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 3, marginBottom: 4 }}>
+            {cal.weekdays.map((wd) => (
+              <div key={wd} style={{ textAlign: "center", color: "#7A6446", fontSize: 10, ...LB }}>{wd}</div>
+            ))}
+          </div>
+          {cal.weeks.map((week, wi) => (
+            <div key={wi} style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 3, marginBottom: 3 }}>
+              {week.map((cell, ci) => (
+                <div key={ci} style={{
+                  position: "relative", aspectRatio: "1 / 1", borderRadius: 4,
+                  border: `1.5px solid ${cell.inMonth ? LINE : "transparent"}`,
+                  background: cell.inMonth ? "rgba(255,255,255,0.22)" : "transparent",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <span style={{
+                    position: "absolute", top: 1, left: 3, fontSize: 10, ...LB,
+                    color: !cell.inMonth ? LINE : cell.isPast ? FAINT : INK,
+                  }}>{cell.day}</span>
+                  {cell.inMonth && cell.lane && (
+                    <div style={{ opacity: cell.isPast ? 0.5 : 1 }}>{icon(CAL_LANE_ICON[cell.lane], "56%")}</div>
+                  )}
+                  {cell.inMonth && !cell.lane && cell.isPast && icon(CAL_INK_X, "50%")}
+                  {cell.isToday && (
+                    <img src={CAL_TODAY_RING} alt="today" style={{
+                      position: "absolute", inset: "5%", width: "90%", height: "90%",
+                      imageRendering: "pixelated", pointerEvents: "none",
+                    }} />
+                  )}
+                </div>
+              ))}
+            </div>
+          ))}
+          {/* legend */}
+          <div style={{
+            display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "6px 14px",
+            marginTop: 12, paddingTop: 10, borderTop: `2px dotted ${LINE}`,
+          }}>
+            {CAL_LEGEND_ORDER.map((lane) => (
+              <div key={lane} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                {icon(CAL_LANE_ICON[lane], 16)}
+                <span style={{ color: "#6B563B", fontSize: 10, ...LB }}>{CAL_LANE_LABEL[lane].toUpperCase()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* critical path footer */}
+        <div style={{ ...card, padding: "10px 8px 12px", marginTop: 8 }}>
+          <div style={{ textAlign: "center", color: INK, fontSize: 12, ...LB, letterSpacing: 2, marginBottom: 9 }}>— CRITICAL PATH —</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 4 }}>
+            {cal.anchors.map((a) => (
+              <div key={a.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, textAlign: "center" }}>
+                <div style={{ color: "#8A7250", fontSize: 9, ...LB }}>JUL {a.day}</div>
+                {icon(CAL_LANE_ICON[a.lane], 22)}
+                <div style={{ color: INK, fontSize: 9, ...LB, lineHeight: 1.15 }}>{a.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ================= ROUTER ================= */
 export default function ScreenLayer({
   screen, go, tasks, setTasks, handled, openHandledSheet, busy, playSfx,
@@ -4090,6 +4211,7 @@ export default function ScreenLayer({
   if (screen === "inventory") return <InventoryScreen go={go} handled={handled} openHandledSheet={openHandledSheet} />;
   if (screen === "log")       return <LogScreen go={go} handled={handled} />;
   if (screen === "stretchy")  return <StretchyScreen go={go} tasks={tasks} />;
+  if (screen === "calendar")  return <CalendarScreen go={go} tasks={tasks} />;
   if (screen === "settings")  return <SettingsScreen go={go} />;
   return null;
 }
