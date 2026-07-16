@@ -4095,105 +4095,111 @@ function CalendarScreen({ go, tasks }) {
     <img src={src} alt="" style={{ width: size, height: size, objectFit: "contain", imageRendering: "pixelated" }} />
   );
   const card = { background: PAPER, borderRadius: 10, border: `3px solid ${INK}` };
+  const perforation = { flexShrink: 0, height: 0, borderTop: `3px dashed ${INK}`, margin: "0 10px" };
   return (
     <div style={{
-      position: "fixed", inset: 0, zIndex: 250, background: "#1A1008", overflowY: "auto",
-      animation: "screenIn 200ms ease-out",
+      position: "fixed", inset: 0, zIndex: 250, background: "#1A1008", boxSizing: "border-box",
+      display: "flex", flexDirection: "column", animation: "screenIn 200ms ease-out",
+      padding: "calc(env(safe-area-inset-top,0px) + 6px) 8px calc(env(safe-area-inset-bottom,0px) + 8px)",
     }}>
       <style>{"@keyframes screenIn{from{opacity:0;transform:translateY(14px)}}"}</style>
-      <div style={{ position: "sticky", top: 0, zIndex: 5, padding: "8px 10px", background: "linear-gradient(#1A1008, rgba(26,16,8,0))" }}>
+      <div style={{ flexShrink: 0, width: "100%", maxWidth: 430, margin: "0 auto 6px" }}>
         <button type="button" onClick={() => go("apartment")} style={{
-          width: 74, height: 30, border: 0, cursor: "pointer", color: "#FFD97A", fontSize: 11, ...LB,
+          width: 74, height: 28, border: 0, cursor: "pointer", color: "#FFD97A", fontSize: 11, ...LB,
           background: `url(${LEDGER_CHIP_DARK}) center/100% 100% no-repeat`,
         }}>BACK</button>
       </div>
-      <div style={{ width: "100%", maxWidth: 430, margin: "0 auto", padding: "0 10px 28px" }}>
-        {/* Cat of the Month header (single exact PNG) */}
-        <div style={{ ...card, padding: "12px 14px 8px" }}>
-          <img src={CAL_HEADER} alt="Cat of the Month: Stretchy" style={{ width: "100%", display: "block", imageRendering: "pixelated" }} />
+      {/* One connected calendar: header flap · body · critical-path flap, joined
+          by perforations inside a single paper card. Natural height, centered in
+          the viewport so the whole thing is visible without scrolling. */}
+      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", justifyContent: "center", width: "100%", maxWidth: 430, margin: "0 auto" }}>
+      <div style={{
+        ...card, flex: "0 1 auto", maxHeight: "100%",
+        display: "flex", flexDirection: "column", overflow: "hidden",
+      }}>
+        {/* header flap */}
+        <div style={{ flex: "0 0 auto", display: "flex", justifyContent: "center", alignItems: "center", padding: "10px 12px 6px" }}>
+          <img src={CAL_HEADER} alt="Cat of the Month: Stretchy" style={{
+            maxHeight: "23vh", maxWidth: "76%", objectFit: "contain", imageRendering: "pixelated", display: "block",
+          }} />
         </div>
-        {/* tear line */}
-        <div style={{ height: 0, borderTop: `3px dashed ${INK}`, margin: "9px 6px" }} />
-        {/* calendar body (+ Critical Path flap folded onto the bottom) */}
-        <div style={{ ...card, padding: "12px 12px 16px", overflow: "hidden" }}>
-          <div style={{ color: INK, fontSize: 12, ...LB, marginBottom: 6 }}>PHASE: {cal.phaseLabel.toUpperCase()}</div>
-          <div style={{ textAlign: "center", color: INK, fontSize: 22, ...LB, letterSpacing: 3, marginBottom: 10 }}>— {cal.title} —</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 3, marginBottom: 4 }}>
+        <div style={perforation} />
+        {/* body (natural height; square grid) */}
+        <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", padding: "6px 10px 4px" }}>
+          <div style={{ position: "relative", marginBottom: 4, flexShrink: 0 }}>
+            <span style={{ position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", color: "#7A6446", fontSize: 9, ...LB }}>PHASE: {cal.phaseLabel.toUpperCase()}</span>
+            <div style={{ textAlign: "center", color: INK, fontSize: 18, ...LB, letterSpacing: 3 }}>— {cal.title} —</div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 3, marginBottom: 3, flexShrink: 0 }}>
             {cal.weekdays.map((wd) => (
-              <div key={wd} style={{ textAlign: "center", color: "#7A6446", fontSize: 10, ...LB }}>{wd}</div>
+              <div key={wd} style={{ textAlign: "center", color: "#7A6446", fontSize: 9, ...LB }}>{wd}</div>
             ))}
           </div>
-          {cal.weeks.map((week, wi) => (
-            <div key={wi} style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 3, marginBottom: 3 }}>
-              {week.map((cell, ci) => (
-                <div key={ci} style={{
-                  position: "relative", aspectRatio: "1 / 1", borderRadius: 4, overflow: "hidden",
-                  border: `1.5px solid ${cell.inMonth ? LINE : "transparent"}`,
-                  background: cell.inMonth ? "rgba(255,255,255,0.22)" : "transparent",
-                }}>
-                  <span style={{
-                    position: "absolute", top: 1, left: 3, fontSize: 9, ...LB, zIndex: 1,
-                    color: !cell.inMonth ? LINE : cell.isPast ? FAINT : INK,
-                  }}>{cell.day}</span>
-                  {cell.inMonth && cell.lanes.length > 0 && (
-                    <div style={{
-                      position: "absolute", left: 1, right: 1, bottom: 1, top: 12,
-                      display: "flex", flexWrap: "wrap", alignContent: "center", justifyContent: "center",
-                      gap: 1, opacity: cell.isPast ? 0.5 : 1,
-                    }}>
-                      {cell.lanes.map((lane) => (
-                        <img key={lane} src={CAL_LANE_ICON[lane]} alt="" style={{
-                          width: 13, height: 13, objectFit: "contain", imageRendering: "pixelated",
-                        }} />
-                      ))}
-                    </div>
-                  )}
-                  {cell.inMonth && cell.lanes.length === 0 && cell.isPast && (
-                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      {icon(CAL_INK_X, "46%")}
-                    </div>
-                  )}
-                  {cell.isToday && (
-                    <img src={CAL_TODAY_RING} alt="today" style={{
-                      position: "absolute", inset: "4%", width: "92%", height: "92%",
-                      imageRendering: "pixelated", pointerEvents: "none", zIndex: 2,
-                    }} />
-                  )}
-                </div>
-              ))}
-            </div>
-          ))}
-          {/* legend */}
-          <div style={{
-            display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "6px 14px",
-            marginTop: 12, paddingTop: 10, borderTop: `2px dotted ${LINE}`,
-          }}>
-            {CAL_LEGEND_ORDER.map((lane) => (
-              <div key={lane} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                {icon(CAL_LANE_ICON[lane], 16)}
-                <span style={{ color: "#6B563B", fontSize: 10, ...LB }}>{CAL_LANE_LABEL[lane].toUpperCase()}</span>
+          <div style={{ display: "grid", gap: 3, gridTemplateColumns: "repeat(7,1fr)" }}>
+            {cal.weeks.flat().map((cell, ci) => (
+              <div key={ci} style={{
+                position: "relative", aspectRatio: "1 / 1", borderRadius: 4, overflow: "hidden",
+                border: `1.5px solid ${cell.inMonth ? LINE : "transparent"}`,
+                background: cell.inMonth ? "rgba(255,255,255,0.22)" : "transparent",
+              }}>
+                <span style={{
+                  position: "absolute", top: 1, left: 3, fontSize: 9, ...LB, zIndex: 1,
+                  color: !cell.inMonth ? LINE : cell.isPast ? FAINT : INK,
+                }}>{cell.day}</span>
+                {cell.inMonth && cell.lanes.length > 0 && (
+                  <div style={{
+                    position: "absolute", left: 1, right: 1, bottom: 1, top: 11,
+                    display: "flex", flexWrap: "wrap", alignContent: "center", justifyContent: "center",
+                    gap: 1, opacity: cell.isPast ? 0.5 : 1,
+                  }}>
+                    {cell.lanes.map((lane) => (
+                      <img key={lane} src={CAL_LANE_ICON[lane]} alt="" style={{
+                        width: 12, height: 12, objectFit: "contain", imageRendering: "pixelated",
+                      }} />
+                    ))}
+                  </div>
+                )}
+                {cell.inMonth && cell.lanes.length === 0 && cell.isPast && (
+                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {icon(CAL_INK_X, "44%")}
+                  </div>
+                )}
+                {cell.isToday && (
+                  <img src={CAL_TODAY_RING} alt="today" style={{
+                    position: "absolute", inset: "4%", width: "92%", height: "92%",
+                    imageRendering: "pixelated", pointerEvents: "none", zIndex: 2,
+                  }} />
+                )}
               </div>
             ))}
           </div>
-          {/* Critical Path — the calendar's bottom flap: a perforated fold below
-              the legend, part of the same paper page, not a separate card. */}
-          <div style={{ margin: "14px -12px 0", borderTop: `3px dashed ${INK}`, paddingTop: 0 }} />
           <div style={{
-            margin: "0 -12px -16px", padding: "12px 10px 14px", borderRadius: "0 0 8px 8px",
-            background: "rgba(0,0,0,0.05)",
+            flexShrink: 0, display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "3px 12px",
+            marginTop: 7, paddingTop: 6, borderTop: `2px dotted ${LINE}`,
           }}>
-            <div style={{ textAlign: "center", color: INK, fontSize: 12, ...LB, letterSpacing: 2, marginBottom: 9 }}>— CRITICAL PATH —</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 4 }}>
-              {cal.anchors.map((a) => (
-                <div key={a.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, textAlign: "center" }}>
-                  <div style={{ color: "#8A7250", fontSize: 9, ...LB }}>JUL {a.day}</div>
-                  {icon(CAL_LANE_ICON[a.lane], 22)}
-                  <div style={{ color: INK, fontSize: 9, ...LB, lineHeight: 1.15 }}>{a.label}</div>
-                </div>
-              ))}
-            </div>
+            {CAL_LEGEND_ORDER.map((lane) => (
+              <div key={lane} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                {icon(CAL_LANE_ICON[lane], 14)}
+                <span style={{ color: "#6B563B", fontSize: 9, ...LB }}>{CAL_LANE_LABEL[lane].toUpperCase()}</span>
+              </div>
+            ))}
           </div>
         </div>
+        <div style={perforation} />
+        {/* critical-path flap */}
+        <div style={{ flexShrink: 0, padding: "7px 10px 8px", background: "rgba(0,0,0,0.05)" }}>
+          <div style={{ textAlign: "center", color: INK, fontSize: 11, ...LB, letterSpacing: 2, marginBottom: 6 }}>— CRITICAL PATH —</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 4 }}>
+            {cal.anchors.map((a) => (
+              <div key={a.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, textAlign: "center" }}>
+                <div style={{ color: "#8A7250", fontSize: 8, ...LB }}>JUL {a.day}</div>
+                {icon(CAL_LANE_ICON[a.lane], 20)}
+                <div style={{ color: INK, fontSize: 8, ...LB, lineHeight: 1.15 }}>{a.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
       </div>
     </div>
   );
