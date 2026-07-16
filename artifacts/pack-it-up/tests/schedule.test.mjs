@@ -374,7 +374,7 @@ test("manualToggleHand removes a scheduler-selected non-forced card", () => {
   assert.ok(next.manualDropIds.includes("sel1"), "removed card must be tracked in manualDropIds");
 });
 
-test("manualToggleHand cannot remove a date-forced card", () => {
+test("manualToggleHand can put back a date-forced card", () => {
   const forced = mkTask({
     id: "forced1", criticality: 2,
     exactDate: "2026-07-11", targetDate: "2026-07-11", latestDate: "2026-07-11",
@@ -383,7 +383,11 @@ test("manualToggleHand cannot remove a date-forced card", () => {
   const deal = dealDailyHand(tasks, "fumes", d("2026-07-11"));
   assert.ok(deal.selectedTaskIds.includes("forced1"), "setup: exact-date-today card is bound + selected");
   const next = manualToggleHand(deal, "forced1", tasks, d("2026-07-11"));
-  assert.deepEqual(next, deal, "removing a date-forced card must be a no-op");
+  assert.ok(!next.selectedTaskIds.includes("forced1"), "a date-forced card can be put back out of the hand");
+  assert.ok(next.manualDropIds.includes("forced1"), "the put-back is tracked as a manual drop");
+  // …and re-adding it works
+  const back = manualToggleHand(next, "forced1", tasks, d("2026-07-11"));
+  assert.ok(back.selectedTaskIds.includes("forced1"), "re-adding a put-back forced card restores it");
 });
 
 test("re-toggling a manually dropped card restores it", () => {

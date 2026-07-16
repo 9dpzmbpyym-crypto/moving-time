@@ -480,7 +480,6 @@ export function manualToggleHand(dailyDeal, taskId, tasks, today = new Date()) {
   const allTasks = normalizeTasks(tasks);
   const task = allTasks.find((t) => t.id === taskId);
   if (!task || !isOpen(task)) return dailyDeal;
-  const forced = isBoundToday(task, today, allTasks);
 
   const manualAddSet = new Set(dailyDeal.manualAddIds || []);
   const manualDropSet = new Set(dailyDeal.manualDropIds || []);
@@ -489,7 +488,9 @@ export function manualToggleHand(dailyDeal, taskId, tasks, today = new Date()) {
   const effortById = { ...(dailyDeal.effortById || {}) };
 
   if (inHand) {
-    if (forced) return dailyDeal; // date-forced cards cannot be removed
+    // Any card in the hand can be put back — including date-forced BOUND cards.
+    // Their deadline pressure still shows in the ledger; the player just chooses
+    // not to hold the card in today's hand.
     manualAddSet.delete(taskId);
     if (selectedSet.has(taskId)) {
       manualDropSet.add(taskId);
@@ -636,10 +637,10 @@ export function ensureDailyDeal(session, tasks, energy, today = new Date()) {
       selected.add(id);
       if (deal.effortById[id] == null) deal.effortById[id] = effortOf(byId[id]);
     }
-    // A carried drop is dropped again UNLESS the task is now date-forced —
-    // a real deadline overrides an earlier manual put-back.
-    const carriedDrops = (prev.manualDropIds || [])
-      .filter((id) => !(byId[id] && isBoundToday(byId[id], today, allOpenTasks)));
+    // A manual put-back sticks for the rest of the day, even for date-forced
+    // BOUND cards — the player's choice to set a card aside is honored until the
+    // next day's fresh deal. (Only carry drops for tasks still open.)
+    const carriedDrops = (prev.manualDropIds || []).filter((id) => byId[id]);
     for (const id of carriedDrops) selected.delete(id);
 
     deal.selectedTaskIds = [...selected];

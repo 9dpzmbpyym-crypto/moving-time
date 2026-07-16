@@ -1362,10 +1362,10 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
                   padding: "6px 8px", background: "#5D7C3B", color: "#F2E4C0",
                   border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB,
                 }}>Done</button>
-                {!focus.bound && <button type="button" onClick={() => putBack(focus.id)} style={{
+                <button type="button" onClick={() => putBack(focus.id)} style={{
                   padding: "6px 8px", background: "#3A1810", color: "#E8C4A8",
                   border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB,
-                }}>Put back</button>}
+                }}>Put back</button>
               </div>
             )}
 
@@ -1778,7 +1778,6 @@ function LedgerScreen({ go, tasks, setTasks, session, onSessionBump }) {
       {rows.map((t) => {
         const open = isOpen(t);
         const inHand = handSet.has(t.id);
-        const handForced = hasTodayDeal && open && isBoundToday(t, new Date(), tasks);
         if (editId === t.id) {
           const dateLocked = isTaskDateLocked(t);
           const datePreview = !dateLocked && /^\d{4}-\d{2}-\d{2}$/.test(editDraft.dueDate)
@@ -1894,25 +1893,17 @@ function LedgerScreen({ go, tasks, setTasks, session, onSessionBump }) {
                   }}>UNDO ✓</button>
                 )}
                 {open && hasTodayDeal && (
-                  handForced ? (
-                    <span aria-label={`${t.title} is locked into today's hand`} style={{
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      padding: "3px 4px", border: "2px solid #120A04", background: "#241509",
-                      color: "#8A7350", fontSize: 9, textAlign: "center", ...LB,
-                    }}>LOCKED</span>
-                  ) : (
-                    <button
-                      type="button"
-                      aria-label={inHand ? `Remove ${t.title} from today's hand` : `Add ${t.title} to today's hand`}
-                      onClick={() => toggleHand(t.id)}
-                      style={{
-                        padding: "3px 4px", border: "2px solid #120A04", cursor: "pointer",
-                        background: inHand ? "#44695B" : "#241509",
-                        color: inHand ? "#F2E4C0" : "#C9B896",
-                        fontSize: 9, textAlign: "center", ...LB,
-                      }}
-                    >{inHand ? "IN HAND ✓" : "HAND +"}</button>
-                  )
+                  <button
+                    type="button"
+                    aria-label={inHand ? `Remove ${t.title} from today's hand` : `Add ${t.title} to today's hand`}
+                    onClick={() => toggleHand(t.id)}
+                    style={{
+                      padding: "3px 4px", border: "2px solid #120A04", cursor: "pointer",
+                      background: inHand ? "#44695B" : "#241509",
+                      color: inHand ? "#F2E4C0" : "#C9B896",
+                      fontSize: 9, textAlign: "center", ...LB,
+                    }}
+                  >{inHand ? "IN HAND ✓" : "HAND +"}</button>
                 )}
               </>
             )}
