@@ -4080,9 +4080,9 @@ const CAL_LANE_LABEL = {
 };
 // Legend reads in the mockup's order, not lane-priority order.
 const CAL_LEGEND_ORDER = ["move", "job", "admin", "health", "cat", "housing"];
-// Header flap and Critical Path flap share this height so they read as a
-// matched pair bookending the grid.
-const CAL_FLAP_H = "16vh";
+// Prominent header flap (roughly the weight of the grid below it); the Critical
+// Path flap stays thin, hugging its single compact row.
+const CAL_HEADER_H = "24vh";
 
 /**
  * Read-only kitchen wall calendar. Every inked day comes from buildJulyCalendar
@@ -4120,8 +4120,8 @@ function CalendarScreen({ go, tasks }) {
         ...card, flex: "0 1 auto", maxHeight: "100%",
         display: "flex", flexDirection: "column", overflow: "hidden",
       }}>
-        {/* header flap — same fixed height as the critical-path flap below */}
-        <div style={{ flex: "0 0 auto", height: CAL_FLAP_H, display: "flex", justifyContent: "center", alignItems: "center", padding: "6px 12px 4px" }}>
+        {/* header flap — prominent */}
+        <div style={{ flex: "0 0 auto", height: CAL_HEADER_H, display: "flex", justifyContent: "center", alignItems: "center", padding: "8px 12px 4px" }}>
           <img src={CAL_HEADER} alt="Cat of the Month: Stretchy" style={{
             maxHeight: "100%", maxWidth: "80%", objectFit: "contain", imageRendering: "pixelated", display: "block",
           }} />
@@ -4190,15 +4190,17 @@ function CalendarScreen({ go, tasks }) {
           </div>
         </div>
         <div style={perforation} />
-        {/* critical-path flap — same fixed height as the header flap above */}
-        <div style={{ flex: "0 0 auto", height: CAL_FLAP_H, display: "flex", flexDirection: "column", justifyContent: "center", padding: "6px 10px", background: "rgba(0,0,0,0.05)" }}>
-          <div style={{ textAlign: "center", color: INK, fontSize: 10, ...LB, letterSpacing: 2, marginBottom: 6 }}>— CRITICAL PATH —</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 3 }}>
+        {/* critical-path flap — thin, hugs one compact row */}
+        <div style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: 8, padding: "5px 10px", background: "rgba(0,0,0,0.05)" }}>
+          <div style={{ flexShrink: 0, color: INK, fontSize: 8, ...LB, letterSpacing: 1, lineHeight: 1.05, width: 44 }}>CRITICAL PATH</div>
+          <div style={{ flex: 1, display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 4 }}>
             {cal.anchors.map((a) => (
-              <div key={a.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1, textAlign: "center" }}>
-                <div style={{ color: "#8A7250", fontSize: 7, ...LB }}>JUL {a.day}</div>
-                {icon(CAL_LANE_ICON[a.lane], 15)}
-                <div style={{ color: INK, fontSize: 7, ...LB, lineHeight: 1.1 }}>{a.label}</div>
+              <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 3, minWidth: 0 }}>
+                {icon(CAL_LANE_ICON[a.lane], 14)}
+                <div style={{ minWidth: 0, lineHeight: 1.05 }}>
+                  <div style={{ color: "#8A7250", fontSize: 7, ...LB }}>JUL {a.day}</div>
+                  <div style={{ color: INK, fontSize: 7.5, ...LB, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.label}</div>
+                </div>
               </div>
             ))}
           </div>
