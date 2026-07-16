@@ -117,11 +117,12 @@ export function buildJulyCalendar({ tasks = [], today = new Date(), year = 2026,
   const noteFor = (d) => {
     const key = keyFor(d);
     let m = marks.get(key);
-    if (!m) { m = { best: null, critical: false, labels: [] }; marks.set(key, m); }
+    if (!m) { m = { best: null, lanes: new Set(), critical: false, labels: [] }; marks.set(key, m); }
     return m;
   };
   const consider = (d, lane, score, isCritical, label) => {
     const m = noteFor(d);
+    m.lanes.add(lane);
     if (!m.best || score > m.best.score
       || (score === m.best.score && laneRank(lane) < laneRank(m.best.lane))) {
       m.best = { lane, score };
@@ -142,12 +143,18 @@ export function buildJulyCalendar({ tasks = [], today = new Date(), year = 2026,
   }
 
   const cellFor = (d, inMonth) => {
-    if (!inMonth) return { day: d, key: null, inMonth: false, lane: null, isToday: false, isPast: false, isCritical: false, count: 0, labels: [] };
+    if (!inMonth) return { day: d, key: null, inMonth: false, lane: null, lanes: [], isToday: false, isPast: false, isCritical: false, count: 0, labels: [] };
     const key = keyFor(d);
     const m = marks.get(key);
+    // The scored primary lane leads; every other distinct lane due that day
+    // follows by move-criticality, so a cell can show every kind of work.
+    const primary = m?.best?.lane || null;
+    const rest = m ? [...m.lanes].filter((l) => l !== primary).sort((a, b) => laneRank(a) - laneRank(b)) : [];
+    const lanes = primary ? [primary, ...rest] : rest;
     return {
       day: d, key, inMonth: true,
-      lane: m?.best?.lane || null,
+      lane: primary,
+      lanes,
       isToday: key === todayKey,
       isPast: todayKey != null && key < todayKey,
       isCritical: !!(m && m.critical),

@@ -40,6 +40,19 @@ const t15 = cells.find((c) => c.key === "2026-07-15");
 assert.equal(t15.lane, "housing", "Jul 15 shows the housing sublet-lock");
 assert.ok(t15.isCritical, "Jul 15 is critical");
 
+// Each in-month day exposes every distinct lane due that day (primary first),
+// so the cell can show more than one icon; filler cells expose none.
+for (const c of cells) {
+  if (!c.inMonth) { assert.deepEqual(c.lanes, [], "filler cell has no lanes"); continue; }
+  assert.ok(Array.isArray(c.lanes), "in-month cell has a lanes array");
+  assert.equal(new Set(c.lanes).size, c.lanes.length, `Jul ${c.day} lanes are distinct`);
+  if (c.lane) assert.equal(c.lanes[0], c.lane, `Jul ${c.day} primary lane leads the list`);
+  for (const l of c.lanes) assert.ok(CALENDAR_LANES.includes(l), `lane ${l} is known`);
+}
+// Jul 15 has several kinds of work due, not just the sublet lock.
+assert.ok(t15.lanes.length >= 3, "Jul 15 surfaces multiple lanes");
+assert.ok(t15.lanes.includes("move") && t15.lanes.includes("housing"), "Jul 15 includes move + housing");
+
 // Anchors: exactly the four move milestones, in date order, with lanes.
 assert.deepEqual(cal.anchors.map((a) => a.day), [15, 22, 27, 31], "anchor days");
 assert.deepEqual(cal.anchors.map((a) => a.lane), ["housing", "cat", "move", "move"], "anchor lanes");
