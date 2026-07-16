@@ -125,6 +125,7 @@ import {
   resolveTaskDestination,
   isWorldBoundTask,
   normalizeTaskBinding,
+  describeBinding,
 } from "./taskBindings.js";
 import {
   SESSION_GOALS,
@@ -162,6 +163,7 @@ import {
   sanitizeApiKey,
   keyFingerprint,
   formatShirleyLineError,
+  LINE_BUSY_LABEL,
 } from "./receptionistCall.js";
 import { NPCS, canNpcMark, pickIncomingCaller } from "./npcs.js";
 
@@ -526,12 +528,32 @@ export function VerticalTaskCard({
               color: "#1A1008", fontSize: metaPx, lineHeight: 1, overflow: "visible", whiteSpace: "nowrap",
               textAlign: "left", ...LB,
             }}>{fmtCardDate(task?.latestDate)}</div>
-            {(task?.notes || task?.detail) && (
-              <div style={{
-                position: "absolute", left: "10%", right: "10%", top: "54%", height: "23%",
-                color: "#3A2018", fontSize: Math.max(5, metaPx - 1), lineHeight: 1.15, overflow: "hidden", textAlign: "left", ...LB,
-              }}>{task.notes || task.detail}</div>
-            )}
+            {(() => {
+              const lines = [];
+              const job = task?.jobId ? SAMPLE_JOBS[task.jobId] : null;
+              if (job) {
+                if (job.org) lines.push(job.org);
+                if (job.salary) lines.push(job.salary);
+                if (job.nextAction) lines.push(`next: ${job.nextAction}`);
+              } else {
+                const bindingDesc = describeBinding(task?.binding);
+                if (bindingDesc) lines.push(`🔗 ${bindingDesc}`);
+              }
+              if (lines.length < 3 && task?.dependsNote) lines.push(`after: ${task.dependsNote}`);
+              if (lines.length < 3 && (task?.notes || task?.detail)) lines.push(task.notes || task.detail);
+              const bodyLines = lines.slice(0, 3);
+              return bodyLines.length > 0 && (
+                <div style={{
+                  position: "absolute", left: "10%", right: "10%", top: "54%", height: "23%",
+                  color: "#6B4A28", fontSize: Math.max(5, metaPx - 1), lineHeight: 1.25, overflow: "hidden",
+                  textAlign: "left", display: "flex", flexDirection: "column", ...LB, fontWeight: 400,
+                }}>
+                  {bodyLines.map((line, i) => (
+                    <div key={i} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{line}</div>
+                  ))}
+                </div>
+              );
+            })()}
           </>
         )}
         {compact && (
@@ -1327,10 +1349,10 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
                   padding: "6px 8px", background: "#3A2410", color: "#FFD97A",
                   border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB,
                 }}>Go</button>
-                {!isWorldBoundTask(focus) && <button type="button" onClick={() => markDone(focus.id)} style={{
+                <button type="button" onClick={() => markDone(focus.id)} style={{
                   padding: "6px 8px", background: "#5D7C3B", color: "#F2E4C0",
                   border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB,
-                }}>Done</button>}
+                }}>Done</button>
                 {!focus.bound && <button type="button" onClick={() => putBack(focus.id)} style={{
                   padding: "6px 8px", background: "#3A1810", color: "#E8C4A8",
                   border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB,
@@ -2140,6 +2162,7 @@ function ShirleyCallOverlay({
     if (waiting) return "…";
     if (lineSource === "live") return "live · OpenRouter";
     if (lineSource === "script") {
+      if (lineError === LINE_BUSY_LABEL) return "desk line";
       return lineError
         ? `script bank · ${lineError}`
         : "script bank";

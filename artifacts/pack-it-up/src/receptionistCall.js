@@ -22,6 +22,10 @@ const RATE_LIMIT_FALLBACKS = [
   "google/gemma-4-31b-it:free",
 ];
 const MAX_MODEL_ATTEMPTS = 2;
+/** Shown when every model in the rotation (plus the one silent retry) 429s. */
+export const LINE_BUSY_LABEL = "line busy, using the desk script";
+/** Wait before the one silent whole-rotation retry on a 429. */
+const RATE_LIMIT_RETRY_DELAY_MS = 1200;
 /** Slugs we used to ship that are dead, paid-only, congested, or CoT-leaky for Shirley. */
 const STALE_DEFAULTS = new Set([
   "openrouter/free",
@@ -65,7 +69,7 @@ export function formatShirleyLineError(error, detail) {
     return "free model blocked/gone — enable free endpoints in openrouter.ai/settings/privacy";
   }
   if (/http_429|rate.?limit|too many requests/i.test(raw)) {
-    return "free model busy (429) — wait ~1 min or switch free model slug in Settings";
+    return LINE_BUSY_LABEL;
   }
   if (error === "timeout" || /abort/i.test(raw)) {
     return "timed out — free models are slow; try again";
@@ -437,49 +441,65 @@ export async function askNpc(npcId, {
   ];
 
   const models = buildModelAttempts(primary);
-  const deadline = Date.now() + OVERALL_BUDGET_MS;
 
-  let lastError = "network";
-  let lastDetail = "";
-  for (const model of models) {
-    const left = deadline - Date.now();
-    if (left < 1500) {
-      lastError = "timeout";
-      lastDetail = "overall budget";
-      break;
-    }
-    try {
-      const raw = await callOpenRouterOnce({
-        apiKey: settings.apiKey,
-        model,
-        messages: chatMessages,
-        timeoutMs: Math.min(timeoutMs, left),
-      });
-      // Machine lines are mutually exclusive (one per turn), but strip all
-      // four so a stray/duplicate tag never leaks into the spoken line.
-      const { display: afterBook, book } = parseBookTag(raw);
-      const { display: afterCancel, cancel } = parseCancelTag(afterBook);
-      const { display: afterMark, mark } = parseMarkTag(afterCancel);
-      const { display: afterAdd, add } = parseAddTag(afterMark);
-      const text = scrubShirleyReply(afterAdd || raw);
-      if (!text) {
-        const err = new Error("empty");
-        throw err;
+  // One full pass through the model rotation (unchanged cap logic below).
+  // Pulled into a function so a 429 can retry the *whole* rotation once,
+  // rather than retrying just the one provider that got rate-limited.
+  async function attemptRotation() {
+    const deadline = Date.now() + OVERALL_BUDGET_MS;
+    let lastError = "network";
+    let lastDetail = "";
+    let hitRateLimit = false;
+    for (const model of models) {
+      const left = deadline - Date.now();
+      if (left < 1500) {
+        lastError = "timeout";
+        lastDetail = "overall budget";
+        break;
       }
-      if (model !== primary) {
-        console.info(`[${npc.name}] used fallback model:`, model);
+      try {
+        const raw = await callOpenRouterOnce({
+          apiKey: settings.apiKey,
+          model,
+          messages: chatMessages,
+          timeoutMs: Math.min(timeoutMs, left),
+        });
+        // Machine lines are mutually exclusive (one per turn), but strip all
+        // four so a stray/duplicate tag never leaks into the spoken line.
+        const { display: afterBook, book } = parseBookTag(raw);
+        const { display: afterCancel, cancel } = parseCancelTag(afterBook);
+        const { display: afterMark, mark } = parseMarkTag(afterCancel);
+        const { display: afterAdd, add } = parseAddTag(afterMark);
+        const text = scrubShirleyReply(afterAdd || raw);
+        if (!text) {
+          const err = new Error("empty");
+          throw err;
+        }
+        if (model !== primary) {
+          console.info(`[${npc.name}] used fallback model:`, model);
+        }
+        return { ok: true, text, book, cancel, mark, add, error: null, model };
+      } catch (e) {
+        lastError = e?.name === "AbortError" ? "timeout" : (e?.message || "network");
+        lastDetail = e?.detail || "";
+        if (e?.status === 429) hitRateLimit = true;
+        console.warn(`[${npc.name}] model failed:`, model, lastError, lastDetail);
+        // Auth / billing — don't burn the rest of the free pool
+        if (e?.status === 401 || e?.status === 402 || e?.status === 403) break;
+        // 404/429/502/503/timeout/empty → try next (capped)
       }
-      return { ok: true, text, book, cancel, mark, add, error: null, model };
-    } catch (e) {
-      lastError = e?.name === "AbortError" ? "timeout" : (e?.message || "network");
-      lastDetail = e?.detail || "";
-      console.warn(`[${npc.name}] model failed:`, model, lastError, lastDetail);
-      // Auth / billing — don't burn the rest of the free pool
-      if (e?.status === 401 || e?.status === 402 || e?.status === 403) break;
-      // 404/429/502/503/timeout/empty → try next (capped)
     }
+    return { ok: false, text: "", book: null, error: lastError, detail: lastDetail || undefined, hitRateLimit };
   }
-  return { ok: false, text: "", book: null, error: lastError, detail: lastDetail || undefined };
+
+  let result = await attemptRotation();
+  if (!result.ok && result.hitRateLimit) {
+    console.warn(`[${npc.name}] 429 across rotation — one silent retry in ${RATE_LIMIT_RETRY_DELAY_MS}ms`);
+    await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_RETRY_DELAY_MS));
+    result = await attemptRotation();
+  }
+  const { hitRateLimit, ...finalResult } = result;
+  return finalResult;
 }
 
 /**

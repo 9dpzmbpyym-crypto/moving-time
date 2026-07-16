@@ -116,6 +116,59 @@ export function normalizeTaskBinding(binding) {
   };
 }
 
+function shortTargetLabel(feature, rawTarget) {
+  const target = String(rawTarget || "");
+  const opt = ITEM_TARGET_OPTIONS.find((option) => option.value === target)
+    || targetOptionsForFeature(feature).find((option) => option.value === target);
+  if (opt) {
+    const parts = opt.label.split(" · ");
+    return (parts.length > 1 ? parts.slice(1).join(" ") : parts[0]).toLowerCase();
+  }
+  const prettified = target
+    .replace(/^collection:/, "")
+    .replace(/^object:/, "")
+    .replace(/^item:/, "")
+    .replace(/[:_]/g, " ")
+    .trim();
+  return prettified.toLowerCase();
+}
+
+function triggerLabel(feature, trigger) {
+  const opt = (COMPLETION_TRIGGER_OPTIONS[feature] || []).find((option) => option.value === trigger);
+  return opt ? opt.label : trigger;
+}
+
+/** Trigger label with generic lead-in words stripped, for use after "when". */
+function plainTriggerWords(feature, trigger) {
+  return triggerLabel(feature, trigger)
+    .replace(/^Everything\s+/i, "")
+    .replace(/^Every item\s+/i, "")
+    .replace(/^Zone\s+/i, "")
+    .replace(/^Appointment\s+/i, "")
+    .toLowerCase();
+}
+
+/**
+ * Short human string describing what a task's game binding is linked to, for
+ * the card info box. Returns null when the task has no (valid) binding.
+ * Examples: "Buyer found: sofa", "Packs: tv hutch games +1, when packed".
+ */
+export function describeBinding(binding) {
+  const b = normalizeTaskBinding(binding);
+  if (!b) return null;
+  const targets = b.targets || [b.target];
+  const first = shortTargetLabel(b.feature, targets[0]);
+  const extra = targets.length > 1 ? ` +${targets.length - 1}` : "";
+  if (b.feature === "apartment_item") {
+    return `${triggerLabel(b.feature, b.trigger)}: ${first}${extra}`;
+  }
+  const verb = b.feature === "health_zone" || b.feature === "health_appointment"
+    ? "Care"
+    : b.trigger === "sold" ? "Sells" : b.trigger === "donated" ? "Donates" : "Packs";
+  const trigger = plainTriggerWords(b.feature, b.trigger);
+  return `${verb}: ${first}${extra}, when ${trigger}`;
+}
+
 export function resolveTaskDestination(task) {
   const binding = normalizeTaskBinding(task?.binding);
   if (binding?.feature === "apartment_item") {
