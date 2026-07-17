@@ -4164,8 +4164,8 @@ function CalendarScreen({ go, tasks }) {
                 {/* milestone glyphs — bigger than the routine lane icons */}
                 {cell.inMonth && cell.milestones.length > 0 && (
                   <div style={{
-                    position: "absolute", left: 0, right: 0, top: 9,
-                    bottom: cell.lanes.length > 0 ? 10 : 1,
+                    position: "absolute", left: 0, right: 0, top: 1,
+                    bottom: cell.lanes.length > 0 ? 12 : 1,
                     display: "flex", flexWrap: "wrap", alignContent: "center", justifyContent: "center",
                     gap: 1, opacity: cell.isPast ? 0.5 : 1, zIndex: 2,
                   }}>
