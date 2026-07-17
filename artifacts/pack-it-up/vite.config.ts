@@ -1,8 +1,16 @@
 import path from 'path';
+import { execSync } from 'child_process';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
+
+// Short id of the commit this bundle was built from, so the running app can show
+// which build is live (Vercel sets VERCEL_GIT_COMMIT_SHA; fall back to local git).
+const buildId = (
+  process.env.VERCEL_GIT_COMMIT_SHA
+  || (() => { try { return execSync('git rev-parse HEAD').toString().trim(); } catch { return ''; } })()
+).slice(0, 7) || 'dev';
 
 const rawPort = process.env.PORT ?? (process.env.VERCEL ? "4173" : undefined);
 
@@ -28,6 +36,9 @@ if (!basePath) {
 
 export default defineConfig({
   base: basePath,
+  define: {
+    __BUILD_ID__: JSON.stringify(buildId),
+  },
   plugins: [
     react(),
     runtimeErrorOverlay(),

@@ -4056,6 +4056,9 @@ function SettingsScreen({ go }) {
       <div style={{ marginTop: 14, color: "#6B563B", fontSize: 10, textAlign: "center", ...LB }}>
         Drag a slider to 0 to mute that channel — music and SFX are independent.
       </div>
+      <div style={{ marginTop: 8, color: "#5A4832", fontSize: 9, textAlign: "center", ...LB }}>
+        build {typeof __BUILD_ID__ !== "undefined" ? __BUILD_ID__ : "dev"}
+      </div>
     </Screen>
   );
 }
