@@ -53,10 +53,22 @@ for (const c of cells) {
 assert.ok(t15.lanes.length >= 3, "Jul 15 surfaces multiple lanes");
 assert.ok(t15.lanes.includes("move") && t15.lanes.includes("housing"), "Jul 15 includes move + housing");
 
-// Anchors: exactly the four move milestones, in date order, with lanes.
-assert.deepEqual(cal.anchors.map((a) => a.day), [15, 22, 27, 31], "anchor days");
-assert.deepEqual(cal.anchors.map((a) => a.lane), ["housing", "cat", "move", "move"], "anchor lanes");
-assert.equal(cal.anchors[0].label, "Sublet Lock", "anchor short label");
+// Milestones resolve from their pinned task / health zone, date-sorted, and land
+// on their day's cell.
+const KNOWN_MS = new Set(["obgyn", "vision", "dentist", "derm", "vet", "walkthrough", "ubox", "laptop", "suitcase", "lock", "wifi", "flight"]);
+assert.ok(Array.isArray(cal.milestones) && cal.milestones.length >= 8, "milestones resolve from tasks");
+const msByKey = Object.fromEntries(cal.milestones.map((m) => [m.key, m]));
+for (const m of cal.milestones) assert.ok(KNOWN_MS.has(m.key), `known milestone ${m.key}`);
+const msDays = cal.milestones.map((m) => m.day);
+assert.deepEqual(msDays, [...msDays].sort((a, b) => a - b), "milestones are date-sorted");
+assert.ok(msByKey.flight && msByKey.flight.day === 31, "flight milestone lands on Jul 31");
+assert.ok(msByKey.vet, "vet milestone resolves by task id");
+assert.ok(msByKey.dentist, "dentist milestone resolves by health zone (teeth)");
+// The flight day's cell carries the flight milestone key.
+const t31 = cells.find((c) => c.key === "2026-07-31");
+assert.ok(t31.milestones.includes("flight"), "Jul 31 cell carries the flight glyph");
+// Filler cells never carry a milestone.
+for (const c of cells) if (!c.inMonth) assert.deepEqual(c.milestones, [], "filler cell has no milestones");
 
 // Phase on Jul 16 is mid-month (source of truth, not the mockup's "Final Push").
 assert.equal(cal.phaseLabel, "Mid-month", "phase label from the spine");

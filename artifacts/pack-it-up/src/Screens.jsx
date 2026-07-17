@@ -145,6 +145,18 @@ import CAL_ICON_JOB from "./assets/calendar/job_briefcase.png";
 import CAL_ICON_ADMIN from "./assets/calendar/admin_folder.png";
 import CAL_ICON_HEALTH from "./assets/calendar/health_cross.png";
 import CAL_ICON_CAT from "./assets/calendar/stretchy_cat_face.png";
+import MS_DENTIST from "./assets/calendar/milestone_dentist.png";
+import MS_VISION from "./assets/calendar/milestone_vision.png";
+import MS_DERM from "./assets/calendar/milestone_derm.png";
+import MS_OBGYN from "./assets/calendar/milestone_obgyn.png";
+import MS_VET from "./assets/calendar/milestone_vet.png";
+import MS_UBOX from "./assets/calendar/milestone_ubox.png";
+import MS_WALKTHROUGH from "./assets/calendar/milestone_walkthrough.png";
+import MS_FLIGHT from "./assets/calendar/milestone_flight.png";
+import MS_LOCK from "./assets/calendar/milestone_lock.png";
+import MS_LAPTOP from "./assets/calendar/milestone_laptop.png";
+import MS_WIFI from "./assets/calendar/milestone_wifi.png";
+import MS_SUITCASE from "./assets/calendar/milestone_suitcase.png";
 import {
   RECEPTIONIST_NAME,
   getNudge,
@@ -4074,6 +4086,12 @@ const CAL_LANE_LABEL = {
 };
 // Legend reads in the mockup's order, not lane-priority order.
 const CAL_LEGEND_ORDER = ["move", "job", "admin", "health", "cat", "housing"];
+// Milestone glyphs, keyed to movePhase.MILESTONES.key.
+const CAL_MILESTONE_ICON = {
+  dentist: MS_DENTIST, vision: MS_VISION, derm: MS_DERM, obgyn: MS_OBGYN,
+  vet: MS_VET, ubox: MS_UBOX, walkthrough: MS_WALKTHROUGH, flight: MS_FLIGHT,
+  lock: MS_LOCK, laptop: MS_LAPTOP, wifi: MS_WIFI, suitcase: MS_SUITCASE,
+};
 // Prominent header flap (roughly the weight of the grid below it); the Critical
 // Path flap stays thin, hugging its single compact row.
 const CAL_HEADER_H = "24vh";
@@ -4143,17 +4161,40 @@ function CalendarScreen({ go, tasks }) {
                   position: "absolute", top: 1, left: 3, fontSize: 9, ...LB, zIndex: 3,
                   color: !cell.inMonth ? LINE : cell.isPast ? FAINT : INK,
                 }}>{cell.day}</span>
+                {/* milestone glyphs — bigger than the routine lane icons */}
+                {cell.inMonth && cell.milestones.length > 0 && (
+                  <div style={{
+                    position: "absolute", left: 0, right: 0, top: 9,
+                    bottom: cell.lanes.length > 0 ? 10 : 1,
+                    display: "flex", flexWrap: "wrap", alignContent: "center", justifyContent: "center",
+                    gap: 1, opacity: cell.isPast ? 0.5 : 1, zIndex: 2,
+                  }}>
+                    {cell.milestones.map((k) => {
+                      const s = cell.milestones.length >= 3 ? 15 : cell.milestones.length === 2 ? 19 : 26;
+                      return (
+                        <img key={k} src={CAL_MILESTONE_ICON[k]} alt="" style={{
+                          width: s, height: s, objectFit: "contain", imageRendering: "pixelated",
+                        }} />
+                      );
+                    })}
+                  </div>
+                )}
+                {/* routine lane icons — small; drop to a bottom strip when a milestone leads */}
                 {cell.inMonth && cell.lanes.length > 0 && (
                   <div style={{
-                    position: "absolute", left: 1, right: 1, bottom: 1, top: 11,
+                    position: "absolute", left: 1, right: 1,
+                    ...(cell.milestones.length > 0 ? { bottom: 1, height: 10 } : { top: 11, bottom: 1 }),
                     display: "flex", flexWrap: "wrap", alignContent: "center", justifyContent: "center",
                     gap: 1, opacity: cell.isPast ? 0.4 : 1,
                   }}>
-                    {cell.lanes.map((lane) => (
-                      <img key={lane} src={CAL_LANE_ICON[lane]} alt="" style={{
-                        width: 12, height: 12, objectFit: "contain", imageRendering: "pixelated",
-                      }} />
-                    ))}
+                    {cell.lanes.map((lane) => {
+                      const s = cell.milestones.length > 0 ? 9 : 12;
+                      return (
+                        <img key={lane} src={CAL_LANE_ICON[lane]} alt="" style={{
+                          width: s, height: s, objectFit: "contain", imageRendering: "pixelated",
+                        }} />
+                      );
+                    })}
                   </div>
                 )}
                 {/* every elapsed day is crossed off, over any icons it carries */}
@@ -4184,17 +4225,15 @@ function CalendarScreen({ go, tasks }) {
           </div>
         </div>
         <div style={perforation} />
-        {/* critical-path flap — thin, hugs one compact row */}
-        <div style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: 8, padding: "5px 10px", background: "rgba(0,0,0,0.05)" }}>
-          <div style={{ flexShrink: 0, color: INK, fontSize: 8, ...LB, letterSpacing: 1, lineHeight: 1.05, width: 44 }}>CRITICAL PATH</div>
-          <div style={{ flex: 1, display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 4 }}>
-            {cal.anchors.map((a) => (
-              <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 3, minWidth: 0 }}>
-                {icon(CAL_LANE_ICON[a.lane], 14)}
-                <div style={{ minWidth: 0, lineHeight: 1.05 }}>
-                  <div style={{ color: "#8A7250", fontSize: 7, ...LB }}>JUL {a.day}</div>
-                  <div style={{ color: INK, fontSize: 7.5, ...LB, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.label}</div>
-                </div>
+        {/* critical-path flap — every milestone in thin two-per-row lines */}
+        <div style={{ flex: "0 0 auto", padding: "5px 10px 7px", background: "rgba(0,0,0,0.05)" }}>
+          <div style={{ textAlign: "center", color: INK, fontSize: 9, ...LB, letterSpacing: 2, marginBottom: 4 }}>— CRITICAL PATH —</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2px 10px" }}>
+            {cal.milestones.map((m) => (
+              <div key={m.key} style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}>
+                <img src={CAL_MILESTONE_ICON[m.key]} alt="" style={{ width: 15, height: 15, objectFit: "contain", imageRendering: "pixelated", flexShrink: 0 }} />
+                <span style={{ flexShrink: 0, color: "#8A7250", fontSize: 7.5, ...LB }}>JUL {m.day}</span>
+                <span style={{ minWidth: 0, color: INK, fontSize: 7.5, ...LB, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.label}</span>
               </div>
             ))}
           </div>

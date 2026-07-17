@@ -28,6 +28,30 @@ export const DATE_TRIGGERS = [
 // first. Mirrors TASK_CATEGORIES ids so a task's `category` doubles as its lane.
 export const CALENDAR_LANES = ["move", "housing", "cat", "health", "job", "admin"];
 
+// Move-spine milestones. Each is pinned to a real task by id, so its calendar
+// date is whatever date that task carries — edit the task and the milestone
+// moves with it. `key` maps to a glyph PNG in Screens.jsx. A milestone whose
+// task is missing or undated simply doesn't render (e.g. vision until you add a
+// vision appointment). Remapping a milestone to a different task is a one-line
+// edit here. Order is the pre-sort tiebreaker for the Critical Path list.
+export const MILESTONES = [
+  // Health milestones match by health `zone` (stable across task edits) and take
+  // the latest-dated open task in that zone — the appointment day, not the
+  // earlier "book it" task. Move/housing milestones pin to a task id.
+  { key: "obgyn", zone: "obgyn", label: "OB/GYN" },
+  { key: "vision", zone: "custom:Vision", label: "Vision" },
+  { key: "dentist", zone: "teeth", label: "Dentist" },
+  { key: "derm", zone: "skin", label: "Dermatology" },
+  { key: "vet", taskId: "c_vet_attend", label: "Vet Visit" },
+  { key: "walkthrough", taskId: "h_walkthrough", label: "Walkthrough" },
+  { key: "ubox", taskId: "m_load1", label: "U-Box Day" },
+  { key: "laptop", taskId: "w_work_return", label: "Work Return" },
+  { key: "suitcase", taskId: "m_plane_bags", label: "Finish Packing" },
+  { key: "lock", taskId: "m_lock_final", label: "Lock U-Box" },
+  { key: "wifi", taskId: "w_wifi_return", label: "Wi-Fi Return" },
+  { key: "flight", taskId: "w_flight", label: "Flight" },
+];
+
 export function dateKey(value = new Date()) {
   if (typeof value === "string") return value.slice(0, 10);
   const date = value instanceof Date ? value : new Date(value);
@@ -117,7 +141,7 @@ export function buildJulyCalendar({ tasks = [], today = new Date(), year = 2026,
   const noteFor = (d) => {
     const key = keyFor(d);
     let m = marks.get(key);
-    if (!m) { m = { best: null, lanes: new Set(), critical: false, labels: [] }; marks.set(key, m); }
+    if (!m) { m = { best: null, lanes: new Set(), critical: false, labels: [], milestones: [] }; marks.set(key, m); }
     return m;
   };
   const consider = (d, lane, score, isCritical, label) => {
@@ -142,8 +166,32 @@ export function buildJulyCalendar({ tasks = [], today = new Date(), year = 2026,
     consider(Number(tr.date.slice(8, 10)), tr.lane, 1000 + (tr.critical ? 100 : 0), !!tr.critical, tr.label);
   }
 
+  // Milestones follow their pinned task's live date. A day can carry more than
+  // one (flight day also has the Wi-Fi return, etc.).
+  const byId = {};
+  for (const t of tasks) if (t?.id) byId[t.id] = t;
+  const monthPrefix = `${year}-${pad(month)}`;
+  const resolveMilestoneTask = (ms) => {
+    if (ms.zone) {
+      // latest-dated open task in the zone = the appointment, not "book it"
+      return (tasks || [])
+        .filter((t) => t?.zone === ms.zone && t?.dueDate)
+        .sort((a, b) => (a.dueDate < b.dueDate ? 1 : a.dueDate > b.dueDate ? -1 : 0))[0];
+    }
+    return byId[ms.taskId];
+  };
+  const milestoneList = [];
+  for (const ms of MILESTONES) {
+    const due = resolveMilestoneTask(ms)?.dueDate;
+    if (!due || due.slice(0, 7) !== monthPrefix) continue;
+    const day = Number(due.slice(8, 10));
+    noteFor(day).milestones.push(ms.key);
+    milestoneList.push({ key: ms.key, day, date: due, label: ms.label });
+  }
+  milestoneList.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+
   const cellFor = (d, inMonth) => {
-    if (!inMonth) return { day: d, key: null, inMonth: false, lane: null, lanes: [], isToday: false, isPast: false, isCritical: false, count: 0, labels: [] };
+    if (!inMonth) return { day: d, key: null, inMonth: false, lane: null, lanes: [], milestones: [], isToday: false, isPast: false, isCritical: false, count: 0, labels: [] };
     const key = keyFor(d);
     const m = marks.get(key);
     // The scored primary lane leads; every other distinct lane due that day
@@ -155,6 +203,7 @@ export function buildJulyCalendar({ tasks = [], today = new Date(), year = 2026,
       day: d, key, inMonth: true,
       lane: primary,
       lanes,
+      milestones: m ? m.milestones : [],
       isToday: key === todayKey,
       isPast: todayKey != null && key < todayKey,
       isCritical: !!(m && m.critical),
@@ -173,18 +222,13 @@ export function buildJulyCalendar({ tasks = [], today = new Date(), year = 2026,
   const weeks = [];
   for (let i = 0; i < flat.length; i += 7) weeks.push(flat.slice(i, i + 7));
 
-  const anchors = DATE_TRIGGERS
-    .filter((tr) => tr.anchor && tr.date.slice(0, 7) === `${year}-${pad(month)}`)
-    .sort((a, b) => (a.date < b.date ? -1 : 1))
-    .map((tr) => ({ id: tr.id, day: Number(tr.date.slice(8, 10)), lane: tr.lane, label: tr.short || tr.label }));
-
   return {
     title: MONTH_LABELS[monthIndex],
     year,
     phaseLabel: currentPhase(today).label,
     weekdays: WEEKDAY_LABELS,
     weeks,
-    anchors,
+    milestones: milestoneList,
     todayKey,
   };
 }
