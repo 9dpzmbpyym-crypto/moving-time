@@ -63,7 +63,23 @@ const msDays = cal.milestones.map((m) => m.day);
 assert.deepEqual(msDays, [...msDays].sort((a, b) => a - b), "milestones are date-sorted");
 assert.ok(msByKey.flight && msByKey.flight.day === 31, "flight milestone lands on Jul 31");
 assert.ok(msByKey.vet, "vet milestone resolves by task id");
-assert.ok(msByKey.dentist, "dentist milestone resolves by health zone (teeth)");
+
+// Health milestones label only already-booked ("attend") slots, never the
+// "make/book the appointment" to-do.
+const teethCal = buildJulyCalendar({
+  today,
+  tasks: [
+    { id: "make", zone: "teeth", category: "health", dueDate: "2026-07-10", title: "Make dentist appointment", kind: "book" },
+    { id: "attend", zone: "teeth", category: "health", dueDate: "2026-07-21", title: "Attend dental appointment" },
+  ],
+});
+const dentist = teethCal.milestones.find((m) => m.key === "dentist");
+assert.ok(dentist && dentist.day === 21, "dentist glyph sits on the attend slot (Jul 21), not the make slot");
+const makeOnly = buildJulyCalendar({
+  today,
+  tasks: [{ id: "make", zone: "skin", category: "health", dueDate: "2026-07-10", title: "Make Dermatology appointment", kind: "book" }],
+});
+assert.ok(!makeOnly.milestones.some((m) => m.key === "derm"), "a make-only zone gets no milestone glyph");
 // The flight day's cell carries the flight milestone key.
 const t31 = cells.find((c) => c.key === "2026-07-31");
 assert.ok(t31.milestones.includes("flight"), "Jul 31 cell carries the flight glyph");

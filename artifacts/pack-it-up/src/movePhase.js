@@ -43,7 +43,7 @@ export const MILESTONES = [
   { key: "dentist", zone: "teeth", label: "Dentist" },
   { key: "derm", zone: "skin", label: "Dermatology" },
   { key: "vet", taskId: "c_vet_attend", label: "Vet Visit" },
-  { key: "walkthrough", taskId: "h_walkthrough", label: "Walkthrough" },
+  { key: "walkthrough", taskId: "m_sweep", label: "Walkthrough / Keys" },
   { key: "ubox", taskId: "m_load1", label: "U-Box Day" },
   { key: "laptop", taskId: "w_work_return", label: "Work Return" },
   { key: "suitcase", taskId: "m_plane_bags", label: "Finish Packing" },
@@ -171,11 +171,19 @@ export function buildJulyCalendar({ tasks = [], today = new Date(), year = 2026,
   const byId = {};
   for (const t of tasks) if (t?.id) byId[t.id] = t;
   const monthPrefix = `${year}-${pad(month)}`;
+  // A "make/book the appointment" task is a to-do to schedule it — not a real
+  // slot. Only "attend" tasks (an appointment that's actually booked) earn a
+  // milestone glyph. Detected by kind:"book", a health_appointment binding, or a
+  // Make/Book title.
+  const isMakeSlot = (t) =>
+    t?.kind === "book"
+    || t?.binding?.feature === "health_appointment"
+    || /^\s*(make|book)\b/i.test(t?.title || "");
   const resolveMilestoneTask = (ms) => {
     if (ms.zone) {
-      // latest-dated open task in the zone = the appointment, not "book it"
+      // latest-dated attended (already-booked) appointment in the zone
       return (tasks || [])
-        .filter((t) => t?.zone === ms.zone && t?.dueDate)
+        .filter((t) => t?.zone === ms.zone && t?.dueDate && !isMakeSlot(t))
         .sort((a, b) => (a.dueDate < b.dueDate ? 1 : a.dueDate > b.dueDate ? -1 : 0))[0];
     }
     return byId[ms.taskId];
