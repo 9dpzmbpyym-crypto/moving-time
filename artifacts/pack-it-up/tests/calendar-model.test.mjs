@@ -75,11 +75,25 @@ const teethCal = buildJulyCalendar({
 });
 const dentist = teethCal.milestones.find((m) => m.key === "dentist");
 assert.ok(dentist && dentist.day === 21, "dentist glyph sits on the attend slot (Jul 21), not the make slot");
-const makeOnly = buildJulyCalendar({
+// A zone with only "make"/prep/contingency to-dos — no booked appointment — stays dark.
+const notBooked = buildJulyCalendar({
   today,
-  tasks: [{ id: "make", zone: "skin", category: "health", dueDate: "2026-07-10", title: "Make Dermatology appointment", kind: "book" }],
+  tasks: [
+    { id: "make", zone: "obgyn", category: "health", dueDate: "2026-07-13", title: "Make OB/GYN appointment", kind: "book" },
+    { id: "plan", zone: "obgyn", category: "health", dueDate: "2026-07-20", title: "Obtain contingency plan if no pre-move OB/GYN appointment" },
+  ],
 });
-assert.ok(!makeOnly.milestones.some((m) => m.key === "derm"), "a make-only zone gets no milestone glyph");
+assert.ok(!notBooked.milestones.some((m) => m.key === "obgyn"), "a zone with only make/contingency to-dos gets no glyph");
+// Add a real attend slot and it lights up on that day.
+const booked = buildJulyCalendar({
+  today,
+  tasks: [
+    { id: "make", zone: "obgyn", category: "health", dueDate: "2026-07-13", title: "Make OB/GYN appointment", kind: "book" },
+    { id: "attend", zone: "obgyn", category: "health", dueDate: "2026-07-23", title: "Attend OB/GYN — IUD replacement" },
+  ],
+});
+const obgyn = booked.milestones.find((m) => m.key === "obgyn");
+assert.ok(obgyn && obgyn.day === 23, "obgyn glyph appears only once an attend slot exists (Jul 23)");
 // The flight day's cell carries the flight milestone key.
 const t31 = cells.find((c) => c.key === "2026-07-31");
 assert.ok(t31.milestones.includes("flight"), "Jul 31 cell carries the flight glyph");

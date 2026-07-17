@@ -171,19 +171,20 @@ export function buildJulyCalendar({ tasks = [], today = new Date(), year = 2026,
   const byId = {};
   for (const t of tasks) if (t?.id) byId[t.id] = t;
   const monthPrefix = `${year}-${pad(month)}`;
-  // A "make/book the appointment" task is a to-do to schedule it — not a real
-  // slot. Only "attend" tasks (an appointment that's actually booked) earn a
-  // milestone glyph. Detected by kind:"book", a health_appointment binding, or a
-  // Make/Book title.
-  const isMakeSlot = (t) =>
-    t?.kind === "book"
-    || t?.binding?.feature === "health_appointment"
-    || /^\s*(make|book)\b/i.test(t?.title || "");
+  // A health milestone lights up only for an appointment the player actually
+  // attends. "Make/Book the appointment", "Obtain contingency plan", records/lab
+  // prep and the like are to-dos, not the appointment, so they never earn a
+  // glyph — the zone stays dark until a real slot is booked. Attend tasks are
+  // titled "Attend …" or carry the health_zone binding the game gives a booked
+  // appointment.
+  const isAttendAppointment = (t) =>
+    /^\s*attend\b/i.test(t?.title || "")
+    || t?.binding?.feature === "health_zone";
   const resolveMilestoneTask = (ms) => {
     if (ms.zone) {
-      // latest-dated attended (already-booked) appointment in the zone
+      // latest-dated booked appointment in the zone (never a make/prep to-do)
       return (tasks || [])
-        .filter((t) => t?.zone === ms.zone && t?.dueDate && !isMakeSlot(t))
+        .filter((t) => t?.zone === ms.zone && t?.dueDate && isAttendAppointment(t))
         .sort((a, b) => (a.dueDate < b.dueDate ? 1 : a.dueDate > b.dueDate ? -1 : 0))[0];
     }
     return byId[ms.taskId];
