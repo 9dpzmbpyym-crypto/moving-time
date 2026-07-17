@@ -4170,7 +4170,7 @@ function CalendarScreen({ go, tasks }) {
                     gap: 1, opacity: cell.isPast ? 0.5 : 1, zIndex: 2,
                   }}>
                     {cell.milestones.map((k) => {
-                      const s = cell.milestones.length >= 3 ? 13 : cell.milestones.length === 2 ? 16 : 21;
+                      const s = cell.milestones.length >= 3 ? 9 : cell.milestones.length === 2 ? 11 : 15;
                       return (
                         <img key={k} src={CAL_MILESTONE_ICON[k]} alt="" style={{
                           width: s, height: s, objectFit: "contain", imageRendering: "pixelated",
