@@ -34,6 +34,7 @@ export const ITEM_TARGET_OPTIONS = [
   ["dining:dining_table", "Dining · Table"],
   ["dining:dining_chairs", "Dining · Chair set"],
   ["living:tv_hutch", "Living · TV hutch"],
+  ["living:tv", "Living · Roku TV"],
   ["living:coffee_table", "Living · Coffee table"],
   ["living:sofa", "Living · Sofa"],
 ].map(([value, label]) => ({ value, label }));
@@ -287,8 +288,15 @@ export function reconcileTasksFromWorldState(tasks, world) {
     if (!binding) return task;
     const satisfied = taskBindingSatisfied(task, world);
     if (satisfied === true) return { ...task, status: binding.resultStatus };
-    // State-bound "done" tasks reopen when an undo restores the world.
-    if (satisfied === false && task.completionMode === "world" && binding.resultStatus === "done" && task.status === "done") {
+    // State-bound "done" tasks reopen when an undo restores the world —
+    // but a hand Done must never be silently reverted.
+    if (
+      satisfied === false
+      && task.completionMode === "world"
+      && !task.manualDone
+      && binding.resultStatus === "done"
+      && task.status === "done"
+    ) {
       return { ...task, status: "pending" };
     }
     return task;

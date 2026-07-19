@@ -182,6 +182,7 @@ export function mergeTasks(initial, savedTasks) {
       room: s.room !== undefined ? s.room : (t.room || null),
       objectId: s.objectId !== undefined ? s.objectId : (t.objectId || null),
       completionMode: s.completionMode || t.completionMode || "manual",
+      manualDone: s.manualDone !== undefined ? !!s.manualDone : !!t.manualDone,
       bookTaskId: s.bookTaskId || t.bookTaskId || null,
       score: typeof s.score === "number" ? s.score : t.score,
       jobId: s.jobId !== undefined && s.jobId !== null ? s.jobId : t.jobId,
@@ -226,6 +227,8 @@ export function mergeTasks(initial, savedTasks) {
       estimatedLatest: !!s.estimatedLatest,
       binding: s.binding || null,
       scheduleOverride: !!s.scheduleOverride,
+      completionMode: s.completionMode || "manual",
+      manualDone: !!s.manualDone,
     }));
   }
   return merged;

@@ -24,6 +24,13 @@ Legend: **YES** = ship soon · **SOFT** = ship if cheap / after YES
 
 ## Open next (Jul 11 — after Grok env/storage session)
 
+### World-truth code pass — [cursor] (Jul 19) — see `docs/sessions/2026-07-19-cursor-world-truth.md`
+- [x] **manual-Done sticks** — hand Done never silently reopened by `reconcileTasksFromWorldState` (`manualDone` flag + test)
+- [x] **Set-dressing** — plants / sill bottles / wastebasket / side-cabinet out of packable catalog; art stays
+- [x] **`living:tv`** — Roku split from TV hutch; buyer/remove tasks bound for fresh installs
+- [x] **Personal laptop** carry-on item in desk hutch (`carryOn` — Pack only, no Sell/Donate)
+- [ ] **[claude/fable]** Save patch for Eloisa’s live device (bindings + world-state truth-ups) — code half done; Import JSON still owed
+
 ### Shipped Jul 13 (Claude/Opus) — see `docs/sessions/2026-07-13-claude-opus-recovery-priority-cleanup.md`
 - [x] **Save recovery**: working Import (Settings) — recovered Eloisa's wiped Vercel save; export blob + localStorage now pruned of untouched flags (`pruneFlagMap`).
 - [x] **Priority fixes**: `taskPressure` was thresholding the criticality-weighted score on the old 0–100 buckets → the Stretchy/pressure meter was pinned; now reads the deadline state machine. Restored the self-imposed-deadline cap; removed dead `urgencyScore` code (see "Pressure v2" note below — that earlier description is now historical).

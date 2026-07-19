@@ -1165,7 +1165,7 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
 
   const markDone = (id) => {
     setTasks((ts) => refreshDailyHousingTasks(
-      ts.map((t) => (t.id === id ? { ...t, status: "done" } : t))
+      ts.map((t) => (t.id === id ? { ...t, status: "done", manualDone: true } : t))
     ));
     onSessionBump?.("cleared", 1, "Cleared +1");
     if (focusId === id) setFocusId(null);
@@ -1617,7 +1617,7 @@ function LedgerScreen({ go, tasks, setTasks, session, onSessionBump }) {
     });
   const markDone = (id) => {
     setTasks((ts) => refreshDailyHousingTasks(
-      ts.map((t) => (t.id === id ? { ...t, status: "done" } : t))
+      ts.map((t) => (t.id === id ? { ...t, status: "done", manualDone: true } : t))
     ));
     onSessionBump?.("cleared", 1, "Cleared +1");
     if (editId === id) setEditId(null);
@@ -1676,6 +1676,8 @@ function LedgerScreen({ go, tasks, setTasks, session, onSessionBump }) {
           binding: editDraft.binding?.feature ? { ...editDraft.binding } : null,
           scheduleOverride: !!editDraft.scheduleOverride,
         };
+        if (next.status === "done" && t.status !== "done") next.manualDone = true;
+        if (next.status !== "done") next.manualDone = false;
         if (next.binding?.feature === "health_zone" || next.binding?.feature === "health_appointment") {
           next.zone = next.binding.target;
         }
@@ -1710,7 +1712,7 @@ function LedgerScreen({ go, tasks, setTasks, session, onSessionBump }) {
     setTasks((ts) => ts.filter((t) => t.status !== "archived"));
   };
   const restoreArchived = (id) => {
-    setTasks((ts) => ts.map((t) => (t.id === id ? { ...t, status: "pending" } : t)));
+    setTasks((ts) => ts.map((t) => (t.id === id ? { ...t, status: "pending", manualDone: false } : t)));
   };
   const addSticky = () => {
     const title = draft.trim();
@@ -2807,7 +2809,7 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
         return;
       }
       setTasks((ts) => refreshDailyHousingTasks(
-        ts.map((t) => (t.id === id ? { ...t, status: "done", needsInfo: false } : t))
+        ts.map((t) => (t.id === id ? { ...t, status: "done", needsInfo: false, manualDone: true } : t))
       ));
       setResolving(null);
       setInspectId(null);

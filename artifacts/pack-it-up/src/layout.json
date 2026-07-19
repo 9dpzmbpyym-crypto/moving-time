@@ -79,6 +79,7 @@
   },
   "living": {
     "tv_hutch": { "x": 72, "y": 44, "scale": 1.15 },
+    "tv": { "x": 109, "y": 210, "scale": 1.15 },
     "radio": { "x": 195, "y": 12, "scale": 1.2 },
     "wall_art_pair": { "x": 374, "y": 130, "scale": 1.1 },
     "sofa": { "x": 351, "y": 276, "scale": 0.9 },

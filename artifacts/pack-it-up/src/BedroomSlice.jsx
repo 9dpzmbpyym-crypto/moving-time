@@ -1116,10 +1116,10 @@ const KITCHEN_OBJECTS = [
     check: "Scarred with a thousand onions. Somehow still your favorite one." },
   { id: "dish_rack", name: "Dish Rack", category: "decor", value: 8, x: 544, y: 276, z: 4, removable: true,
     check: "Two plates and a prayer. It's held up the whole time you've lived here." },
-  { id: "sill_plants_k", name: "Windowsill Herbs", category: "plants", value: 6, x: 488, y: 226, z: 4, removable: true,
-    check: "Herbs that outlived three New Year's resolutions to cook more." },
-  { id: "fridge_plant", name: "Fridge-top Plant", category: "plants", value: 7, x: 672, y: 178, z: 4, removable: true,
-    check: "It's trailed off that fridge top so long it's basically a factory feature." },
+  { id: "sill_plants_k", name: "Windowsill Herbs", category: "plants", value: 6, x: 488, y: 226, z: 4, removable: false,
+    check: "Herbs that outlived three New Year's resolutions. Set dressing — they stay put." },
+  { id: "fridge_plant", name: "Fridge-top Plant", category: "plants", value: 7, x: 672, y: 178, z: 4, removable: false,
+    check: "Trailed off that fridge top forever. Set dressing — not packable." },
   { id: "kitchen_door", name: "Back Door", category: "furniture", x: 96, y: 40, z: 1, removable: false,
     check: "The service door to the back stairs. Comes with the building." },
   { id: "door_towel", name: "Striped Towel", category: "textiles", value: 3, x: 128, y: 140, z: 2, removable: true,
@@ -1315,8 +1315,8 @@ const DINING_OBJECTS = [
     check: "Single-pane, drafty, yours to look through until the last box is out. It stays." },
   { id: "dining_curtains", name: "Green Curtains", category: "textiles", x: 320, y: 48, z: 2, removable: true, value: 10,
     check: "They never belonged to the landlord — take them, or leave them for the next tenant." },
-  { id: "sill_plants_d", name: "Sill Succulents", category: "plants", x: 452, y: 280, z: 3, removable: true, value: 6,
-    check: "Low-maintenance succulents. They've survived worse landlords than this one." },
+  { id: "sill_plants_d", name: "Sill Succulents", category: "plants", x: 452, y: 280, z: 3, removable: false, value: 6,
+    check: "Low-maintenance succulents. Set dressing — they keep the sill warm." },
   { id: "shelf_art", name: "Still-life Print", category: "decor", x: 696, y: 56, z: 2, removable: true, value: 9,
     check: "A framed print of a shelf. The real shelf was sold separately, apparently." },
   { id: "dining_table", name: "Dining Table", category: "furniture", x: 300, y: 350, z: 4, removable: true, value: 70,
@@ -1420,6 +1420,16 @@ function drawRadio(ctx, { on = false, t = 0 } = {}) {
 }
 
 const LIVING_SPRITES = {
+  tv: { w: 42, h: 22, draw(ctx) {
+    // Flat Roku / living-room TV — separate Marketplace listing from the hutch.
+    r(ctx, P.out, 0, 0, 42, 20);
+    r(ctx, "#2A2A2A", 1, 1, 40, 18);
+    r(ctx, "#141414", 3, 3, 36, 14);
+    r(ctx, P.glassHi, 6, 4, 6, 2);
+    r(ctx, P.glassHi, 14, 6, 3, 1);
+    r(ctx, "#3A3A3A", 18, 18, 6, 2);
+    r(ctx, P.out, 19, 20, 4, 2);
+  }},
   tv_hutch: { w: 56, h: 96, glowRegions: [[3, 61, 24, 31], [29, 61, 24, 31]], draw(ctx) {
     // plant — left side of the top so the radio has room on the right
     r(ctx, P.woodDark, 4, 6, 8, 4);
@@ -1437,13 +1447,10 @@ const LIVING_SPRITES = {
     [[6, 20, 2, 7, P.burgundy], [9, 21, 2, 6, P.teal], [12, 19, 2, 8, P.mustard],
      [15, 21, 2, 6, P.green], [41, 20, 2, 7, P.burgundy], [44, 21, 2, 6, P.mustard]]
       .forEach(([x, y, w, h, c]) => { r(ctx, P.out, x, y, w, h); r(ctx, c, x, y + 1, w, h - 1); });
+    // Empty TV niche — the Roku is its own object (`living:tv`).
     outlineRect(ctx, "#2A1A0C", 4, 33, 48, 24);
     r(ctx, P.woodDark, 5, 34, 46, 22);
-    r(ctx, P.out, 8, 36, 40, 17);
-    r(ctx, "#141414", 9, 37, 38, 15);
-    r(ctx, P.glassHi, 12, 38, 6, 2);
-    r(ctx, P.glassHi, 21, 40, 3, 1);
-    r(ctx, P.woodDark, 26, 53, 4, 3);
+    r(ctx, "#1A120A", 8, 36, 40, 17);
     r(ctx, P.woodHi, 1, 57, 54, 2);
     r(ctx, P.woodDark, 1, 59, 54, 1);
     outlineRect(ctx, "#2A1A0C", 3, 61, 24, 31);
@@ -1618,6 +1625,8 @@ const LIVING_SPRITES = {
 const LIVING_OBJECTS = [
   { id: "tv_hutch", name: "TV Hutch", category: "furniture", value: 120, x: 72, y: 78, z: 3, removable: true,
     check: "Every remote from the last decade is lost somewhere inside this thing." },
+  { id: "tv", name: "Roku TV", category: "furniture", value: 100, x: 109, y: 210, z: 4, removable: true,
+    check: "Flat, stubborn, and already listed. The hutch is furniture; this screen is the sale." },
   { id: "radio", name: "Apartment Radio", category: "decor", value: 18, x: 195, y: 12, z: 5, removable: false,
     check: "Cherry Blossom is the apartment's heartbeat. This little box is optional personality." },
   { id: "wall_art_pair", name: "Wall Art", category: "decor", value: 12, x: 376, y: 104, z: 2, removable: true,
@@ -1721,10 +1730,10 @@ const ROOMS = {
         check: "A small green painting that made a rented wall feel less rented." },
       { id: "art_poster",     name: "Coin Co. Poster",  category: "decor",     x: 184, y: 84,  z: 2, removable: true, value: 5,
         check: "Birmingham Coin Company. You don't collect coins. It just looked cool." },
-      { id: "sill_plants",    name: "Windowsill Plants",category: "plants",    x: 408, y: 248, z: 3, removable: true, value: 6,
-        check: "The windowsill crew. They ride up front, obviously." },
-      { id: "hanging_plant",  name: "Hanging Pothos",   category: "plants",    x: 676, y: 14,  z: 3, removable: true, value: 10,
-        check: "It survived three heat waves. It can survive Queens." },
+      { id: "sill_plants",    name: "Windowsill Plants",category: "plants",    x: 408, y: 248, z: 3, removable: false, value: 6,
+        check: "The windowsill crew. Set dressing — they stay in the picture." },
+      { id: "hanging_plant",  name: "Hanging Pothos",   category: "plants",    x: 676, y: 14,  z: 3, removable: false, value: 10,
+        check: "It survived three heat waves. Set dressing — still hanging in." },
       { id: "bed",            name: "Bed",              category: "furniture", x: 180, y: 280, z: 3, removable: true, value: 60,
         check: "Still smells like laundry day. The burgundy pillow matches nothing, which is why it works." },
       { id: "nightstand",     name: "Nightstand",       category: "furniture", x: 68,  y: 372, z: 3, removable: true, value: 25,
@@ -1818,8 +1827,8 @@ ROOMS.bathroom = {
       check: "The fancy towels. Guests were never allowed to actually use them." },
     { id: "mirror_cabinet",  name: "Mirrored Cabinet",    category: "furniture",x: 640, y: 96,  z: 2, removable: false,
       check: "Behind the mirror: expired everything. The cabinet stays put." },
-    { id: "sill_bottles",    name: "Windowsill Bottles",  category: "plants",   x: 248, y: 208, z: 3, removable: true, value: 7,
-      check: "A tiny skyline of glass bottles and one determined plant." },
+    { id: "sill_bottles",    name: "Windowsill Bottles",  category: "plants",   x: 248, y: 208, z: 3, removable: false, value: 7,
+      check: "A tiny skyline of glass bottles. Set dressing — not on the packing list." },
     { id: "bathtub",         name: "Bathtub",             category: "furniture",x: 66,  y: 344, z: 3, removable: false,
       check: "Deep enough to think in. It stays with the pipes." },
     { id: "toilet",          name: "Toilet",              category: "furniture",x: 460, y: 340, z: 3, removable: false,
@@ -1863,10 +1872,10 @@ ROOMS.office = {
       check: "Molded to exactly one spine: yours." },
     { id: "storage_bin",     name: "Storage Tote",     category: "decor",     x: 752, y: 288, z: 4, removable: true, value: 6,
       check: "Labeled “MISC” — which was ambitious." },
-    { id: "waste_bin",       name: "Wastebasket",      category: "decor",     x: 600, y: 296, z: 4, removable: true, value: 3,
-      check: "Promoted to the desk for the move. Contains at least three drafts of the same letter." },
-    { id: "side_cabinet",    name: "Side Cabinet",     category: "furniture", x: 664, y: 288, z: 3, removable: true, value: 30,
-      check: "Short cabinet drafted into desk duty: books, one dramatic vase, and room for whatever's next." },
+    { id: "waste_bin",       name: "Wastebasket",      category: "decor",     x: 600, y: 296, z: 4, removable: false, value: 3,
+      check: "Promoted to the desk for atmosphere. Set dressing — not a pack target." },
+    { id: "side_cabinet",    name: "Side Cabinet",     category: "furniture", x: 664, y: 288, z: 3, removable: false, value: 30,
+      check: "Part of the L-desk sale — open it for contents, but it isn't its own listing." },
     { id: "wifi_router",     name: "Wi-Fi Router",     category: "decor",     x: 280, y: 378, z: 6, removable: true, value: 40,
       check: "Blinks under the desk like it knows the password and refuses to share." },
     { id: "cat_bed",         name: "Stretchy's Bed",   category: "decor",     x: 560, y: 280, z: 5, removable: true, value: 22,
@@ -1882,6 +1891,7 @@ const sk = (roomId, id) => `${roomId}:${id}`;
 const BUYER_BINDINGS = [
   { taskId: "f_buyer_dining", objects: ["dining:dining_table", "dining:dining_chairs"] },
   { taskId: "f_buyer_entertainment", objects: ["living:tv_hutch"] },
+  { taskId: "f_buyer_tv", objects: ["living:tv"] },
   { taskId: "f_buyer_coffee", objects: ["living:coffee_table"] },
   { taskId: "f_buyer_desk", objects: ["office:desk_hutch", "office:office_chair"] },
   { taskId: "f_buyer_sofa", objects: ["living:sofa"] },
@@ -3052,6 +3062,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     if (!prev || prev.packed || prev.sold || prev.donated || busy) return;
     const items = CONTENTS[`${room.id}:${storageId}`] || [];
     const it = items.find((x) => x.id === itemId);
+    if (it?.carryOn) return;
     const credit = it?.value || 0;
     // Stay in the storage overlay; play the coin burst + floating amount locally
     // over the item thumbnail instead of closing back to the apartment.
@@ -3076,6 +3087,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     if (!prev || prev.packed || prev.sold || prev.donated || busy) return;
     const items = CONTENTS[`${room.id}:${storageId}`] || [];
     const it = items.find((x) => x.id === itemId);
+    if (it?.carryOn) return;
     haptic(HAPTIC.donate);
     playDonateSfx();
     // Stay in the storage overlay; the shrink animation plays locally.
@@ -3201,6 +3213,9 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
   const visibleObjectsFor = (rm) =>
     rm.objects
       .filter((o) => {
+        // Set dressing (removable: false) always stays drawn — old saves may
+        // still carry packed flags from when plants were packable.
+        if (!o.removable) return true;
         const st = objState[sk(rm.id, o.id)];
         const animating = rm.id === room.id && (o.id === packingId || o.id === sellingId || o.id === donatingId);
         return (!st.packed && !st.sold && !st.donated) || animating;
@@ -3844,7 +3859,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
                         </div>
                       )}
                       <div style={{ color: "#F2E4C0", fontSize: 10, textAlign: "center", lineHeight: 1.15, ...ui.label }}>{it.name}</div>
-                      {st.packed && <div style={{ color: "#C9B896", fontSize: 9, ...ui.label }}>packed</div>}
+                      {st.packed && <div style={{ color: "#C9B896", fontSize: 9, ...ui.label }}>{it.carryOn ? "carry-on" : "packed"}</div>}
                       {st.sold && <div style={{ color: "#D9A33C", fontSize: 9, ...ui.label }}>sold ${st.soldFor}</div>}
                       {st.donated && <div style={{ color: "#77974C", fontSize: 9, ...ui.label }}>donated</div>}
                     </div>
@@ -3857,7 +3872,8 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
                   onClick={() => { if (sel) { packContent(o.id, sel.id); } }}
                   disabled={!sel || !!selDone || !!busy}
                   style={{ flex: 1, padding: "8px 2px", fontSize: 11, cursor: (!sel || selDone || busy) ? "not-allowed" : "pointer", color: "#F2E4C0", background: sel ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (!sel || selDone) ? 0.4 : 1, ...ui.label }}
-                >📦 Pack</button>
+                >{sel?.carryOn ? "🎒 Carry-on" : "📦 Pack"}</button>
+                {!sel?.carryOn && (
                 <button
                   data-storage-action="sell"
                   onClick={() => { if (sel) { sellContent(o.id, sel.id); } }}
@@ -3865,12 +3881,15 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
                   title={sel?.value ? `sell ~$${sel.value}` : "can't sell"}
                   style={{ flex: 1, padding: "8px 2px", fontSize: 11, cursor: (!sel || selDone || busy || !sel?.value) ? "not-allowed" : "pointer", color: "#FFD97A", background: sel ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (!sel || selDone || !sel?.value) ? 0.4 : 1, ...ui.label }}
                 >💰 Sell</button>
+                )}
+                {!sel?.carryOn && (
                 <button
                   data-storage-action="donate"
                   onClick={() => { if (sel) { donateContent(o.id, sel.id); } }}
                   disabled={!sel || !!selDone || !!busy}
                   style={{ flex: 1, padding: "8px 2px", fontSize: 11, cursor: (!sel || selDone || busy) ? "not-allowed" : "pointer", color: "#9CC76F", background: sel ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (!sel || selDone) ? 0.4 : 1, ...ui.label }}
                 >🎁 Donate</button>
+                )}
               </div>
             </div>
           );
