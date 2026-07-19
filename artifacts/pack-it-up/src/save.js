@@ -24,13 +24,18 @@ const EMPTY_FLAGS = { packed: false, sold: false, soldFor: 0, donated: false, bu
 
 function sanitizeFlags(raw) {
   if (!raw || typeof raw !== "object") return { ...EMPTY_FLAGS };
-  return {
+  const out = {
     packed: !!raw.packed,
     sold: !!raw.sold,
     soldFor: Math.max(0, Number(raw.soldFor) || 0),
     donated: !!raw.donated,
     buyerFound: !!raw.buyerFound,
   };
+  // Which pile slot an item landed in (0–5). Only meaningful while packed.
+  if (out.packed && Number.isFinite(Number(raw.boxSlot))) {
+    out.boxSlot = Math.min(5, Math.max(0, Number(raw.boxSlot) | 0));
+  }
+  return out;
 }
 
 export function migrateSave(data) {

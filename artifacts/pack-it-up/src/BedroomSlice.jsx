@@ -1665,9 +1665,20 @@ const BOX_W = 34, BOX_H = 26;           // one box, cells (~2x the old boxes)
 // fill order: bottom row L→R, then middle row, then apex
 const BOX_SLOTS = [[16, 42], [50, 42], [84, 42], [33, 23], [67, 23], [50, 4]];
 const BOX_MAX = BOX_SLOTS.length;
+/** Packed-item thumbs / fly sprites: ~1/5 of one box face so small things don't fill the carton. */
+const BOX_ITEM_MAX_PX = Math.max(12, Math.round((BOX_W * CELL) / 5));
 const boxSlotCenter = (i) => {
   const [sx, sy] = BOX_SLOTS[Math.min(Math.max(i, 0), BOX_MAX - 1)];
   return { x: BOX_ORIGIN.x + (sx + BOX_W / 2) * CELL, y: BOX_ORIGIN.y + (sy + BOX_H / 2) * CELL };
+};
+/** Hit-test a pointer against a drawn box slot (cell coords inside the pile canvas). */
+const boxSlotAtCell = (cx, cy, count) => {
+  const n = Math.min(count, BOX_MAX);
+  for (let i = n - 1; i >= 0; i--) {
+    const [sx, sy] = BOX_SLOTS[i];
+    if (cx >= sx && cx < sx + BOX_W && cy >= sy && cy < sy + BOX_H) return i;
+  }
+  return -1;
 };
 
 function drawBoxes(ctx, count, openIdx = -1) {
@@ -2526,6 +2537,9 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
   // which content item is selected inside the inline storage panel — drives
   // the Pack/Sell/Donate action bar instead of per-card tiny emoji buttons.
   const [selectedContentId, setSelectedContentId] = useState(null);
+  // Click a pile box → inspect its packed items (furniture + contents) and unpack.
+  const [boxOpenSlot, setBoxOpenSlot] = useState(null); // 0..BOX_MAX-1 | null
+  const [selectedBoxItemKey, setSelectedBoxItemKey] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [hoverId, setHoverId] = useState(null);
   const [packingId, setPackingId] = useState(null); // mid pack animation
@@ -2759,6 +2773,10 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     setStorageAnchor(null);
     setSelectedContentId(null);
   };
+  const closeBoxInspect = () => {
+    setBoxOpenSlot(null);
+    setSelectedBoxItemKey(null);
+  };
   const closeRadio = () => setRadioOpen(null);
 
   /* Timeout registry — every animation/toast timer goes through schedule() so
@@ -2862,16 +2880,27 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     });
   }, [schedule, showReward]);
 
+  const nextBoxSlotForRoom = useCallback((roomId, objMap, contentMap) => {
+    const rmPacked = (ROOMS[roomId]?.objects || []).filter(
+      (o) => o.removable && objMap[sk(roomId, o.id)]?.packed
+    ).length;
+    const contentPacked = Object.entries(contentMap)
+      .filter(([key, st]) => key.startsWith(`${roomId}:`) && st.packed)
+      .length;
+    return Math.min(rmPacked + contentPacked, BOX_MAX - 1);
+  }, []);
+
   const packObject = useCallback((id) => {
     const k = sk(room.id, id);
     const obj = room.objects.find((o) => o.id === id);
     if (!obj || !obj.removable || objState[k].packed || objState[k].sold || objState[k].donated || busy) return;
     const prev = objState[k];
+    const boxSlot = nextBoxSlotForRoom(room.id, objState, contentsState);
     haptic(HAPTIC.pack);
     playPackSfx();
     setPackingId(id);
     schedule(() => {
-      const nextState = { ...objState, [k]: { ...objState[k], packed: true } };
+      const nextState = { ...objState, [k]: { ...objState[k], packed: true, boxSlot } };
       setObjState(nextState);
       setTasks((current) => reconcileTasksFromWorldState(current, {
         objState: nextState, appointments, calmedZones: session.calmedZones,
@@ -2882,7 +2911,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
       setMinutes((m) => m + 10);
       onSessionBump("cleared", 1, "Cleared +1");
     }, 520);
-  }, [room, objState, busy, schedule, onSessionBump]);
+  }, [room, objState, contentsState, busy, schedule, onSessionBump, nextBoxSlotForRoom]);
 
   const sellObject = useCallback((id, amount) => {
     const k = sk(room.id, id);
@@ -2989,11 +3018,12 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     const k = `${room.id}:${storageId}:${itemId}`;
     const prev = contentsState[k];
     if (!prev || prev.packed || prev.sold || prev.donated || busy) return;
+    const boxSlot = nextBoxSlotForRoom(room.id, objState, contentsState);
     haptic(HAPTIC.pack);
     playPackSfx();
     // Flip packed immediately so the room box pile stays visible after the
     // fly ends (visibility is driven by packed counts, not only packingHere).
-    setContentsState((s) => ({ ...s, [k]: { ...s[k], packed: true } }));
+    setContentsState((s) => ({ ...s, [k]: { ...s[k], packed: true, boxSlot } }));
     // Close back to the apartment so the box stack is visible, then fly the
     // item sprite from the storage object to the box pile's mouth — same
     // packToBox keyframe the furniture uses.
@@ -3009,25 +3039,16 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
       const placed = { ...storageObj, ...saved };
       const sScale = saved.scale ?? storageObj.scale ?? 1;
       const sw = (storageSpr.w || 32) * CELL * sScale;
-      // Keep the departing item clearly readable while normalizing sprites with
-      // very different source dimensions to one visual size.
-      const targetPx = 40;
+      // Land at ~1/5 of a box face so small items don't read as the whole carton.
+      const targetPx = BOX_ITEM_MAX_PX;
       const pscale = Math.min(targetPx / ((spr.w || 16) * CELL), targetPx / ((spr.h || 16) * CELL));
       const iw = (spr.w || 16) * CELL * pscale;
       const ih = (spr.h || 16) * CELL * pscale;
       // start centered horizontally over the storage sprite, at its top edge
       const ox = placed.x + (sw - iw) / 2;
       const oy = placed.y - Math.max(8, ih * 0.35);
-      // target: receiving box slot. Count already includes this item (optimistic
-      // pack above), so the open mouth is at settled-1.
-      const rmPacked = room.objects.filter(
-        (o) => o.removable && objState[sk(room.id, o.id)].packed
-      ).length;
-      const contentPacked = Object.entries(contentsState)
-        .filter(([key, st]) => key.startsWith(`${room.id}:`) && st.packed)
-        .length + 1; // +1 = this item (state update not flushed yet)
-      const totalPacked = rmPacked + contentPacked;
-      const boxIdx = Math.min(Math.max(0, totalPacked - 1), BOX_MAX - 1);
+      // target: receiving box slot (matches boxSlot stamped above).
+      const boxIdx = boxSlot;
       const boxTarget = boxSlotCenter(boxIdx);
       setContentFlyFx({
         spr,
@@ -3054,7 +3075,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
       setMinutes((m) => m + 10);
       onSessionBump("cleared", 1, "Cleared +1");
     }, 520);
-  }, [room, objState, contentsState, busy, schedule, onSessionBump]);
+  }, [room, objState, contentsState, busy, schedule, onSessionBump, nextBoxSlotForRoom]);
 
   const sellContent = useCallback((storageId, itemId) => {
     const k = `${room.id}:${storageId}:${itemId}`;
@@ -3109,12 +3130,28 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     const k = sk(room.id, id);
     const prev = objState[k];
     setUndoStack((stack) => [...stack, undoEntry(id, prev, 0, 0)]);
-    const nextState = { ...objState, [k]: { ...objState[k], packed: false } };
+    const nextFlags = { ...objState[k], packed: false };
+    delete nextFlags.boxSlot;
+    const nextState = { ...objState, [k]: nextFlags };
     setObjState(nextState);
     setTasks((current) => reconcileTasksFromWorldState(current, {
       objState: nextState, appointments, calmedZones: session.calmedZones,
     }));
+    setSelectedBoxItemKey(null);
   };
+
+  const unpackContent = useCallback((storageId, itemId) => {
+    const k = `${room.id}:${storageId}:${itemId}`;
+    const prev = contentsState[k];
+    if (!prev?.packed || busy) return;
+    setUndoStack((stack) => [...stack, undoContentEntry(storageId, itemId, prev, 0, 0)]);
+    setContentsState((s) => {
+      const next = { ...s[k], packed: false };
+      delete next.boxSlot;
+      return { ...s, [k]: next };
+    });
+    setSelectedBoxItemKey(null);
+  }, [room.id, contentsState, busy]);
 
   const unsellObject = (id) => {
     const k = sk(room.id, id);
@@ -3354,6 +3391,55 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
   const packedList = removable.filter((o) => objState[sk(room.id, o.id)].packed);
   const soldList = removable.filter((o) => objState[sk(room.id, o.id)].sold);
   const donatedList = removable.filter((o) => objState[sk(room.id, o.id)].donated);
+
+  /** Packed furniture + contents in this room, each assigned to a pile slot. */
+  const packedInRoomBoxes = useMemo(() => {
+    const list = [];
+    for (const o of room.objects) {
+      if (!o.removable) continue;
+      const st = objState[sk(room.id, o.id)];
+      if (!st?.packed) continue;
+      list.push({
+        key: sk(room.id, o.id),
+        kind: "object",
+        id: o.id,
+        name: o.name,
+        spr: room.sprites[o.id],
+        boxSlot: st.boxSlot,
+      });
+    }
+    for (const [storageKey, items] of Object.entries(CONTENTS)) {
+      if (!storageKey.startsWith(`${room.id}:`)) continue;
+      const sid = storageKey.slice(room.id.length + 1);
+      for (const it of items) {
+        const ck = `${storageKey}:${it.id}`;
+        const st = contentsState[ck];
+        if (!st?.packed) continue;
+        list.push({
+          key: ck,
+          kind: "content",
+          storageId: sid,
+          id: it.id,
+          name: it.name,
+          spr: it.spr,
+          carryOn: !!it.carryOn,
+          boxSlot: st.boxSlot,
+        });
+      }
+    }
+    list.sort((a, b) => a.key.localeCompare(b.key));
+    return list.map((it, i) => ({
+      ...it,
+      slot: Number.isFinite(Number(it.boxSlot))
+        ? Math.min(BOX_MAX - 1, Math.max(0, Number(it.boxSlot) | 0))
+        : Math.min(i, BOX_MAX - 1),
+    }));
+  }, [room, objState, contentsState]);
+
+  const itemsInOpenBox = boxOpenSlot == null
+    ? []
+    : packedInRoomBoxes.filter((it) => it.slot === boxOpenSlot);
+  const selectedBoxItem = itemsInOpenBox.find((it) => it.key === selectedBoxItemKey) || null;
   const lastUndo = undoStack.length > 0 ? undoStack[undoStack.length - 1] : null;
   const lastUndoObj = lastUndo && ROOMS[lastUndo.roomId]?.objects.find((o) => o.id === lastUndo.id);
 
@@ -3516,17 +3602,18 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     // Content packs flip packed immediately; open the slot for the newest box
     // (rmBoxes-1) while the fly is in progress. Furniture packs still settle
     // packed at the end of the anim, so open at rmBoxes while in flight.
+    const inspectOpen = rm.id === room.id && boxOpenSlot != null ? boxOpenSlot : -1;
     const openIdx = packingHere
       ? Math.min(
           Math.max(0, packingContentKey ? rmBoxes - 1 : rmBoxes),
           BOX_MAX - 1,
         )
-      : -1;
+      : inspectOpen;
     const boxTarget = boxSlotCenter(openIdx < 0 ? Math.max(0, rmBoxes - 1) : openIdx);
     return (
       <>
         {/* LAYER 0 — room shell */}
-        <div style={{ position: "absolute", inset: 0 }} onClick={() => { setSelectedId(null); closeStorage(); closeRadio(); }}>
+        <div style={{ position: "absolute", inset: 0 }} onClick={() => { setSelectedId(null); closeStorage(); closeRadio(); closeBoxInspect(); }}>
           <PixelCanvas w={240} h={extCells} draw={getShellDraw(rm, extCells)} redrawKey={extCells} />
         </div>
 
@@ -3645,11 +3732,13 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
                   });
                   setStorageId(o.id);
                   closeRadio();
+                  closeBoxInspect();
                   return;
                 }
                 setSelectedId(o.id);
                 closeRadio();
                 closeStorage();
+                closeBoxInspect();
               }}
               onMouseEnter={() => setHoverId(o.id)}
               onMouseLeave={() => setHoverId((h) => (h === o.id ? null : h))}
@@ -4101,8 +4190,30 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
             Show for furniture packs OR storage-content packs (rmBoxes includes
             both). packingHere covers the fly-in frame before state flips. */}
         {(rmBoxes > 0 || packingHere) && (
-          <div style={{ position: "absolute", left: BOX_ORIGIN.x, top: BOX_ORIGIN.y, zIndex: 60, animation: "popIn 220ms ease-out" }}>
-            <div className={packingHere ? "boxReceiving" : ""} style={{ transformOrigin: "bottom center" }}>
+          <div
+            role={rm.id === room.id ? "button" : undefined}
+            aria-label={rm.id === room.id ? "Open a packed box" : undefined}
+            style={{
+              position: "absolute", left: BOX_ORIGIN.x, top: BOX_ORIGIN.y, zIndex: 60,
+              animation: "popIn 220ms ease-out",
+              cursor: rm.id === room.id && rmBoxes > 0 ? "pointer" : "default",
+            }}
+            onClick={(e) => {
+              if (rm.id !== room.id || rmBoxes <= 0) return;
+              e.stopPropagation();
+              closeStorage();
+              closeRadio();
+              setSelectedId(null);
+              const rect = e.currentTarget.getBoundingClientRect();
+              const cx = ((e.clientX - rect.left) / Math.max(1, rect.width)) * BOX_CW;
+              const cy = ((e.clientY - rect.top) / Math.max(1, rect.height)) * BOX_CH;
+              let hit = boxSlotAtCell(cx, cy, rmBoxes);
+              if (hit < 0) hit = Math.min(rmBoxes - 1, BOX_MAX - 1);
+              setBoxOpenSlot(hit);
+              setSelectedBoxItemKey(null);
+            }}
+          >
+            <div className={packingHere ? "boxReceiving" : ""} style={{ transformOrigin: "bottom center", pointerEvents: "none" }}>
               <PixelCanvas w={BOX_CW} h={BOX_CH} draw={(ctx) => drawBoxes(ctx, rmBoxes, openIdx)} redrawKey={`${rmBoxes}-${openIdx}`} />
             </div>
           </div>
@@ -4134,6 +4245,130 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
             <PixelCanvas w={contentFlyFx.spr.w} h={contentFlyFx.spr.h} draw={contentFlyFx.spr.draw} />
           </div>
         )}
+
+        {/* Open-box inspect — same idea as a furniture storage panel: pick an
+            item, then Unpack. Thumbs max out at ~1/5 of a box face. */}
+        {boxOpenSlot != null && rm.id === room.id && (() => {
+          const panelW = Math.min(260, typeof window !== "undefined" ? window.innerWidth - 36 : 260);
+          const maxDim = BOX_ITEM_MAX_PX;
+          const panel = (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: isMobile ? "fixed" : "absolute",
+                ...(isMobile
+                  ? {
+                    left: "50%",
+                    bottom: "calc(env(safe-area-inset-bottom, 0px) + 88px)",
+                    transform: "translateX(-50%)",
+                    zIndex: 9999,
+                  }
+                  : {
+                    left: Math.max(8, BOX_ORIGIN.x - 20),
+                    top: Math.max(8, BOX_ORIGIN.y - 250),
+                    zIndex: 400,
+                  }),
+                width: panelW,
+                maxHeight: isMobile ? "42dvh" : 280,
+                display: "flex",
+                flexDirection: "column",
+                background: "#1A0F06",
+                border: "3px solid #120A04",
+                boxShadow: "inset 0 0 0 2px #4A2E17, 0 8px 0 #0A0502",
+                padding: 10,
+                ...ui.label,
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, flex: "0 0 auto" }}>
+                <div style={{ color: "#FFD97A", fontSize: 13 }}>📦 Box {boxOpenSlot + 1}</div>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); closeBoxInspect(); }}
+                  style={{ background: "none", border: "none", color: "#C9B896", fontSize: 18, cursor: "pointer", lineHeight: 1, minWidth: 32, minHeight: 32, ...ui.label }}
+                  title="close"
+                >×</button>
+              </div>
+              <div style={{ color: "#C9B896", fontSize: 11, marginBottom: 6, flex: "0 0 auto" }}>
+                {itemsInOpenBox.length === 0
+                  ? "Empty — nothing stamped to this carton yet."
+                  : `${itemsInOpenBox.length} inside · tap to select, then unpack`}
+              </div>
+              <div className="storageScroll" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 4, minHeight: 0, flex: "1 1 auto", overflowY: "auto", paddingRight: 2 }}>
+                {itemsInOpenBox.map((it) => {
+                  const isSel = selectedBoxItemKey === it.key;
+                  const fit = it.spr
+                    ? Math.min(maxDim / (it.spr.w * CELL), maxDim / (it.spr.h * CELL))
+                    : 0;
+                  return (
+                    <div
+                      key={it.key}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedBoxItemKey(isSel ? null : it.key);
+                      }}
+                      style={{
+                        padding: 4,
+                        background: isSel ? "#3A2410" : "#1A0F06",
+                        border: isSel ? "2px solid #FFD97A" : "2px solid #4A2E17",
+                        cursor: "pointer",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 2,
+                      }}
+                    >
+                      {it.spr && (
+                        <div style={{
+                          width: maxDim, height: maxDim,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          background: "#241509", border: "1px solid #4A2E17", overflow: "hidden",
+                        }}>
+                          <div style={{ transform: `scale(${fit})`, transformOrigin: "center", imageRendering: "pixelated" }}>
+                            <PixelCanvas w={it.spr.w} h={it.spr.h} draw={it.spr.draw} redrawKey={itemArtRedrawKey} />
+                          </div>
+                        </div>
+                      )}
+                      <div style={{ color: "#F2E4C0", fontSize: 10, textAlign: "center", lineHeight: 1.15, ...ui.label }}>{it.name}</div>
+                      {it.carryOn && <div style={{ color: "#C9B896", fontSize: 9, ...ui.label }}>carry-on</div>}
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ display: "flex", gap: 5, marginTop: 6, paddingTop: 6, borderTop: "2px solid #4A2E17", flex: "0 0 auto" }}>
+                <button
+                  type="button"
+                  disabled={!selectedBoxItem || !!busy}
+                  onClick={() => {
+                    if (!selectedBoxItem) return;
+                    if (selectedBoxItem.kind === "object") unpackObject(selectedBoxItem.id);
+                    else unpackContent(selectedBoxItem.storageId, selectedBoxItem.id);
+                  }}
+                  style={{
+                    flex: 1, padding: "8px 2px", fontSize: 11,
+                    cursor: (!selectedBoxItem || busy) ? "not-allowed" : "pointer",
+                    color: "#F2E4C0",
+                    background: selectedBoxItem ? "#3A2410" : "#1A0F06",
+                    border: "2px solid #120A04",
+                    opacity: (!selectedBoxItem || busy) ? 0.4 : 1,
+                    ...ui.label,
+                  }}
+                >📤 Unpack</button>
+              </div>
+            </div>
+          );
+          return isMobile
+            ? createPortal(
+                <>
+                  <div
+                    onClick={() => closeBoxInspect()}
+                    style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(10, 5, 2, 0.18)" }}
+                  />
+                  {panel}
+                </>,
+                document.body
+              )
+            : panel;
+        })()}
       </>
     );
   };
@@ -4201,7 +4436,10 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
       const ease = (t) => 1 - Math.pow(1 - t, 3);
       // rooms loop: bedroom ↔ living closes the apartment circuit
       const self = { raf: 0, commit: () => {
-        if (delta) setRoomIndex((i) => (i + delta + N) % N);
+        if (delta) {
+          closeBoxInspect();
+          setRoomIndex((i) => (i + delta + N) % N);
+        }
         setDragX(0);
       } };
       const step = (now) => {
@@ -4801,6 +5039,23 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
                 </div>
               )}
               {packedList.map((o) => invRow(o, CATEGORY_COLORS[o.category], "packed", "unpack", unpackObject))}
+              {packedInRoomBoxes.filter((it) => it.kind === "content").map((it) => (
+                <div key={it.key} style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  marginTop: 8, padding: "10px 12px", background: "#1A0F06", border: "2px solid #4A2E17",
+                }}>
+                  <div>
+                    <div style={{ color: "#F2E4C0", fontSize: 14, ...ui.label }}>{it.name}</div>
+                    <div style={{ color: "#B07A3C", fontSize: 12, ...ui.label }}>{it.carryOn ? "carry-on" : "packed"} · box {(it.slot ?? 0) + 1}</div>
+                  </div>
+                  <button
+                    onClick={() => unpackContent(it.storageId, it.id)}
+                    style={{ padding: "8px 12px", fontSize: 12, background: "#2E1D0E", color: "#C9B896", border: "2px solid #120A04", cursor: "pointer", ...ui.label }}
+                  >
+                    unpack
+                  </button>
+                </div>
+              ))}
               {soldList.map((o) => invRow(o, P.gold, `sold · +$${objState[sk(room.id, o.id)].soldFor}`, "buy back", unsellObject))}
               {donatedList.map((o) => invRow(o, "#B9CEDC", "donated", "take back", undonateObject))}
             </div>

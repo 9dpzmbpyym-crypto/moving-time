@@ -94,7 +94,7 @@ import {
   ensureDailyDeal, handTasks, offerTasks, dealProgress, toggleDealPick, manualToggleHand,
   taskStatus, urgencyScore, isBoundToday,
 } from "./schedule.js";
-import { PixelCanvas } from "./BedroomSlice.jsx";
+import { PixelCanvas, CELL } from "./BedroomSlice.jsx";
 import {
   getAudioSettings,
   setMusicVolume,
@@ -3617,7 +3617,9 @@ function HealthScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast
 function listRow(key, name, room, tag, tagColor, spr) {
   const maxDim = 28;
   const w = spr ? spr.w : 0, h = spr ? spr.h : 0;
-  const fit = w && h ? Math.min(maxDim / w, maxDim / h) : 0;
+  // PixelCanvas CSS size is (w*CELL)×(h*CELL) — fit must use screen px, not cells,
+  // or content PNGs (raw pixel dims as cells) read as a 4× zoomed crop.
+  const fit = w && h ? Math.min(maxDim / (w * CELL), maxDim / (h * CELL)) : 0;
   return (
     <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginTop: 8, padding: "10px 12px", background: "#1A0F06", border: "2px solid #4A2E17" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
