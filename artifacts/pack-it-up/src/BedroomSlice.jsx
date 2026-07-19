@@ -1655,8 +1655,8 @@ const LIVING_OBJECTS = [
 
 /* box stack sprite (grows near the door as you pack).
    Geometry lives in constants so the pack-to-box fly animation can aim at the
-   exact slot the incoming item lands in. Bigger boxes than before, and the pile
-   grows one box per packed item (a widening pyramid) up to BOX_MAX. */
+   exact slot the incoming item lands in. Each carton holds ITEMS_PER_BOX items;
+   the pile shows ceil(packed / ITEMS_PER_BOX) boxes (capped at BOX_MAX). */
 const BOX_ORIGIN = { x: 212, y: 452 };  // stage px: top-left of the pile canvas
                                          // centered in the foreground so the pile
                                          // clears fixtures (tub, etc.) in every room
@@ -1665,8 +1665,15 @@ const BOX_W = 34, BOX_H = 26;           // one box, cells (~2x the old boxes)
 // fill order: bottom row L→R, then middle row, then apex
 const BOX_SLOTS = [[16, 42], [50, 42], [84, 42], [33, 23], [67, 23], [50, 4]];
 const BOX_MAX = BOX_SLOTS.length;
+const ITEMS_PER_BOX = 5;
 /** Packed-item thumbs / fly sprites: ~1/5 of one box face so small things don't fill the carton. */
 const BOX_ITEM_MAX_PX = Math.max(12, Math.round((BOX_W * CELL) / 5));
+const boxCountForPacked = (n) => {
+  const total = Math.max(0, Number(n) || 0);
+  if (total <= 0) return 0;
+  return Math.min(BOX_MAX, Math.ceil(total / ITEMS_PER_BOX));
+};
+const boxSlotForIndex = (i) => Math.min(BOX_MAX - 1, Math.floor(Math.max(0, i) / ITEMS_PER_BOX));
 const boxSlotCenter = (i) => {
   const [sx, sy] = BOX_SLOTS[Math.min(Math.max(i, 0), BOX_MAX - 1)];
   return { x: BOX_ORIGIN.x + (sx + BOX_W / 2) * CELL, y: BOX_ORIGIN.y + (sy + BOX_H / 2) * CELL };
@@ -2887,7 +2894,8 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     const contentPacked = Object.entries(contentMap)
       .filter(([key, st]) => key.startsWith(`${roomId}:`) && st.packed)
       .length;
-    return Math.min(rmPacked + contentPacked, BOX_MAX - 1);
+    // Next item lands in the carton for its index among already-packed goods.
+    return boxSlotForIndex(rmPacked + contentPacked);
   }, []);
 
   const packObject = useCallback((id) => {
@@ -3427,12 +3435,12 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
         });
       }
     }
+    // Always re-bucket by packed order (5 per box) so older 1-item-per-box
+    // stamps from early saves don't leave a lonely carton for every item.
     list.sort((a, b) => a.key.localeCompare(b.key));
     return list.map((it, i) => ({
       ...it,
-      slot: Number.isFinite(Number(it.boxSlot))
-        ? Math.min(BOX_MAX - 1, Math.max(0, Number(it.boxSlot) | 0))
-        : Math.min(i, BOX_MAX - 1),
+      slot: boxSlotForIndex(i),
     }));
   }, [room, objState, contentsState]);
 
@@ -3440,6 +3448,16 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     ? []
     : packedInRoomBoxes.filter((it) => it.slot === boxOpenSlot);
   const selectedBoxItem = itemsInOpenBox.find((it) => it.key === selectedBoxItemKey) || null;
+
+  // If unpacking shrinks the pile, don't leave an inspect open on a missing carton.
+  useEffect(() => {
+    if (boxOpenSlot == null) return;
+    const n = boxCountForPacked(packedInRoomBoxes.length);
+    if (boxOpenSlot >= n) {
+      setBoxOpenSlot(null);
+      setSelectedBoxItemKey(null);
+    }
+  }, [boxOpenSlot, packedInRoomBoxes.length]);
   const lastUndo = undoStack.length > 0 ? undoStack[undoStack.length - 1] : null;
   const lastUndoObj = lastUndo && ROOMS[lastUndo.roomId]?.objects.find((o) => o.id === lastUndo.id);
 
@@ -3595,19 +3613,18 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     const rmContentPacked = Object.entries(contentsState)
       .filter(([key, st]) => key.startsWith(`${rm.id}:`) && st.packed)
       .length;
-    const rmBoxes = Math.min(BOX_MAX, rmPacked + rmContentPacked);
+    const totalPacked = rmPacked + rmContentPacked;
+    const rmBoxes = boxCountForPacked(totalPacked);
     // an item is flying to the pile now — furniture (packingId) OR a content
-    // item (packingContentKey). Both must open the box to catch it.
+    // item (packingContentKey). Both must open the receiving carton.
     const packingHere = rm.id === room.id && (!!packingId || !!packingContentKey);
-    // Content packs flip packed immediately; open the slot for the newest box
-    // (rmBoxes-1) while the fly is in progress. Furniture packs still settle
-    // packed at the end of the anim, so open at rmBoxes while in flight.
+    // Content packs flip packed immediately (count includes the new item);
+    // furniture packs settle at anim end (count is still pre-pack).
     const inspectOpen = rm.id === room.id && boxOpenSlot != null ? boxOpenSlot : -1;
     const openIdx = packingHere
-      ? Math.min(
-          Math.max(0, packingContentKey ? rmBoxes - 1 : rmBoxes),
-          BOX_MAX - 1,
-        )
+      ? (packingContentKey
+        ? boxSlotForIndex(Math.max(0, totalPacked - 1))
+        : boxSlotForIndex(totalPacked))
       : inspectOpen;
     const boxTarget = boxSlotCenter(openIdx < 0 ? Math.max(0, rmBoxes - 1) : openIdx);
     return (
