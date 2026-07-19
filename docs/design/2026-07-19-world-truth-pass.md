@@ -95,9 +95,44 @@ Load-day sequence, U-Box logistics/photos, jobs, housing paperwork, Stretchy
 plane-day kit + departure, phantom-sale pairs (outdoor set, shoe shelf,
 metal shelves, AC, mattress).
 
-## Open before the patch cuts
+## Real packing plan (Eloisa dictation, Jul 19) — drives PLANE/SHIP/store split
 
-1. **Eloisa's suitcase + sublet-box lists** → finalizes toiletries split,
-   makeup/keepsakes card scope, possibly linens scope.
-2. **Computer object** — real desktop, or set dressing?
-3. Marketplace below-the-fold: any active listings not yet mapped?
+Two months in NYC, summer, Stretchy flies in-cabin with her.
+
+**PLANE (carry-on / checked bag):** a couple small prints · a candle · 1–2 small
+knickknacks · **red desk lamp** (collapses — checked bag; NOT sold/stored) ·
+summer clothes + basics · walking shoes (worn) + sandals (packed) · travel makeup
+bag + a couple small accessories · travel perfumes · meds (full 8wk+ in carry-on,
+never checked/shipped) · laptop (see decision) · ID / phone / chargers + power
+bank / earbuds · maybe a book or two · **linen blanket** (heat) + maybe one
+pillowcase. **Stretchy carry-on:** travel meds bag · travel food balls + a few
+days kibble backup · familiar-smell item.
+
+**SHIP to self (sublet box, mostly bought NEW — not apartment inventory):** new
+hair care + skincare · maybe new pillow · Quince pillowcases · small pack
+compostable plates/utensils · **Stretchy's Petco food bag + food puzzle**.
+
+**Sublet PROVIDES:** towels (confirmed) + sheets (offered — likely take it).
+→ Towels dropped from her bag entirely; full sheet set likely dropped too.
+Kitchen stocked, roommates cook, she'll mostly eat out → compostables kept small.
+
+**Implications for the patch:**
+- `red desk lamp` → PLANE / do-not-sell; it leaves the "pack lamps" (U-Box) task.
+  Lamps task = mushroom lamp + torchiere only.
+- Bathroom **hair care** items (curl cream, hair oil, mousse) → she buys new in NY,
+  so these are **store (U-Box) or trash**, NOT carried. `m_pack_bath` keeps them
+  as pack-for-storage; no suitcase binding.
+- **Makeup / jewelry / small accessories** → the new suitcase card = PLANE.
+- **Meds** (human): DO-NOT-PACK / carry-on flag, never stored.
+- **Sheets/linens:** linen blanket = SHIP; her sheets likely not carried (sublet
+  provides) → `p_linens`/"bedding & towels" scope shrinks to what actually moves.
+- No new game objects needed for Stretchy travel — plane-day kit/departure stay
+  manual (deliberately unbound).
+
+## Still open before the patch cuts
+
+1. **Computer object** — real desktop, or set dressing? (still unconfirmed)
+2. **Laptop decision** (buy-new-before vs in-NY) — affects nothing in-game; the
+   `laptop`/`laptop_chg` items stay bound to `w_work_return` regardless.
+3. Marketplace below-the-fold: any active listings not yet mapped? (shoe shelf =
+   the "west elm" listing, confirmed; outdoor set — both tracker-only, OK.)
