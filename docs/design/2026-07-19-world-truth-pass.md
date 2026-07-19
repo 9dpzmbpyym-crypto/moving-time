@@ -25,6 +25,15 @@ Done — surface one line ("Tracks: Hutch Books — still unpacked in the Office
 
 - **`living:tv`** — split Roku TV out of the TV hutch (it is a separate $100
   listing); bind existing `f_buyer_tv` / `f_remove_tv` to it.
+- **Personal laptop** (NEW item, confirmed Jul 19) — she owns a personal laptop
+  not yet in the game; it flies in her carry-on (may be replaced in NY). Add as a
+  single desk item (`office:desk_hutch:personal_laptop`) with a **do-not-pack /
+  carry-on** flag, bound to **`m_plane_bags`** ("Finish packing luggage") so
+  "packing" = into the carry-on; it can never be Sold or U-Box-loaded. First real
+  instance of the P2b carry-on/`noPack` checklist. Old-laptop disposal if replaced
+  = a later separate card, not modeled now.
+- **`office:computer`** is NOT new and NOT set dressing — it is the **work
+  monitor**, returned to her employer (see `w_work_return` binding below).
 - Nothing else gets art. Shoe shelf (= the "west elm" listing), outdoor set,
   metal shelves, AC, mattress: task pairs are the tracker. Confirmed OK.
 
@@ -70,7 +79,7 @@ Done — surface one line ("Tracks: Hutch Books — still unpacked in the Office
 | `h_moveout_clean` | + cleaning-supplies collection, *handled* (finish cleaning, toss the kit) |
 | `h_restore_blinds` | all three curtain objects (bedroom / office / dining), *handled* |
 | `w_wifi_return` | `office:wifi_router` (confirmed by Eloisa) |
-| `w_work_return` | active work kit — work laptop + charger (confirmed by Eloisa) |
+| `w_work_return` | active work kit (work laptop + charger) **+ `object:office:computer`** — the computer/monitor is work equipment returned to her employer, not sold/stored (confirmed Jul 19). Make it a `packing_requirement` set, trigger *handled*. |
 | `t_skin` | health appointment *skin · booked* (parity with t_teeth / t_obgyn) |
 | `t_labs` | health zone *lymph · stabilized* (parity with t_med_bridge) |
 | `f_buyer_tv` / `f_remove_tv` | new `living:tv` after the split |
@@ -131,8 +140,19 @@ Kitchen stocked, roommates cook, she'll mostly eat out → compostables kept sma
 
 ## Still open before the patch cuts
 
-1. **Computer object** — real desktop, or set dressing? (still unconfirmed)
-2. **Laptop decision** (buy-new-before vs in-NY) — affects nothing in-game; the
-   `laptop`/`laptop_chg` items stay bound to `w_work_return` regardless.
-3. Marketplace below-the-fold: any active listings not yet mapped? (shoe shelf =
-   the "west elm" listing, confirmed; outdoor set — both tracker-only, OK.)
+All blocking questions resolved (Jul 19). Ready to cut on Eloisa's green light.
+- Computer object = work monitor → work return. RESOLVED.
+- Personal laptop → add as carry-on item bound to `m_plane_bags`. RESOLVED.
+- Marketplace: shoe shelf = "west elm" listing; outdoor set — both tracker-only. OK.
+- Laptop buy-new decision affects nothing in-game (`laptop`/`laptop_chg` stay on
+  `w_work_return`).
+
+## Deliverables when green-lit
+
+1. **Import-ready save JSON** (Eloisa pastes into Settings → Import) — all the
+   binding/world-state truth-ups above.
+2. **Cursor/Composer ticket** — set-dressing pass (drop plants/bottles/wastebasket
+   from packable catalog, retire side_cabinet, split `living:tv`, add
+   `personal_laptop` carry-on item) + the **manual-Done-sticks** fix (a hand
+   Done on a world-bound card is never silently reverted by
+   `reconcileTasksFromWorldState`).
