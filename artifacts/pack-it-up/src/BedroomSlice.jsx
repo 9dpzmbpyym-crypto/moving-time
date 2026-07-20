@@ -1116,10 +1116,10 @@ const KITCHEN_OBJECTS = [
     check: "Scarred with a thousand onions. Somehow still your favorite one." },
   { id: "dish_rack", name: "Dish Rack", category: "decor", value: 8, x: 544, y: 276, z: 4, removable: true,
     check: "Two plates and a prayer. It's held up the whole time you've lived here." },
-  { id: "sill_plants_k", name: "Windowsill Herbs", category: "plants", value: 6, x: 488, y: 226, z: 4, removable: true,
-    check: "Herbs that outlived three New Year's resolutions to cook more." },
-  { id: "fridge_plant", name: "Fridge-top Plant", category: "plants", value: 7, x: 672, y: 178, z: 4, removable: true,
-    check: "It's trailed off that fridge top so long it's basically a factory feature." },
+  { id: "sill_plants_k", name: "Windowsill Herbs", category: "plants", value: 6, x: 488, y: 226, z: 4, removable: false,
+    check: "Herbs that outlived three New Year's resolutions. Set dressing — they stay put." },
+  { id: "fridge_plant", name: "Fridge-top Plant", category: "plants", value: 7, x: 672, y: 178, z: 4, removable: false,
+    check: "Trailed off that fridge top forever. Set dressing — not packable." },
   { id: "kitchen_door", name: "Back Door", category: "furniture", x: 96, y: 40, z: 1, removable: false,
     check: "The service door to the back stairs. Comes with the building." },
   { id: "door_towel", name: "Striped Towel", category: "textiles", value: 3, x: 128, y: 140, z: 2, removable: true,
@@ -1315,8 +1315,8 @@ const DINING_OBJECTS = [
     check: "Single-pane, drafty, yours to look through until the last box is out. It stays." },
   { id: "dining_curtains", name: "Green Curtains", category: "textiles", x: 320, y: 48, z: 2, removable: true, value: 10,
     check: "They never belonged to the landlord — take them, or leave them for the next tenant." },
-  { id: "sill_plants_d", name: "Sill Succulents", category: "plants", x: 452, y: 280, z: 3, removable: true, value: 6,
-    check: "Low-maintenance succulents. They've survived worse landlords than this one." },
+  { id: "sill_plants_d", name: "Sill Succulents", category: "plants", x: 452, y: 280, z: 3, removable: false, value: 6,
+    check: "Low-maintenance succulents. Set dressing — they keep the sill warm." },
   { id: "shelf_art", name: "Still-life Print", category: "decor", x: 696, y: 56, z: 2, removable: true, value: 9,
     check: "A framed print of a shelf. The real shelf was sold separately, apparently." },
   { id: "dining_table", name: "Dining Table", category: "furniture", x: 300, y: 350, z: 4, removable: true, value: 70,
@@ -1420,6 +1420,16 @@ function drawRadio(ctx, { on = false, t = 0 } = {}) {
 }
 
 const LIVING_SPRITES = {
+  tv: { w: 42, h: 22, draw(ctx) {
+    // Flat Roku / living-room TV — separate Marketplace listing from the hutch.
+    r(ctx, P.out, 0, 0, 42, 20);
+    r(ctx, "#2A2A2A", 1, 1, 40, 18);
+    r(ctx, "#141414", 3, 3, 36, 14);
+    r(ctx, P.glassHi, 6, 4, 6, 2);
+    r(ctx, P.glassHi, 14, 6, 3, 1);
+    r(ctx, "#3A3A3A", 18, 18, 6, 2);
+    r(ctx, P.out, 19, 20, 4, 2);
+  }},
   tv_hutch: { w: 56, h: 96, glowRegions: [[3, 61, 24, 31], [29, 61, 24, 31]], draw(ctx) {
     // plant — left side of the top so the radio has room on the right
     r(ctx, P.woodDark, 4, 6, 8, 4);
@@ -1437,13 +1447,10 @@ const LIVING_SPRITES = {
     [[6, 20, 2, 7, P.burgundy], [9, 21, 2, 6, P.teal], [12, 19, 2, 8, P.mustard],
      [15, 21, 2, 6, P.green], [41, 20, 2, 7, P.burgundy], [44, 21, 2, 6, P.mustard]]
       .forEach(([x, y, w, h, c]) => { r(ctx, P.out, x, y, w, h); r(ctx, c, x, y + 1, w, h - 1); });
+    // Empty TV niche — the Roku is its own object (`living:tv`).
     outlineRect(ctx, "#2A1A0C", 4, 33, 48, 24);
     r(ctx, P.woodDark, 5, 34, 46, 22);
-    r(ctx, P.out, 8, 36, 40, 17);
-    r(ctx, "#141414", 9, 37, 38, 15);
-    r(ctx, P.glassHi, 12, 38, 6, 2);
-    r(ctx, P.glassHi, 21, 40, 3, 1);
-    r(ctx, P.woodDark, 26, 53, 4, 3);
+    r(ctx, "#1A120A", 8, 36, 40, 17);
     r(ctx, P.woodHi, 1, 57, 54, 2);
     r(ctx, P.woodDark, 1, 59, 54, 1);
     outlineRect(ctx, "#2A1A0C", 3, 61, 24, 31);
@@ -1618,6 +1625,8 @@ const LIVING_SPRITES = {
 const LIVING_OBJECTS = [
   { id: "tv_hutch", name: "TV Hutch", category: "furniture", value: 120, x: 72, y: 78, z: 3, removable: true,
     check: "Every remote from the last decade is lost somewhere inside this thing." },
+  { id: "tv", name: "Roku TV", category: "furniture", value: 100, x: 109, y: 210, z: 4, removable: true,
+    check: "Flat, stubborn, and already listed. The hutch is furniture; this screen is the sale." },
   { id: "radio", name: "Apartment Radio", category: "decor", value: 18, x: 195, y: 12, z: 5, removable: false,
     check: "Cherry Blossom is the apartment's heartbeat. This little box is optional personality." },
   { id: "wall_art_pair", name: "Wall Art", category: "decor", value: 12, x: 376, y: 104, z: 2, removable: true,
@@ -1646,8 +1655,8 @@ const LIVING_OBJECTS = [
 
 /* box stack sprite (grows near the door as you pack).
    Geometry lives in constants so the pack-to-box fly animation can aim at the
-   exact slot the incoming item lands in. Bigger boxes than before, and the pile
-   grows one box per packed item (a widening pyramid) up to BOX_MAX. */
+   exact slot the incoming item lands in. Each carton holds ITEMS_PER_BOX items;
+   the pile shows ceil(packed / ITEMS_PER_BOX) boxes (capped at BOX_MAX). */
 const BOX_ORIGIN = { x: 212, y: 452 };  // stage px: top-left of the pile canvas
                                          // centered in the foreground so the pile
                                          // clears fixtures (tub, etc.) in every room
@@ -1656,9 +1665,27 @@ const BOX_W = 34, BOX_H = 26;           // one box, cells (~2x the old boxes)
 // fill order: bottom row L→R, then middle row, then apex
 const BOX_SLOTS = [[16, 42], [50, 42], [84, 42], [33, 23], [67, 23], [50, 4]];
 const BOX_MAX = BOX_SLOTS.length;
+const ITEMS_PER_BOX = 5;
+/** Packed-item thumbs / fly sprites: ~1/5 of one box face so small things don't fill the carton. */
+const BOX_ITEM_MAX_PX = Math.max(12, Math.round((BOX_W * CELL) / 5));
+const boxCountForPacked = (n) => {
+  const total = Math.max(0, Number(n) || 0);
+  if (total <= 0) return 0;
+  return Math.min(BOX_MAX, Math.ceil(total / ITEMS_PER_BOX));
+};
+const boxSlotForIndex = (i) => Math.min(BOX_MAX - 1, Math.floor(Math.max(0, i) / ITEMS_PER_BOX));
 const boxSlotCenter = (i) => {
   const [sx, sy] = BOX_SLOTS[Math.min(Math.max(i, 0), BOX_MAX - 1)];
   return { x: BOX_ORIGIN.x + (sx + BOX_W / 2) * CELL, y: BOX_ORIGIN.y + (sy + BOX_H / 2) * CELL };
+};
+/** Hit-test a pointer against a drawn box slot (cell coords inside the pile canvas). */
+const boxSlotAtCell = (cx, cy, count) => {
+  const n = Math.min(count, BOX_MAX);
+  for (let i = n - 1; i >= 0; i--) {
+    const [sx, sy] = BOX_SLOTS[i];
+    if (cx >= sx && cx < sx + BOX_W && cy >= sy && cy < sy + BOX_H) return i;
+  }
+  return -1;
 };
 
 function drawBoxes(ctx, count, openIdx = -1) {
@@ -1721,10 +1748,10 @@ const ROOMS = {
         check: "A small green painting that made a rented wall feel less rented." },
       { id: "art_poster",     name: "Coin Co. Poster",  category: "decor",     x: 184, y: 84,  z: 2, removable: true, value: 5,
         check: "Birmingham Coin Company. You don't collect coins. It just looked cool." },
-      { id: "sill_plants",    name: "Windowsill Plants",category: "plants",    x: 408, y: 248, z: 3, removable: true, value: 6,
-        check: "The windowsill crew. They ride up front, obviously." },
-      { id: "hanging_plant",  name: "Hanging Pothos",   category: "plants",    x: 676, y: 14,  z: 3, removable: true, value: 10,
-        check: "It survived three heat waves. It can survive Queens." },
+      { id: "sill_plants",    name: "Windowsill Plants",category: "plants",    x: 408, y: 248, z: 3, removable: false, value: 6,
+        check: "The windowsill crew. Set dressing — they stay in the picture." },
+      { id: "hanging_plant",  name: "Hanging Pothos",   category: "plants",    x: 676, y: 14,  z: 3, removable: false, value: 10,
+        check: "It survived three heat waves. Set dressing — still hanging in." },
       { id: "bed",            name: "Bed",              category: "furniture", x: 180, y: 280, z: 3, removable: true, value: 60,
         check: "Still smells like laundry day. The burgundy pillow matches nothing, which is why it works." },
       { id: "nightstand",     name: "Nightstand",       category: "furniture", x: 68,  y: 372, z: 3, removable: true, value: 25,
@@ -1818,8 +1845,8 @@ ROOMS.bathroom = {
       check: "The fancy towels. Guests were never allowed to actually use them." },
     { id: "mirror_cabinet",  name: "Mirrored Cabinet",    category: "furniture",x: 640, y: 96,  z: 2, removable: false,
       check: "Behind the mirror: expired everything. The cabinet stays put." },
-    { id: "sill_bottles",    name: "Windowsill Bottles",  category: "plants",   x: 248, y: 208, z: 3, removable: true, value: 7,
-      check: "A tiny skyline of glass bottles and one determined plant." },
+    { id: "sill_bottles",    name: "Windowsill Bottles",  category: "plants",   x: 248, y: 208, z: 3, removable: false, value: 7,
+      check: "A tiny skyline of glass bottles. Set dressing — not on the packing list." },
     { id: "bathtub",         name: "Bathtub",             category: "furniture",x: 66,  y: 344, z: 3, removable: false,
       check: "Deep enough to think in. It stays with the pipes." },
     { id: "toilet",          name: "Toilet",              category: "furniture",x: 460, y: 340, z: 3, removable: false,
@@ -1863,10 +1890,10 @@ ROOMS.office = {
       check: "Molded to exactly one spine: yours." },
     { id: "storage_bin",     name: "Storage Tote",     category: "decor",     x: 752, y: 288, z: 4, removable: true, value: 6,
       check: "Labeled “MISC” — which was ambitious." },
-    { id: "waste_bin",       name: "Wastebasket",      category: "decor",     x: 600, y: 296, z: 4, removable: true, value: 3,
-      check: "Promoted to the desk for the move. Contains at least three drafts of the same letter." },
-    { id: "side_cabinet",    name: "Side Cabinet",     category: "furniture", x: 664, y: 288, z: 3, removable: true, value: 30,
-      check: "Short cabinet drafted into desk duty: books, one dramatic vase, and room for whatever's next." },
+    { id: "waste_bin",       name: "Wastebasket",      category: "decor",     x: 600, y: 296, z: 4, removable: false, value: 3,
+      check: "Promoted to the desk for atmosphere. Set dressing — not a pack target." },
+    { id: "side_cabinet",    name: "Side Cabinet",     category: "furniture", x: 664, y: 288, z: 3, removable: false, value: 30,
+      check: "Part of the L-desk sale — open it for contents, but it isn't its own listing." },
     { id: "wifi_router",     name: "Wi-Fi Router",     category: "decor",     x: 280, y: 378, z: 6, removable: true, value: 40,
       check: "Blinks under the desk like it knows the password and refuses to share." },
     { id: "cat_bed",         name: "Stretchy's Bed",   category: "decor",     x: 560, y: 280, z: 5, removable: true, value: 22,
@@ -1882,6 +1909,7 @@ const sk = (roomId, id) => `${roomId}:${id}`;
 const BUYER_BINDINGS = [
   { taskId: "f_buyer_dining", objects: ["dining:dining_table", "dining:dining_chairs"] },
   { taskId: "f_buyer_entertainment", objects: ["living:tv_hutch"] },
+  { taskId: "f_buyer_tv", objects: ["living:tv"] },
   { taskId: "f_buyer_coffee", objects: ["living:coffee_table"] },
   { taskId: "f_buyer_desk", objects: ["office:desk_hutch", "office:office_chair"] },
   { taskId: "f_buyer_sofa", objects: ["living:sofa"] },
@@ -2516,6 +2544,9 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
   // which content item is selected inside the inline storage panel — drives
   // the Pack/Sell/Donate action bar instead of per-card tiny emoji buttons.
   const [selectedContentId, setSelectedContentId] = useState(null);
+  // Click a pile box → inspect its packed items (furniture + contents) and unpack.
+  const [boxOpenSlot, setBoxOpenSlot] = useState(null); // 0..BOX_MAX-1 | null
+  const [selectedBoxItemKey, setSelectedBoxItemKey] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [hoverId, setHoverId] = useState(null);
   const [packingId, setPackingId] = useState(null); // mid pack animation
@@ -2749,6 +2780,10 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     setStorageAnchor(null);
     setSelectedContentId(null);
   };
+  const closeBoxInspect = () => {
+    setBoxOpenSlot(null);
+    setSelectedBoxItemKey(null);
+  };
   const closeRadio = () => setRadioOpen(null);
 
   /* Timeout registry — every animation/toast timer goes through schedule() so
@@ -2852,16 +2887,28 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     });
   }, [schedule, showReward]);
 
+  const nextBoxSlotForRoom = useCallback((roomId, objMap, contentMap) => {
+    const rmPacked = (ROOMS[roomId]?.objects || []).filter(
+      (o) => o.removable && objMap[sk(roomId, o.id)]?.packed
+    ).length;
+    const contentPacked = Object.entries(contentMap)
+      .filter(([key, st]) => key.startsWith(`${roomId}:`) && st.packed)
+      .length;
+    // Next item lands in the carton for its index among already-packed goods.
+    return boxSlotForIndex(rmPacked + contentPacked);
+  }, []);
+
   const packObject = useCallback((id) => {
     const k = sk(room.id, id);
     const obj = room.objects.find((o) => o.id === id);
     if (!obj || !obj.removable || objState[k].packed || objState[k].sold || objState[k].donated || busy) return;
     const prev = objState[k];
+    const boxSlot = nextBoxSlotForRoom(room.id, objState, contentsState);
     haptic(HAPTIC.pack);
     playPackSfx();
     setPackingId(id);
     schedule(() => {
-      const nextState = { ...objState, [k]: { ...objState[k], packed: true } };
+      const nextState = { ...objState, [k]: { ...objState[k], packed: true, boxSlot } };
       setObjState(nextState);
       setTasks((current) => reconcileTasksFromWorldState(current, {
         objState: nextState, appointments, calmedZones: session.calmedZones,
@@ -2872,7 +2919,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
       setMinutes((m) => m + 10);
       onSessionBump("cleared", 1, "Cleared +1");
     }, 520);
-  }, [room, objState, busy, schedule, onSessionBump]);
+  }, [room, objState, contentsState, busy, schedule, onSessionBump, nextBoxSlotForRoom]);
 
   const sellObject = useCallback((id, amount) => {
     const k = sk(room.id, id);
@@ -2979,11 +3026,12 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     const k = `${room.id}:${storageId}:${itemId}`;
     const prev = contentsState[k];
     if (!prev || prev.packed || prev.sold || prev.donated || busy) return;
+    const boxSlot = nextBoxSlotForRoom(room.id, objState, contentsState);
     haptic(HAPTIC.pack);
     playPackSfx();
     // Flip packed immediately so the room box pile stays visible after the
     // fly ends (visibility is driven by packed counts, not only packingHere).
-    setContentsState((s) => ({ ...s, [k]: { ...s[k], packed: true } }));
+    setContentsState((s) => ({ ...s, [k]: { ...s[k], packed: true, boxSlot } }));
     // Close back to the apartment so the box stack is visible, then fly the
     // item sprite from the storage object to the box pile's mouth — same
     // packToBox keyframe the furniture uses.
@@ -2999,25 +3047,16 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
       const placed = { ...storageObj, ...saved };
       const sScale = saved.scale ?? storageObj.scale ?? 1;
       const sw = (storageSpr.w || 32) * CELL * sScale;
-      // Keep the departing item clearly readable while normalizing sprites with
-      // very different source dimensions to one visual size.
-      const targetPx = 40;
+      // Land at ~1/5 of a box face so small items don't read as the whole carton.
+      const targetPx = BOX_ITEM_MAX_PX;
       const pscale = Math.min(targetPx / ((spr.w || 16) * CELL), targetPx / ((spr.h || 16) * CELL));
       const iw = (spr.w || 16) * CELL * pscale;
       const ih = (spr.h || 16) * CELL * pscale;
       // start centered horizontally over the storage sprite, at its top edge
       const ox = placed.x + (sw - iw) / 2;
       const oy = placed.y - Math.max(8, ih * 0.35);
-      // target: receiving box slot. Count already includes this item (optimistic
-      // pack above), so the open mouth is at settled-1.
-      const rmPacked = room.objects.filter(
-        (o) => o.removable && objState[sk(room.id, o.id)].packed
-      ).length;
-      const contentPacked = Object.entries(contentsState)
-        .filter(([key, st]) => key.startsWith(`${room.id}:`) && st.packed)
-        .length + 1; // +1 = this item (state update not flushed yet)
-      const totalPacked = rmPacked + contentPacked;
-      const boxIdx = Math.min(Math.max(0, totalPacked - 1), BOX_MAX - 1);
+      // target: receiving box slot (matches boxSlot stamped above).
+      const boxIdx = boxSlot;
       const boxTarget = boxSlotCenter(boxIdx);
       setContentFlyFx({
         spr,
@@ -3044,7 +3083,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
       setMinutes((m) => m + 10);
       onSessionBump("cleared", 1, "Cleared +1");
     }, 520);
-  }, [room, objState, contentsState, busy, schedule, onSessionBump]);
+  }, [room, objState, contentsState, busy, schedule, onSessionBump, nextBoxSlotForRoom]);
 
   const sellContent = useCallback((storageId, itemId) => {
     const k = `${room.id}:${storageId}:${itemId}`;
@@ -3052,6 +3091,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     if (!prev || prev.packed || prev.sold || prev.donated || busy) return;
     const items = CONTENTS[`${room.id}:${storageId}`] || [];
     const it = items.find((x) => x.id === itemId);
+    if (it?.carryOn) return;
     const credit = it?.value || 0;
     // Stay in the storage overlay; play the coin burst + floating amount locally
     // over the item thumbnail instead of closing back to the apartment.
@@ -3076,6 +3116,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     if (!prev || prev.packed || prev.sold || prev.donated || busy) return;
     const items = CONTENTS[`${room.id}:${storageId}`] || [];
     const it = items.find((x) => x.id === itemId);
+    if (it?.carryOn) return;
     haptic(HAPTIC.donate);
     playDonateSfx();
     // Stay in the storage overlay; the shrink animation plays locally.
@@ -3097,12 +3138,28 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     const k = sk(room.id, id);
     const prev = objState[k];
     setUndoStack((stack) => [...stack, undoEntry(id, prev, 0, 0)]);
-    const nextState = { ...objState, [k]: { ...objState[k], packed: false } };
+    const nextFlags = { ...objState[k], packed: false };
+    delete nextFlags.boxSlot;
+    const nextState = { ...objState, [k]: nextFlags };
     setObjState(nextState);
     setTasks((current) => reconcileTasksFromWorldState(current, {
       objState: nextState, appointments, calmedZones: session.calmedZones,
     }));
+    setSelectedBoxItemKey(null);
   };
+
+  const unpackContent = useCallback((storageId, itemId) => {
+    const k = `${room.id}:${storageId}:${itemId}`;
+    const prev = contentsState[k];
+    if (!prev?.packed || busy) return;
+    setUndoStack((stack) => [...stack, undoContentEntry(storageId, itemId, prev, 0, 0)]);
+    setContentsState((s) => {
+      const next = { ...s[k], packed: false };
+      delete next.boxSlot;
+      return { ...s, [k]: next };
+    });
+    setSelectedBoxItemKey(null);
+  }, [room.id, contentsState, busy]);
 
   const unsellObject = (id) => {
     const k = sk(room.id, id);
@@ -3201,6 +3258,9 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
   const visibleObjectsFor = (rm) =>
     rm.objects
       .filter((o) => {
+        // Set dressing (removable: false) always stays drawn — old saves may
+        // still carry packed flags from when plants were packable.
+        if (!o.removable) return true;
         const st = objState[sk(rm.id, o.id)];
         const animating = rm.id === room.id && (o.id === packingId || o.id === sellingId || o.id === donatingId);
         return (!st.packed && !st.sold && !st.donated) || animating;
@@ -3339,6 +3399,65 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
   const packedList = removable.filter((o) => objState[sk(room.id, o.id)].packed);
   const soldList = removable.filter((o) => objState[sk(room.id, o.id)].sold);
   const donatedList = removable.filter((o) => objState[sk(room.id, o.id)].donated);
+
+  /** Packed furniture + contents in this room, each assigned to a pile slot. */
+  const packedInRoomBoxes = useMemo(() => {
+    const list = [];
+    for (const o of room.objects) {
+      if (!o.removable) continue;
+      const st = objState[sk(room.id, o.id)];
+      if (!st?.packed) continue;
+      list.push({
+        key: sk(room.id, o.id),
+        kind: "object",
+        id: o.id,
+        name: o.name,
+        spr: room.sprites[o.id],
+        boxSlot: st.boxSlot,
+      });
+    }
+    for (const [storageKey, items] of Object.entries(CONTENTS)) {
+      if (!storageKey.startsWith(`${room.id}:`)) continue;
+      const sid = storageKey.slice(room.id.length + 1);
+      for (const it of items) {
+        const ck = `${storageKey}:${it.id}`;
+        const st = contentsState[ck];
+        if (!st?.packed) continue;
+        list.push({
+          key: ck,
+          kind: "content",
+          storageId: sid,
+          id: it.id,
+          name: it.name,
+          spr: it.spr,
+          carryOn: !!it.carryOn,
+          boxSlot: st.boxSlot,
+        });
+      }
+    }
+    // Always re-bucket by packed order (5 per box) so older 1-item-per-box
+    // stamps from early saves don't leave a lonely carton for every item.
+    list.sort((a, b) => a.key.localeCompare(b.key));
+    return list.map((it, i) => ({
+      ...it,
+      slot: boxSlotForIndex(i),
+    }));
+  }, [room, objState, contentsState]);
+
+  const itemsInOpenBox = boxOpenSlot == null
+    ? []
+    : packedInRoomBoxes.filter((it) => it.slot === boxOpenSlot);
+  const selectedBoxItem = itemsInOpenBox.find((it) => it.key === selectedBoxItemKey) || null;
+
+  // If unpacking shrinks the pile, don't leave an inspect open on a missing carton.
+  useEffect(() => {
+    if (boxOpenSlot == null) return;
+    const n = boxCountForPacked(packedInRoomBoxes.length);
+    if (boxOpenSlot >= n) {
+      setBoxOpenSlot(null);
+      setSelectedBoxItemKey(null);
+    }
+  }, [boxOpenSlot, packedInRoomBoxes.length]);
   const lastUndo = undoStack.length > 0 ? undoStack[undoStack.length - 1] : null;
   const lastUndoObj = lastUndo && ROOMS[lastUndo.roomId]?.objects.find((o) => o.id === lastUndo.id);
 
@@ -3494,24 +3613,24 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     const rmContentPacked = Object.entries(contentsState)
       .filter(([key, st]) => key.startsWith(`${rm.id}:`) && st.packed)
       .length;
-    const rmBoxes = Math.min(BOX_MAX, rmPacked + rmContentPacked);
+    const totalPacked = rmPacked + rmContentPacked;
+    const rmBoxes = boxCountForPacked(totalPacked);
     // an item is flying to the pile now — furniture (packingId) OR a content
-    // item (packingContentKey). Both must open the box to catch it.
+    // item (packingContentKey). Both must open the receiving carton.
     const packingHere = rm.id === room.id && (!!packingId || !!packingContentKey);
-    // Content packs flip packed immediately; open the slot for the newest box
-    // (rmBoxes-1) while the fly is in progress. Furniture packs still settle
-    // packed at the end of the anim, so open at rmBoxes while in flight.
+    // Content packs flip packed immediately (count includes the new item);
+    // furniture packs settle at anim end (count is still pre-pack).
+    const inspectOpen = rm.id === room.id && boxOpenSlot != null ? boxOpenSlot : -1;
     const openIdx = packingHere
-      ? Math.min(
-          Math.max(0, packingContentKey ? rmBoxes - 1 : rmBoxes),
-          BOX_MAX - 1,
-        )
-      : -1;
+      ? (packingContentKey
+        ? boxSlotForIndex(Math.max(0, totalPacked - 1))
+        : boxSlotForIndex(totalPacked))
+      : inspectOpen;
     const boxTarget = boxSlotCenter(openIdx < 0 ? Math.max(0, rmBoxes - 1) : openIdx);
     return (
       <>
         {/* LAYER 0 — room shell */}
-        <div style={{ position: "absolute", inset: 0 }} onClick={() => { setSelectedId(null); closeStorage(); closeRadio(); }}>
+        <div style={{ position: "absolute", inset: 0 }} onClick={() => { setSelectedId(null); closeStorage(); closeRadio(); closeBoxInspect(); }}>
           <PixelCanvas w={240} h={extCells} draw={getShellDraw(rm, extCells)} redrawKey={extCells} />
         </div>
 
@@ -3630,11 +3749,13 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
                   });
                   setStorageId(o.id);
                   closeRadio();
+                  closeBoxInspect();
                   return;
                 }
                 setSelectedId(o.id);
                 closeRadio();
                 closeStorage();
+                closeBoxInspect();
               }}
               onMouseEnter={() => setHoverId(o.id)}
               onMouseLeave={() => setHoverId((h) => (h === o.id ? null : h))}
@@ -3844,7 +3965,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
                         </div>
                       )}
                       <div style={{ color: "#F2E4C0", fontSize: 10, textAlign: "center", lineHeight: 1.15, ...ui.label }}>{it.name}</div>
-                      {st.packed && <div style={{ color: "#C9B896", fontSize: 9, ...ui.label }}>packed</div>}
+                      {st.packed && <div style={{ color: "#C9B896", fontSize: 9, ...ui.label }}>{it.carryOn ? "carry-on" : "packed"}</div>}
                       {st.sold && <div style={{ color: "#D9A33C", fontSize: 9, ...ui.label }}>sold ${st.soldFor}</div>}
                       {st.donated && <div style={{ color: "#77974C", fontSize: 9, ...ui.label }}>donated</div>}
                     </div>
@@ -3857,7 +3978,8 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
                   onClick={() => { if (sel) { packContent(o.id, sel.id); } }}
                   disabled={!sel || !!selDone || !!busy}
                   style={{ flex: 1, padding: "8px 2px", fontSize: 11, cursor: (!sel || selDone || busy) ? "not-allowed" : "pointer", color: "#F2E4C0", background: sel ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (!sel || selDone) ? 0.4 : 1, ...ui.label }}
-                >📦 Pack</button>
+                >{sel?.carryOn ? "🎒 Carry-on" : "📦 Pack"}</button>
+                {!sel?.carryOn && (
                 <button
                   data-storage-action="sell"
                   onClick={() => { if (sel) { sellContent(o.id, sel.id); } }}
@@ -3865,12 +3987,15 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
                   title={sel?.value ? `sell ~$${sel.value}` : "can't sell"}
                   style={{ flex: 1, padding: "8px 2px", fontSize: 11, cursor: (!sel || selDone || busy || !sel?.value) ? "not-allowed" : "pointer", color: "#FFD97A", background: sel ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (!sel || selDone || !sel?.value) ? 0.4 : 1, ...ui.label }}
                 >💰 Sell</button>
+                )}
+                {!sel?.carryOn && (
                 <button
                   data-storage-action="donate"
                   onClick={() => { if (sel) { donateContent(o.id, sel.id); } }}
                   disabled={!sel || !!selDone || !!busy}
                   style={{ flex: 1, padding: "8px 2px", fontSize: 11, cursor: (!sel || selDone || busy) ? "not-allowed" : "pointer", color: "#9CC76F", background: sel ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (!sel || selDone) ? 0.4 : 1, ...ui.label }}
                 >🎁 Donate</button>
+                )}
               </div>
             </div>
           );
@@ -4082,8 +4207,30 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
             Show for furniture packs OR storage-content packs (rmBoxes includes
             both). packingHere covers the fly-in frame before state flips. */}
         {(rmBoxes > 0 || packingHere) && (
-          <div style={{ position: "absolute", left: BOX_ORIGIN.x, top: BOX_ORIGIN.y, zIndex: 60, animation: "popIn 220ms ease-out" }}>
-            <div className={packingHere ? "boxReceiving" : ""} style={{ transformOrigin: "bottom center" }}>
+          <div
+            role={rm.id === room.id ? "button" : undefined}
+            aria-label={rm.id === room.id ? "Open a packed box" : undefined}
+            style={{
+              position: "absolute", left: BOX_ORIGIN.x, top: BOX_ORIGIN.y, zIndex: 60,
+              animation: "popIn 220ms ease-out",
+              cursor: rm.id === room.id && rmBoxes > 0 ? "pointer" : "default",
+            }}
+            onClick={(e) => {
+              if (rm.id !== room.id || rmBoxes <= 0) return;
+              e.stopPropagation();
+              closeStorage();
+              closeRadio();
+              setSelectedId(null);
+              const rect = e.currentTarget.getBoundingClientRect();
+              const cx = ((e.clientX - rect.left) / Math.max(1, rect.width)) * BOX_CW;
+              const cy = ((e.clientY - rect.top) / Math.max(1, rect.height)) * BOX_CH;
+              let hit = boxSlotAtCell(cx, cy, rmBoxes);
+              if (hit < 0) hit = Math.min(rmBoxes - 1, BOX_MAX - 1);
+              setBoxOpenSlot(hit);
+              setSelectedBoxItemKey(null);
+            }}
+          >
+            <div className={packingHere ? "boxReceiving" : ""} style={{ transformOrigin: "bottom center", pointerEvents: "none" }}>
               <PixelCanvas w={BOX_CW} h={BOX_CH} draw={(ctx) => drawBoxes(ctx, rmBoxes, openIdx)} redrawKey={`${rmBoxes}-${openIdx}`} />
             </div>
           </div>
@@ -4115,6 +4262,130 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
             <PixelCanvas w={contentFlyFx.spr.w} h={contentFlyFx.spr.h} draw={contentFlyFx.spr.draw} />
           </div>
         )}
+
+        {/* Open-box inspect — same idea as a furniture storage panel: pick an
+            item, then Unpack. Thumbs max out at ~1/5 of a box face. */}
+        {boxOpenSlot != null && rm.id === room.id && (() => {
+          const panelW = Math.min(260, typeof window !== "undefined" ? window.innerWidth - 36 : 260);
+          const maxDim = BOX_ITEM_MAX_PX;
+          const panel = (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: isMobile ? "fixed" : "absolute",
+                ...(isMobile
+                  ? {
+                    left: "50%",
+                    bottom: "calc(env(safe-area-inset-bottom, 0px) + 88px)",
+                    transform: "translateX(-50%)",
+                    zIndex: 9999,
+                  }
+                  : {
+                    left: Math.max(8, BOX_ORIGIN.x - 20),
+                    top: Math.max(8, BOX_ORIGIN.y - 250),
+                    zIndex: 400,
+                  }),
+                width: panelW,
+                maxHeight: isMobile ? "42dvh" : 280,
+                display: "flex",
+                flexDirection: "column",
+                background: "#1A0F06",
+                border: "3px solid #120A04",
+                boxShadow: "inset 0 0 0 2px #4A2E17, 0 8px 0 #0A0502",
+                padding: 10,
+                ...ui.label,
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, flex: "0 0 auto" }}>
+                <div style={{ color: "#FFD97A", fontSize: 13 }}>📦 Box {boxOpenSlot + 1}</div>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); closeBoxInspect(); }}
+                  style={{ background: "none", border: "none", color: "#C9B896", fontSize: 18, cursor: "pointer", lineHeight: 1, minWidth: 32, minHeight: 32, ...ui.label }}
+                  title="close"
+                >×</button>
+              </div>
+              <div style={{ color: "#C9B896", fontSize: 11, marginBottom: 6, flex: "0 0 auto" }}>
+                {itemsInOpenBox.length === 0
+                  ? "Empty — nothing stamped to this carton yet."
+                  : `${itemsInOpenBox.length} inside · tap to select, then unpack`}
+              </div>
+              <div className="storageScroll" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 4, minHeight: 0, flex: "1 1 auto", overflowY: "auto", paddingRight: 2 }}>
+                {itemsInOpenBox.map((it) => {
+                  const isSel = selectedBoxItemKey === it.key;
+                  const fit = it.spr
+                    ? Math.min(maxDim / (it.spr.w * CELL), maxDim / (it.spr.h * CELL))
+                    : 0;
+                  return (
+                    <div
+                      key={it.key}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedBoxItemKey(isSel ? null : it.key);
+                      }}
+                      style={{
+                        padding: 4,
+                        background: isSel ? "#3A2410" : "#1A0F06",
+                        border: isSel ? "2px solid #FFD97A" : "2px solid #4A2E17",
+                        cursor: "pointer",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 2,
+                      }}
+                    >
+                      {it.spr && (
+                        <div style={{
+                          width: maxDim, height: maxDim,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          background: "#241509", border: "1px solid #4A2E17", overflow: "hidden",
+                        }}>
+                          <div style={{ transform: `scale(${fit})`, transformOrigin: "center", imageRendering: "pixelated" }}>
+                            <PixelCanvas w={it.spr.w} h={it.spr.h} draw={it.spr.draw} redrawKey={itemArtRedrawKey} />
+                          </div>
+                        </div>
+                      )}
+                      <div style={{ color: "#F2E4C0", fontSize: 10, textAlign: "center", lineHeight: 1.15, ...ui.label }}>{it.name}</div>
+                      {it.carryOn && <div style={{ color: "#C9B896", fontSize: 9, ...ui.label }}>carry-on</div>}
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ display: "flex", gap: 5, marginTop: 6, paddingTop: 6, borderTop: "2px solid #4A2E17", flex: "0 0 auto" }}>
+                <button
+                  type="button"
+                  disabled={!selectedBoxItem || !!busy}
+                  onClick={() => {
+                    if (!selectedBoxItem) return;
+                    if (selectedBoxItem.kind === "object") unpackObject(selectedBoxItem.id);
+                    else unpackContent(selectedBoxItem.storageId, selectedBoxItem.id);
+                  }}
+                  style={{
+                    flex: 1, padding: "8px 2px", fontSize: 11,
+                    cursor: (!selectedBoxItem || busy) ? "not-allowed" : "pointer",
+                    color: "#F2E4C0",
+                    background: selectedBoxItem ? "#3A2410" : "#1A0F06",
+                    border: "2px solid #120A04",
+                    opacity: (!selectedBoxItem || busy) ? 0.4 : 1,
+                    ...ui.label,
+                  }}
+                >📤 Unpack</button>
+              </div>
+            </div>
+          );
+          return isMobile
+            ? createPortal(
+                <>
+                  <div
+                    onClick={() => closeBoxInspect()}
+                    style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(10, 5, 2, 0.18)" }}
+                  />
+                  {panel}
+                </>,
+                document.body
+              )
+            : panel;
+        })()}
       </>
     );
   };
@@ -4182,7 +4453,10 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
       const ease = (t) => 1 - Math.pow(1 - t, 3);
       // rooms loop: bedroom ↔ living closes the apartment circuit
       const self = { raf: 0, commit: () => {
-        if (delta) setRoomIndex((i) => (i + delta + N) % N);
+        if (delta) {
+          closeBoxInspect();
+          setRoomIndex((i) => (i + delta + N) % N);
+        }
         setDragX(0);
       } };
       const step = (now) => {
@@ -4782,6 +5056,23 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
                 </div>
               )}
               {packedList.map((o) => invRow(o, CATEGORY_COLORS[o.category], "packed", "unpack", unpackObject))}
+              {packedInRoomBoxes.filter((it) => it.kind === "content").map((it) => (
+                <div key={it.key} style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  marginTop: 8, padding: "10px 12px", background: "#1A0F06", border: "2px solid #4A2E17",
+                }}>
+                  <div>
+                    <div style={{ color: "#F2E4C0", fontSize: 14, ...ui.label }}>{it.name}</div>
+                    <div style={{ color: "#B07A3C", fontSize: 12, ...ui.label }}>{it.carryOn ? "carry-on" : "packed"} · box {(it.slot ?? 0) + 1}</div>
+                  </div>
+                  <button
+                    onClick={() => unpackContent(it.storageId, it.id)}
+                    style={{ padding: "8px 12px", fontSize: 12, background: "#2E1D0E", color: "#C9B896", border: "2px solid #120A04", cursor: "pointer", ...ui.label }}
+                  >
+                    unpack
+                  </button>
+                </div>
+              ))}
               {soldList.map((o) => invRow(o, P.gold, `sold · +$${objState[sk(room.id, o.id)].soldFor}`, "buy back", unsellObject))}
               {donatedList.map((o) => invRow(o, "#B9CEDC", "donated", "take back", undonateObject))}
             </div>

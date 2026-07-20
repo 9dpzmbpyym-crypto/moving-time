@@ -273,6 +273,8 @@ export const CONTENTS = {
     // drawers: laptop + small electronics
     { id: "laptop",    name: "Work Laptop",        spr: art("s3_r11_i01_work_laptop.png"),                value: 200 },
     { id: "laptop_chg", name: "Laptop Charger",    spr: art("s3_r11_i02_laptop_charger.png"),             value: 25 },
+    // Personal machine — flies in carry-on; never sold or U-Box-loaded.
+    { id: "personal_laptop", name: "Personal Laptop", spr: art("s3_r11_i01_work_laptop.png"), value: 0, carryOn: true },
     { id: "tablet",    name: "Tablet",             spr: art("s3_r12_i02_tablet.png"),                     value: 120 },
     { id: "earbuds",   name: "Earbuds",            spr: art("s3_r12_i03_earbuds.png"),                    value: 20 },
     { id: "ext_drive", name: "External Drive",     spr: art("s3_r12_i08_external_drive_power_bank.png"),  value: 35 },

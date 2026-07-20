@@ -9,6 +9,11 @@ Covers **July 5–10, 2026**. Combines:
 
 ---
 
+## 2026-07-19 — [Cursor / Grok 4.5]
+- World-truth code pass: manual-Done sticks (`manualDone`), set-dressing catalog drop, `living:tv` Roku split, personal laptop carry-on
+- Fresh-install bindings for `f_buyer_tv` / `f_remove_tv`; binding stub tests run under plain Node on Windows
+- Session: `docs/sessions/2026-07-19-cursor-world-truth.md`
+
 ## 2026-07-14 — [Cursor / Grok 4.5]
 - Shirley on Vercel: “bad key” was actually free-model **429**; default → `openrouter/free` + provider rotation; Test key saves-then-verifies; cleaner phone errors
 - Live Shirley prompt swapped to move-spine `RUNTIME_SYSTEM_PROMPTS.md` (+ guide lifecycle); kept `BOOK:` for FSM

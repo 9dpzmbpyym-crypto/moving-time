@@ -1,12 +1,36 @@
+/*
+ * taskBindings transitions + save merge. taskBindings.js transitively imports
+ * contents.js (Vite-only JSON + import.meta.glob), so we load it from source
+ * with those imports stubbed — same pattern as describe-binding.test.mjs.
+ * Run: node tests/task-bindings.test.mjs  (from artifacts/pack-it-up/)
+ */
 import assert from "node:assert/strict";
-import {
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { makeQuickTask, isTaskDateLocked, scheduleDatesForLedger } from "../src/tasks.js";
+import { mergeTasks } from "../src/save.js";
+
+const srcPath = fileURLToPath(new URL("../src/taskBindings.js", import.meta.url));
+let source = readFileSync(srcPath, "utf8");
+source = source
+  .replace(/^import .*inventoryCollections\.js";\r?\n/m, "")
+  .replace(/^import .*apartmentObjectCatalog\.js";\r?\n/m, "");
+
+const stubs = `
+const INVENTORY_COLLECTION_OPTIONS = [];
+const INVENTORY_ITEM_OPTIONS = [];
+const inventoryTargetKeys = () => [];
+const PACKABLE_APARTMENT_TARGET_OPTIONS = [
+  { value: "living:sofa", label: "Living · Sofa" },
+];
+`;
+
+const {
   completeTaskFromEvent,
   reconcileTasksFromWorldState,
   resolveTaskDestination,
   taskBindingSatisfied,
-} from "../src/taskBindings.js";
-import { makeQuickTask, isTaskDateLocked, scheduleDatesForLedger } from "../src/tasks.js";
-import { mergeTasks } from "../src/save.js";
+} = await import("data:text/javascript," + encodeURIComponent(stubs + source));
 
 const itemTask = {
   id: "pack_sofa",
@@ -26,10 +50,19 @@ assert.equal(taskBindingSatisfied(itemTask, {
   objState: { "living:sofa": { packed: true } },
 }), true, "saved world state satisfies a linked task");
 
-const reopened = reconcileTasksFromWorldState([{ ...itemTask, status: "done" }], {
+const reopened = reconcileTasksFromWorldState([{
+  ...itemTask, status: "done", completionMode: "world",
+}], {
   objState: { "living:sofa": { packed: false, sold: false, donated: false } },
 });
-assert.equal(reopened[0].status, "pending", "undoing world state reopens a linked task");
+assert.equal(reopened[0].status, "pending", "undoing world state reopens an auto-completed linked task");
+
+const handDoneSticks = reconcileTasksFromWorldState([{
+  ...itemTask, status: "done", completionMode: "world", manualDone: true,
+}], {
+  objState: { "living:sofa": { packed: false, sold: false, donated: false } },
+});
+assert.equal(handDoneSticks[0].status, "done", "hand Done on a world-bound task is never silently reopened");
 
 assert.deepEqual(resolveTaskDestination(itemTask), {
   screen: "apartment", roomId: "living", objectId: "sofa",

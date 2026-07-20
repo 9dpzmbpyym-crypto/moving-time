@@ -17,8 +17,8 @@ import { fileURLToPath } from "node:url";
 const srcPath = fileURLToPath(new URL("../src/taskBindings.js", import.meta.url));
 let source = readFileSync(srcPath, "utf8");
 source = source
-  .replace(/^import .*inventoryCollections\.js";\n/m, "")
-  .replace(/^import .*apartmentObjectCatalog\.js";\n/m, "");
+  .replace(/^import .*inventoryCollections\.js";\r?\n/m, "")
+  .replace(/^import .*apartmentObjectCatalog\.js";\r?\n/m, "");
 
 // Minimal stubs for the label sources describeBinding reads. Real values live
 // in the Vite-only modules above; the shapes here match what the app ships.
