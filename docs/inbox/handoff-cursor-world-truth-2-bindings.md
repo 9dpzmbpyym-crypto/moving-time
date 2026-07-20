@@ -1,3 +1,7 @@
+> **STATUS: DONE — landed by Fable directly in `main` commit `e63bda6` (Jul 20).**
+> Do NOT run this as a Cursor task; it's already implemented and verified
+> (typecheck + binding-uniqueness 61 bindings + build all green). Kept for record.
+
 # Handoff → Cursor Grok (paste this whole file) — world-truth pass 2: canonical bindings
 
 You are Cursor Grok. Pull `main` into `cursor` first; never work on `main`. Mark
