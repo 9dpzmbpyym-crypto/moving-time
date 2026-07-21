@@ -84,7 +84,7 @@ import HEALTH_FULL from "./assets/items/task_card_assets/vertical/health_full_ca
 import STRETCHY_FULL from "./assets/items/task_card_assets/vertical/stretchy_full_card.png";
 import HOUSING_FULL from "./assets/items/task_card_assets/vertical/housing_full_card.png";
 import {
-  TASK_CATEGORIES, SAMPLE_JOBS, isOpen, taskPressure, isHardOverdue,
+  TASK_CATEGORIES, SAMPLE_JOBS, isOpen, taskPressure, stretchyStress, isHardOverdue,
   PRESSURE_LABELS, PRESSURE_COLORS,
   doorForTask, makeQuickTask, refreshDailyHousingTasks,
   tasksAfterBooking, tasksAfterAttend,
@@ -3679,8 +3679,10 @@ function LogScreen({ go, handled }) {
 
 /* ================= STRETCHY ================= */
 function StretchyScreen({ go, tasks }) {
-  const pressure = taskPressure(tasks);
-  const hearts = pressure === 0 ? 3 : pressure === 1 ? 3 : pressure === 2 ? 2 : 1;
+  // Stretchy reacts to HIS OWN care chain (vet/meds/kit/carrier) + U-Box-week
+  // disruption, not the whole apartment's task load. stretchyStress: 0/1/2.
+  const stress = stretchyStress(tasks);
+  const hearts = 3 - stress;
   const catTasks = tasks.filter((t) => isOpen(t) && t.category === "cat");
   const mood = hearts === 3 ? "loafing contentedly" : hearts === 2 ? "a little watchful" : "needs a quiet corner";
   return (
