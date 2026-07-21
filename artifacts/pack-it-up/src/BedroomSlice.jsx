@@ -47,7 +47,7 @@ import TASKS_BUTTON_BG from "./assets/ui_chrome/tasks_button.png";
 // Next-layer screens (Menu/Desk/Health/etc.) + the task/urgency scaffold.
 // The apartment stays the hub; these render as full-screen overlays above it.
 import ScreenLayer, { RewardToast, IncomingPhoneCue, VerticalTaskCard } from "./Screens.jsx";
-import { INITIAL_TASKS, isOpen as isTaskOpen, taskPressure, TASK_CATEGORIES, refreshDailyHousingTasks } from "./tasks.js";
+import { INITIAL_TASKS, isOpen as isTaskOpen, taskPressure, stretchyStress, TASK_CATEGORIES, refreshDailyHousingTasks } from "./tasks.js";
 import { CONTENTS, hasContents, remainingCount, contentsFor, itemArtReady } from "./contents.js";
 import {
   loadSave,
@@ -4169,7 +4169,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
         {/* STRETCHY — the cat, only in the current room, above the floor/furniture
             but non-interactive. Keyed by room so he re-mounts and trots back in. */}
         {rm.id === room.id && (
-          <Stretchy key={rm.id} spots={CAT_SPOTS[rm.id]} enterSide={catEnterSide} pressure={pressure} playCatSfx={playCatSfx} onOpen={() => setScreen("stretchy")} />
+          <Stretchy key={rm.id} spots={CAT_SPOTS[rm.id]} enterSide={catEnterSide} pressure={stretchyStress(tasks)} playCatSfx={playCatSfx} onOpen={() => setScreen("stretchy")} />
         )}
 
         {/* coin burst + floating amount — own overlay on its own timer so the
