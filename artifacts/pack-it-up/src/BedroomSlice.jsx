@@ -46,8 +46,9 @@ import ACTION_MENU_BG from "./assets/ui_chrome/action_menu.png";
 import TASKS_BUTTON_BG from "./assets/ui_chrome/tasks_button.png";
 // Next-layer screens (Menu/Desk/Health/etc.) + the task/urgency scaffold.
 // The apartment stays the hub; these render as full-screen overlays above it.
-import ScreenLayer, { RewardToast, IncomingPhoneCue, VerticalTaskCard } from "./Screens.jsx";
+import ScreenLayer, { RewardToast, AchievementToast, IncomingPhoneCue, VerticalTaskCard } from "./Screens.jsx";
 import { INITIAL_TASKS, isOpen as isTaskOpen, taskPressure, stretchyStress, TASK_CATEGORIES, refreshDailyHousingTasks } from "./tasks.js";
+import { INVENTORY_COLLECTIONS, INVENTORY_COLLECTION_OPTIONS } from "./inventoryCollections.js";
 import { CONTENTS, hasContents, remainingCount, contentsFor, itemArtReady } from "./contents.js";
 import {
   loadSave,
@@ -2544,6 +2545,26 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
   // which content item is selected inside the inline storage panel — drives
   // the Pack/Sell/Donate action bar instead of per-card tiny emoji buttons.
   const [selectedContentId, setSelectedContentId] = useState(null);
+  // Multi-select set of item ids checked in the open storage overlay. Tapping an
+  // item toggles it; "Pack (N)" packs all checked at once (batch). Cleared on
+  // close. Sell/Donate stay single-item (enabled only when exactly one checked).
+  const [checkedContentIds, setCheckedContentIds] = useState(() => new Set());
+  const [justPackedIds, setJustPackedIds] = useState(() => new Set());
+  // Collection-complete achievements. `achievedCollections` (persisted) fires each
+  // popup once ever; the queue drains one at a time so a big batch never spams.
+  const [achievedCollections, setAchievedCollections] = useState(
+    () => new Set(Array.isArray(bootSave?.achievedCollections) ? bootSave.achievedCollections : [])
+  );
+  const [achievementQueue, setAchievementQueue] = useState([]);
+  const [achievement, setAchievement] = useState(null);
+  useEffect(() => {
+    if (achievement || achievementQueue.length === 0) return;
+    const [next, ...rest] = achievementQueue;
+    setAchievement(next);
+    setAchievementQueue(rest);
+    const t = setTimeout(() => setAchievement(null), 2600);
+    return () => clearTimeout(t);
+  }, [achievement, achievementQueue]);
   // Click a pile box → inspect its packed items (furniture + contents) and unpack.
   const [boxOpenSlot, setBoxOpenSlot] = useState(null); // 0..BOX_MAX-1 | null
   const [selectedBoxItemKey, setSelectedBoxItemKey] = useState(null);
@@ -2703,11 +2724,11 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
   /* Debounced persist — pack/sell/donate/tasks/room. Flush on hide so a
      phone lock mid-pack still keeps progress. */
   const savePayloadRef = useRef(null);
-  savePayloadRef.current = { objState, contentsState, coins, minutes, tasks, roomIndex, session, appointments };
+  savePayloadRef.current = { objState, contentsState, coins, minutes, tasks, roomIndex, session, appointments, achievedCollections: [...achievedCollections] };
   useEffect(() => {
     const id = setTimeout(() => writeSave(savePayloadRef.current), 250);
     return () => clearTimeout(id);
-  }, [objState, contentsState, coins, minutes, tasks, roomIndex, session]);
+  }, [objState, contentsState, coins, minutes, tasks, roomIndex, session, achievedCollections]);
   useEffect(() => {
     const flush = () => writeSave(savePayloadRef.current);
     const onVis = () => {
@@ -2779,6 +2800,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     setStorageZone(null);
     setStorageAnchor(null);
     setSelectedContentId(null);
+    setCheckedContentIds(new Set());
   };
   const closeBoxInspect = () => {
     setBoxOpenSlot(null);
@@ -3032,6 +3054,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
     // Flip packed immediately so the room box pile stays visible after the
     // fly ends (visibility is driven by packed counts, not only packingHere).
     setContentsState((s) => ({ ...s, [k]: { ...s[k], packed: true, boxSlot } }));
+    checkCollectionAchievements([k]);
     // Close back to the apartment so the box stack is visible, then fly the
     // item sprite from the storage object to the box pile's mouth — same
     // packToBox keyframe the furniture uses.
@@ -3083,6 +3106,71 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
       setMinutes((m) => m + 10);
       onSessionBump("cleared", 1, "Cleared +1");
     }, 520);
+  }, [room, objState, contentsState, busy, schedule, onSessionBump, nextBoxSlotForRoom]);
+
+  const COLLECTION_LABELS = useMemo(
+    () => Object.fromEntries(INVENTORY_COLLECTION_OPTIONS.map((o) => [o.value, o.label])),
+    []
+  );
+  // When a pack completes every item of a named collection for the first time,
+  // enqueue a celebratory popup. `eff` overlays the just-packed keys onto current
+  // contents so we don't race the async setContentsState.
+  const checkCollectionAchievements = (packedKeys) => {
+    if (!packedKeys.length) return;
+    const eff = { ...contentsState };
+    for (const k of packedKeys) eff[k] = { ...eff[k], packed: true };
+    const handled = (key) => {
+      const isObj = key.startsWith("object:");
+      const flags = isObj ? objState[key.slice("object:".length)] : eff[key];
+      return !!(flags && (flags.packed || flags.sold || flags.donated));
+    };
+    const packedSet = new Set(packedKeys);
+    const done = [];
+    for (const [cid, keys] of Object.entries(INVENTORY_COLLECTIONS)) {
+      if (!keys.length || achievedCollections.has(cid)) continue;
+      if (!keys.some((key) => packedSet.has(key))) continue; // only collections this batch touched
+      if (keys.every(handled)) done.push(cid);
+    }
+    if (!done.length) return;
+    setAchievedCollections((s) => { const n = new Set(s); done.forEach((c) => n.add(c)); return n; });
+    setAchievementQueue((q) => [...q, ...done.map((cid) => ({
+      id: cid,
+      label: (COLLECTION_LABELS[cid] || cid).replace(/^Task Set · /, ""),
+      count: INVENTORY_COLLECTIONS[cid].length,
+      whole: cid.endsWith(":all"),
+    }))]);
+  };
+
+  // Batch pack: stamp every checked item packed at once, staying in the overlay
+  // so you can keep going. One grouped undo restores the whole batch. No fly —
+  // like sell/donate this stays local; the room box pile updates on close.
+  const packSelectedContents = useCallback((storageId, itemIds) => {
+    if (busy) return;
+    const base = nextBoxSlotForRoom(room.id, objState, contentsState);
+    const undoItems = [];
+    const packedKeys = [];
+    for (const id of itemIds) {
+      const k = `${room.id}:${storageId}:${id}`;
+      const prev = contentsState[k];
+      if (prev && (prev.packed || prev.sold || prev.donated)) continue;
+      undoItems.push({ storageId, id, prev: prev || { packed: false, sold: false, soldFor: 0, donated: false } });
+      packedKeys.push(k);
+    }
+    if (!packedKeys.length) return;
+    haptic(HAPTIC.pack);
+    playPackSfx();
+    setContentsState((s) => {
+      const next = { ...s };
+      packedKeys.forEach((k, i) => { next[k] = { ...s[k], packed: true, boxSlot: base + i }; });
+      return next;
+    });
+    setJustPackedIds(new Set(itemIds));
+    schedule(() => setJustPackedIds(new Set()), 440);
+    setCheckedContentIds(new Set());
+    setUndoStack((stack) => [...stack, { kind: "batchContent", roomId: room.id, items: undoItems, coinsDelta: 0, minutesDelta: 10 * packedKeys.length }]);
+    setMinutes((m) => m + 10 * packedKeys.length);
+    onSessionBump("cleared", packedKeys.length, `Cleared +${packedKeys.length}`);
+    checkCollectionAchievements(packedKeys);
   }, [room, objState, contentsState, busy, schedule, onSessionBump, nextBoxSlotForRoom]);
 
   const sellContent = useCallback((storageId, itemId) => {
@@ -3200,6 +3288,19 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
       ).map((task) => reconcileTasksFromWorldState([task], {
         objState: restored, appointments, calmedZones: session.calmedZones,
       })[0]));
+      setUndoStack((stack) => stack.slice(0, -1));
+      return;
+    }
+    if (entry.kind === "batchContent") {
+      setContentsState((s) => {
+        const next = { ...s };
+        for (const it of entry.items) {
+          const ck = `${entry.roomId}:${it.storageId}:${it.id}`;
+          next[ck] = { ...next[ck], packed: it.prev.packed, sold: it.prev.sold, soldFor: it.prev.soldFor, donated: it.prev.donated };
+        }
+        return next;
+      });
+      setMinutes((m) => m - (entry.minutesDelta || 0));
       setUndoStack((stack) => stack.slice(0, -1));
       return;
     }
@@ -3828,9 +3929,16 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
             const st = contentsState[`${sKey}:${it.id}`];
             return !st || (!st.packed && !st.sold && !st.donated);
           }).length;
-          const sel = items.find((it) => it.id === selectedContentId) || null;
+          // Checked, still-packable item ids in THIS container.
+          const checkedHere = items
+            .filter((it) => checkedContentIds.has(it.id))
+            .filter((it) => { const st = contentsState[`${sKey}:${it.id}`]; return !st || (!st.packed && !st.sold && !st.donated); })
+            .map((it) => it.id);
+          // Sell/Donate act on a single selection only.
+          const sel = checkedHere.length === 1 ? (items.find((it) => it.id === checkedHere[0]) || null) : null;
           const selSt = sel ? (contentsState[`${sKey}:${sel.id}`] || { packed: false, sold: false, soldFor: 0, donated: false }) : null;
           const selDone = selSt && (selSt.packed || selSt.sold || selSt.donated);
+          const allCheckedCarryOn = checkedHere.length > 0 && checkedHere.every((id) => items.find((it) => it.id === id)?.carryOn);
           const storageTitle = ({
             utensils: "Utensil drawer",
             junk: "Junk drawer",
@@ -3909,6 +4017,8 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
                 .storageScroll::-webkit-scrollbar-track { background: #1A0F06; border-left: 2px solid #120A04; }
                 .storageScroll::-webkit-scrollbar-thumb { background: #4A2E17; border: 2px solid #120A04; }
                 .storageScroll::-webkit-scrollbar-thumb:hover { background: #6B4A28; }
+                @keyframes packPop { 0% { transform: scale(1); } 40% { transform: scale(1.14); } 100% { transform: scale(0.9); opacity: 0.5; } }
+                .packPop { animation: packPop 0.42s ease-in forwards; }
               `}</style>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4, flex: "0 0 auto" }}>
                 <div style={{ color: "#FFD97A", fontSize: 13, ...ui.label }}>{storageTitle}</div>
@@ -3926,19 +4036,29 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
                   const k = `${sKey}:${it.id}`;
                   const st = contentsState[k] || { packed: false, sold: false, soldFor: 0, donated: false };
                   const done = st.packed || st.sold || st.donated;
-                  const isSel = selectedContentId === it.id && !done;
+                  const isSel = checkedContentIds.has(it.id) && !done;
+                  const popping = justPackedIds.has(it.id);
                   const maxDim = 32;
                   const fit = it.spr ? Math.min(maxDim / (it.spr.w * CELL), maxDim / (it.spr.h * CELL)) : 0;
                   return (
-                    <div key={it.id} data-content-id={it.id} style={{
+                    <div key={it.id} data-content-id={it.id} className={popping ? "packPop" : undefined} style={{
                       position: "relative", padding: 4,
                       background: done ? "#0F0904" : (isSel ? "#3A2410" : "#1A0F06"),
                       border: isSel ? "2px solid #FFD97A" : "2px solid #4A2E17",
                       opacity: done ? 0.5 : 1, cursor: done ? "default" : "pointer",
                       display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
                     }}
-                      onClick={(e) => { e.stopPropagation(); if (!done) setSelectedContentId(isSel ? null : it.id); }}
+                      onClick={(e) => { e.stopPropagation(); if (!done) setCheckedContentIds((s) => { const n = new Set(s); n.has(it.id) ? n.delete(it.id) : n.add(it.id); return n; }); }}
                     >
+                      {isSel && (
+                        <div style={{
+                          position: "absolute", top: -6, right: -6, zIndex: 6,
+                          width: 18, height: 18, borderRadius: "50%",
+                          background: "#FFD97A", border: "2px solid #120A04",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          color: "#120A04", fontSize: 11, fontWeight: 700, ...ui.label,
+                        }}>✓</div>
+                      )}
                       {storageSellFx && storageSellFx.itemId === it.id && (
                         <div style={{ position: "absolute", left: "50%", top: "50%", zIndex: 500, pointerEvents: "none" }}>
                           {COIN_BURSTS.map(({ tx, ty, d }, i) => (
@@ -3975,27 +4095,24 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
               <div style={{ display: "flex", gap: 5, marginTop: 6, paddingTop: 6, borderTop: "2px solid #4A2E17", flex: "0 0 auto" }}>
                 <button
                   data-storage-action="pack"
-                  onClick={() => { if (sel) { packContent(o.id, sel.id); } }}
-                  disabled={!sel || !!selDone || !!busy}
-                  style={{ flex: 1, padding: "8px 2px", fontSize: 11, cursor: (!sel || selDone || busy) ? "not-allowed" : "pointer", color: "#F2E4C0", background: sel ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (!sel || selDone) ? 0.4 : 1, ...ui.label }}
-                >{sel?.carryOn ? "🎒 Carry-on" : "📦 Pack"}</button>
-                {!sel?.carryOn && (
+                  onClick={() => { if (checkedHere.length) packSelectedContents(o.id, checkedHere); }}
+                  disabled={!checkedHere.length || !!busy}
+                  style={{ flex: 2, padding: "8px 2px", fontSize: 11, cursor: (!checkedHere.length || busy) ? "not-allowed" : "pointer", color: "#F2E4C0", background: checkedHere.length ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: checkedHere.length ? 1 : 0.4, ...ui.label }}
+                >{allCheckedCarryOn ? "🎒 Carry-on" : "📦 Pack"}{checkedHere.length ? ` (${checkedHere.length})` : ""}</button>
                 <button
                   data-storage-action="sell"
-                  onClick={() => { if (sel) { sellContent(o.id, sel.id); } }}
-                  disabled={!sel || !!selDone || !!busy || !sel?.value}
-                  title={sel?.value ? `sell ~$${sel.value}` : "can't sell"}
-                  style={{ flex: 1, padding: "8px 2px", fontSize: 11, cursor: (!sel || selDone || busy || !sel?.value) ? "not-allowed" : "pointer", color: "#FFD97A", background: sel ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (!sel || selDone || !sel?.value) ? 0.4 : 1, ...ui.label }}
+                  onClick={() => { if (sel && !sel.carryOn) { sellContent(o.id, sel.id); } }}
+                  disabled={!sel || !!selDone || !!busy || !sel?.value || !!sel?.carryOn}
+                  title={sel?.carryOn ? "carry-on — keep" : sel?.value ? `sell ~$${sel.value}` : "select one to sell"}
+                  style={{ flex: 1, padding: "8px 2px", fontSize: 11, cursor: (!sel || selDone || busy || !sel?.value || sel?.carryOn) ? "not-allowed" : "pointer", color: "#FFD97A", background: (sel && !sel.carryOn) ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (sel && !selDone && sel.value && !sel.carryOn) ? 1 : 0.4, ...ui.label }}
                 >💰 Sell</button>
-                )}
-                {!sel?.carryOn && (
                 <button
                   data-storage-action="donate"
-                  onClick={() => { if (sel) { donateContent(o.id, sel.id); } }}
-                  disabled={!sel || !!selDone || !!busy}
-                  style={{ flex: 1, padding: "8px 2px", fontSize: 11, cursor: (!sel || selDone || busy) ? "not-allowed" : "pointer", color: "#9CC76F", background: sel ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (!sel || selDone) ? 0.4 : 1, ...ui.label }}
+                  onClick={() => { if (sel && !sel.carryOn) { donateContent(o.id, sel.id); } }}
+                  disabled={!sel || !!selDone || !!busy || !!sel?.carryOn}
+                  title={sel?.carryOn ? "carry-on — keep" : sel ? "donate" : "select one to donate"}
+                  style={{ flex: 1, padding: "8px 2px", fontSize: 11, cursor: (!sel || selDone || busy || sel?.carryOn) ? "not-allowed" : "pointer", color: "#9CC76F", background: (sel && !sel.carryOn) ? "#3A2410" : "#1A0F06", border: "2px solid #120A04", opacity: (sel && !selDone && !sel.carryOn) ? 1 : 0.4, ...ui.label }}
                 >🎁 Donate</button>
-                )}
               </div>
             </div>
           );
@@ -4061,6 +4178,8 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
                 .storageScroll::-webkit-scrollbar-track { background: #1A0F06; border-left: 2px solid #120A04; }
                 .storageScroll::-webkit-scrollbar-thumb { background: #4A2E17; border: 2px solid #120A04; }
                 .storageScroll::-webkit-scrollbar-thumb:hover { background: #6B4A28; }
+                @keyframes packPop { 0% { transform: scale(1); } 40% { transform: scale(1.14); } 100% { transform: scale(0.9); opacity: 0.5; } }
+                .packPop { animation: packPop 0.42s ease-in forwards; }
               `}</style>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <div style={{ color: "#FFD97A", fontSize: 14 }}>RADIO</div>
@@ -5104,6 +5223,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
           <IncomingPhoneCue npcName={NPCS[incomingCall.npcId]?.name} onAnswer={() => setScreen("desk")} />
         )}
         <RewardToast text={screen === "apartment" ? rewardToast : null} />
+        <AchievementToast data={achievement} onDismiss={() => setAchievement(null)} />
       </div>
     );
   }
@@ -5426,6 +5546,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
 
       {donateToastEl}
       <RewardToast text={screen === "apartment" ? rewardToast : null} />
+      <AchievementToast data={achievement} onDismiss={() => setAchievement(null)} />
       {screen === "apartment" && incomingCall && (
         <IncomingPhoneCue npcName={NPCS[incomingCall.npcId]?.name} onAnswer={() => setScreen("desk")} />
       )}

@@ -104,6 +104,7 @@ export function writeSave(partial) {
       roomIndex: Math.max(0, Number(partial.roomIndex) || 0),
       session: partial.session && typeof partial.session === "object" ? partial.session : undefined,
       appointments: Array.isArray(partial.appointments) ? partial.appointments : [],
+      achievedCollections: Array.isArray(partial.achievedCollections) ? partial.achievedCollections : [],
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
   } catch {
