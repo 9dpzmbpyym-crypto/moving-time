@@ -4935,6 +4935,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
               <VerticalTaskCard
                 key={t.id}
                 task={t}
+                world={{ objState, contentsState }}
                 width={fanCardW}
                 bound={!!t.bound}
                 style={{
@@ -5216,6 +5217,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
           appointments={appointments}
           setAppointments={setAppointments}
           objState={objState}
+          contentsState={contentsState}
           incomingCall={incomingCall}
           clearIncomingCall={() => setIncomingCall(null)}
         />
@@ -5566,6 +5568,7 @@ export default function PackItUp({ glowMode = "split", initialScreen = "apartmen
         appointments={appointments}
         setAppointments={setAppointments}
         objState={objState}
+        contentsState={contentsState}
         incomingCall={incomingCall}
         clearIncomingCall={() => setIncomingCall(null)}
       />

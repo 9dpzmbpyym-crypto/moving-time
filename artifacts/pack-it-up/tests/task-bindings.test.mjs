@@ -30,6 +30,7 @@ const {
   reconcileTasksFromWorldState,
   resolveTaskDestination,
   taskBindingSatisfied,
+  taskBindingProgress,
 } = await import("data:text/javascript," + encodeURIComponent(stubs + source));
 
 const itemTask = {
@@ -115,5 +116,26 @@ assert.deepEqual(scheduleDatesForLedger({ category: "job", selfTarget: true }, "
 assert.equal(isTaskDateLocked({ id: "w_flight" }), true, "flight dates are locked");
 assert.equal(isTaskDateLocked({ kind: "attend" }), true, "recorded appointment dates are locked");
 assert.equal(isTaskDateLocked({ id: "m_load_main" }), true, "U-Box operation dates are locked");
+
+// taskBindingProgress: multi-target apartment_item (no inventory stub needed).
+const progTask = {
+  id: "roll_rug_lamp",
+  binding: { feature: "apartment_item", targets: ["living:living_rug", "living:floor_lamp"], aggregate: "all", trigger: "packed", resultStatus: "done" },
+};
+assert.deepEqual(
+  taskBindingProgress(progTask, { objState: {} }),
+  { done: 0, total: 2, next: "Living · Living Rug" },
+  "progress: nothing packed"
+);
+assert.deepEqual(
+  taskBindingProgress(progTask, { objState: { "living:living_rug": { packed: true } } }),
+  { done: 1, total: 2, next: "Living · Floor Lamp" },
+  "progress: one of two packed, next points to the unpacked one"
+);
+assert.equal(
+  taskBindingProgress({ binding: { feature: "apartment_item", target: "living:sofa", trigger: "packed", resultStatus: "done" } }, { objState: {} }),
+  null,
+  "progress: single-target returns null (no line)"
+);
 
 console.log("task binding transitions passed");

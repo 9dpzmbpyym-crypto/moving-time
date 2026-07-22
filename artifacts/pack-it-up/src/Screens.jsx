@@ -126,6 +126,7 @@ import {
   isWorldBoundTask,
   normalizeTaskBinding,
   describeBinding,
+  taskBindingProgress,
 } from "./taskBindings.js";
 import {
   SESSION_GOALS,
@@ -442,7 +443,7 @@ export function HorizontalTaskCard({ task, dimmed = false, style }) {
  * Natural PNG aspect (no stretch) so % overlays stay locked to art.
  */
 export function VerticalTaskCard({
-  task, width = 106, bound = false, manual = false, selected = false, compact = false, textScale = 1, onClick, style,
+  task, width = 106, bound = false, manual = false, selected = false, compact = false, textScale = 1, onClick, style, world = null,
 }) {
   const src = CARD_FULL[task?.category] || CARD_FULL.admin;
   const effort = clampPips(task?.effort || 1) || 1;
@@ -559,6 +560,10 @@ export function VerticalTaskCard({
               } else {
                 const bindingDesc = describeBinding(task?.binding);
                 if (bindingDesc) lines.push(`🔗 ${bindingDesc}`);
+                const prog = world ? taskBindingProgress(task, world) : null;
+                if (prog && prog.done < prog.total) {
+                  lines.push(`▸ ${prog.done}/${prog.total} packed${prog.next ? ` · finish in ${prog.next}` : ""}`);
+                }
               }
               if (lines.length < 3 && task?.dependsNote) lines.push(`after: ${task.dependsNote}`);
               if (lines.length < 3 && (task?.notes || task?.detail)) lines.push(task.notes || task.detail);
@@ -1140,7 +1145,7 @@ const boardChromeCss = (
   `}</style>
 );
 
-function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast }) {
+function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast, world }) {
   const energy = session?.energy || null;
   const deal = session?.dailyDeal;
   const picks = energy && deal ? handTasks(tasks, deal) : [];
@@ -1444,6 +1449,7 @@ function BoardScreen({ go, tasks, setTasks, session, onSessionBump, rewardToast 
                     <VerticalTaskCard
                       key={t.id}
                       task={t}
+                      world={world}
                       width={handCardW}
                       bound={!!t.bound}
                       manual={!!t.manual}
@@ -1600,7 +1606,7 @@ function TaskBindingFields({ value, onChange, fieldStyle }) {
   );
 }
 
-function LedgerScreen({ go, tasks, setTasks, session, onSessionBump }) {
+function LedgerScreen({ go, tasks, setTasks, session, onSessionBump, world }) {
   const [lane, setLane] = useState("housing");
   const [sortBy, setSortBy] = useState("due");
   const [showArchived, setShowArchived] = useState(false);
@@ -2386,7 +2392,7 @@ function ContactPickerOverlay({ onPick, onClose }) {
 }
 
 function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewardToast,
-  appointments, setAppointments, objState, incomingCall, clearIncomingCall }) {
+  appointments, setAppointments, objState, incomingCall, clearIncomingCall, world }) {
   const [tray, setTray] = useState("all"); // all | admin | job | housing
   const deskTasks = tasks.filter((t) => isOpen(t) && ["job", "admin", "move", "housing", "health", "cat"].includes(t.category));
   const filtered = deskTasks.filter((t) => {
@@ -2977,6 +2983,7 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
                   <div key={task.id} style={{ position: "relative", flex: "0 0 auto" }}>
                     <VerticalTaskCard
                       task={task}
+                      world={world}
                       width={62}
                       selected={inspectId === task.id}
                       onClick={() => setInspectId(task.id)}
@@ -3142,7 +3149,7 @@ function DeskScreen({ go, tasks, setTasks, playSfx, session, onSessionBump, rewa
           {!phonePhase && !contactPickerOpen && inspected && (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
               <div style={{ position: "relative" }}>
-                <VerticalTaskCard task={inspected} width={84} />
+                <VerticalTaskCard task={inspected} width={84} world={world} />
                 {resolving && resolving.id === inspected.id && resolving.mode !== "info" && (
                   <>
                     {/* ink residue left on the paper — pops in as the stamp presses */}
@@ -4283,23 +4290,24 @@ function CalendarScreen({ go, tasks }) {
 export default function ScreenLayer({
   screen, go, tasks, setTasks, handled, openHandledSheet, busy, playSfx,
   session, onSessionBump, rewardToast,
-  appointments, setAppointments, objState, incomingCall, clearIncomingCall,
+  appointments, setAppointments, objState, contentsState, incomingCall, clearIncomingCall,
   taskFocus,
 }) {
+  const world = { objState: objState || {}, contentsState: contentsState || {} };
   if (screen === "apartment") return null;
   if (screen === "menu")      return <MenuScreen go={go} tasks={tasks} />;
   if (screen === "board")     return (
     <BoardScreen go={go} tasks={tasks} setTasks={setTasks}
-      session={session} onSessionBump={onSessionBump} rewardToast={rewardToast} />
+      session={session} onSessionBump={onSessionBump} rewardToast={rewardToast} world={world} />
   );
   if (screen === "ledger")    return (
-    <LedgerScreen go={go} tasks={tasks} setTasks={setTasks} session={session} onSessionBump={onSessionBump} />
+    <LedgerScreen go={go} tasks={tasks} setTasks={setTasks} session={session} onSessionBump={onSessionBump} world={world} />
   );
   if (screen === "desk")      return (
     <DeskScreen go={go} tasks={tasks} setTasks={setTasks} playSfx={playSfx}
       session={session} onSessionBump={onSessionBump} rewardToast={rewardToast}
       appointments={appointments || []} setAppointments={setAppointments}
-      objState={objState} incomingCall={incomingCall} clearIncomingCall={clearIncomingCall} />
+      objState={objState} incomingCall={incomingCall} clearIncomingCall={clearIncomingCall} world={world} />
   );
   if (screen === "health")    return (
     <HealthScreen go={go} tasks={tasks} setTasks={setTasks}
