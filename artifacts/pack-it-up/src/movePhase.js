@@ -154,7 +154,12 @@ export function buildJulyCalendar({ tasks = [], today = new Date(), year = 2026,
     if (isCritical) m.critical = true;
     if (label) m.labels.push(label);
   };
+  // Only live tasks ink the grid. Archived/dismissed cards are removed from
+  // play (e.g. m_ubox_receive superseded by m_load1) and must not leave a
+  // phantom marker on their old date.
+  const isLiveTask = (t) => !["archived", "dismissed"].includes(t?.status);
   for (const t of tasks) {
+    if (!isLiveTask(t)) continue;
     const due = t?.dueDate;
     if (!due || due.slice(0, 7) !== `${year}-${pad(month)}`) continue;
     const crit = t.criticality || 0;
@@ -169,7 +174,7 @@ export function buildJulyCalendar({ tasks = [], today = new Date(), year = 2026,
   // Milestones follow their pinned task's live date. A day can carry more than
   // one (flight day also has the Wi-Fi return, etc.).
   const byId = {};
-  for (const t of tasks) if (t?.id) byId[t.id] = t;
+  for (const t of tasks) if (t?.id && isLiveTask(t)) byId[t.id] = t;
   const monthPrefix = `${year}-${pad(month)}`;
   // A health milestone lights up only for an appointment the player actually
   // attends. "Make/Book the appointment", "Obtain contingency plan", records/lab

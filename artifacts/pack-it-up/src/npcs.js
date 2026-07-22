@@ -91,7 +91,7 @@ const shirleyBank = (userText, callState, gameState = {}) => {
    Source: docs/move-spine/npc-guides/SAL_MOVING_DISPATCH.md
    ============================================================ */
 
-export const UBOX_DELIVERY_DATE = "2026-07-27";
+export const UBOX_DELIVERY_DATE = "2026-07-29";
 export const UBOX_LOCK_DATE = "2026-07-30";
 const SAL_LOADWEEK_START = "2026-07-25";
 
