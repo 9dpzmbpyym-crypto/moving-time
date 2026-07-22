@@ -306,3 +306,47 @@ export function reconcileTasksFromWorldState(tasks, world) {
 export function isWorldBoundTask(task) {
   return !!normalizeTaskBinding(task?.binding);
 }
+
+/** Room · Container label from a world key (content/object). */
+function keyPlace(key) {
+  const raw = key.startsWith("object:") ? key.slice("object:".length) : key;
+  const [room, container] = raw.split(":");
+  const cap = (s) => (s || "").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return container ? `${cap(room)} · ${cap(container)}` : cap(room);
+}
+
+/**
+ * Multi-item progress for a task's packing/collection binding, for the card's
+ * "how to finish it" line. Returns { done, total, next } (next = place label of
+ * the first unhandled item), or null for non-collection or single-target bindings.
+ */
+export function taskBindingProgress(task, world = {}) {
+  const binding = normalizeTaskBinding(task?.binding);
+  if (!binding) return null;
+  if (!["inventory_collection", "packing_requirement", "apartment_item"].includes(binding.feature)) return null;
+  const targets = binding.targets || [binding.target];
+  const keys = [];
+  for (const target of targets) {
+    if (binding.feature === "apartment_item") keys.push(target);
+    else if (binding.feature === "packing_requirement") {
+      if (target.startsWith("object:") || target.startsWith("item:")) keys.push(target.replace(/^item:/, ""));
+      else keys.push(...inventoryTargetKeys("inventory_collection", target));
+    } else {
+      keys.push(...inventoryTargetKeys("inventory_collection", target));
+    }
+  }
+  const uniq = [...new Set(keys)];
+  if (uniq.length <= 1) return null;
+  const handledKey = (key) => {
+    const isObj = binding.feature === "apartment_item" || key.startsWith("object:");
+    const sk = key.startsWith("object:") ? key.slice("object:".length) : key;
+    const flags = isObj ? world.objState?.[sk] : world.contentsState?.[sk];
+    if (!flags) return false;
+    if (binding.trigger === "handled") return !!(flags.packed || flags.sold || flags.donated);
+    if (binding.trigger === "removed") return !!(flags.sold || flags.donated);
+    return !!flags[binding.trigger] || !!flags.packed;
+  };
+  const done = uniq.filter(handledKey).length;
+  const nextKey = uniq.find((k) => !handledKey(k)) || null;
+  return { done, total: uniq.length, next: nextKey ? keyPlace(nextKey) : null };
+}
