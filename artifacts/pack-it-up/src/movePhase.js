@@ -5,8 +5,8 @@ export const MOVE_DATE = "2026-07-31";
 export const PHASES = [
   { id: "pack-first", label: "Pack first", start: "2026-07-01", end: "2026-07-14" },
   { id: "mid-month", label: "Mid-month", start: "2026-07-15", end: "2026-07-24" },
-  { id: "ubox-week", label: "U-Box week", start: "2026-07-25", end: "2026-07-26" },
-  { id: "load-days", label: "Load days", start: "2026-07-27", end: "2026-07-29" },
+  { id: "ubox-week", label: "U-Box week", start: "2026-07-25", end: "2026-07-28" },
+  { id: "load-days", label: "Load days", start: "2026-07-29", end: "2026-07-29" },
   { id: "lock-night", label: "Lock night", start: "2026-07-30", end: "2026-07-30" },
   { id: "flight-day", label: "Flight day", start: "2026-07-31", end: "2026-07-31" },
   { id: "arrived", label: "Arrived", start: "2026-08-01", end: null },
@@ -18,8 +18,8 @@ export const DATE_TRIGGERS = [
   // dates, so this table stays the single source of truth for the move spine.
   { id: "sublet-lock", date: "2026-07-15", label: "Lock the Aug 1 sublet", critical: true, lane: "housing", anchor: true, short: "Sublet Lock" },
   { id: "vet-window", date: "2026-07-22", end: "2026-07-25", label: "Stretchy vet window", critical: true, lane: "cat", anchor: true, short: "Vet Visit" },
-  { id: "ubox-arrives", date: "2026-07-27", label: "U-Box arrives", critical: true, lane: "move", anchor: true, short: "U-Box Day" },
-  { id: "main-load", date: "2026-07-28", end: "2026-07-29", label: "Main loading days", critical: true, lane: "move" },
+  { id: "ubox-arrives", date: "2026-07-29", label: "U-Box arrives", critical: true, lane: "move", anchor: true, short: "U-Box Day" },
+  { id: "main-load", date: "2026-07-29", end: "2026-07-30", label: "Main loading days", critical: true, lane: "move" },
   { id: "lock-box", date: "2026-07-30", label: "Lock the U-Box tonight", critical: true, lane: "move" },
   { id: "flight", date: "2026-07-31", label: "Flight day — sweep, do not pack", critical: true, lane: "move", anchor: true, short: "Flight Day" },
 ];
