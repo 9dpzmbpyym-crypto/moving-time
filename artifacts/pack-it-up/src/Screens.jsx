@@ -801,6 +801,33 @@ export function RewardToast({ text }) {
   );
 }
 
+/** Collection-complete celebration. Bigger + gold vs RewardToast; whole-container
+ *  clears get a brighter flourish. Tap to dismiss (also auto-dismisses). */
+export function AchievementToast({ data, onDismiss }) {
+  if (!data) return null;
+  const whole = data.whole;
+  return (
+    <div
+      onClick={onDismiss}
+      className="rewardPop"
+      style={{
+        position: "fixed", left: "50%", top: "22%", transform: "translateX(-50%)", zIndex: 600,
+        width: "min(320px, 84vw)", padding: "14px 18px", textAlign: "center",
+        background: whole ? "#4A2E17" : "#2A1A0C", color: "#FFD97A",
+        border: "3px solid #120A04",
+        boxShadow: `inset 0 0 0 2px ${whole ? "#FFD97A" : "#C9942E"}, 0 6px 0 #000, 0 0 24px rgba(201,148,46,0.5)`,
+        cursor: "pointer", ...LB,
+      }}
+    >
+      <div style={{ fontSize: 11, letterSpacing: "1px", color: "#C9942E", marginBottom: 4 }}>
+        {whole ? "✦ ZONE CLEARED ✦" : "✦ COLLECTION PACKED ✦"}
+      </div>
+      <div style={{ fontSize: 15, lineHeight: 1.25, color: "#F2E4C0" }}>{data.label}</div>
+      <div style={{ fontSize: 11, color: "#9CC76F", marginTop: 5 }}>all {data.count} packed</div>
+    </div>
+  );
+}
+
 function Screen({ title, icon, onBack, children, bg = "#1A1008", subtitle, progress, progressLabel, checklist, compact = false, flush = false, headerPad = 0, hideChrome = false, hideBack = false }) {
   const slim = compact || flush;
   return (
@@ -3826,6 +3853,7 @@ function SettingsScreen({ go }) {
         roomIndex: 0,
         session: data.session && typeof data.session === "object" ? data.session : undefined,
         appointments: Array.isArray(data.appointments) ? data.appointments : [],
+        achievedCollections: Array.isArray(data.achievedCollections) ? data.achievedCollections : [],
       };
       localStorage.setItem("pack-it-up-save", JSON.stringify(payload));
       setImportState(`✓ Restored ${tasks.length} tasks — reloading…`);
@@ -3867,6 +3895,7 @@ function SettingsScreen({ go }) {
         session: save.session || null,
         objState: save.objState || {},
         contentsState: save.contentsState || {},
+        achievedCollections: save.achievedCollections || [],
       }, null, 2);
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(payload);
