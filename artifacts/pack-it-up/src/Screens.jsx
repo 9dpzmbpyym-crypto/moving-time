@@ -562,7 +562,7 @@ export function VerticalTaskCard({
                 if (bindingDesc) lines.push(`🔗 ${bindingDesc}`);
                 const prog = world ? taskBindingProgress(task, world) : null;
                 if (prog && prog.done < prog.total) {
-                  lines.push(`▸ ${prog.done}/${prog.total} packed${prog.next ? ` · finish in ${prog.next}` : ""}`);
+                  lines.push(`${prog.done}/${prog.total} packed${prog.next ? ` · finish in ${prog.next}` : ""}`);
                 }
               }
               if (lines.length < 3 && task?.dependsNote) lines.push(`after: ${task.dependsNote}`);
@@ -1939,7 +1939,7 @@ function LedgerScreen({ go, tasks, setTasks, session, onSessionBump, world }) {
                     border: "2px solid #120A04", fontSize: 10, cursor: "pointer", ...LB,
                   }}>UNDO ✓</button>
                 )}
-                {open && hasTodayDeal && (
+                {open && !!dailyDeal && (
                   <button
                     type="button"
                     aria-label={inHand ? `Remove ${t.title} from today's hand` : `Add ${t.title} to today's hand`}
