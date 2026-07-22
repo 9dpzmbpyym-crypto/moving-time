@@ -1,3 +1,7 @@
+> **STATUS: DONE — built by Fable directly on `main` (Jul 22).** All three parts
+> shipped and verified (batch pack + achievements browser-tested; taskBindingProgress
+> unit-tested; typecheck + build + suite green). Do NOT run as a Cursor task. Kept for record.
+
 # Handoff → Cursor Grok (paste this whole file) — batch packing + collection achievements + card progress
 
 You are Cursor Grok. Pull `main` into `cursor` first; never work on `main`. Mark
